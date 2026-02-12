@@ -1,38 +1,426 @@
-.App {
-  text-align: center;
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+@import "tailwindcss";
+
+/* Tailwind Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS Variables */
+:root {
+  --primary: #13ec5b;
+  --background-light: #f6f8f6;
+  --background-dark: #102216;
+  --text-light: #0f172a;
+  --text-dark: #f1f5f9;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Base Styles */
+body {
+  font-family: 'Manrope', sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+/* Material Symbols Configuration */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+/* Filled variant for Material Symbols */
+.material-symbols-outlined.fill {
+  font-variation-settings: 'FILL' 1;
 }
 
-.App-link {
-  color: #61dafb;
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-@keyframes App-logo-spin {
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Smooth Transitions */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Focus Styles */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Custom Animation for Stats Cards */
+@keyframes fadeInUp {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(20px);
   }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+
+.bg-white, .dark\:bg-slate-900 {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Chart Bar Hover Effects */
+.group:hover .group-hover\:bg-primary {
+  background-color: var(--primary) !important;
+}
+
+/* Custom Status Badge Variants */
+.status-delivered {
+  @apply bg-green-100 text-green-700;
+}
+
+.status-pending {
+  @apply bg-yellow-100 text-yellow-700;
+}
+
+.status-transit {
+  @apply bg-primary/20 text-primary-dark;
+}
+
+/* Dark mode status variants */
+.dark .status-delivered {
+  @apply bg-green-900/30 text-green-400;
+}
+
+.dark .status-pending {
+  @apply bg-yellow-900/30 text-yellow-400;
+}
+
+.dark .status-transit {
+  @apply bg-primary/20 text-primary;
+}
+
+/* Custom Input Styles */
+input[type="text"] {
+  @apply bg-slate-100 dark:bg-slate-800;
+}
+
+input[type="text"]:focus {
+  @apply ring-2 ring-primary/50 outline-none;
+}
+
+/* Table Styles */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+th {
+  @apply font-bold text-xs uppercase tracking-wider;
+}
+
+td {
+  @apply text-sm;
+}
+
+/* Alert Card Animations */
+@keyframes pulseWarning {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.bg-red-50, .dark\:bg-red-900\/10 {
+  animation: pulseWarning 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom Gradient Backgrounds */
+.bg-primary-gradient {
+  background: linear-gradient(135deg, var(--primary) 0%, #0ea53c 100%);
+}
+
+/* Glass Morphism Effect (Optional) */
+.glass-effect {
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.dark .glass-effect {
+  background: rgba(15, 23, 42, 0.8);
+}
+
+/* Chart Bar Custom Styles */
+.chart-bar {
+  transition: height 0.3s ease, background-color 0.2s ease;
+}
+
+/* Responsive Typography */
+@media (max-width: 640px) {
+  h1 {
+    @apply text-2xl;
+  }
+  
+  .text-3xl {
+    @apply text-2xl;
+  }
+  
+  .text-2xl {
+    @apply text-xl;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white;
+    color: black;
+  }
+  
+  .shadow-sm, .shadow {
+    box-shadow: none !important;
+  }
+}
+
+/* Loading Skeleton Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  animation: shimmer 2s infinite;
+  background: linear-gradient(
+    to right,
+    #f1f5f9 4%,
+    #e2e8f0 25%,
+    #f1f5f9 36%
+  );
+  background-size: 1000px 100%;
+}
+
+.dark .skeleton {
+  background: linear-gradient(
+    to right,
+    #1e293b 4%,
+    #334155 25%,
+    #1e293b 36%
+  );
+  background-size: 1000px 100%;
+}
+
+/* Tooltip Custom Styles */
+.tooltip {
+  @apply absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 transition-opacity whitespace-nowrap;
+}
+
+.group:hover .tooltip {
+  @apply opacity-100;
+}
+
+/* Custom Border Styles */
+.border-primary-light {
+  border-color: rgba(19, 236, 91, 0.2);
+}
+
+/* Hover Card Effects */
+.hover-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+}
+
+/* Dark mode specific adjustments */
+.dark .hover-card:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+/* Stats Card Number Animation */
+@keyframes countUp {
+  from {
+    opacity: 0.7;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.text-2xl.font-extrabold {
+  animation: countUp 0.6s ease-out;
+}
+
+/* Custom Spacing Utilities */
+@layer utilities {
+  .animation-delay-100 {
+    animation-delay: 0.1s;
+  }
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+  .animation-delay-300 {
+    animation-delay: 0.3s;
+  }
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+  .animation-delay-500 {
+    animation-delay: 0.5s;
+  }
+}
+
+/* Ensure proper dark mode transitions */
+.dark {
+  color-scheme: dark;
+}
+
+/* Fix for Tailwind dark mode with custom classes */
+.dark .bg-background-light {
+  background-color: var(--background-dark);
+}
+
+/* Custom Ring Styles */
+.ring-primary\/20 {
+  --tw-ring-color: rgba(19, 236, 91, 0.2);
+}
+
+/* Ensure proper spacing in flex layouts */
+.flex-1 {
+  flex: 1 1 0%;
+}
+
+/* Custom width and height utilities */
+.size-10 {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.size-10 {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+/* Background cover utility */
+.bg-cover {
+  background-size: cover;
+}
+
+.bg-center {
+  background-position: center;
+}
+
+/* Border radius utilities */
+.rounded-t-sm {
+  border-top-left-radius: 0.125rem;
+  border-top-right-radius: 0.125rem;
+}
+
+/* Z-index utilities */
+.z-10 {
+  z-index: 10;
+}
+
+/* Cursor utilities */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Group hover utilities */
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
+/* Transition utilities */
+.transition-opacity {
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.transition-colors {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Whitespace utilities */
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+
+/* Ensure the main layout takes full height */
+.h-screen {
+  height: 100vh;
+}
+
+/* Prevent overflow issues */
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+/* Flex shrink utilities */
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+
+/* Border utilities */
+.border-r {
+  border-right-width: 1px;
+}
+
+/* Box shadow utilities */
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
