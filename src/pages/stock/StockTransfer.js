@@ -11,13 +11,20 @@ const StockTransactions = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFormat, setExportFormat] = useState('excel');
   const [exportType, setExportType] = useState('all'); // all, purchase, sale, return, adjustment, transfer
-  
+
   // Product dropdown state
   const [selectedProduct, setSelectedProduct] = useState("Areca Leaf Plate 10\" Round");
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
   const [quantity, setQuantity] = useState("");
-  const [transactionType, setTransactionType] = useState("PURCHASE");
+  const [unitPrice, setUnitPrice] = useState("");
+  const [totalAmount, setTotalAmount] = useState("");
+  const [isPaid, setIsPaid] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const [isLogging, setIsLogging] = useState(false);
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
+  const [billItems, setBillItems] = useState([]);
 
   // Search and Filter states for Recent History
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,36 +33,48 @@ const StockTransactions = () => {
 
   // Products list
   const products = [
-    { id: 1, name: "Areca Leaf Plate 10\" Round", sku: "FG-PL-010", category: "Finished Goods", unit: "pcs", currentStock: 4500 },
-    { id: 2, name: "Areca Leaf Plate 8\" Round", sku: "FG-PL-008", category: "Finished Goods", unit: "pcs", currentStock: 3800 },
-    { id: 3, name: "Areca Leaf Bowl 6\"", sku: "FG-BL-006", category: "Finished Goods", unit: "pcs", currentStock: 2500 },
-    { id: 4, name: "Areca Leaf Square Plate", sku: "FG-PL-SQ", category: "Finished Goods", unit: "pcs", currentStock: 1800 },
-    { id: 5, name: "Raw Areca Sheaths (Grade A)", sku: "RM-AL-001", category: "Raw Material", unit: "kg", currentStock: 1200 },
-    { id: 6, name: "Raw Areca Sheaths (Grade B)", sku: "RM-AL-002", category: "Raw Material", unit: "kg", currentStock: 850 },
+    { id: 1, name: "Areca Leaf Plate 6\" Round", sku: "FG-PL-006", category: "Finished Goods", unit: "pcs", currentStock: 6000, price: 2.50 },
+    { id: 2, name: "Areca Leaf Plate 8\" Round", sku: "FG-PL-008", category: "Finished Goods", unit: "pcs", currentStock: 5000, price: 4.50 },
+    { id: 3, name: "Areca Leaf Plate 10\" Round", sku: "FG-PL-010", category: "Finished Goods", unit: "pcs", currentStock: 3200, price: 6.50 },
+    { id: 4, name: "Areca Leaf Plate 12\" Round", sku: "FG-PL-012", category: "Finished Goods", unit: "pcs", currentStock: 2500, price: 8.50 },
   ];
 
+  // Initialize unit price when product is selected
+  useEffect(() => {
+    const product = products.find(p => p.name === selectedProduct);
+    if (product) {
+      setUnitPrice(product.price.toString());
+    }
+  }, [selectedProduct]);
+
+  // Auto-calculate Total Amount when Quantity or Unit Price change
+  useEffect(() => {
+    if (quantity && unitPrice) {
+      const calculatedAmount = (parseFloat(quantity) * parseFloat(unitPrice)).toFixed(2);
+      setTotalAmount(calculatedAmount);
+    } else {
+      setTotalAmount("");
+    }
+  }, [quantity, unitPrice]);
+
   const [allTransactions, setAllTransactions] = useState([
-    { id: 1, date: "Oct 24, 2023 14:32 PM", product: "Areca Leaf Plate 10\" Round", type: "PURCHASE", quantity: 1200, unit: "pcs", balance: 4500, status: "success" },
-    { id: 2, date: "Oct 24, 2023 12:15 PM", product: "Raw Areca Sheaths (Grade A)", type: "SALE", quantity: -500, unit: "kg", balance: 2100, status: "failed" },
-    { id: 3, date: "Oct 23, 2023 16:20 PM", product: "Areca Leaf Bowl 6\"", type: "PURCHASE", quantity: 800, unit: "pcs", balance: 1850, status: "success" },
-    { id: 4, date: "Oct 23, 2023 10:05 AM", product: "Areca Leaf Plate 8\" Round", type: "RETURN", quantity: 50, unit: "pcs", balance: 950, status: "success" },
-    { id: 5, date: "Oct 22, 2023 14:30 PM", product: "Raw Areca Sheaths (Grade B)", type: "PURCHASE", quantity: 300, unit: "kg", balance: 850, status: "success" },
+    { id: 1, date: "Oct 24, 2023 14:32 PM", product: "Areca Leaf Plate 10\" Round", type: "PURCHASE", quantity: 1200, unit: "pcs", balance: 4500, status: "success", customer: "Global Exports", company: "AVS Eco" },
+    { id: 2, date: "Oct 24, 2023 12:15 PM", product: "Raw Areca Sheaths (Grade A)", type: "SALE", quantity: -500, unit: "kg", balance: 2100, status: "failed", customer: "Local Vendor", company: "AVS Eco" },
+    { id: 3, date: "Oct 23, 2023 16:20 PM", product: "Areca Leaf Bowl 6\"", type: "PURCHASE", quantity: 800, unit: "pcs", balance: 1850, status: "success", customer: "Bulk Supplier", company: "AVS Eco" },
   ]);
 
   // Filtered transactions based on search and filters
   const getFilteredTransactions = () => {
     return allTransactions.filter((transaction) => {
-      const matchesSearch = searchTerm === "" || 
+      const matchesSearch = searchTerm === "" ||
         transaction.product.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.type.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesType = typeFilter === "all" || 
-        transaction.type.toLowerCase() === typeFilter.toLowerCase();
-      
-      const matchesStatus = statusFilter === "all" || 
-        transaction.status.toLowerCase() === statusFilter.toLowerCase();
-      
-      return matchesSearch && matchesType && matchesStatus;
+        (transaction.company && transaction.company.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (transaction.customer && transaction.customer.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchesPayment = typeFilter === "all" ||
+        (transaction.paymentStatus && transaction.paymentStatus.toLowerCase() === typeFilter.toLowerCase());
+
+      return matchesSearch && matchesPayment;
     });
   };
 
@@ -64,7 +83,10 @@ const StockTransactions = () => {
   // Get filtered data for export based on type
   const getFilteredDataForExport = (type) => {
     if (type === 'all') return allTransactions;
-    return allTransactions.filter(t => t.type.toLowerCase() === type.toLowerCase());
+    if (type === 'paid' || type === 'unpaid') {
+      return allTransactions.filter(t => t.paymentStatus?.toLowerCase() === type.toLowerCase());
+    }
+    return allTransactions.filter(t => t.type?.toLowerCase() === type.toLowerCase());
   };
 
   const StatusBadge = ({ status }) => (
@@ -81,19 +103,41 @@ const StockTransactions = () => {
 
   // Format date for display
   const formatDate = (date) => {
-    return date.toLocaleString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric', 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
-  // Handle Log Transaction
-  const handleLogTransaction = () => {
+  // Add item to current bill session
+  const handleAddItem = () => {
     if (!quantity || parseFloat(quantity) <= 0) {
-      setFeedbackMessage("Please enter valid quantity");
+      setFeedbackMessage("Please enter pieces");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    const newItem = {
+      id: Date.now(),
+      product: selectedProduct,
+      qty: parseFloat(quantity),
+      amount: parseFloat(totalAmount) || 0,
+      unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
+    };
+
+    setBillItems([...billItems, newItem]);
+    setQuantity("");
+    setTotalAmount("");
+    setFeedbackMessage(`Added ${selectedProduct} to bill`);
+    setTimeout(() => setFeedbackMessage(""), 2000);
+  };
+
+  const handleLogTransaction = () => {
+    if (billItems.length === 0 && (!quantity || parseFloat(quantity) <= 0)) {
+      setFeedbackMessage("Please add items to bill or enter current item details");
       setTimeout(() => setFeedbackMessage(""), 3000);
       return;
     }
@@ -101,39 +145,117 @@ const StockTransactions = () => {
     setIsLogging(true);
 
     setTimeout(() => {
-      const qty = parseFloat(quantity);
-      const selectedProductObj = products.find(p => p.name === selectedProduct);
-      const unit = selectedProductObj?.unit || "pcs";
-      
-      // Determine quantity sign based on transaction type
-      let quantityValue = qty;
-      if (transactionType === "SALE" || transactionType === "TRANSFER") {
-        quantityValue = -qty;
+      let itemsToLog = [...billItems];
+
+      // If there's something currently entered but not "Added", include it
+      if (quantity && parseFloat(quantity) > 0) {
+        itemsToLog.push({
+          product: selectedProduct,
+          qty: parseFloat(quantity),
+          amount: parseFloat(totalAmount) || 0,
+          unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
+        });
       }
 
-      // Calculate new balance
-      const lastTransaction = allTransactions[0];
-      const currentBalance = lastTransaction ? lastTransaction.balance : selectedProductObj?.currentStock || 0;
-      const newBalance = currentBalance + quantityValue;
+      const totalPieces = itemsToLog.reduce((sum, item) => sum + item.qty, 0);
+      const totalBillAmount = itemsToLog.reduce((sum, item) => sum + item.amount, 0);
 
-      const newTransaction = {
+      // Create a readable summary like "500x6\", 200x8\""
+      const productSummary = itemsToLog.map(item =>
+        `${item.qty}x${item.product.replace('Areca Leaf Plate ', '').replace(' Round', '')}`
+      ).join(', ');
+
+      const newHistoryEntry = {
         id: allTransactions.length + 1,
         date: formatDate(new Date()),
-        product: selectedProduct,
-        type: transactionType,
-        quantity: quantityValue,
-        unit: unit,
-        balance: newBalance,
-        status: "success"
+        product: productSummary,
+        type: "SALE",
+        quantity: -totalPieces,
+        unit: "pcs",
+        balance: (allTransactions[0]?.balance || 10000) - totalPieces,
+        status: "success",
+        company: companyName,
+        customer: customerName,
+        amount: totalBillAmount,
+        paymentStatus: isPaid ? "Paid" : "Unpaid"
       };
 
-      setAllTransactions([newTransaction, ...allTransactions]);
+      setAllTransactions([newHistoryEntry, ...allTransactions]);
+      setBillItems([]);
       setQuantity("");
+      setTotalAmount("");
+      setCompanyName("");
+      setCustomerName("");
       setIsLogging(false);
-      setFeedbackMessage(`✅ Transaction logged successfully! New balance: ${newBalance} ${unit}`);
+      setFeedbackMessage(`✅ Bill saved for ${companyName}! Total: ₹${totalBillAmount}`);
 
       setTimeout(() => setFeedbackMessage(""), 3000);
-    }, 500);
+    }, 800);
+  };
+
+  const handleGenerateBill = () => {
+    if (!companyName) {
+      setFeedbackMessage("Please enter a Company Name");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    let itemsForBill = [...billItems];
+    if (quantity && parseFloat(quantity) > 0) {
+      itemsForBill.push({
+        product: selectedProduct,
+        qty: parseFloat(quantity),
+        amount: parseFloat(totalAmount) || 0
+      });
+    }
+
+    if (itemsForBill.length === 0) {
+      setFeedbackMessage("No items to generate bill");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    const billData = {
+      company: companyName,
+      customer: customerName,
+      date: formatDate(new Date()),
+      items: itemsForBill.map(item => ({
+        product: item.product,
+        qty: item.qty,
+        amount: item.amount
+      }))
+    };
+
+    setSelectedBill(billData);
+    setShowBillModal(true);
+  };
+
+  const openBillFromHistory = (transaction) => {
+    // If it's a consolidated summary like "100x6\", 200x8\""
+    // We can't perfectly decompose it without storing items separately, 
+    // but for the UI we can show it as a single row in the bill or try a simple split
+
+    const billData = {
+      company: transaction.company,
+      customer: transaction.customer,
+      date: transaction.date,
+      items: [{
+        product: transaction.product,
+        qty: Math.abs(transaction.quantity),
+        amount: transaction.amount || 0
+      }]
+    };
+
+    setSelectedBill(billData);
+    setShowBillModal(true);
+  };
+
+  const handleDeleteTransaction = (id) => {
+    if (window.confirm("Are you sure you want to delete this transaction?")) {
+      setAllTransactions(allTransactions.filter(t => t.id !== id));
+      setFeedbackMessage("❌ Transaction deleted");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+    }
   };
 
   // Export Handler
@@ -149,7 +271,7 @@ const StockTransactions = () => {
       const dataToExport = getFilteredDataForExport(exportType);
       const fileName = `${exportType === 'all' ? 'All' : exportType}_Stock_Report_${new Date().toISOString().split('T')[0]}`;
 
-      switch(exportFormat) {
+      switch (exportFormat) {
         case 'excel':
           exportToExcel(dataToExport, fileName);
           break;
@@ -175,15 +297,15 @@ const StockTransactions = () => {
   };
 
   const exportToCSV = (data, fileName) => {
-    const headers = ["Date", "Product", "Type", "Quantity", "Unit", "Balance", "Status"];
+    const headers = ["Date", "Customer", "Company", "Description", "Pieces", "Amount (₹)", "Payment Status"];
     const csvData = data.map((item) => [
       item.date,
+      item.customer || "-",
+      item.company || "-",
       item.product,
-      item.type,
-      item.quantity > 0 ? `+${item.quantity}` : item.quantity,
-      item.unit,
-      item.balance,
-      item.status,
+      Math.abs(item.quantity),
+      item.amount || 0,
+      item.paymentStatus || "Unpaid",
     ]);
 
     const csvContent = [headers, ...csvData].map((e) => e.join(",")).join("\n");
@@ -257,46 +379,10 @@ const StockTransactions = () => {
           <p className="page-subtitle">Log and monitor your areca leaf product movements in real-time</p>
         </div>
         <div className="header-actions">
-          {/* Dropdown Menu - ONLY Menu Button */}
-          <div className="dropdown-container">
-            <button 
-              className="btn-outline dropdown-toggle"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-              <span className="material-symbols-outlined">menu</span>
-              View 
-              <span className="material-symbols-outlined dropdown-arrow">
-                {isDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
-              </span>
-            </button>
-            
-            {isDropdownOpen && (
-              <div className="dropdown-menu">
-                <button 
-                  className="dropdown-item"
-                  onClick={() => handleNavigation('/stock')}
-                >
-                  <span className="material-symbols-outlined">inventory</span>
-                  <span>Stock Overview</span>
-                </button>
-                <button 
-                  className="dropdown-item active"
-                  onClick={() => handleNavigation('/stock-transaction')}
-                >
-                  <span className="material-symbols-outlined">swap_horiz</span>
-                  <span>Stock Transaction</span>
-                  <span className="material-symbols-outlined check">check</span>
-                </button>
-                <button 
-                  className="dropdown-item"
-                  onClick={() => handleNavigation('/stock/production')}
-                >
-                  <span className="material-symbols-outlined">factory</span>
-                  <span>Production</span>
-                </button>
-              </div>
-            )}
-          </div>
+          <button className="btn-stock-overview" onClick={() => navigate('/stock')}>
+            <span className="material-symbols-outlined">inventory</span>
+            Stock Overview
+          </button>
 
           {/* Export Button */}
           <button className="btn-outline" onClick={handleExport} disabled={exportLoading}>
@@ -313,85 +399,166 @@ const StockTransactions = () => {
         <div className="table-header">
           <h3>Quick Stock Entry</h3>
         </div>
-        <div className="quick-entry-container">
-          {/* Product Dropdown */}
-          <div className="quick-entry-item">
-            <span className="quick-entry-label">Product:</span>
-            <div className="product-dropdown">
-              <button 
-                onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
-                className="product-dropdown-toggle"
-              >
-                <span className="product-dropdown-text">
-                  {selectedProduct}
-                </span>
-                <span className="material-symbols-outlined product-dropdown-arrow">
-                  {isProductDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
-                </span>
-              </button>
-              
-              {isProductDropdownOpen && (
-                <div className="product-dropdown-menu">
-                  {products.map((product) => (
-                    <button
-                      key={product.id}
-                      onClick={() => {
-                        setSelectedProduct(product.name);
-                        setIsProductDropdownOpen(false);
-                      }}
-                      className={`product-dropdown-item ${selectedProduct === product.name ? 'active' : ''}`}
-                    >
-                      <span className="product-name-text">{product.name}</span>
-                      <span className="product-sku-category">{product.sku} • {product.category}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+        <div className="quick-entry-grid">
+          <div className="quick-entry-row">
+            <div className="quick-entry-item">
+              <span className="quick-entry-label">Company:</span>
+              <input
+                type="text"
+                placeholder="Company Name"
+                className="quick-entry-input"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+              />
+            </div>
+
+            <div className="quick-entry-item">
+              <span className="quick-entry-label">Customer:</span>
+              <input
+                type="text"
+                placeholder="Customer Name"
+                className="quick-entry-input"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+              />
             </div>
           </div>
 
-          {/* Quantity Input */}
-          <div className="quick-entry-item">
-            <span className="quick-entry-label">Quantity:</span>
-            <input 
-              type="number" 
-              placeholder="0.00" 
-              className="quick-entry-input"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-            />
-            <span className="unit-label">
-              {products.find(p => p.name === selectedProduct)?.unit || "pcs"}
-            </span>
+          <div className="quick-entry-row">
+            <div className="quick-entry-item">
+              <span className="quick-entry-label">Product:</span>
+              <div className="product-dropdown">
+                <button
+                  onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
+                  className="product-dropdown-toggle"
+                >
+                  <span className="product-dropdown-text">{selectedProduct}</span>
+                  <span className="material-symbols-outlined product-dropdown-arrow">
+                    {isProductDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                  </span>
+                </button>
+                {isProductDropdownOpen && (
+                  <div className="product-dropdown-menu">
+                    {products.map((product) => (
+                      <button
+                        key={product.id}
+                        onClick={() => {
+                          setSelectedProduct(product.name);
+                          setIsProductDropdownOpen(false);
+                        }}
+                        className={`product-dropdown-item ${selectedProduct === product.name ? 'active' : ''}`}
+                      >
+                        <span className="product-name-text">{product.name}</span>
+                        <span className="product-sku-category">{product.sku}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="quick-entry-item">
+              <span className="quick-entry-label">Total Pieces:</span>
+              <input
+                type="number"
+                placeholder="0"
+                className="quick-entry-input"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+              />
+            </div>
           </div>
 
-          {/* Transaction Type Dropdown */}
-          <div className="quick-entry-item">
-            <span className="quick-entry-label">Transaction Type:</span>
-            <select 
-              className="quick-entry-select"
-              value={transactionType}
-              onChange={(e) => setTransactionType(e.target.value)}
-            >
-              <option value="PURCHASE">Purchase</option>
-              <option value="SALE">Sale</option>
-              <option value="RETURN">Return</option>
-              <option value="ADJUSTMENT">Adjustment</option>
-              <option value="TRANSFER">Transfer</option>
-            </select>
+          <div className="quick-entry-row">
+            <div className="quick-entry-item">
+              <span className="quick-entry-label">Rate/Pc:</span>
+              <div className="amount-input-wrapper">
+                <span className="currency-prefix">₹</span>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  className="quick-entry-input amount-input"
+                  value={unitPrice}
+                  onChange={(e) => setUnitPrice(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="quick-entry-item">
+              <span className="quick-entry-label">Total Amount:</span>
+              <div className="amount-input-wrapper">
+                <span className="currency-prefix">₹</span>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  className="quick-entry-input amount-input"
+                  value={totalAmount}
+                  readOnly
+                />
+              </div>
+            </div>
           </div>
 
-          {/* LOG TRANSACTION Button */}
-          <button 
-            className="btn-primary quick-entry-btn"
-            onClick={handleLogTransaction}
-            disabled={isLogging}
-          >
-            <span className="material-symbols-outlined">
-              {isLogging ? "hourglass_empty" : "add"}
-            </span>
-            {isLogging ? "LOGGING..." : "LOG TRANSACTION"}
-          </button>
+          <div className="quick-entry-footer">
+            <div className="quick-entry-item payment-status-item">
+              <span className="quick-entry-label">Status:</span>
+              <div className={`payment-toggle ${isPaid ? 'paid' : 'unpaid'}`} onClick={() => setIsPaid(!isPaid)}>
+                <span className="toggle-label">{isPaid ? 'PAID' : 'UNPAID'}</span>
+                <div className="toggle-switch"></div>
+              </div>
+            </div>
+
+            <div className="quick-entry-action-group">
+              <button
+                className="btn-outline quick-entry-btn add-btn-colored"
+                onClick={handleAddItem}
+              >
+                <span className="material-symbols-outlined">add_circle</span>
+                ADD ITEM
+              </button>
+
+              <button
+                className="btn-outline quick-entry-btn bill-btn-colored"
+                onClick={handleGenerateBill}
+              >
+                <span className="material-symbols-outlined">receipt_long</span>
+                GENERATE BILL
+              </button>
+
+              <button
+                className="btn-primary quick-entry-btn log-btn-colored"
+                onClick={handleLogTransaction}
+                disabled={isLogging || (billItems.length === 0 && !quantity)}
+              >
+                <span className="material-symbols-outlined">
+                  {isLogging ? "hourglass_empty" : "done_all"}
+                </span>
+                {isLogging ? "LOGGING..." : "LOG ALL & SAVE"}
+              </button>
+            </div>
+          </div>
+
+          {/* New: Quick Preview of added items */}
+          {billItems.length > 0 && (
+            <div className="bill-preview-section">
+              <div className="preview-header">
+                <span>Items in Current Bill ({billItems.length})</span>
+                <button className="clear-bill" onClick={() => setBillItems([])}>Clear All</button>
+              </div>
+              <div className="preview-list">
+                {billItems.map(item => (
+                  <div key={item.id} className="preview-item">
+                    <span className="item-name">{item.product}</span>
+                    <span className="item-qty">{item.qty} pcs</span>
+                    <span className="item-amt">₹{item.amount}</span>
+                    <button className="remove-item" onClick={() => setBillItems(billItems.filter(i => i.id !== item.id))}>
+                      <span className="material-symbols-outlined">close</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -434,22 +601,9 @@ const StockTransactions = () => {
               onChange={(e) => setTypeFilter(e.target.value)}
               className="filter-select"
             >
-              <option value="all">All Types</option>
-              <option value="purchase">Purchase</option>
-              <option value="sale">Sale</option>
-              <option value="return">Return</option>
-              <option value="adjustment">Adjustment</option>
-              <option value="transfer">Transfer</option>
-            </select>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">All Status</option>
-              <option value="success">Success</option>
-              <option value="failed">Failed</option>
+              <option value="all">All Payments</option>
+              <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid</option>
             </select>
           </div>
         </div>
@@ -470,11 +624,12 @@ const StockTransactions = () => {
             <thead>
               <tr>
                 <th>DATE & TIME</th>
+                <th>CUSTOMER / COMPANY</th>
                 <th>PRODUCT DESCRIPTION</th>
-                <th>TYPE</th>
-                <th>QUANTITY</th>
-                <th>BALANCE</th>
-                <th>STATUS</th>
+                <th>PIECES</th>
+                <th>AMOUNT</th>
+                <th>PAYMENT</th>
+                <th>ACTION</th>
               </tr>
             </thead>
             <tbody>
@@ -483,29 +638,34 @@ const StockTransactions = () => {
                   <tr key={transaction.id}>
                     <td>{transaction.date}</td>
                     <td>
-                      <div className="product-info">
-                        <div className="product-icon">
-                          <span className="material-symbols-outlined">
-                            {transaction.type === 'PURCHASE' ? 'shopping_cart' : 
-                             transaction.type === 'SALE' ? 'sell' : 
-                             transaction.type === 'RETURN' ? 'assignment_return' : 
-                             transaction.type === 'TRANSFER' ? 'swap_horiz' : 'tune'}
-                          </span>
-                        </div>
-                        <span className="product-name">{transaction.product}</span>
+                      <div className="party-info">
+                        <span className="customer-text">{transaction.customer || '-'}</span>
+                        <span className="company-text">{transaction.company || '-'}</span>
                       </div>
                     </td>
                     <td>
-                      <span className={`transaction-type ${transaction.type.toLowerCase()}`}>
-                        {transaction.type}
+                      <div className="product-info">
+                        <span className="product-name">{transaction.product}</span>
+                      </div>
+                    </td>
+                    <td className="quantity-cell">
+                      {Math.abs(transaction.quantity)}
+                    </td>
+                    <td className="amount-cell">
+                      ₹{transaction.amount?.toLocaleString() || '0'}
+                    </td>
+                    <td>
+                      <span className={`payment-badge ${transaction.paymentStatus?.toLowerCase()}`}>
+                        {transaction.paymentStatus || 'Unpaid'}
                       </span>
                     </td>
-                    <td className={`transaction-quantity ${transaction.type.toLowerCase()}`}>
-                      {transaction.quantity > 0 ? '+' : ''}{transaction.quantity} {transaction.unit}
-                    </td>
-                    <td className="product-value">{transaction.balance} {transaction.unit}</td>
-                    <td>
-                      <StatusBadge status={transaction.status} />
+                    <td className="table-actions">
+                      <button className="icon-action-btn view" title="View Bill" onClick={() => openBillFromHistory(transaction)}>
+                        <span className="material-symbols-outlined">visibility</span>
+                      </button>
+                      <button className="icon-action-btn delete" title="Delete" onClick={() => handleDeleteTransaction(transaction.id)}>
+                        <span className="material-symbols-outlined">delete</span>
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -518,8 +678,8 @@ const StockTransactions = () => {
                       </span>
                       <h4>No transactions found</h4>
                       <p>Try adjusting your search or filters</p>
-                      <button 
-                        className="btn-outline" 
+                      <button
+                        className="btn-outline"
                         onClick={clearFilters}
                         style={{ marginTop: '12px' }}
                       >
@@ -559,7 +719,7 @@ const StockTransactions = () => {
                 <span className="material-symbols-outlined">download</span>
               </div>
               <p className="modal-title">Choose Export Options</p>
-              
+
               <div className="export-section">
                 <h4>Export Format</h4>
                 <div className="export-format-options">
@@ -612,55 +772,25 @@ const StockTransactions = () => {
                     />
                     <span>All Transactions</span>
                   </label>
-                  <label className={`type-option ${exportType === 'purchase' ? 'active' : ''}`}>
+                  <label className={`type-option ${exportType === 'paid' ? 'active' : ''}`}>
                     <input
                       type="radio"
                       name="type"
-                      value="purchase"
-                      checked={exportType === 'purchase'}
+                      value="paid"
+                      checked={exportType === 'paid'}
                       onChange={(e) => setExportType(e.target.value)}
                     />
-                    <span>Purchase Report</span>
+                    <span>Paid Only</span>
                   </label>
-                  <label className={`type-option ${exportType === 'sale' ? 'active' : ''}`}>
+                  <label className={`type-option ${exportType === 'unpaid' ? 'active' : ''}`}>
                     <input
                       type="radio"
                       name="type"
-                      value="sale"
-                      checked={exportType === 'sale'}
+                      value="unpaid"
+                      checked={exportType === 'unpaid'}
                       onChange={(e) => setExportType(e.target.value)}
                     />
-                    <span>Sales Report</span>
-                  </label>
-                  <label className={`type-option ${exportType === 'return' ? 'active' : ''}`}>
-                    <input
-                      type="radio"
-                      name="type"
-                      value="return"
-                      checked={exportType === 'return'}
-                      onChange={(e) => setExportType(e.target.value)}
-                    />
-                    <span>Return Report</span>
-                  </label>
-                  <label className={`type-option ${exportType === 'adjustment' ? 'active' : ''}`}>
-                    <input
-                      type="radio"
-                      name="type"
-                      value="adjustment"
-                      checked={exportType === 'adjustment'}
-                      onChange={(e) => setExportType(e.target.value)}
-                    />
-                    <span>Adjustment Report</span>
-                  </label>
-                  <label className={`type-option ${exportType === 'transfer' ? 'active' : ''}`}>
-                    <input
-                      type="radio"
-                      name="type"
-                      value="transfer"
-                      checked={exportType === 'transfer'}
-                      onChange={(e) => setExportType(e.target.value)}
-                    />
-                    <span>Transfer Report</span>
+                    <span>Unpaid Only</span>
                   </label>
                 </div>
               </div>
@@ -684,6 +814,64 @@ const StockTransactions = () => {
               >
                 {exportLoading ? 'Exporting...' : 'Export'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Bill Generation Modal */}
+      {showBillModal && selectedBill && (
+        <div className="bill-modal-overlay" onClick={() => setShowBillModal(false)}>
+          <div className="bill-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="bill-header">
+              <div className="bill-brand">
+                <h2>AVS ECO PRODUCTS</h2>
+                <p>Areca Leaf Plate Manufacturer</p>
+              </div>
+              <div className="bill-meta">
+                <p><strong>Date:</strong> {selectedBill.date}</p>
+                <p><strong>Company:</strong> {selectedBill.company}</p>
+                <p><strong>Customer:</strong> {selectedBill.customer}</p>
+              </div>
+            </div>
+
+            <div className="bill-table-container">
+              <table className="bill-table">
+                <thead>
+                  <tr>
+                    <th>Product Description</th>
+                    <th>Qty (Pieces)</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedBill.items.map((item, idx) => (
+                    <tr key={idx}>
+                      <td>{item.product}</td>
+                      <td>{item.qty}</td>
+                      <td>₹{item.amount.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan="2" className="total-label">Grand Total</td>
+                    <td className="total-value">
+                      ₹{selectedBill.items.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div className="bill-footer">
+              <p>Thank you for your business!</p>
+              <div className="bill-actions">
+                <button className="btn-outline" onClick={() => setShowBillModal(false)}>Close</button>
+                <button className="btn-primary" onClick={() => window.print()}>
+                  <span className="material-symbols-outlined">print</span>
+                  Print Bill
+                </button>
+              </div>
             </div>
           </div>
         </div>

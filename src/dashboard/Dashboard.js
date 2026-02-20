@@ -1,372 +1,571 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import logo from '../assets/logo.png';
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [timeFilter, setTimeFilter] = useState("Monthly");
+  const [showStockPopup, setShowStockPopup] = useState(false);
+  const [showProductionPopup, setShowProductionPopup] = useState(false);
+  const [showExpensesPopup, setShowExpensesPopup] = useState(false);
+  const [hoveredBar, setHoveredBar] = useState(null);
+  const [stockPopupPosition, setStockPopupPosition] = useState({ top: 0, left: 0 });
+  const [productionPopupPosition, setProductionPopupPosition] = useState({ top: 0, left: 0 });
+  const [expensesPopupPosition, setExpensesPopupPosition] = useState({ top: 0, left: 0 });
 
-  // MOCK DATA
+  // DATA REPOSITORY - All data changes based on filter
   const dashboardData = {
     Weekly: {
       metrics: {
-        inventory: "₹18.5 L",
-        production: "28,500",
+        stockValue: "₹18.5 L",
+        production: "28,500 Units",
         expenses: "₹4.2 L",
-        netProfit: "₹14.3 L"
+        stockGrowth: "+2.1%",
+        prodGrowth: "+5.4%",
+        expStatus: "Optimal",
+        expColor: "#10b981"
       },
-      sales: [
-        { label: "6 Inch", value: 7800, max: 10000, color: "#006A4E" }, // Theme Green
-        { label: "8 Inch", value: 5900, max: 10000, color: "#3b82f6" },
-        { label: "10 Inch", value: 4500, max: 10000, color: "#8b5cf6" },
-        { label: "12 Inch", value: 3200, max: 10000, color: "#f59e0b" },
+      plates: [
+        { size: "6 Inch", stock: 5200, produced: 8500, sold: 7800 },
+        { size: "8 Inch", stock: 4100, produced: 6200, sold: 5900 },
+        { size: "10 Inch", stock: 3200, produced: 4800, sold: 4500 },
+        { size: "12 Inch", stock: 2100, produced: 3500, sold: 3200 },
       ],
-      comparison: [
-        { day: "Mon", sales: 2.5, expense: 0.8 },
-        { day: "Tue", sales: 2.8, expense: 0.9 },
-        { day: "Wed", sales: 3.2, expense: 1.1 },
-        { day: "Thu", sales: 2.9, expense: 1.0 },
-        { day: "Fri", sales: 3.5, expense: 1.2 },
-        { day: "Sat", sales: 4.2, expense: 1.5 },
+      productionDetails: [
+        { size: "6 Inch", today: 1250, week: 8500, efficiency: "94%" },
+        { size: "8 Inch", today: 980, week: 6200, efficiency: "92%" },
+        { size: "10 Inch", today: 720, week: 4800, efficiency: "88%" },
+        { size: "12 Inch", today: 550, week: 3500, efficiency: "91%" }
       ],
       attendance: {
-        avgPresent: 142,
-        avgAbsent: 14,
-        trend: [60, 75, 80, 70, 85, 90, 88]
+        present: 142,
+        absent: 14,
+        onLeave: 8,
+        total: 164,
+        trend: [98, 142, 138, 145, 144, 140, 142],
+        days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      },
+      expenses: {
+        total: "₹4.2 L",
+        categories: [
+          { name: "Machine Maintenance", amount: "₹0.5 L", percentage: 12, color: "#f97316" },
+          { name: "Stock Purchased", amount: "₹2.1 L", percentage: 50, color: "#3b82f6" },
+          { name: "Employee Salary", amount: "₹1.3 L", percentage: 31, color: "#10b981" },
+          { name: "Others", amount: "₹0.3 L", percentage: 7, color: "#8b5cf6" }
+        ]
       }
     },
     Monthly: {
       metrics: {
-        inventory: "₹82.4 L",
-        production: "1,25,000",
+        stockValue: "₹82.4 L",
+        production: "1,25,000 Units",
         expenses: "₹32.4 L",
-        netProfit: "₹50.0 L"
+        stockGrowth: "+12.5%",
+        prodGrowth: "+8.2%",
+        expStatus: "Over Budget",
+        expColor: "#ef4444"
       },
-      sales: [
-        { label: "6 Inch", value: 42000, max: 50000, color: "#006A4E" }, // Theme Green
-        { label: "8 Inch", value: 36500, max: 50000, color: "#3b82f6" },
-        { label: "10 Inch", value: 22000, max: 50000, color: "#8b5cf6" },
-        { label: "12 Inch", value: 16500, max: 50000, color: "#f59e0b" },
+      plates: [
+        { size: "6 Inch", stock: 15200, produced: 45000, sold: 42000 },
+        { size: "8 Inch", stock: 11800, produced: 38000, sold: 36500 },
+        { size: "10 Inch", stock: 9200, produced: 25000, sold: 22000 },
+        { size: "12 Inch", stock: 7600, produced: 18000, sold: 16500 },
       ],
-      comparison: [
-        { day: "Wk 1", sales: 12.5, expense: 8.2 },
-        { day: "Wk 2", sales: 15.2, expense: 7.5 },
-        { day: "Wk 3", sales: 18.8, expense: 9.1 },
-        { day: "Wk 4", sales: 22.4, expense: 8.5 },
+      productionDetails: [
+        { size: "6 Inch", today: 1450, month: 45000, efficiency: "96%" },
+        { size: "8 Inch", today: 1220, month: 38000, efficiency: "94%" },
+        { size: "10 Inch", today: 850, month: 25000, efficiency: "89%" },
+        { size: "12 Inch", today: 620, month: 18000, efficiency: "92%" }
       ],
       attendance: {
-        avgPresent: 138,
-        avgAbsent: 18,
-        trend: [80, 82, 78, 85]
+        present: 138,
+        absent: 18,
+        onLeave: 12,
+        total: 168,
+        trend: [125, 138, 142, 140, 135, 138, 142],
+        days: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7']
+      },
+      expenses: {
+        total: "₹32.4 L",
+        categories: [
+          { name: "Machine Maintenance", amount: "₹3.9 L", percentage: 12, color: "#f97316" },
+          { name: "Stock Purchased", amount: "₹16.2 L", percentage: 50, color: "#3b82f6" },
+          { name: "Employee Salary", amount: "₹9.7 L", percentage: 30, color: "#10b981" },
+          { name: "Others", amount: "₹2.6 L", percentage: 8, color: "#8b5cf6" }
+        ]
       }
     },
     Yearly: {
       metrics: {
-        inventory: "₹95.2 L",
-        production: "15.2 L",
+        stockValue: "₹95.2 L",
+        production: "15.2 L Units",
         expenses: "₹3.8 Cr",
-        netProfit: "₹1.4 Cr"
+        stockGrowth: "+18%",
+        prodGrowth: "+24%",
+        expStatus: "Optimal",
+        expColor: "#10b981"
       },
-      sales: [
-        { label: "6 Inch", value: 510000, max: 600000, color: "#006A4E" }, // Theme Green
-        { label: "8 Inch", value: 395000, max: 600000, color: "#3b82f6" },
-        { label: "10 Inch", value: 305000, max: 600000, color: "#8b5cf6" },
-        { label: "12 Inch", value: 198000, max: 600000, color: "#f59e0b" },
+      plates: [
+        { size: "6 Inch", stock: 45000, produced: 520000, sold: 510000 },
+        { size: "8 Inch", stock: 38000, produced: 410000, sold: 395000 },
+        { size: "10 Inch", stock: 25000, produced: 320000, sold: 305000 },
+        { size: "12 Inch", stock: 18000, produced: 210000, sold: 198000 },
       ],
-      comparison: [
-        { day: "Q1", sales: 45, expense: 12 },
-        { day: "Q2", sales: 52, expense: 15 },
-        { day: "Q3", sales: 48, expense: 14 },
-        { day: "Q4", sales: 65, expense: 18 },
+      productionDetails: [
+        { size: "6 Inch", today: 1500, year: 520000, efficiency: "97%" },
+        { size: "8 Inch", today: 1250, year: 410000, efficiency: "95%" },
+        { size: "10 Inch", today: 920, year: 320000, efficiency: "91%" },
+        { size: "12 Inch", today: 680, year: 210000, efficiency: "93%" }
       ],
       attendance: {
-        avgPresent: 145,
-        avgAbsent: 11,
-        trend: [130, 135, 140, 142, 145, 148, 150, 148, 146, 145, 142, 140]
+        present: 145,
+        absent: 11,
+        onLeave: 6,
+        total: 162,
+        trend: [130, 135, 140, 142, 145, 148, 150],
+        days: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul']
+      },
+      expenses: {
+        total: "₹3.8 Cr",
+        categories: [
+          { name: "Machine Maintenance", amount: "₹0.46 Cr", percentage: 12, color: "#f97316" },
+          { name: "Stock Purchased", amount: "₹1.9 Cr", percentage: 50, color: "#3b82f6" },
+          { name: "Employee Salary", amount: "₹1.14 Cr", percentage: 30, color: "#10b981" },
+          { name: "Others", amount: "₹0.3 Cr", percentage: 8, color: "#8b5cf6" }
+        ]
       }
     }
   };
 
   const currentData = dashboardData[timeFilter];
-  const maxComp = Math.max(...currentData.comparison.map(d => Math.max(d.sales, d.expense)));
+  const maxPlateStock = Math.max(...currentData.plates.map(p => p.stock));
+  const maxSold = Math.max(...currentData.plates.map(p => p.sold));
+
+  // Navigation handlers
+  const handleStockClick = () => navigate("/stock");
+  const handleProductionClick = () => navigate("/production");
+  const handleExpensesClick = () => navigate("/expenses");
+  const handleAttendanceClick = () => navigate("/attendance");
+
+  // Popup handlers with position calculation
+  const handleStockHover = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setStockPopupPosition({
+      top: rect.bottom + 8,
+      left: rect.left
+    });
+    setShowStockPopup(true);
+  };
+
+  const handleProductionHover = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setProductionPopupPosition({
+      top: rect.bottom + 8,
+      left: rect.left
+    });
+    setShowProductionPopup(true);
+  };
+
+  const handleExpensesHover = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setExpensesPopupPosition({
+      top: rect.bottom + 8,
+      left: rect.left
+    });
+    setShowExpensesPopup(true);
+  };
+
+  // Get greeting based on time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  };
+
+  const currentDate = new Date().toLocaleDateString('en-IN', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
   return (
     <div className="dashboard-container">
-      {/* HEADER */}
-      <div className="dashboard-header">
-        <div className="dashboard-title">
-          <h2>Business Overview</h2>
-          <p>{timeFilter} Performance Metrics</p>
+      {/* GREETINGS HEADER */}
+{/* GREETINGS HEADER */}
+<div className="greetings-header" style={{ background: '#d0fbde' }}>
+  <div className="greetings-left">
+    <div className="greetings-left-content">
+      <div>
+        <h1>Good Evening, Arun Kumar! 👋</h1>
+        <p>Friday, 20 February 2026</p>
+      </div>
+    </div>
+  </div>
+  <div className="greetings-right">
+    {/* Logo from assets - on right side */}
+    <img 
+      src={logo} 
+      alt="AVS Logo" 
+      className="header-logo"
+    />
+  </div>
+</div>
+
+      {/* KEY METRICS ROW */}
+      <div className="metrics-row">
+        {/* Stock Card */}
+        <div
+          className="metric-card clickable"
+          onClick={handleStockClick}
+          onMouseEnter={handleStockHover}
+          onMouseLeave={() => setShowStockPopup(false)}
+        >
+          <div className="metric-icon stock-bg">
+            <span className="material-symbols-outlined">inventory</span>
+          </div>
+          <div className="metric-content">
+            <span className="metric-label">STOCK VALUE</span>
+            <span className="metric-value">{currentData.metrics.stockValue}</span>
+            <span className="metric-trend positive">{currentData.metrics.stockGrowth}</span>
+          </div>
         </div>
 
-        <div className="filter-group" style={{
-          background: '#ffffff',
-          padding: '6px',
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-          display: 'flex',
-          gap: '8px'
-        }}>
-          {["Weekly", "Monthly", "Yearly"].map(filter => (
-            <button
-              key={filter}
-              style={{
-                padding: '10px 24px',
-                border: 'none',
-                background: timeFilter === filter ? '#006A4E' : 'transparent',
-                color: timeFilter === filter ? '#ffffff' : '#64748b',
-                borderRadius: '8px',
-                fontWeight: timeFilter === filter ? '700' : '500',
-                cursor: 'pointer',
-                fontSize: '14px',
-                transition: 'all 0.3s ease',
-                boxShadow: timeFilter === filter ? '0 4px 6px rgba(0,106,78,0.2)' : 'none'
-              }}
-              onClick={() => setTimeFilter(filter)}
-            >
-              {filter}
-            </button>
+        {/* Production Card */}
+        <div
+          className="metric-card clickable"
+          onClick={handleProductionClick}
+          onMouseEnter={handleProductionHover}
+          onMouseLeave={() => setShowProductionPopup(false)}
+        >
+          <div className="metric-icon production-bg">
+            <span className="material-symbols-outlined">manufacturing</span>
+          </div>
+          <div className="metric-content">
+            <span className="metric-label">PRODUCTION</span>
+            <span className="metric-value">{currentData.metrics.production}</span>
+            <span className="metric-trend positive">{currentData.metrics.prodGrowth}</span>
+          </div>
+        </div>
+
+        {/* Expenses Card */}
+        <div
+          className="metric-card clickable"
+          onClick={handleExpensesClick}
+          onMouseEnter={handleExpensesHover}
+          onMouseLeave={() => setShowExpensesPopup(false)}
+        >
+          <div className="metric-icon expenses-bg">
+            <span className="material-symbols-outlined">payments</span>
+          </div>
+          <div className="metric-content">
+            <span className="metric-label">EXPENSES</span>
+            <span className="metric-value">{currentData.metrics.expenses}</span>
+            <span className="metric-status" style={{ color: currentData.metrics.expColor }}>
+              {currentData.metrics.expStatus}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* POPUPS - Fixed positioning outside flow */}
+      {showStockPopup && (
+        <div className="fixed-popup stock-popup" style={{ top: stockPopupPosition.top, left: stockPopupPosition.left }}>
+          <div className="popup-header">
+            <h4>CURRENT STOCK - 4 SIZES</h4>
+          </div>
+          <div className="popup-content">
+            {currentData.plates.map((plate, index) => (
+              <div key={index} className="popup-item">
+                <span className="popup-size">{plate.size}</span>
+                <span className="popup-value">{plate.stock.toLocaleString()} units</span>
+              </div>
+            ))}
+            <div className="popup-footer">
+              <span>Total Value: {currentData.metrics.stockValue}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showProductionPopup && (
+        <div className="fixed-popup production-popup" style={{ top: productionPopupPosition.top, left: productionPopupPosition.left }}>
+          <div className="popup-header">
+            <h4>TODAY'S PRODUCTION</h4>
+          </div>
+          <div className="popup-content">
+            {currentData.productionDetails.map((prod, index) => (
+              <div key={index} className="popup-item">
+                <span className="popup-size">{prod.size}</span>
+                <span className="popup-value">{prod.today.toLocaleString()} units</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showExpensesPopup && (
+        <div className="fixed-popup expenses-popup" style={{ top: expensesPopupPosition.top, left: expensesPopupPosition.left }}>
+          <div className="popup-header">
+            <h4>EXPENSE BREAKDOWN</h4>
+          </div>
+          <div className="popup-content">
+            {currentData.expenses.categories.map((expense, index) => (
+              <div key={index} className="popup-item">
+                <span className="popup-size">{expense.name}</span>
+                <span className="popup-value">{expense.amount}</span>
+              </div>
+            ))}
+            <div className="popup-footer">
+              <span>Total: {currentData.metrics.expenses}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHARTS SECTION */}
+      <div className="charts-row">
+        {/* Bar Chart */}
+        <div className="chart-card sales-expenses-card large-chart">
+          <div className="chart-header">
+            <h3>SALES VS EXPENSES</h3>
+            <div className="filter-group small">
+              {["Weekly", "Monthly", "Yearly"].map(filter => (
+                <button
+                  key={filter}
+                  className={`filter-chip ${timeFilter === filter ? 'active' : ''}`}
+                  onClick={() => setTimeFilter(filter)}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="enhanced-bar-chart">
+            {currentData.plates.map((plate, index) => (
+              <div key={index} className="enhanced-bar-group">
+                <div className="enhanced-bar-label">{plate.size}</div>
+                <div className="enhanced-bars">
+                  <div
+                    className="bar-container"
+                    onMouseEnter={() => setHoveredBar({ type: 'sales', index, value: plate.sold })}
+                    onMouseLeave={() => setHoveredBar(null)}
+                  >
+                    <div
+                      className="enhanced-bar sales-bar"
+                      style={{ height: `${(plate.sold / maxSold) * 180}px` }}
+                    >
+                      {hoveredBar?.type === 'sales' && hoveredBar?.index === index && (
+                        <div className="bar-tooltip">
+                          Sales: {plate.sold.toLocaleString()} units<br />
+                          Value: ₹{(plate.sold * 0.1).toFixed(1)}L
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div
+                    className="bar-container"
+                    onMouseEnter={() => setHoveredBar({ type: 'expenses', index, value: plate.sold * 0.3 })}
+                    onMouseLeave={() => setHoveredBar(null)}
+                  >
+                    <div
+                      className="enhanced-bar expenses-bar"
+                      style={{ height: `${((plate.sold * 0.3) / maxSold) * 180}px` }}
+                    >
+                      {hoveredBar?.type === 'expenses' && hoveredBar?.index === index && (
+                        <div className="bar-tooltip">
+                          Expenses: ₹{((plate.sold * 0.3) / 1000).toFixed(1)}K<br />
+                          {((plate.sold * 0.3) / plate.sold * 100).toFixed(1)}% of sales
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="bar-values">
+                  <span className="sales-value">₹{(plate.sold * 0.1).toFixed(1)}L</span>
+                  <span className="expenses-value">₹{((plate.sold * 0.3) / 1000).toFixed(1)}K</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ATTENDANCE SECTION */}
+        {/* ATTENDANCE SECTION */}
+<div className="chart-card attendance-section" onClick={handleAttendanceClick}>
+  <div className="attendance-header">
+    <h3>ATTENDANCE</h3>
+    <span className="view-details">VIEW DETAILS →</span>
+  </div>
+
+  <div className="attendance-pie-container">
+    {/* Pie Chart */}
+    <div className="pie-chart-wrapper">
+      <div className="pie-chart">
+        {/* Present Segment */}
+        <div 
+          className="pie-segment present-segment" 
+          style={{ 
+            transform: `rotate(0deg)`,
+            background: `conic-gradient(#10b981 0deg ${(currentData.attendance.present / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.present / currentData.attendance.total) * 360}deg 360deg)`
+          }}
+        >
+          <div className="pie-tooltip">Present: {currentData.attendance.present}</div>
+        </div>
+        
+        {/* Absent Segment */}
+        <div 
+          className="pie-segment absent-segment" 
+          style={{ 
+            transform: `rotate(${(currentData.attendance.present / currentData.attendance.total) * 360}deg)`,
+            background: `conic-gradient(#ef4444 0deg ${(currentData.attendance.absent / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.absent / currentData.attendance.total) * 360}deg 360deg)`
+          }}
+        >
+          <div className="pie-tooltip">Absent: {currentData.attendance.absent}</div>
+        </div>
+        
+        {/* Leave Segment */}
+        <div 
+          className="pie-segment leave-segment" 
+          style={{ 
+            transform: `rotate(${((currentData.attendance.present + currentData.attendance.absent) / currentData.attendance.total) * 360}deg)`,
+            background: `conic-gradient(#f59e0b 0deg ${(currentData.attendance.onLeave / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.onLeave / currentData.attendance.total) * 360}deg 360deg)`
+          }}
+        >
+          <div className="pie-tooltip">On Leave: {currentData.attendance.onLeave}</div>
+        </div>
+        
+        {/* Center Circle */}
+        <div className="pie-center">
+          <span className="pie-total">{currentData.attendance.total}</span>
+          <span className="pie-total-label">TOTAL</span>
+        </div>
+      </div>
+    </div>
+
+    {/* Legend */}
+    <div className="pie-legend">
+      <div className="legend-item">
+        <span className="legend-color present-color"></span>
+        <div className="legend-details">
+          <span className="legend-label">PRESENT</span>
+          <span className="legend-value">{currentData.attendance.present}</span>
+          <span className="legend-percentage">
+            ({Math.round((currentData.attendance.present / currentData.attendance.total) * 100)}%)
+          </span>
+        </div>
+      </div>
+      
+      <div className="legend-item">
+        <span className="legend-color absent-color"></span>
+        <div className="legend-details">
+          <span className="legend-label">ABSENT</span>
+          <span className="legend-value">{currentData.attendance.absent}</span>
+          <span className="legend-percentage">
+            ({Math.round((currentData.attendance.absent / currentData.attendance.total) * 100)}%)
+          </span>
+        </div>
+      </div>
+      
+      <div className="legend-item">
+        <span className="legend-color leave-color"></span>
+        <div className="legend-details">
+          <span className="legend-label">ON LEAVE</span>
+          <span className="legend-value">{currentData.attendance.onLeave}</span>
+          <span className="legend-percentage">
+            ({Math.round((currentData.attendance.onLeave / currentData.attendance.total) * 100)}%)
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Stats Summary */}
+  <div className="attendance-stats-summary">
+    <div className="summary-item">
+      <span className="summary-label">ATTENDANCE RATE</span>
+      <span className="summary-value rate-high">
+        {Math.round((currentData.attendance.present / currentData.attendance.total) * 100)}%
+      </span>
+    </div>
+    <div className="summary-item">
+      <span className="summary-label">ABSENTEE RATE</span>
+      <span className="summary-value">
+        {Math.round(((currentData.attendance.absent + currentData.attendance.onLeave) / currentData.attendance.total) * 100)}%
+      </span>
+    </div>
+  </div>
+</div>
+      </div>
+
+      {/* STOCK OVERVIEW */}
+      <div className="stock-overview-section">
+        <h3>STOCK OVERVIEW - 4 PLATE SIZES</h3>
+        <div className="stock-grid">
+          {currentData.plates.map((plate, index) => (
+            <div key={index} className="stock-item-card">
+              <div className="stock-item-header">
+                <span className="stock-size">{plate.size.split(' ')[0]}</span>
+                <span className="stock-value">{plate.stock.toLocaleString()} units</span>
+              </div>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* CLICKABLE METRIC CARDS */}
-      <div className="dashboard-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
-
-        {/* 1. INVENTORY -> STOCK */}
-        <div
-          className="metric-card hover-card"
-          onClick={() => navigate('/stock')}
-          style={{ cursor: 'pointer', borderLeft: '4px solid #f59e0b' }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <span style={{ fontSize: '14px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Stocks</span>
-              <h3 style={{ fontSize: '36px', margin: '4px 0 8px', color: '#1e293b', fontWeight: '800', letterSpacing: '-1px' }}>{currentData.metrics.inventory}</h3>
-            </div>
-            <div className="icon-box" style={{ background: '#fffbeb', color: '#f59e0b' }}>
-              <span className="material-symbols-outlined">inventory_2</span>
-            </div>
-          </div>
-          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Click to view Stock Overview</p>
+      {/* EXPENSES BREAKDOWN */}
+      <div className="expenses-breakdown-section">
+        <div className="section-header">
+          <h3>THIS MONTH EXPENSES BREAKDOWN</h3>
+          <button className="view-link" onClick={handleExpensesClick}>
+            VIEW ALL EXPENSES →
+          </button>
         </div>
 
-        {/* 2. PRODUCTION -> PRODUCTS (CATEGORY) */}
-        <div
-          className="metric-card hover-card"
-          onClick={() => navigate('/products')}
-          style={{ cursor: 'pointer', borderLeft: '4px solid #3b82f6' }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <span style={{ fontSize: '14px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Production</span>
-              <h3 style={{ fontSize: '36px', margin: '4px 0 8px', color: '#1e293b', fontWeight: '800', letterSpacing: '-1px' }}>{currentData.metrics.production}</h3>
+        <div className="expenses-categories-grid">
+          <div className="expense-category-card">
+            <div className="category-icon machine-icon">
+              <span className="material-symbols-outlined">precision_manufacturing</span>
             </div>
-            <div className="icon-box" style={{ background: '#eff6ff', color: '#3b82f6' }}>
-              <span className="material-symbols-outlined">category</span>
+            <div className="category-details">
+              <span className="category-name">MACHINE MAINTENANCE</span>
+              <span className="category-amount">{currentData.expenses.categories[0].amount}</span>
             </div>
           </div>
-          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Click for Plate Categories</p>
-        </div>
 
-        {/* 3. EXPENSES -> EXPENSE DETAIL */}
-        <div
-          className="metric-card hover-card"
-          onClick={() => navigate('/expenses')}
-          style={{ cursor: 'pointer', borderLeft: '4px solid #ef4444' }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <span style={{ fontSize: '14px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Expenses</span>
-              <h3 style={{ fontSize: '36px', margin: '4px 0 8px', color: '#1e293b', fontWeight: '800', letterSpacing: '-1px' }}>{currentData.metrics.expenses}</h3>
+          <div className="expense-category-card">
+            <div className="category-icon stock-icon">
+              <span className="material-symbols-outlined">shopping_cart</span>
             </div>
-            <div className="icon-box" style={{ background: '#fef2f2', color: '#ef4444' }}>
+            <div className="category-details">
+              <span className="category-name">STOCK PURCHASED</span>
+              <span className="category-amount">{currentData.expenses.categories[1].amount}</span>
+            </div>
+          </div>
+
+          <div className="expense-category-card">
+            <div className="category-icon salary-icon">
               <span className="material-symbols-outlined">payments</span>
             </div>
-          </div>
-          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Click to view Cost Breakdown</p>
-        </div>
-      </div>
-
-      {/* CHART ROW */}
-      <div className="chart-section" style={{ gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-
-        {/* LEFT: PLATE SALES PERFORMANCE (BAR CHART) */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">Plate Sales Performance</h3>
-            <span style={{ fontSize: '12px', fontWeight: '600', color: '#006A4E' }}>Units Sold</span>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', height: '220px', paddingBottom: '10px' }}>
-            {currentData.sales.map((item, index) => (
-              <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1, height: '100%', justifyContent: 'flex-end' }}>
-                <div style={{ fontWeight: '600', fontSize: '14px', color: '#0f172a' }}>{item.value.toLocaleString()}</div>
-                <div style={{
-                  width: '40px',
-                  height: `${(item.value / item.max) * 100}%`,
-                  background: item.color,
-                  borderRadius: '6px 6px 0 0',
-                  transition: 'height 0.5s ease',
-                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
-                }}></div>
-                <div style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>{item.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* RIGHT: SALES vs EXPENSES COMPARISON */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">Sales vs Expenses</h3>
-            <div style={{ display: 'flex', gap: '16px', fontSize: '12px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '10px', height: '10px', background: '#006A4E', borderRadius: '2px' }}></span> Sales</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '10px', height: '10px', background: '#ef4444', borderRadius: '2px' }}></span> Exp</span>
+            <div className="category-details">
+              <span className="category-name">EMPLOYEE SALARY</span>
+              <span className="category-amount">{currentData.expenses.categories[2].amount}</span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '220px', padding: '0 10px' }}>
-            {currentData.comparison.map((d, i) => (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', flex: 1, height: '100%', justifyContent: 'flex-end' }}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', height: '100%' }}>
-
-                  {/* Sales Column */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                    <span style={{ fontSize: '10px', fontWeight: '700', color: '#006A4E', marginBottom: '4px' }}>{d.sales}</span>
-                    <div style={{
-                      width: '18px',
-                      height: `${(d.sales / maxComp) * 70}%`, // Reduced height to fit text
-                      background: '#006A4E',
-                      borderRadius: '4px 4px 0 0'
-                    }}></div>
-                  </div>
-
-                  {/* Expense Column */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                    <span style={{ fontSize: '10px', fontWeight: '700', color: '#ef4444', marginBottom: '4px' }}>{d.expense}</span>
-                    <div style={{
-                      width: '18px',
-                      height: `${(d.expense / maxComp) * 70}%`, // Reduced height to fit text
-                      background: '#ef4444',
-                      borderRadius: '4px 4px 0 0'
-                    }}></div>
-                  </div>
-
-                </div>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>{d.day}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </div>
-
-      {/* ATTENDANCE SECTION */}
-      <div className="chart-card" style={{ marginTop: '24px', cursor: 'pointer' }} onClick={() => navigate('/attendance')}>
-        <div className="chart-header">
-          <h3 className="chart-title">Employee Attendance Summary</h3>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-
-          {/* LEFT: PIE CHART (Donut Style) & STATS */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '30px', flex: 1 }}>
-            {/* Donut Chart */}
-            <div style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              background: `conic-gradient(
-                  #006A4E 0% ${(currentData.attendance.avgPresent / (currentData.attendance.avgPresent + currentData.attendance.avgAbsent)) * 100}%, 
-                  #ef4444 0% 100%
-                )`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-            }}>
-              <div style={{ width: '85px', height: '85px', background: 'white', borderRadius: '50%', position: 'absolute' }}></div>
-              <div style={{ position: 'relative', textAlign: 'center' }}>
-                <div style={{ fontSize: '22px', fontWeight: '800', color: '#006A4E' }}>
-                  {Math.round((currentData.attendance.avgPresent / (currentData.attendance.avgPresent + currentData.attendance.avgAbsent)) * 100)}%
-                </div>
-                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Rate</div>
-              </div>
+          <div className="expense-category-card">
+            <div className="category-icon others-icon">
+              <span className="material-symbols-outlined">category</span>
             </div>
-
-            {/* Legend / Stats */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '12px', height: '12px', background: '#006A4E', borderRadius: '50%' }}></div>
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Avg Present</div>
-                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>{currentData.attendance.avgPresent}</div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '12px', height: '12px', background: '#ef4444', borderRadius: '50%' }}></div>
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Avg Absent</div>
-                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>{currentData.attendance.avgAbsent}</div>
-                </div>
-              </div>
+            <div className="category-details">
+              <span className="category-name">OTHERS</span>
+              <span className="category-amount">{currentData.expenses.categories[3].amount}</span>
             </div>
-          </div>
-
-          {/* RIGHT: BAR CHART (Trend) */}
-          <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', paddingLeft: '40px' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '15px' }}>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', background: '#f1f5f9', padding: '4px 10px', borderRadius: '4px' }}>
-                Trend ({timeFilter})
-              </span>
-            </div>
-
-            <div style={{ height: '100px', width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px' }}>
-              {currentData.attendance.trend.map((h, i) => {
-                let label = "";
-                if (timeFilter === "Weekly") {
-                  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-                  label = days[i];
-                } else if (timeFilter === "Monthly") {
-                  label = `W${i + 1}`;
-                } else {
-                  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                  label = months[i];
-                }
-
-                const percentage = Math.min((h / 160) * 85, 85);
-
-                return (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end' }}>
-                    <span style={{ fontSize: '10px', fontWeight: '600', color: '#006A4E', marginBottom: '4px' }}>{h}</span>
-                    <div style={{
-                      width: '100%',
-                      maxWidth: '20px',
-                      height: `${percentage}%`,
-                      background: '#006A4E',
-                      borderRadius: '4px 4px 0 0',
-                      opacity: 0.9,
-                      transition: 'height 0.3s ease',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                    }}></div>
-                    <span style={{ fontSize: '11px', color: '#64748b', marginTop: '6px', fontWeight: '500' }}>{label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Footer Link */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#006A4E', fontSize: '13px', fontWeight: '600' }}>
-            View Detailed Log <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>
           </div>
         </div>
       </div>
-
     </div>
   );
 };

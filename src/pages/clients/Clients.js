@@ -10,8 +10,6 @@ const Clients = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [showFiltersModal, setShowFiltersModal] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClient, setSelectedClient] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -127,16 +125,12 @@ const Clients = () => {
     },
   ]);
 
-  // Status options
-  const statuses = ["All Status", "Active", "Pending", "Inactive"];
-
   // Form state for add/edit
   const [formData, setFormData] = useState({
     companyName: "",
     contactPerson: "",
     email: "",
     phone: "",
-    status: "Active",
     address: "",
     gst: "",
   });
@@ -144,8 +138,6 @@ const Clients = () => {
   // Calculate stats
   const stats = {
     totalClients: clients.length,
-    activeClients: clients.filter((c) => c.status === "Active").length,
-    pendingClients: clients.filter((c) => c.status === "Pending").length,
     totalRevenue: clients.reduce((sum, c) => {
       const amount = parseFloat(c.totalSpent.replace(/[^0-9.-]+/g, ""));
       return sum + amount;
@@ -154,9 +146,6 @@ const Clients = () => {
 
   // Filter clients
   const filteredClients = clients.filter((client) => {
-    // Status filter
-    const matchesStatus = selectedStatus === "All Status" || client.status === selectedStatus;
-
     // Search filter
     const matchesSearch =
       searchTerm === "" ||
@@ -165,7 +154,7 @@ const Clients = () => {
       client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.phone.includes(searchTerm);
 
-    return matchesStatus && matchesSearch;
+    return matchesSearch;
   });
 
   // Pagination
@@ -176,7 +165,7 @@ const Clients = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedStatus, searchTerm]);
+  }, [searchTerm]);
 
   // ========== HANDLERS ==========
 
@@ -197,7 +186,6 @@ const Clients = () => {
       contactPerson: "",
       email: "",
       phone: "",
-      status: "Active",
       address: "",
       gst: "",
     });
@@ -243,7 +231,6 @@ const Clients = () => {
       contactPerson: client.contactPerson,
       email: client.email,
       phone: client.phone,
-      status: client.status,
       address: client.address,
       gst: client.gst,
     });
@@ -257,15 +244,14 @@ const Clients = () => {
     const updatedClients = clients.map((c) =>
       c.id === selectedClient.id
         ? {
-            ...c,
-            companyName: formData.companyName,
-            contactPerson: formData.contactPerson,
-            email: formData.email,
-            phone: formData.phone,
-            status: formData.status,
-            address: formData.address,
-            gst: formData.gst,
-          }
+          ...c,
+          companyName: formData.companyName,
+          contactPerson: formData.contactPerson,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          gst: formData.gst,
+        }
         : c
     );
 
@@ -312,7 +298,6 @@ const Clients = () => {
 
   // Clear filters
   const clearFilters = () => {
-    setSelectedStatus("All Status");
     setSearchTerm("");
   };
 
@@ -356,10 +341,6 @@ const Clients = () => {
     }, 1500);
   };
 
-  // More Filters Handler
-  const handleMoreFilters = () => {
-    setShowFiltersModal(true);
-  };
 
   // Pagination Handlers
   const goToPage = (page) => {
@@ -387,10 +368,10 @@ const Clients = () => {
             {feedbackMessage.includes("deleted")
               ? "delete"
               : feedbackMessage.includes("updated")
-              ? "edit"
-              : feedbackMessage.includes("added")
-              ? "add"
-              : "check_circle"}
+                ? "edit"
+                : feedbackMessage.includes("added")
+                  ? "add"
+                  : "check_circle"}
           </span>
           <span>{feedbackMessage}</span>
         </div>
@@ -421,30 +402,7 @@ const Clients = () => {
             <span className="stat-value">{stats.totalClients}</span>
           </div>
         </div>
-        <div 
-          className="stat-card clickable"
-          onClick={() => setSelectedStatus("Active")}
-        >
-          <div className="stat-icon green">
-            <span className="material-symbols-outlined">person</span>
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Active</span>
-            <span className="stat-value">{stats.activeClients}</span>
-          </div>
-        </div>
-        <div 
-          className="stat-card clickable"
-          onClick={() => setSelectedStatus("Pending")}
-        >
-          <div className="stat-icon orange">
-            <span className="material-symbols-outlined">pending</span>
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Pending</span>
-            <span className="stat-value">{stats.pendingClients}</span>
-          </div>
-        </div>
+
         <div className="stat-card">
           <div className="stat-icon purple">
             <span className="material-symbols-outlined">currency_rupee</span>
@@ -501,25 +459,7 @@ const Clients = () => {
           )}
         </div>
 
-        <div className="filter-group">
-          <select
-            className="filter-select"
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-          >
-            {statuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-        </div>
-
         <div className="filter-actions">
-          <button className="more-filters-btn" onClick={handleMoreFilters}>
-            <span className="material-symbols-outlined">filter_alt</span>
-            More Filters
-          </button>
           <button className="export-btn" onClick={handleExport}>
             <span className="material-symbols-outlined">
               {exportLoading ? "hourglass_empty" : "download"}
@@ -530,7 +470,7 @@ const Clients = () => {
       </div>
 
       {/* Filter Badge */}
-      {(selectedStatus !== "All Status" || searchTerm) && (
+      {searchTerm && (
         <div className="filter-badge-container">
           <span className="filter-badge">
             Filtered: {filteredClients.length} clients
@@ -554,7 +494,6 @@ const Clients = () => {
                   <th>Phone</th>
                   <th>Total Orders</th>
                   <th>Total Spent</th>
-                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -589,13 +528,6 @@ const Clients = () => {
                       </td>
                       <td>
                         <span className="spent-amount">{client.totalSpent}</span>
-                      </td>
-                      <td>
-                        <span
-                          className={`status-badge ${client.status.toLowerCase()}`}
-                        >
-                          {client.status}
-                        </span>
                       </td>
                       <td>
                         <div className="action-buttons">
@@ -703,16 +635,11 @@ const Clients = () => {
                   <div className="client-card-avatar">
                     <span className="material-symbols-outlined">business</span>
                   </div>
-                  <span
-                    className={`card-status-badge ${client.status.toLowerCase()}`}
-                  >
-                    {client.status}
-                  </span>
                 </div>
                 <div className="client-card-content">
                   <h3 className="client-card-name">{client.companyName}</h3>
                   <p className="client-card-contact">{client.contactPerson}</p>
-                  
+
                   <div className="client-card-details">
                     <div className="detail-row">
                       <span className="detail-label">Email:</span>
@@ -1130,70 +1057,6 @@ const Clients = () => {
         </div>
       )}
 
-      {/* ===== MORE FILTERS MODAL ===== */}
-      {showFiltersModal && (
-        <div className="modal-overlay" onClick={() => setShowFiltersModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>More Filters</h3>
-              <button className="modal-close" onClick={() => setShowFiltersModal(false)}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="filter-section">
-                <h4>Total Orders</h4>
-                <div className="filter-row">
-                  <div className="filter-field">
-                    <label>Min Orders</label>
-                    <input type="number" placeholder="0" className="modal-input" />
-                  </div>
-                  <div className="filter-field">
-                    <label>Max Orders</label>
-                    <input type="number" placeholder="Any" className="modal-input" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="filter-section">
-                <h4>Total Spent</h4>
-                <div className="filter-row">
-                  <div className="filter-field">
-                    <label>Min Amount (₹)</label>
-                    <input type="number" placeholder="0" className="modal-input" />
-                  </div>
-                  <div className="filter-field">
-                    <label>Max Amount (₹)</label>
-                    <input type="number" placeholder="Any" className="modal-input" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="filter-section">
-                <h4>Last Order Date</h4>
-                <div className="filter-row">
-                  <div className="filter-field">
-                    <label>From</label>
-                    <input type="date" className="modal-input" />
-                  </div>
-                  <div className="filter-field">
-                    <label>To</label>
-                    <input type="date" className="modal-input" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="modal-cancel" onClick={() => setShowFiltersModal(false)}>
-                Cancel
-              </button>
-              <button className="modal-confirm" onClick={() => setShowFiltersModal(false)}>
-                Apply Filters
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

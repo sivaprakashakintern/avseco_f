@@ -4,101 +4,76 @@ import "./Stock.css";
 
 const StockOverview = () => {
   const navigate = useNavigate();
-  
+
   // ========== STATE MANAGEMENT ==========
   const [stockItems, setStockItems] = useState([
     {
       id: 1,
-      name: "Areca Leaf - Grade A",
-      sku: "RM-AL-001",
-      category: "Raw Material",
-      quantity: 1250,
-      unit: "kg",
-      price: 45,
-      totalValue: 56250,
+      name: "Areca Leaf Plate",
+      sku: "FG-PL-006",
+      category: "Finished Goods",
+      quantity: 6000,
+      unit: "pcs",
+      price: 6.50,
+      totalValue: 39000,
       status: "normal",
+      size: "6 inch",
+      perPlateRate: 6.50
     },
     {
       id: 2,
-      name: "Packaging Box - Small",
-      sku: "PK-BX-001",
-      category: "Packaging",
-      quantity: 45,
+      name: "Areca Leaf Plate",
+      sku: "FG-PL-008",
+      category: "Finished Goods",
+      quantity: 5000,
       unit: "pcs",
-      price: 12,
-      totalValue: 540,
-      status: "low",
+      price: 8.50,
+      totalValue: 42500,
+      status: "normal",
+      size: "8 inch",
+      perPlateRate: 8.50
     },
     {
       id: 3,
-      name: "Areca Leaf - Grade B",
-      sku: "RM-AL-002",
-      category: "Raw Material",
-      quantity: 850,
-      unit: "kg",
-      price: 38,
-      totalValue: 32300,
-      status: "normal",
-    },
-    {
-      id: 4,
-      name: "Labels - Premium",
-      sku: "LB-PR-001",
-      category: "Packaging",
-      quantity: 280,
-      unit: "pcs",
-      price: 5,
-      totalValue: 1400,
-      status: "low",
-    },
-    {
-      id: 5,
-      name: "Cleaning Supplies",
-      sku: "CS-GN-001",
-      category: "Supplies",
-      quantity: 15,
-      unit: "units",
-      price: 85,
-      totalValue: 1275,
-      status: "critical",
-    },
-    {
-      id: 6,
-      name: "Finished Plates - 10 inch",
+      name: "Areca Leaf Plate",
       sku: "FG-PL-010",
       category: "Finished Goods",
       quantity: 3200,
       unit: "pcs",
-      price: 18,
-      totalValue: 57600,
+      price: 12.00,
+      totalValue: 38400,
       status: "normal",
+      size: "10 inch",
+      perPlateRate: 12.00
     },
     {
-      id: 7,
-      name: "Finished Bowls - 6 inch",
-      sku: "FG-BL-006",
+      id: 4,
+      name: "Areca Leaf Plate",
+      sku: "FG-PL-012",
       category: "Finished Goods",
-      quantity: 1850,
+      quantity: 2500,
       unit: "pcs",
-      price: 12,
-      totalValue: 22200,
+      price: 15.00,
+      totalValue: 37500,
       status: "normal",
-    },
+      size: "12 inch",
+      perPlateRate: 15.00
+    }
   ]);
-
-  // Dropdown state
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Stats state
   const [stats, setStats] = useState({
-    totalItems: 0,
-    totalValue: 0,
+    totalProducts: 0,
     lowStock: 0,
-    categories: 12,
+    totalStock: 0,
+    plateTypes: 4,
   });
 
+  // Selected product and view state
+  const [selectedProduct, setSelectedProduct] = useState("Areca Leaf Plate");
+  const [viewMode, setViewMode] = useState("product"); // "product" or "size"
+
   // Modal states
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -106,11 +81,8 @@ const StockOverview = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
 
-  // Form states for add/edit
+  // Form states for edit
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
@@ -119,123 +91,42 @@ const StockOverview = () => {
     unit: "kg",
     price: "",
     threshold: 100,
+    size: "",
+    perPlateRate: "",
   });
+
+  // ========== GET UNIQUE PRODUCTS ==========
+  const uniqueProducts = [...new Set(stockItems.map(item => item.name))];
+
+  // ========== FILTER ITEMS BASED ON SELECTION ==========
+  const getFilteredItems = () => {
+    return stockItems;
+  };
+
+  const filteredItems = getFilteredItems();
 
   // ========== CALCULATE STATS ==========
   useEffect(() => {
-    const totalItems = stockItems.reduce((sum, item) => sum + item.quantity, 0);
-    const totalValue = stockItems.reduce((sum, item) => sum + item.totalValue, 0);
-    const lowStock = stockItems.filter(
-      (item) => item.status === "low" || item.status === "critical"
-    ).length;
+    // Force total products to 1 as requested
+    const totalProducts = 1;
+
+    // Tally total stock from filtered items to ensure they match
+    const totalStockValue = filteredItems.reduce((sum, item) => sum + item.quantity, 0);
 
     setStats({
-      totalItems,
-      totalValue,
-      lowStock,
-      categories: [...new Set(stockItems.map((item) => item.category))].length,
+      totalProducts: 1,
+      lowStock: 0,
+      totalStock: totalStockValue,
+      plateTypes: 4,
     });
-  }, [stockItems]);
-
-  // ========== FILTERED ITEMS ==========
-  const filteredItems = stockItems.filter((item) => {
-    // Search filter
-    const matchesSearch =
-      searchTerm === "" ||
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.sku.toLowerCase().includes(searchTerm.toLowerCase());
-
-    // Category filter
-    const matchesCategory =
-      categoryFilter === "all" || item.category === categoryFilter;
-
-    // Status filter
-    const matchesStatus =
-      statusFilter === "all" || item.status === statusFilter;
-
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  // ========== UNIQUE CATEGORIES FOR FILTER ==========
-  const categories = ["all", ...new Set(stockItems.map((item) => item.category))];
+  }, [filteredItems]);
 
   // ========== NAVIGATION HANDLERS ==========
-  const handleNavigation = (path) => {
-    setIsDropdownOpen(false);
-    navigate(path);
+  const handleStockTransfer = () => {
+    navigate('/stock/transfer');
   };
 
   // ========== HANDLERS ==========
-
-  // Add Stock
-  const handleAddStock = () => {
-    setFormData({
-      name: "",
-      sku: "",
-      category: "Raw Material",
-      quantity: "",
-      unit: "kg",
-      price: "",
-      threshold: 100,
-    });
-    setShowAddModal(true);
-  };
-
-  const confirmAddStock = () => {
-    // Validate form
-    if (
-      !formData.name ||
-      !formData.sku ||
-      !formData.quantity ||
-      !formData.price
-    ) {
-      setFeedbackMessage("Please fill all required fields");
-      setTimeout(() => setFeedbackMessage(""), 3000);
-      return;
-    }
-
-    const quantity = parseInt(formData.quantity);
-    const price = parseInt(formData.price);
-    const totalValue = quantity * price;
-
-    // Determine status based on threshold
-    let status = "normal";
-    if (quantity < formData.threshold * 0.5) {
-      status = "critical";
-    } else if (quantity < formData.threshold) {
-      status = "low";
-    }
-
-    const newItem = {
-      id: stockItems.length + 1,
-      name: formData.name,
-      sku: formData.sku,
-      category: formData.category,
-      quantity: quantity,
-      unit: formData.unit,
-      price: price,
-      totalValue: totalValue,
-      status: status,
-      threshold: formData.threshold,
-    };
-
-    setStockItems([...stockItems, newItem]);
-    setShowAddModal(false);
-    setFeedbackMessage("Stock item added successfully");
-
-    // Reset form
-    setFormData({
-      name: "",
-      sku: "",
-      category: "Raw Material",
-      quantity: "",
-      unit: "kg",
-      price: "",
-      threshold: 100,
-    });
-
-    setTimeout(() => setFeedbackMessage(""), 3000);
-  };
 
   // Edit Stock
   const handleEditStock = (item) => {
@@ -248,6 +139,8 @@ const StockOverview = () => {
       unit: item.unit,
       price: item.price,
       threshold: item.threshold || 100,
+      size: item.size || "",
+      perPlateRate: item.perPlateRate || "",
     });
     setShowEditModal(true);
   };
@@ -256,7 +149,8 @@ const StockOverview = () => {
     if (!selectedItem) return;
 
     const quantity = parseInt(formData.quantity);
-    const price = parseInt(formData.price);
+    const price = parseFloat(formData.price);
+    const perPlateRate = parseFloat(formData.perPlateRate) || 0;
     const totalValue = quantity * price;
 
     // Determine status based on threshold
@@ -270,17 +164,19 @@ const StockOverview = () => {
     const updatedItems = stockItems.map((item) =>
       item.id === selectedItem.id
         ? {
-            ...item,
-            name: formData.name,
-            sku: formData.sku,
-            category: formData.category,
-            quantity: quantity,
-            unit: formData.unit,
-            price: price,
-            totalValue: totalValue,
-            status: status,
-            threshold: formData.threshold,
-          }
+          ...item,
+          name: formData.name,
+          sku: formData.sku,
+          category: formData.category,
+          quantity: quantity,
+          unit: formData.unit,
+          price: price,
+          totalValue: totalValue,
+          status: status,
+          threshold: formData.threshold,
+          size: formData.size,
+          perPlateRate: perPlateRate,
+        }
         : item
     );
 
@@ -318,18 +214,18 @@ const StockOverview = () => {
   const confirmExport = (format) => {
     setExportLoading(true);
 
-    // Simulate export API call
     setTimeout(() => {
       setExportLoading(false);
       setShowExportModal(false);
       setExportSuccess(true);
       setFeedbackMessage(`Stock report exported as ${format}`);
 
-      // Create CSV data
       if (format === "CSV") {
-        const headers = ["Product Name", "SKU", "Category", "Quantity", "Unit Price", "Total Value", "Status"];
-        const csvData = stockItems.map((item) => [
+        const headers = ["Product Name", "Size", "Per Plate Rate", "SKU", "Category", "Quantity", "Unit Price", "Total Value", "Status"];
+        const csvData = filteredItems.map((item) => [
           item.name,
+          item.size || "-",
+          item.perPlateRate ? `₹${item.perPlateRate}` : "-",
           item.sku,
           item.category,
           `${item.quantity} ${item.unit}`,
@@ -389,27 +285,13 @@ const StockOverview = () => {
 
   // Format currency
   const formatCurrency = (value) => {
-    return `₹${value.toLocaleString("en-IN")}`;
+    return `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   // Format quantity with unit
   const formatQuantity = (quantity, unit) => {
     return `${quantity.toLocaleString("en-IN")} ${unit}`;
   };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.dropdown-container')) {
-        setIsDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, []);
 
   return (
     <div className="stock-page">
@@ -420,10 +302,8 @@ const StockOverview = () => {
             {feedbackMessage.includes("deleted")
               ? "delete"
               : feedbackMessage.includes("updated")
-              ? "edit"
-              : feedbackMessage.includes("added")
-              ? "add"
-              : "check_circle"}
+                ? "edit"
+                : "check_circle"}
           </span>
           <span>{feedbackMessage}</span>
         </div>
@@ -444,56 +324,9 @@ const StockOverview = () => {
           <p className="page-subtitle">Real-time inventory management</p>
         </div>
         <div className="header-actions">
-          {/* Dropdown Menu */}
-          <div className="dropdown-container">
-            <button 
-              className="btn-outline dropdown-toggle"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-              <span className="material-symbols-outlined">menu</span>
-              View Pages
-              <span className="material-symbols-outlined dropdown-arrow">
-                {isDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
-              </span>
-            </button>
-            
-            {isDropdownOpen && (
-              <div className="dropdown-menu">
-                <div className="dropdown-header"></div>
-                <button 
-                  className="dropdown-item active"
-                  onClick={() => handleNavigation('/stock')}
-                >
-                  <span className="material-symbols-outlined">inventory</span>
-                  <span>Stock Overview</span>
-                  <span className="material-symbols-outlined check">check</span>
-                </button>
-                <button 
-                  className="dropdown-item"
-                  onClick={() => handleNavigation('/stock/transfer')}
-                >
-                  <span className="material-symbols-outlined">swap_horiz</span>
-                  <span>StockTransfer</span>
-                </button>
-               <button 
-  className="dropdown-item"
-  onClick={() => handleNavigation('/stock/production')} // <-- use this exact path
->
-  <span className="material-symbols-outlined">factory</span>
-  <span>Production</span>
-</button>
-
-                <div className="dropdown-divider"></div>
-                <div className="dropdown-footer">
-                 
-                </div>
-              </div>
-            )}
-          </div>
-
-          <button className="btn-primary" onClick={handleAddStock}>
-            <span className="material-symbols-outlined">add</span>
-            Add Stock
+          <button className="btn-primary" onClick={handleStockTransfer}>
+            <span className="material-symbols-outlined">swap_horiz</span>
+            Stock Transfer
           </button>
           <button className="btn-outline" onClick={handleExport}>
             <span className="material-symbols-outlined">
@@ -511,22 +344,14 @@ const StockOverview = () => {
             <span className="material-symbols-outlined">inventory</span>
           </div>
           <div className="stat-info">
-            <span className="stat-label">Total Items</span>
-            <span className="stat-value">{stats.totalItems.toLocaleString("en-IN")}</span>
+            <span className="stat-label">Total Products</span>
+            <span className="stat-value">{stats.totalProducts}</span>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon green">
-            <span className="material-symbols-outlined">currency_rupee</span>
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Total Value</span>
-            <span className="stat-value">{formatCurrency(stats.totalValue)}</span>
-          </div>
-        </div>
-        <div 
+
+        <div
           className="stat-card clickable"
-          onClick={() => setStatusFilter("low")}
+          onClick={() => {/* You can add low stock filter logic here if needed */ }}
         >
           <div className="stat-icon yellow">
             <span className="material-symbols-outlined">warning</span>
@@ -536,98 +361,48 @@ const StockOverview = () => {
             <span className="stat-value">{stats.lowStock}</span>
           </div>
         </div>
+
         <div className="stat-card">
-          <div className="stat-icon red">
-            <span className="material-symbols-outlined">inventory_2</span>
+          <div className="stat-icon green">
+            <span className="material-symbols-outlined">category</span>
           </div>
           <div className="stat-info">
-            <span className="stat-label">Categories</span>
-            <span className="stat-value">{stats.categories}</span>
+            <span className="stat-label">Total Stock</span>
+            <span className="stat-value">{stats.totalStock.toLocaleString("en-IN")}</span>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon purple">
+            <span className="material-symbols-outlined">flatware</span>
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Plate Types</span>
+            <span className="stat-value">{stats.plateTypes}</span>
           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="stock-filters">
-        <div className="search-box">
-          <span className="material-symbols-outlined search-icon">search</span>
-          <input
-            type="text"
-            placeholder="Search by product name or SKU..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-          {searchTerm && (
-            <button className="clear-search" onClick={() => setSearchTerm("")}>
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          )}
-        </div>
+      {/* Product Selection Removed */}
 
-        <div className="filter-group">
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="filter-select"
-          >
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat === "all" ? "All Categories" : cat}
-              </option>
-            ))}
-          </select>
+      {/* Selection Summary Section removed as requested */}
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">All Status</option>
-            <option value="normal">Normal</option>
-            <option value="low">Low Stock</option>
-            <option value="critical">Critical</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Stock Table */}
+      {/* Stock Table View */}
       <div className="stock-table-container">
         <div className="table-header">
-          <h3>
-            Stock Items
-            {filteredItems.length < stockItems.length && (
-              <span className="filter-badge">
-                Filtered: {filteredItems.length} items
-              </span>
-            )}
-          </h3>
-          {(categoryFilter !== "all" || statusFilter !== "all" || searchTerm) && (
-            <button
-              className="clear-filters-btn"
-              onClick={() => {
-                setCategoryFilter("all");
-                setStatusFilter("all");
-                setSearchTerm("");
-              }}
-            >
-              Clear Filters
-            </button>
-          )}
+          <h2 className="section-title">
+            Stock Details
+          </h2>
         </div>
-
         <div className="table-responsive">
           <table className="stock-table">
             <thead>
               <tr>
-                <th>Product Name</th>
-                <th>SKU</th>
-                <th>Category</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Total Value</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>Product & SKU</th>
+                <th>Size</th>
+                <th>Pieces</th>
+                <th>Per Plate Price</th>
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -635,46 +410,23 @@ const StockOverview = () => {
                 filteredItems.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <div className="product-info">
-                        <div className="product-icon">
-                          <span className="material-symbols-outlined">
-                            {item.category === "Raw Material"
-                              ? "grass"
-                              : item.category === "Packaging"
-                              ? "inventory"
-                              : item.category === "Finished Goods"
-                              ? "shopping_bag"
-                              : "category"}
-                          </span>
-                        </div>
+                      <div className="product-info-cell">
                         <span className="product-name">{item.name}</span>
+                        <span className="product-sku">{item.sku}</span>
                       </div>
                     </td>
-                    <td className="product-sku">{item.sku}</td>
-                    <td>{item.category}</td>
-                    <td>{formatQuantity(item.quantity, item.unit)}</td>
-                    <td>{formatCurrency(item.price)}</td>
-                    <td className="product-value">{formatCurrency(item.totalValue)}</td>
+                    <td>{item.size && item.size !== "-" ? <span className="size-badge">{item.size}</span> : "-"}</td>
+                    <td className="quantity-cell">{item.quantity.toLocaleString("en-IN")} Pieces</td>
+                    <td className="per-plate-cell">{item.perPlateRate > 0 ? formatCurrency(item.perPlateRate) : "-"}</td>
                     <td>
-                      <span className={getStatusBadge(item.status)}>
-                        {getStatusText(item.status)}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="action-buttons">
+                      <div className="action-buttons-cell">
                         <button
-                          className="action-btn edit"
+                          className="action-btn-minimal edit"
                           onClick={() => handleEditStock(item)}
-                          title="Edit"
+                          title="Edit Item"
                         >
-                          <span className="material-symbols-outlined">edit</span>
-                        </button>
-                        <button
-                          className="action-btn delete"
-                          onClick={() => handleDeleteStock(item)}
-                          title="Delete"
-                        >
-                          <span className="material-symbols-outlined">delete</span>
+                          <span className="material-symbols-outlined">edit_square</span>
+                          Edit
                         </button>
                       </div>
                     </td>
@@ -682,16 +434,10 @@ const StockOverview = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="no-data">
+                  <td colSpan="5" className="no-data-cell">
                     <div className="empty-state">
-                      <span className="material-symbols-outlined empty-icon">
-                        inventory
-                      </span>
+                      <span className="material-symbols-outlined empty-icon">inventory</span>
                       <h4>No items found</h4>
-                      <p>Try adjusting your filters or add new stock items</p>
-                      <button className="btn-primary" onClick={handleAddStock}>
-                        Add Stock Item
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -699,133 +445,11 @@ const StockOverview = () => {
             </tbody>
           </table>
         </div>
-
-        {/* Table Footer */}
-        <div className="table-footer">
-          <div className="pagination-info">
-            Showing {filteredItems.length} of {stockItems.length} items
-          </div>
-        </div>
       </div>
 
+      {/* Results Summary Removed */}
+
       {/* ========== MODALS ========== */}
-
-      {/* Add Stock Modal */}
-      {showAddModal && (
-        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Add New Stock Item</h3>
-              <button className="modal-close" onClick={() => setShowAddModal(false)}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="modal-form-group">
-                <label>Product Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter product name"
-                  className="modal-input"
-                />
-              </div>
-              <div className="modal-row">
-                <div className="modal-form-group">
-                  <label>SKU *</label>
-                  <input
-                    type="text"
-                    name="sku"
-                    value={formData.sku}
-                    onChange={handleInputChange}
-                    placeholder="Enter SKU"
-                    className="modal-input"
-                  />
-                </div>
-                <div className="modal-form-group">
-                  <label>Category *</label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="modal-select"
-                  >
-                    <option>Raw Material</option>
-                    <option>Packaging</option>
-                    <option>Finished Goods</option>
-                    <option>Supplies</option>
-                  </select>
-                </div>
-              </div>
-              <div className="modal-row">
-                <div className="modal-form-group">
-                  <label>Quantity *</label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    value={formData.quantity}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    className="modal-input"
-                  />
-                </div>
-                <div className="modal-form-group">
-                  <label>Unit</label>
-                  <select
-                    name="unit"
-                    value={formData.unit}
-                    onChange={handleInputChange}
-                    className="modal-select"
-                  >
-                    <option>kg</option>
-                    <option>pcs</option>
-                    <option>units</option>
-                    <option>boxes</option>
-                  </select>
-                </div>
-              </div>
-              <div className="modal-row">
-                <div className="modal-form-group">
-                  <label>Unit Price (₹) *</label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    className="modal-input"
-                  />
-                </div>
-                <div className="modal-form-group">
-                  <label>Low Stock Threshold</label>
-                  <input
-                    type="number"
-                    name="threshold"
-                    value={formData.threshold}
-                    onChange={handleInputChange}
-                    placeholder="100"
-                    className="modal-input"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="modal-cancel"
-                onClick={() => setShowAddModal(false)}
-              >
-                Cancel
-              </button>
-              <button className="modal-confirm" onClick={confirmAddStock}>
-                Add Stock
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Edit Stock Modal */}
       {showEditModal && selectedItem && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
@@ -837,17 +461,17 @@ const StockOverview = () => {
               </button>
             </div>
             <div className="modal-body">
-              <div className="modal-form-group">
-                <label>Product Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="modal-input"
-                />
-              </div>
               <div className="modal-row">
+                <div className="modal-form-group">
+                  <label>Product Name *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="modal-input"
+                  />
+                </div>
                 <div className="modal-form-group">
                   <label>SKU *</label>
                   <input
@@ -858,68 +482,49 @@ const StockOverview = () => {
                     className="modal-input"
                   />
                 </div>
+              </div>
+
+              <div className="modal-row">
                 <div className="modal-form-group">
-                  <label>Category *</label>
+                  <label>Size</label>
                   <select
-                    name="category"
-                    value={formData.category}
+                    name="size"
+                    value={formData.size}
                     onChange={handleInputChange}
                     className="modal-select"
                   >
-                    <option>Raw Material</option>
-                    <option>Packaging</option>
-                    <option>Finished Goods</option>
-                    <option>Supplies</option>
+                    <option value="">Select Size</option>
+                    <option value="6 inch">6 inch</option>
+                    <option value="8 inch">8 inch</option>
+                    <option value="10 inch">10 inch</option>
+                    <option value="12 inch">12 inch</option>
+                    <option value="-">Not Applicable</option>
                   </select>
                 </div>
-              </div>
-              <div className="modal-row">
                 <div className="modal-form-group">
-                  <label>Quantity *</label>
+                  <label>Per Plate Rate (₹)</label>
                   <input
                     type="number"
-                    name="quantity"
-                    value={formData.quantity}
+                    name="perPlateRate"
+                    value={formData.perPlateRate}
                     onChange={handleInputChange}
                     className="modal-input"
+                    step="0.01"
+                    placeholder="0.00"
                   />
-                </div>
-                <div className="modal-form-group">
-                  <label>Unit</label>
-                  <select
-                    name="unit"
-                    value={formData.unit}
-                    onChange={handleInputChange}
-                    className="modal-select"
-                  >
-                    <option>kg</option>
-                    <option>pcs</option>
-                    <option>units</option>
-                    <option>boxes</option>
-                  </select>
                 </div>
               </div>
-              <div className="modal-row">
-                <div className="modal-form-group">
-                  <label>Unit Price (₹) *</label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    className="modal-input"
-                  />
-                </div>
-                <div className="modal-form-group">
-                  <label>Low Stock Threshold</label>
-                  <input
-                    type="number"
-                    name="threshold"
-                    value={formData.threshold}
-                    onChange={handleInputChange}
-                    className="modal-input"
-                  />
-                </div>
+
+              <div className="modal-form-group">
+                <label>Pieces (Quantity) *</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={formData.quantity}
+                  onChange={handleInputChange}
+                  className="modal-input"
+                  placeholder="Total count of pieces"
+                />
               </div>
             </div>
             <div className="modal-footer">
