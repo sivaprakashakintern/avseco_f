@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "./Navbar.css";
+import "./Sidebar.css";
+import logo from "../../assets/avs.png";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [popupTop, setPopupTop] = useState(0);
+  const [popupLeft, setPopupLeft] = useState(0);
 
   useEffect(() => {
     const handleResize = () => {
@@ -16,8 +20,8 @@ const Sidebar = () => {
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const toggleMobileMenu = () => {
@@ -27,18 +31,22 @@ const Sidebar = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isMobile && isMobileMenuOpen) {
-        const sidebar = document.querySelector('.sidebar');
-        const hamburger = document.querySelector('.mobile-hamburger');
-        
-        if (sidebar && !sidebar.contains(event.target) && 
-            hamburger && !hamburger.contains(event.target)) {
+        const sidebar = document.querySelector(".sidebar");
+        const hamburger = document.querySelector(".mobile-hamburger");
+
+        if (
+          sidebar &&
+          !sidebar.contains(event.target) &&
+          hamburger &&
+          !hamburger.contains(event.target)
+        ) {
           setIsMobileMenuOpen(false);
         }
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobile, isMobileMenuOpen]);
 
   const handleNavigation = (path) => {
@@ -48,53 +56,67 @@ const Sidebar = () => {
     }
   };
 
-  const isActive = (label) => {
-    const path = location.pathname;
-    switch(label) {
-      case 'Dashboard': return path === '/' || path === '/dashboard';
-      case 'Stock': return path === '/stock';
-      case 'Product List': return path === '/products';
-      case 'Stock Purchased': return path === '/purchased';
-      case 'Employees': return path === '/employees';
-      case 'Clients': return path === '/clients';
-      case 'Attendance': return path === '/attendance';
-      case 'Reports': return path === '/reports';
-      default: return false;
+  const handleLogoClick = () => {
+    navigate("/dashboard");
+    if (isMobile) {
+      setIsMobileMenuOpen(false);
     }
   };
 
-  const getRoutePath = (label) => {
-    switch(label) {
-      case 'Dashboard': return '/dashboard';
-      case 'Stock': return '/stock';
-      case 'Product List': return '/products';
-      case 'Stock Purchased': return '/purchased';
-      case 'Employees': return '/employees';
-      case 'Clients': return '/clients';
-      case 'Attendance': return '/attendance';
-      case 'Reports': return '/reports';
-      default: return '/';
-    }
+  const isActive = (path) => {
+    return location.pathname === path;
   };
 
+  // ===== NAVIGATION ITEMS WITH CORRECT PATHS =====
   const navItems = [
-    { icon: "dashboard", label: "Dashboard" },
-    { icon: "inventory_2", label: "Stock" },
-    { icon: "format_list_bulleted", label: "Product List" },
-    { icon: "shopping_cart", label: "Stock Purchased" },
-    { icon: "badge", label: "Employees" },
-    { icon: "group", label: "Clients" },
-    { icon: "event_available", label: "Attendance" },
-    { icon: "description", label: "Reports" },
+    { icon: "dashboard", label: "Dashboard", path: "/dashboard" },
+    { icon: "inventory_2", label: "Stock", path: "/stock" },
+    { icon: "format_list_bulleted", label: "Product List", path: "/products" },
+
+    // ✅ PRODUCTION - CORRECT PATH (ROUTE, NOT FILENAME)
+    { icon: "factory", label: "Production", path: "/production/plan" },
+
+    { icon: "payments", label: "Expenses", path: "/expenses" },
+    { icon: "badge", label: "Employees", path: "/employees" },
+    { icon: "group", label: "Clients", path: "/clients" },
+
+    // ATTENDANCE SUB-MENU (Now Hover/Popup based via CSS)
+    {
+      icon: "event_available",
+      label: "Attendance",
+      path: "/attendance",
+      isSubmenu: true, // Flag for specific styling
+      children: [
+        { label: "Daily Log", path: "/attendance" },
+        { label: "Attendance Report", path: "/attendance-report" }
+      ]
+    },
+
+    // CHECK SYSTEM STATUS
+    {
+      icon: "check_circle",
+      label: "Check",
+      path: "/check",
+      apiStatus: true // Green dot indicator
+    },
   ];
+
+  const [expandedMenu, setExpandedMenu] = useState(null);
+
+  const toggleSubMenu = (label) => {
+    if (expandedMenu === label) {
+      setExpandedMenu(null);
+    } else {
+      setExpandedMenu(label);
+    }
+  };
 
   return (
     <>
       {isMobile && (
-        <button 
-          className={`mobile-hamburger ${isMobileMenuOpen ? 'active' : ''}`}
+        <button
+          className={`mobile-hamburger ${isMobileMenuOpen ? "active" : ""}`}
           onClick={toggleMobileMenu}
-          aria-label="Menu"
         >
           <span className="hamburger-line"></span>
           <span className="hamburger-line"></span>
@@ -103,47 +125,90 @@ const Sidebar = () => {
       )}
 
       {isMobile && isMobileMenuOpen && (
-        <div 
+        <div
           className="mobile-overlay active"
           onClick={() => setIsMobileMenuOpen(false)}
         ></div>
       )}
 
-      <aside className={`sidebar ${isMobile ? 'mobile' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-        <div className="sidebar-header">
-          <div className="logo-container">
-            <span className="material-symbols-outlined logo-icon">factory</span>
-          </div>
-          <div className="company-text">
-            <h1 className="company-name">AVSECO</h1>
-            <p className="company-subtitle">Manufacturing ERP</p>
-          </div>
-          
-          {isMobile && isMobileMenuOpen && (
-            <button 
-              className="mobile-close"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          )}
+      <aside
+        className={`sidebar ${isMobile ? "mobile" : ""} ${isMobileMenuOpen ? "mobile-open" : ""
+          }`}
+      >
+        <div className="sidebar-header" onClick={handleLogoClick}>
+          <img src={logo} alt="AVSECO Logo" className="logo-full" />
         </div>
 
         <nav className="sidebar-nav">
           {navItems.map((item) => (
-            <div
-              key={item.label}
-              className={`nav-item ${isActive(item.label) ? 'active' : ''}`}
-              onClick={() => handleNavigation(getRoutePath(item.label))}
-            >
-              <span className="material-symbols-outlined">{item.icon}</span>
-              <p className="nav-text">{item.label}</p>
-            </div>
+            <React.Fragment key={item.label}>
+              {item.children ? (
+                // Parent Item with Submenu (Hover/Popup)
+                <div
+                  className={`nav-group popup-group ${isActive(item.path) || location.pathname.includes(item.path) ? "active-group" : ""}`}
+                  onMouseEnter={(e) => {
+                    if (!isMobile) {
+                      setExpandedMenu(item.label);
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setPopupTop(rect.top);
+                      setPopupLeft(rect.right);
+                    }
+                  }}
+                  onMouseLeave={() => !isMobile && setExpandedMenu(null)}
+                >
+                  <div
+                    className={`nav-item ${isActive(item.path) || location.pathname.includes(item.path) ? "active" : ""}`}
+                    onClick={() => isMobile && toggleSubMenu(item.label)}
+                  >
+                    <span className="material-symbols-outlined">{item.icon}</span>
+                    <p className="nav-text">{item.label}</p>
+                    <span className="material-symbols-outlined branch-icon">
+                      {isMobile ? (expandedMenu === item.label ? "expand_less" : "expand_more") : "chevron_right"}
+                    </span>
+                  </div>
+
+                  {/* Popup Submenu */}
+                  {(expandedMenu === item.label) && (
+                    <div
+                      className={`submenu ${!isMobile ? 'popup-menu' : ''}`}
+                      style={!isMobile ? { top: popupTop, left: popupLeft, position: 'fixed', marginLeft: 0 } : {}}
+                    >
+                      {item.children.map((sub) => (
+                        <div
+                          key={sub.label}
+                          className={`submenu-item ${isActive(sub.path) ? "active" : ""}`}
+                          onClick={() => handleNavigation(sub.path)}
+                        >
+                          <span className="submenu-text">{sub.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Regular Item
+                <div
+                  className={`nav-item ${isActive(item.path) ? "active" : ""}`}
+                  onClick={() => handleNavigation(item.path)}
+                >
+                  <span className="material-symbols-outlined">{item.icon}</span>
+                  <p className="nav-text">{item.label}</p>
+
+                  {/* API Status Indicator for Reports */}
+                  {item.apiStatus !== undefined && (
+                    <span
+                      className={`api-status-dot ${item.apiStatus ? "connected" : "disconnected"}`}
+                      title={item.apiStatus ? "API Connected" : "API Error"}
+                    ></span>
+                  )}
+                </div>
+              )}
+            </React.Fragment>
           ))}
         </nav>
       </aside>
     </>
   );
-}; 
+};
 
 export default Sidebar;

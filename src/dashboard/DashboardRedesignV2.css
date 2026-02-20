@@ -1,0 +1,236 @@
+/* ... (existing styles) ... */
+
+/* ===== NEW STATS GRID ===== */
+.stats-overview-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 24px !important;
+    margin-bottom: 24px !important;
+}
+
+.metric-card {
+    background: white !important;
+    border-radius: 16px !important;
+    padding: 24px !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 20px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    border: 1px solid transparent !important;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Icon Backgrounds */
+.metric-icon-bg {
+    width: 54px !important;
+    height: 54px !important;
+    border-radius: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    color: white !important;
+    font-size: 24px !important;
+}
+
+.metric-icon-bg.sales {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3) !important;
+}
+
+.metric-icon-bg.expense {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+.metric-icon-bg.stock {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3) !important;
+}
+
+.metric-icon-bg.employee {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Metric Info */
+.metric-info {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.metric-label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--text-slate) !important;
+    margin-bottom: 6px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.metric-value-row {
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+.metric-value {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    color: var(--text-dark) !important;
+    line-height: 1.1 !important;
+}
+
+.metric-trend {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 2px 6px !important;
+    border-radius: 20px !important;
+}
+
+.metric-trend.positive {
+    background: #ecfdf5 !important;
+    color: #059669 !important;
+}
+
+.metric-subtext {
+    font-size: 13px !important;
+    color: var(--text-slate) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.sub-label {
+    font-weight: 600 !important;
+    color: var(--text-dark) !important;
+}
+
+/* Specific Visuals inside cards */
+.metric-badge {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    background: #f1f5f9 !important;
+    color: var(--text-slate) !important;
+    padding: 3px 8px !important;
+    border-radius: 12px !important;
+    text-transform: uppercase !important;
+}
+
+.metric-progress-container {
+    width: 100% !important;
+}
+
+.metric-progress-bar {
+    width: 100% !important;
+    height: 6px !important;
+    background: #f1f5f9 !important;
+    border-radius: 3px !important;
+    display: flex !important;
+    overflow: hidden !important;
+    margin-bottom: 6px !important;
+}
+
+.prog-fill {
+    height: 100% !important;
+    border-radius: 3px !important;
+}
+
+.prog-fill.raw {
+    background: #3b82f6 !important;
+}
+
+.prog-fill.finish {
+    background: #006A4E !important;
+}
+
+.metric-progress-labels {
+    display: flex !important;
+    justify-content: space-between !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    color: var(--text-slate) !important;
+}
+
+.metric-avatars {
+    display: flex !important;
+    align-items: center !important;
+}
+
+.mini-avatar {
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 50% !important;
+    border: 2px solid white !important;
+    margin-left: -8px !important;
+    background: #e2e8f0 !important;
+    background-image: linear-gradient(135deg, #cbd5e1, #94a3b8) !important;
+}
+
+.mini-avatar:first-child {
+    margin-left: 0 !important;
+}
+
+.mini-avatar-count {
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 50% !important;
+    background: #f1f5f9 !important;
+    border: 2px solid white !important;
+    margin-left: -8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    color: var(--text-slate) !important;
+}
+
+/* ===== TOGGLE PILL ===== */
+.view-toggle-pill {
+    background: #f1f5f9 !important;
+    padding: 4px !important;
+    border-radius: 20px !important;
+    display: flex !important;
+    gap: 4px !important;
+}
+
+.view-toggle-pill button {
+    border: none !important;
+    background: transparent !important;
+    padding: 6px 16px !important;
+    border-radius: 16px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: var(--text-slate) !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+}
+
+.view-toggle-pill button.active {
+    background: white !important;
+    color: var(--text-dark) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Responsive Grid */
+@media (max-width: 1200px) {
+    .stats-overview-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-overview-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+}

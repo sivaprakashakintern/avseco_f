@@ -1,248 +1,780 @@
-import React, { useState } from 'react';
-import './ProductList.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "./ProductList.css";
+
+// Import local plate images - ONLY 4 PLATES
+import plate6Img from "../assets/plate6.png";
+import plate8Img from "../assets/plate8.png";
+import plate10Img from "../assets/plate10.png";
+import plate12Img from "../assets/plate12.png";
 
 const ProductList = () => {
-  const [viewMode, setViewMode] = useState('list');
-  const [selectedSize, setSelectedSize] = useState('All Sizes');
+  const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState("grid");
+  const [selectedSize, setSelectedSize] = useState("All Sizes");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  const products = [
+  // Product Data with ONLY 4 PLATE images
+  const [products, setProducts] = useState([
     {
       id: 1,
-      name: 'Areca Round Dinner Plate',
-      sku: 'ARP-10RND-01',
-      size: '10-inch',
-      costPrice: '₹4.50',
-      sellPrice: '₹8.00',
-      margin: '43.7%',
-      status: 'Active',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDt417bR4fL7dfXHZAlSSXI0HUbJfNOT79cyqn7sjmM8xrgK9eGM5RVvWNuLjksidw8llAJa4ORPn6fU6l3Adc_gU8N52OIPhqg6eFYBM81h2jJG6nh0KLVUO1tG2Dv6IMfH1kGLce_2c_PI5Yfg4vKbd_J0sFeoHd7598_4B_WBLtTWwPxPOSEeZFwE0qp7gbKweVtqK_1la7wQ5Uc9G3Tv7QoeLWQLzspu0nGCc54kd5fSPIXz2RYhKPicEQZEYsmlIbYRDW0cpJ3'
+      name: "Areca 6 Inch Round Plate",
+      sku: "ARP-6RND-03",
+      size: "6-inch",
+      category: "Plates",
+      costPrice: 2.80,
+      sellPrice: 5.00,
+      margin: "44.0%",
+      stock: 2100,
+      status: "Active",
+      image: plate6Img,
     },
     {
       id: 2,
-      name: 'Square Serving Plate',
-      sku: 'ARP-12SQ-05',
-      size: '12-inch',
-      costPrice: '₹6.20',
-      sellPrice: '₹11.50',
-      margin: '46.1%',
-      status: 'Active',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuArLlrpTxsPxTkEB1fh1TY1GZoOE7i0AcC-bnMal5c2ckegwELqUvOtvaHS54I6N8qW8vdi_ztpEOYKcTc3b_iZdJK2ijqmnRWMunSDk3M9wzjczR84cwKJiafq-M6alvVbDyZtT00i3sBbMp8Ydzco7xsQyzBO9CKVF13yA_1aHFt-KPBrmtLCDU2BbZ2Pn5edTI6-s3KGHZeNzgc9zwZOiUjlSOLQOg54nDQtHefV131pWg3L2ROhl9-Gvr14WFmY9FOt34b1CE9S'
+      name: "Areca 8 Inch Round Plate",
+      sku: "ARP-8RND-04",
+      size: "8-inch",
+      category: "Plates",
+      costPrice: 3.50,
+      sellPrice: 6.50,
+      margin: "46.2%",
+      stock: 1850,
+      status: "Active",
+      image: plate8Img,
     },
     {
       id: 3,
-      name: 'Heart-Shaped Snack Bowl',
-      sku: 'ARP-4HRT-12',
-      size: '4-inch',
-      costPrice: '₹2.00',
-      sellPrice: '₹4.50',
-      margin: '55.5%',
-      status: 'Inactive',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDh57LfdKEiHQqSfrA6UrD6tJGi-_N_LQn3Z0_EaIL5gi-9KiMel9OVju7ykq92DQ7kKa8DGJIa04ONFubuMRXPLkzfxDi7Dd9YOcwA7zaV5QdwgeAvfzTZvJIxYTJ4kXmmjDd9ZoaJ6KbfFkvIWgh2TOOLggrDPuj0LcsyIm-3MYdnori2Pgu4DOWo11w-KJ-3sYJfh8Up41U48zK6e8Q3bFbA_lhBqoz3H2em3-kFjQTHeq2jhxGx9nIg0IF0MeMpfCdMKwgMKpjp'
+      name: "Areca 10 Inch Dinner Plate",
+      sku: "ARP-10RND-01",
+      size: "10-inch",
+      category: "Plates",
+      costPrice: 4.50,
+      sellPrice: 8.00,
+      margin: "43.7%",
+      stock: 1250,
+      status: "Active",
+      image: plate10Img,
     },
     {
       id: 4,
-      name: 'Deep Square Bowl',
-      sku: 'ARP-6DSQ-09',
-      size: '6-inch',
-      costPrice: '₹3.80',
-      sellPrice: '₹6.50',
-      margin: '41.5%',
-      status: 'Active',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCiLRTzDhp3EMoRfqJn6mJ_o6cEg237wQ1XnTyi_1Z5yRvA3xDxgkKaKAMiZBE1mdALWCqJx_BYqMiNtc0pCRjoe4u8l_zh-54FPot3T6L3Yo9solvxLY4GgqRODDT0vNKahhZynTTTKxuF5CgBiILOMnDV3fBJjr68QWz7uKOsXJfsK8e2ffDmt3xBXjwWtqGzivVZzfHa1POEBoOeSn4Zs2GylRR0EX6r3K1aKNLtlTWB2RI90SuFSyQZZpVulp8q-QQdCAHdSL1_'
-    }
-  ];
+      name: "Areca 12 Inch Party Plate",
+      sku: "ARP-12RND-07",
+      size: "12-inch",
+      category: "Plates",
+      costPrice: 5.80,
+      sellPrice: 10.50,
+      margin: "44.8%",
+      stock: 950,
+      status: "Active",
+      image: plate12Img,
+    },
+  ]);
 
-  const sizeFilters = ['All Sizes', '12-inch', '10-inch', '6-inch', '4-inch'];
+  // Form state for add/edit
+  const [formData, setFormData] = useState({
+    name: "",
+    sku: "",
+    size: "10-inch",
+    category: "Plates",
+    costPrice: "",
+    sellPrice: "",
+    stock: "",
+    status: "Active",
+    image: plate10Img,
+  });
+
+  // Filter options - ONLY 4 SIZES
+  const sizeFilters = ["All Sizes", "6-inch", "8-inch", "10-inch", "12-inch"];
+  const categoryFilters = ["all", "Plates"]; // Only Plates category
+
+  // Get unique sizes for filter
+  const uniqueSizes = ["All Sizes", ...new Set(products.map(p => p.size))].sort();
+
+  // Filter products based on size, category, and search
+  const filteredProducts = products.filter((product) => {
+    // Size filter
+    const matchesSize = selectedSize === "All Sizes" || product.size === selectedSize;
+
+    // Category filter (always true since only Plates)
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+
+    // Search filter
+    const matchesSearch = searchTerm === "" ||
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return matchesSize && matchesCategory && matchesSearch;
+  });
+
+  // Calculate stats - UPDATED: totalProducts = 1 (single product type), activeProducts removed
+  const stats = {
+    totalProducts: 1,          // one product with four size variants
+    // activeProducts removed
+    lowStock: products.filter(p => p.stock < 500).length, // kept for potential future use
+  };
+
+  // ========== HANDLERS ==========
+
+  // Add Product
+  const handleAddProduct = () => {
+    setFormData({
+      name: "",
+      sku: "",
+      size: "10-inch",
+      category: "Plates",
+      costPrice: "",
+      sellPrice: "",
+      stock: "",
+      status: "Active",
+      image: plate10Img,
+    });
+    setShowAddModal(true);
+  };
+
+  const confirmAddProduct = () => {
+    // Validate form - SKU no longer checked here as it's auto-generated
+    if (!formData.name || !formData.costPrice || !formData.sellPrice || !formData.stock) {
+      setFeedbackMessage("Please fill all required fields");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    // Determine image based on size - ONLY 4 PLATES
+    let productImage = plate10Img;
+    if (formData.size === "6-inch") productImage = plate6Img;
+    else if (formData.size === "8-inch") productImage = plate8Img;
+    else if (formData.size === "10-inch") productImage = plate10Img;
+    else if (formData.size === "12-inch") productImage = plate12Img;
+
+    const cost = parseFloat(formData.costPrice);
+    const sell = parseFloat(formData.sellPrice);
+    const margin = ((sell - cost) / sell * 100).toFixed(1) + "%";
+
+    // Auto-generate SKU
+    const autoSku = `ARP-${formData.size.replace("-inch", "")}RND-${Math.floor(Math.random() * 90 + 10)}`;
+
+    const newProduct = {
+      id: products.length + 1,
+      name: formData.name,
+      sku: autoSku,
+      size: formData.size,
+      category: "Plates",
+      costPrice: cost,
+      sellPrice: sell,
+      margin: margin,
+      stock: parseInt(formData.stock),
+      status: "Active", // Default status
+      image: productImage,
+    };
+
+    setProducts([...products, newProduct]);
+    setShowAddModal(false);
+    setFeedbackMessage("Product added successfully");
+
+    setTimeout(() => setFeedbackMessage(""), 3000);
+  };
+
+  // Edit Product
+  const handleEditProduct = (product) => {
+    setSelectedProduct(product);
+    setFormData({
+      name: product.name,
+      sku: product.sku,
+      size: product.size,
+      category: "Plates",
+      costPrice: product.costPrice,
+      sellPrice: product.sellPrice,
+      stock: product.stock,
+      status: product.status,
+      image: product.image,
+    });
+    setShowEditModal(true);
+  };
+
+  const confirmEditProduct = () => {
+    if (!selectedProduct) return;
+
+    const cost = parseFloat(formData.costPrice);
+    const sell = parseFloat(formData.sellPrice);
+    const margin = ((sell - cost) / sell * 100).toFixed(1) + "%";
+
+    // Determine image based on size - ONLY 4 PLATES
+    let productImage = plate10Img;
+    if (formData.size === "6-inch") productImage = plate6Img;
+    else if (formData.size === "8-inch") productImage = plate8Img;
+    else if (formData.size === "10-inch") productImage = plate10Img;
+    else if (formData.size === "12-inch") productImage = plate12Img;
+
+    const updatedProducts = products.map((p) =>
+      p.id === selectedProduct.id
+        ? {
+          ...p,
+          name: formData.name,
+          sku: formData.sku,
+          size: formData.size,
+          category: "Plates",
+          costPrice: cost,
+          sellPrice: sell,
+          margin: margin,
+          stock: parseInt(formData.stock),
+          status: formData.status,
+          image: productImage,
+        }
+        : p
+    );
+
+    setProducts(updatedProducts);
+    setShowEditModal(false);
+    setSelectedProduct(null);
+    setFeedbackMessage("Product updated successfully");
+
+    setTimeout(() => setFeedbackMessage(""), 3000);
+  };
+
+  // Delete Product
+  const handleDeleteProduct = (product) => {
+    setSelectedProduct(product);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteProduct = () => {
+    if (!selectedProduct) return;
+
+    const filteredProducts = products.filter((p) => p.id !== selectedProduct.id);
+    setProducts(filteredProducts);
+    setShowDeleteModal(false);
+    setSelectedProduct(null);
+    setFeedbackMessage("Product deleted successfully");
+
+    setTimeout(() => setFeedbackMessage(""), 3000);
+  };
+
+  // Form input change handler
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  // Clear filters
+  const clearFilters = () => {
+    setSelectedSize("All Sizes");
+    setSelectedCategory("all");
+    setSearchTerm("");
+  };
+
+  // Format currency
+  const formatCurrency = (value) => {
+    return `₹${value.toFixed(2)}`;
+  };
 
   return (
     <div className="product-list-container">
-      {/* Breadcrumbs & View Toggle */}
-      <div className="product-header">
-        <div className="breadcrumb">
-          <a href="/" className="breadcrumb-link">Home</a>
-          <span className="breadcrumb-separator">/</span>
-          <span className="breadcrumb-current">Products</span>
+
+      {/* Feedback Toast */}
+      {feedbackMessage && (
+        <div className="feedback-toast">
+          <span className="material-symbols-outlined">
+            {feedbackMessage.includes("deleted") ? "delete" :
+              feedbackMessage.includes("updated") ? "edit" :
+                feedbackMessage.includes("added") ? "add" : "check_circle"}
+          </span>
+          <span>{feedbackMessage}</span>
         </div>
+      )}
+
+      {/* ===== PAGE HEADER ===== */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Products</h1>
+          <p className="page-subtitle">Manage and track your product catalog</p>
+        </div>
+
+        <div className="header-actions">
+          <button className="primary-btn" onClick={handleAddProduct}>
+            <span className="material-symbols-outlined">add</span>
+            Add Product
+          </button>
+        </div>
+      </div>
+
+      {/* ===== STATS CARDS (only Total Products and Sizes) ===== */}
+      <div className="product-stats">
+        <div className="stat-card">
+          <div className="stat-icon blue">
+            <span className="material-symbols-outlined">inventory</span>
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Total Products</span>
+            <span className="stat-value">{stats.totalProducts}</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon orange">
+            <span className="material-symbols-outlined">category</span>
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Sizes</span>
+            <span className="stat-value">4</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== SEARCH AND FILTERS (unchanged) ===== */}
+      <div className="filters-section">
+        <div className="search-box">
+          <span className="material-symbols-outlined search-icon">search</span>
+          <input
+            type="text"
+            placeholder="Search products by name or SKU..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          {searchTerm && (
+            <button className="clear-search" onClick={() => setSearchTerm("")}>
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          )}
+        </div>
+
+        <div className="filter-group">
+          <select
+            className="filter-select"
+            value={selectedSize}
+            onChange={(e) => setSelectedSize(e.target.value)}
+          >
+            {uniqueSizes.map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="view-toggle">
-          <button 
-            className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-            onClick={() => setViewMode('list')}
+          <button
+            className={`view-btn ${viewMode === "list" ? "active" : ""}`}
+            onClick={() => setViewMode("list")}
+            title="List View"
           >
             <span className="material-symbols-outlined">view_list</span>
           </button>
-          <button 
-            className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-            onClick={() => setViewMode('grid')}
+
+          <button
+            className={`view-btn ${viewMode === "grid" ? "active" : ""}`}
+            onClick={() => setViewMode("grid")}
+            title="Grid View"
           >
             <span className="material-symbols-outlined">grid_view</span>
           </button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="filters-section">
-        <div className="size-filters">
-          {sizeFilters.map((size) => (
-            <button
-              key={size}
-              className={`size-filter-btn ${selectedSize === size ? 'active' : ''}`}
-              onClick={() => setSelectedSize(size)}
-            >
-              {size}
-              <span className="material-symbols-outlined">expand_more</span>
+      {/* Filter Badge */}
+      {(selectedSize !== "All Sizes" || searchTerm) && (
+        <div className="filter-badge-container">
+          <span className="filter-badge">
+            Filtered: {filteredProducts.length} products
+            <button className="clear-filters-btn" onClick={clearFilters}>
+              Clear All
             </button>
-          ))}
+          </span>
         </div>
-        <button className="more-filters-btn">
-          <span className="material-symbols-outlined">filter_alt</span>
-          More Filters
-        </button>
-      </div>
+      )}
 
-      {/* List View */}
-      {viewMode === 'list' && (
-        <div className="product-table-container">
+      {/* ===== LIST VIEW (unchanged) ===== */}
+      {viewMode === "list" && (
+        <div className="table-wrapper">
           <table className="product-table">
             <thead>
               <tr>
-                <th>Product Details</th>
+                <th>Product</th>
                 <th>Size</th>
-                <th>Cost Price</th>
-                <th>Sell Price</th>
+                <th>Cost</th>
+                <th>Sell</th>
                 <th>Margin</th>
+                <th>Stock</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
-              {products.map((product) => (
-                <tr key={product.id} className="product-row">
-                  <td>
-                    <div className="product-info">
-                      <div 
-                        className={`product-image ${product.status === 'Inactive' ? 'inactive' : ''}`}
-                        style={{ backgroundImage: `url("${product.image}")` }}
-                      ></div>
-                      <div>
-                        <p className="product-name">{product.name}</p>
-                        <p className="product-sku">SKU: {product.sku}</p>
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product) => (
+                  <tr key={product.id}>
+                    <td>
+                      <div className="product-info">
+                        <div
+                          className="product-image"
+                          style={{
+                            backgroundImage: `url(${product.image})`,
+                          }}
+                        ></div>
+                        <div>
+                          <p className="product-name">{product.name}</p>
+                          <p className="product-sku">{product.sku}</p>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>{product.size}</td>
-                  <td>{product.costPrice}</td>
-                  <td className="sell-price">{product.sellPrice}</td>
-                  <td>
-                    <span className={`margin-badge ${product.status === 'Active' ? 'active' : 'inactive'}`}>
-                      {product.margin}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="status-toggle">
-                      <div className={`toggle-switch ${product.status === 'Active' ? 'active' : ''}`}>
-                        <div className={`toggle-dot ${product.status === 'Active' ? 'active' : ''}`}></div>
-                      </div>
-                      <span className={`status-text ${product.status === 'Active' ? 'active' : 'inactive'}`}>
+                    </td>
+                    <td>{product.size}</td>
+                    <td>{formatCurrency(product.costPrice)}</td>
+                    <td>{formatCurrency(product.sellPrice)}</td>
+                    <td className="product-margin">{product.margin}</td>
+                    <td>
+                      <span className={`stock-badge ${product.stock < 500 ? 'low' : 'normal'}`}>
+                        {product.stock} pcs
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`status-badge ${product.status.toLowerCase()}`}
+                      >
                         {product.status}
                       </span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="edit-btn">
-                        <span className="material-symbols-outlined">edit</span>
-                      </button>
-                      <button className="delete-btn">
-                        <span className="material-symbols-outlined">delete</span>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          className="action-btn edit"
+                          onClick={() => handleEditProduct(product)}
+                          title="Edit Product"
+                        >
+                          <span className="material-symbols-outlined">edit</span>
+                        </button>
+                        <button
+                          className="action-btn delete"
+                          onClick={() => handleDeleteProduct(product)}
+                          title="Delete Product"
+                        >
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="no-data">
+                    <div className="empty-state">
+                      <span className="material-symbols-outlined empty-icon">
+                        category
+                      </span>
+                      <h4>No products found</h4>
+                      <p>Try adjusting your filters or add a new product</p>
+                      <button className="primary-btn" onClick={handleAddProduct}>
+                        Add Product
                       </button>
                     </div>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
-
-          {/* Pagination */}
-          <div className="pagination">
-            <p className="pagination-info">Showing <span>1-4</span> of <span>24</span> products</p>
-            <div className="pagination-controls">
-              <button className="pagination-btn" disabled>Previous</button>
-              <button className="pagination-btn active">1</button>
-              <button className="pagination-btn">2</button>
-              <button className="pagination-btn">3</button>
-              <button className="pagination-btn">Next</button>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* Grid View */}
-      {viewMode === 'grid' && (
+      {/* ===== GRID VIEW (unchanged) ===== */}
+      {viewMode === "grid" && (
         <div className="product-grid">
-          {products.map((product) => (
-            <div key={product.id} className="product-card">
-              <div className="product-card-image" style={{ backgroundImage: `url("${product.image}")` }}>
-                <span className={`product-status-badge ${product.status.toLowerCase()}`}>
-                  {product.status}
-                </span>
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
+              <div key={product.id} className="product-card">
+                <div
+                  className="product-card-image"
+                  style={{ backgroundImage: `url(${product.image})` }}
+                >
+                  {/* Status badge removed */}
+                </div>
+
+                <div className="product-card-content">
+                  <h3 className="product-card-title">{product.name}</h3>
+                  <p className="product-card-sku">{product.sku}</p>
+                  <div className="product-card-details">
+                    <span className="product-card-size">{product.size}</span>
+                    <span className="product-card-price">{formatCurrency(product.sellPrice)}</span>
+                  </div>
+                  <div className="product-card-footer">
+                    <span className={`stock-indicator ${product.stock < 500 ? 'low' : 'normal'}`}>
+                      Stock: {product.stock} pcs
+                    </span>
+                    <div className="product-card-actions">
+                      <button
+                        className="icon-btn edit"
+                        onClick={() => handleEditProduct(product)}
+                        title="Edit"
+                      >
+                        <span className="material-symbols-outlined">edit</span>
+                      </button>
+                      <button
+                        className="icon-btn delete"
+                        onClick={() => handleDeleteProduct(product)}
+                        title="Delete"
+                      >
+                        <span className="material-symbols-outlined">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="product-card-content">
-                <div className="product-card-header">
-                  <div>
-                    <h3 className="product-card-title">{product.name}</h3>
-                    <p className="product-card-sku">SKU: {product.sku}</p>
-                  </div>
-                  <span className="product-card-margin">{product.margin}</span>
-                </div>
-                <div className="product-card-details">
-                  <div>
-                    <span className="detail-label">Cost</span>
-                    <p className="detail-value">{product.costPrice}</p>
-                  </div>
-                  <div>
-                    <span className="detail-label">Sell</span>
-                    <p className="detail-value">{product.sellPrice}</p>
-                  </div>
-                  <div>
-                    <span className="detail-label">Size</span>
-                    <p className="detail-value">{product.size}</p>
-                  </div>
-                </div>
-                <div className="product-card-actions">
-                  <button className="card-edit-btn">Edit</button>
-                  <button className="card-view-btn">View</button>
-                </div>
-              </div>
+            ))
+          ) : (
+            <div className="empty-state-grid">
+              <span className="material-symbols-outlined empty-icon">category</span>
+              <h4>No products found</h4>
+              <p>Try adjusting your filters or add a new product</p>
+              <button className="primary-btn" onClick={handleAddProduct}>
+                Add Product
+              </button>
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* Footer Stats */}
-      <div className="product-footer-stats">
-        <div className="stat-box">
-          <p className="stat-box-label">Total SKUs</p>
-          <p className="stat-box-value">24</p>
-        </div>
-        <div className="stat-box">
-          <p className="stat-box-label">Active Products</p>
-          <div className="stat-box-active">
-            <p className="stat-box-value active">21</p>
-            <span className="active-percentage">87%</span>
+      {/* ===== MODALS (unchanged) ===== */}
+      {/* Add Product Modal */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Add New Product</h3>
+              <button className="modal-close" onClick={() => setShowAddModal(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-form-group">
+                <label>Product Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="Enter product name"
+                  className="modal-input"
+                />
+              </div>
+              <div className="modal-form-group">
+                <label>Size *</label>
+                <select
+                  name="size"
+                  value={formData.size}
+                  onChange={handleInputChange}
+                  className="modal-select"
+                >
+                  <option>6-inch</option>
+                  <option>8-inch</option>
+                  <option>10-inch</option>
+                  <option>12-inch</option>
+                </select>
+              </div>
+              <div className="modal-row">
+                <div className="modal-form-group">
+                  <label>Cost Price (₹) *</label>
+                  <input
+                    type="number"
+                    name="costPrice"
+                    value={formData.costPrice}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    step="0.01"
+                    className="modal-input"
+                  />
+                </div>
+                <div className="modal-form-group">
+                  <label>Sell Price (₹) *</label>
+                  <input
+                    type="number"
+                    name="sellPrice"
+                    value={formData.sellPrice}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    step="0.01"
+                    className="modal-input"
+                  />
+                </div>
+              </div>
+              <div className="modal-form-group">
+                <label>Initial Stock *</label>
+                <input
+                  type="number"
+                  name="stock"
+                  value={formData.stock}
+                  onChange={handleInputChange}
+                  placeholder="0"
+                  className="modal-input"
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="modal-cancel"
+                onClick={() => setShowAddModal(false)}
+              >
+                Cancel
+              </button>
+              <button className="modal-confirm" onClick={confirmAddProduct}>
+                Add Product
+              </button>
+            </div>
           </div>
         </div>
-        <div className="stat-box">
-          <p className="stat-box-label">Avg Margin</p>
-          <p className="stat-box-value">44.8%</p>
+      )}
+
+      {/* Edit Product Modal */}
+      {showEditModal && selectedProduct && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Product</h3>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-form-group">
+                <label>Product Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="modal-input"
+                />
+              </div>
+              <div className="modal-row">
+                <div className="modal-form-group">
+                  <label>SKU *</label>
+                  <input
+                    type="text"
+                    name="sku"
+                    value={formData.sku}
+                    onChange={handleInputChange}
+                    className="modal-input"
+                  />
+                </div>
+                <div className="modal-form-group">
+                  <label>Size *</label>
+                  <select
+                    name="size"
+                    value={formData.size}
+                    onChange={handleInputChange}
+                    className="modal-select"
+                  >
+                    <option>6-inch</option>
+                    <option>8-inch</option>
+                    <option>10-inch</option>
+                    <option>12-inch</option>
+                  </select>
+                </div>
+              </div>
+              <div className="modal-row">
+                <div className="modal-form-group">
+                  <label>Cost Price (₹) *</label>
+                  <input
+                    type="number"
+                    name="costPrice"
+                    value={formData.costPrice}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    className="modal-input"
+                  />
+                </div>
+                <div className="modal-form-group">
+                  <label>Sell Price (₹) *</label>
+                  <input
+                    type="number"
+                    name="sellPrice"
+                    value={formData.sellPrice}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    className="modal-input"
+                  />
+                </div>
+              </div>
+              <div className="modal-row">
+                <div className="modal-form-group">
+                  <label>Stock Quantity *</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    value={formData.stock}
+                    onChange={handleInputChange}
+                    className="modal-input"
+                  />
+                </div>
+                <div className="modal-form-group">
+                  <label>Status</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="modal-select"
+                  >
+                    <option>Active</option>
+                    <option>Inactive</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="modal-cancel"
+                onClick={() => setShowEditModal(false)}
+              >
+                Cancel
+              </button>
+              <button className="modal-confirm" onClick={confirmEditProduct}>
+                Save Changes
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="stat-box">
-          <p className="stat-box-label">Exported Reports</p>
-          <button className="export-btn">
-            <span className="material-symbols-outlined">download</span>
-            Get CSV Summary
-          </button>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedProduct && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Delete Product</h3>
+              <button className="modal-close" onClick={() => setShowDeleteModal(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-icon warning">
+                <span className="material-symbols-outlined">warning</span>
+              </div>
+              <p className="modal-title">Are you sure?</p>
+              <p className="modal-desc">
+                You are about to delete <strong>{selectedProduct.name}</strong> from
+                your product catalog. This action cannot be undone.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="modal-cancel"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </button>
+              <button className="modal-confirm delete" onClick={confirmDeleteProduct}>
+                Delete Product
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

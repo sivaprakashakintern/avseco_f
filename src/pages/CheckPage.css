@@ -1,0 +1,222 @@
+.check-page-container {
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 80px);
+    /* Adjust based on topbar height */
+    background-color: var(--background-light);
+}
+
+.check-card {
+    background: white;
+    padding: 3rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    /* Soft shadow */
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    /* Very subtle border */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+
+.check-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 1rem;
+}
+
+.status-indicator-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+.status-animation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+}
+
+.icon-large {
+    font-size: 5rem !important;
+    /* Large icon */
+    margin-bottom: 1rem;
+}
+
+/* Connected State - Green */
+.connected .icon-large {
+    color: #22c55e;
+    /* Green */
+}
+
+.connected h2 {
+    color: #15803d;
+    margin: 0;
+}
+
+.status-text {
+    color: #64748b;
+}
+
+/* Error State - Red */
+.error .icon-large {
+    color: #ef4444;
+    /* Red */
+}
+
+.error h2 {
+    color: #b91c1c;
+    margin: 0;
+}
+
+.error-text {
+    color: #ef4444;
+    background: #fef2f2;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    max-width: 100%;
+}
+
+/* Checking State */
+.checking {
+    color: #3b82f6;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+    font-size: 3rem !important;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Pulse Animation for Rings */
+.pulse-ring {
+    position: absolute;
+    top: 50%;
+    /* Center relative to icon */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* Center strictly */
+    width: 100px;
+    /* Base size */
+    height: 100px;
+    border-radius: 50%;
+    opacity: 0;
+    z-index: -1;
+    margin-top: -2.5rem;
+    /* Adjust based on icon position and size */
+}
+
+.green.pulse-ring {
+    border: 3px solid #22c55e;
+    animation: pulse-green 2s infinite;
+}
+
+.red.pulse-ring {
+    border: 3px solid #ef4444;
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% {
+        width: 60px;
+        height: 60px;
+        opacity: 0.8;
+    }
+
+    100% {
+        width: 140px;
+        height: 140px;
+        opacity: 0;
+    }
+}
+
+@keyframes pulse-red {
+    0% {
+        width: 60px;
+        height: 60px;
+        opacity: 0.8;
+    }
+
+    100% {
+        width: 140px;
+        height: 140px;
+        opacity: 0;
+    }
+}
+
+.retry-btn {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.retry-btn:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.last-checked {
+    color: #94a3b8;
+    /* Muted text */
+    font-size: 0.8rem;
+    margin-top: auto;
+}
+
+/* Dark Mode Support */
+.dark .check-card {
+    background: #004d39;
+    /* Use theme darker green or secondary background */
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .check-title {
+    color: white;
+}
+
+.dark .connected h2 {
+    color: #4ade80;
+}
+
+.dark .error h2 {
+    color: #f87171;
+}
+
+.dark .status-text {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.dark .error-text {
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+}
