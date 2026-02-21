@@ -28,53 +28,7 @@ body,
   background-color: #0a3028;
 }
 
-/* ===== PAGE HEADER ===== */
-.production-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 28px;
-  background: #006A4E;
-  /* Solid premium green as requested */
-  padding: 28px 36px;
-  border-radius: 20px;
-  box-shadow: 0 10px 25px -5px rgba(0, 71, 52, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.production-header h2 {
-  font-size: 28px;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: -0.02em;
-  margin: 0 0 4px 0;
-}
-
-.production-header p {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.82);
-  margin: 0;
-  font-weight: 500;
-}
-
-.date-badge {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
-  border-radius: 40px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.date-badge .material-symbols-outlined {
-  font-size: 20px;
-  color: #ffffff;
-}
+/* Global premium-header will handle these */
 
 /* ===== TARGET ENTRY FORM ===== */
 .target-entry-section {

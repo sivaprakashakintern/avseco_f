@@ -317,18 +317,18 @@ const StockOverview = () => {
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="page-header">
+      {/* ===== PREMIUM ANALYTICS HEADER ===== */}
+      <div className="page-header premium-header">
         <div>
           <h1 className="page-title">Stock Overview</h1>
-          <p className="page-subtitle">Real-time inventory management</p>
+          <p className="page-subtitle">Real-time inventory management and tracking</p>
         </div>
         <div className="header-actions">
-          <button className="btn-primary" onClick={handleStockTransfer}>
+          <button className="btn-transfer-premium" onClick={handleStockTransfer}>
             <span className="material-symbols-outlined">swap_horiz</span>
             Stock Transfer
           </button>
-          <button className="btn-outline" onClick={handleExport}>
+          <button className="btn-export-premium" onClick={handleExport}>
             <span className="material-symbols-outlined">
               {exportLoading ? "hourglass_empty" : "download"}
             </span>

@@ -11,40 +11,7 @@
   background-color: #0a3028;
 }
 
-/* ===== PAGE HEADER ===== */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 28px;
-}
-
-.page-title {
-  font-size: 28px;
-  font-weight: 800;
-  color: #0a3b2e;
-  margin: 0 0 6px 0;
-  letter-spacing: -0.025em;
-}
-
-.dark .page-title {
-  color: white;
-}
-
-.page-subtitle {
-  font-size: 14px;
-  color: #2a6e4b;
-  margin: 0;
-}
-
-.dark .page-subtitle {
-  color: #a1b8a9;
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
+/* Global premium-header will handle these */
 
 /* ===== BUTTONS ===== */
 .primary-btn {

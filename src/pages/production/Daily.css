@@ -21,10 +21,21 @@
   animation: slideIn 0.3s ease;
 }
 
-.notification-popup.success { border-left: 4px solid #2e8b66; }
-.notification-popup.error { border-left: 4px solid #dc3545; }
-.notification-popup.warning { border-left: 4px solid #ffc107; }
-.notification-popup.info { border-left: 4px solid #17a2b8; }
+.notification-popup.success {
+  border-left: 4px solid #2e8b66;
+}
+
+.notification-popup.error {
+  border-left: 4px solid #dc3545;
+}
+
+.notification-popup.warning {
+  border-left: 4px solid #ffc107;
+}
+
+.notification-popup.info {
+  border-left: 4px solid #17a2b8;
+}
 
 .notification-content {
   display: flex;
@@ -37,10 +48,21 @@
   font-size: 24px;
 }
 
-.notification-popup.success .notification-icon { color: #2e8b66; }
-.notification-popup.error .notification-icon { color: #dc3545; }
-.notification-popup.warning .notification-icon { color: #ffc107; }
-.notification-popup.info .notification-icon { color: #17a2b8; }
+.notification-popup.success .notification-icon {
+  color: #2e8b66;
+}
+
+.notification-popup.error .notification-icon {
+  color: #dc3545;
+}
+
+.notification-popup.warning .notification-icon {
+  color: #ffc107;
+}
+
+.notification-popup.info .notification-icon {
+  color: #17a2b8;
+}
 
 .notification-message {
   flex: 1;
@@ -68,37 +90,28 @@
 }
 
 @keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes progress {
-  from { width: 100%; }
-  to { width: 0%; }
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
 }
 
-/* ===== PAGE HEADER SECTION ===== */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.header-left h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1e3a2f;
-  margin: 0 0 4px 0;
-}
-
-.header-left p {
-  font-size: 14px;
-  color: #3a6b58;
-  margin: 0;
-}
+/* Global premium-header will handle these */
 
 .header-right {
   display: flex;
@@ -175,6 +188,7 @@
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -399,12 +413,29 @@
   transform: scale(1.05);
 }
 
-.stat-icon.green { background: #e0f2e9; color: #2e8b66; }
-.stat-icon.blue { background: #e6f0ff; color: #2e5a8b; }
-.stat-icon.orange { background: #fff4e0; color: #b45b0b; }
-.stat-icon.purple { background: #f0e6ff; color: #6f42c1; }
+.stat-icon.green {
+  background: #e0f2e9;
+  color: #2e8b66;
+}
 
-.stat-info { flex: 1; }
+.stat-icon.blue {
+  background: #e6f0ff;
+  color: #2e5a8b;
+}
+
+.stat-icon.orange {
+  background: #fff4e0;
+  color: #b45b0b;
+}
+
+.stat-icon.purple {
+  background: #f0e6ff;
+  color: #6f42c1;
+}
+
+.stat-info {
+  flex: 1;
+}
 
 .stat-label {
   display: block;
@@ -426,7 +457,9 @@
   color: #8a9e94;
 }
 
-.stat-trend.positive { color: #2e8b66; }
+.stat-trend.positive {
+  color: #2e8b66;
+}
 
 /* ===== PRODUCTION FORM CARD ===== */
 .form-card {
@@ -565,7 +598,9 @@
   cursor: pointer;
 }
 
-.button-item { justify-content: flex-end; }
+.button-item {
+  justify-content: flex-end;
+}
 
 .btn-add {
   padding: 12px 24px;
@@ -583,8 +618,8 @@
   transition: all 0.2s;
 }
 
-.btn-add:hover { 
-  background: #1e6b4c; 
+.btn-add:hover {
+  background: #1e6b4c;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(46, 139, 102, 0.2);
 }
@@ -638,7 +673,7 @@
   box-shadow: 0 0 0 3px rgba(46, 139, 102, 0.1);
 }
 
-.search-box input:focus + .search-icon {
+.search-box input:focus+.search-icon {
   color: #2e8b66;
 }
 
@@ -689,8 +724,8 @@
 }
 
 /* ===== DATE PICKER COMPONENT ===== */
-.date-picker-container { 
-  position: relative; 
+.date-picker-container {
+  position: relative;
 }
 
 .date-picker-btn {
@@ -771,8 +806,8 @@
   font-size: 14px;
 }
 
-.date-item:hover { 
-  background: #f0f9f4; 
+.date-item:hover {
+  background: #f0f9f4;
   color: #2e8b66;
   padding-left: 20px;
 }
@@ -831,8 +866,8 @@
   margin: 0;
 }
 
-.table-header .material-symbols-outlined { 
-  color: #2e8b66; 
+.table-header .material-symbols-outlined {
+  color: #2e8b66;
 }
 
 .records-count {
@@ -840,8 +875,8 @@
   color: #3a6b58;
 }
 
-.table-wrapper { 
-  overflow-x: auto; 
+.table-wrapper {
+  overflow-x: auto;
 }
 
 .data-table {
@@ -873,8 +908,8 @@
   background: #f8fdfa;
 }
 
-.text-right { 
-  text-align: right; 
+.text-right {
+  text-align: right;
 }
 
 .grade-badge {
@@ -928,8 +963,8 @@
   transition: all 0.2s;
 }
 
-.delete-btn:hover { 
-  background: #ffebee; 
+.delete-btn:hover {
+  background: #ffebee;
   transform: scale(1.1);
 }
 
@@ -943,8 +978,8 @@
   gap: 8px;
 }
 
-.product-icon { 
-  color: #2e8b66; 
+.product-icon {
+  color: #2e8b66;
   transition: transform 0.2s;
 }
 
@@ -1001,8 +1036,8 @@
 }
 
 /* ===== MONTHLY SUMMARY SECTION (FIXED) ===== */
-.monthly-summary { 
-  padding: 20px; 
+.monthly-summary {
+  padding: 20px;
 }
 
 .week-row {
@@ -1032,8 +1067,8 @@
   color: #3a6b58;
 }
 
-.progress-container { 
-  flex: 1; 
+.progress-container {
+  flex: 1;
 }
 
 .progress-bar {
@@ -1473,14 +1508,14 @@
 
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 1024px) {
-  .stats-grid { 
-    grid-template-columns: repeat(2, 1fr); 
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
-  
-  .form-grid { 
-    grid-template-columns: repeat(2, 1fr); 
+
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .size-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1491,51 +1526,51 @@
     flex-direction: column;
     align-items: flex-start;
   }
-  
-  .header-right { 
-    width: 100%; 
+
+  .header-right {
+    width: 100%;
   }
-  
+
   .btn-plan,
   .btn-export {
     flex: 1;
     justify-content: center;
   }
-  
-  .stats-grid { 
-    grid-template-columns: 1fr; 
+
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
-  
-  .form-grid { 
-    grid-template-columns: 1fr; 
+
+  .form-grid {
+    grid-template-columns: 1fr;
   }
-  
+
   .filters-section,
   .history-filters {
     flex-direction: column;
   }
-  
+
   .search-box,
   .filter-box,
   .date-picker-btn {
     width: 100%;
   }
-  
+
   .week-row {
     flex-wrap: wrap;
     gap: 12px;
   }
-  
-  .week-label { 
-    min-width: 120px; 
+
+  .week-label {
+    min-width: 120px;
     font-size: 13px;
   }
-  
-  .week-value { 
-    min-width: 100px; 
+
+  .week-value {
+    min-width: 100px;
     font-size: 13px;
   }
-  
+
   .week-percentage {
     min-width: 50px;
     font-size: 13px;
@@ -1571,64 +1606,64 @@
     align-items: flex-start;
     padding: 16px 20px;
   }
-  
+
   .summary-controls {
     width: 100%;
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .view-selector {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .view-btn {
     flex: 1;
     text-align: center;
     padding: 8px 12px;
     min-width: auto;
   }
-  
+
   .date-picker-btn.small {
     width: 100%;
     min-width: 100%;
   }
-  
+
   .size-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .summary-total-card {
     flex-direction: column;
     gap: 12px;
     text-align: center;
     padding: 20px;
   }
-  
+
   .summary-total-card .total-label {
     font-size: 16px;
   }
-  
+
   .summary-total-card .total-value {
     font-size: 28px;
   }
-  
+
   .breakdown-table {
     font-size: 12px;
   }
-  
+
   .breakdown-table th,
   .breakdown-table td {
     padding: 10px 8px;
   }
-  
+
   .mui-calendar-dropdown {
     width: 280px;
     right: -20px;
   }
-  
+
   .mui-calendar-dropdown .MuiPickersDay-root {
     width: 32px;
     height: 32px;
@@ -1657,42 +1692,42 @@
   .data-table td {
     padding: 12px 8px;
   }
-  
+
   .breakdown-table {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
   }
-  
+
   .week-row {
     flex-wrap: wrap;
     gap: 8px;
   }
-  
-  .week-label { 
-    min-width: 100%; 
+
+  .week-label {
+    min-width: 100%;
     margin-bottom: 4px;
   }
-  
-  .week-value { 
+
+  .week-value {
     min-width: auto;
     flex: 1;
   }
-  
+
   .progress-container {
     width: 100%;
     order: 3;
   }
-  
+
   .week-percentage {
     min-width: auto;
   }
-  
+
   .mui-calendar-dropdown {
     width: 260px;
     right: -10px;
   }
-  
+
   .mui-calendar-dropdown .MuiPickersDay-root {
     width: 28px;
     height: 28px;

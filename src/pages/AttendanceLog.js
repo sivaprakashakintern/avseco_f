@@ -438,42 +438,35 @@ const AttendanceLog = () => {
         </div>
       )}
 
-      {/* ===== PAGE HEADER ===== */}
-      <div className="page-header">
+      {/* ===== PREMIUM ANALYTICS HEADER ===== */}
+      <div className="page-header premium-header">
         <div className="page-title-section">
           <h1 className="page-title">Daily Attendance Log</h1>
           <p className="page-subtitle">
-            {formatDate(currentDate)}
+            Recorded for: {formatDate(currentDate)}
           </p>
         </div>
 
-        <div className="date-controls">
+        <div className="header-actions">
           <button
-            className="action-btn"
+            className="btn-transfer-premium"
             onClick={() => navigate("/attendance-report")}
-            style={{
-              width: 'auto',
-              height: '40px',
-              padding: '0 16px',
-              borderRadius: '40px',
-              border: '1px solid #b0e6a0',
-              background: 'white',
-              color: '#006A4E',
-              fontWeight: '600',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginRight: '10px'
-            }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>analytics</span>
-            View Attendance Report
+            <span className="material-symbols-outlined">analytics</span>
+            Full Report
           </button>
 
-
+          <button
+            className="btn-export-premium"
+            onClick={handleSaveAttendance}
+            disabled={saveLoading}
+          >
+            <span className="material-symbols-outlined">
+              {saveLoading ? "hourglass_empty" : "check_circle"}
+            </span>
+            {saveLoading ? "Saving..." : "Save Log"}
+          </button>
         </div>
-
       </div>
 
       {/* ===== STATS CARDS ===== */}
@@ -595,7 +588,7 @@ const AttendanceLog = () => {
         </div>
 
         <button
-          className="save-btn"
+          className="btn-export-premium"
           onClick={handleSaveAttendance}
           disabled={saveLoading}
         >
@@ -615,11 +608,11 @@ const AttendanceLog = () => {
             <span className="count-badge">{filteredEmployees.length}</span>
           </div>
           <div className="action-buttons">
-            <button className="btn-secondary" onClick={() => setShowStoppageModal(true)} title="Log Force Majeure / Breakdown">
+            <button className="btn-transfer-premium" onClick={() => setShowStoppageModal(true)} title="Log Force Majeure / Breakdown">
               <span className="material-symbols-outlined">warning</span>
               Log Stoppage
             </button>
-            <button className="btn-primary-outline" onClick={handleMarkAllPresent}>
+            <button className="btn-export-premium" onClick={handleMarkAllPresent}>
               <span className="material-symbols-outlined">check_circle</span>
               Mark All Present
             </button>
@@ -763,7 +756,7 @@ const AttendanceLog = () => {
         {/* Bottom Save Action */}
         <div className="table-footer-actions" style={{ display: 'flex', justifyContent: 'flex-end', padding: '20px 24px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
           <button
-            className="save-btn"
+            className="btn-export-premium"
             onClick={handleSaveAttendance}
             disabled={saveLoading}
           >

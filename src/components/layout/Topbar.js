@@ -35,7 +35,13 @@ const Topbar = () => {
     { icon: "check_circle", label: "Check", path: "/check" },
   ];
 
+  const handleNavigation = (path) => {
+    navigate(path);
+    setOpen(false); // Close dropdown after navigation
+  };
+
   const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn"); // Clear login status
     console.log("Logging out...");
     navigate("/login");
   };

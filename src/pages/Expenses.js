@@ -90,35 +90,22 @@ const Expenses = () => {
     return (
         <div className="stock-page">
             {/* ... (Header and Stats remain same) ... */}
-            <div className="page-header">
+            {/* ===== PREMIUM ANALYTICS HEADER ===== */}
+            <div className="page-header premium-header">
                 <div>
-                    <h1 className="page-title">Expenses</h1>
-                    <p className="page-subtitle">Track and manage company expenses</p>
+                    <h1 className="page-title">Expense Management</h1>
+                    <p className="page-subtitle">Track and manage company expenses with precision</p>
                 </div>
                 <div className="header-actions">
                     <button
                         onClick={() => navigate("/expenses/report")}
-                        className="action-btn"
-                        style={{
-                            width: 'auto',
-                            height: '40px',
-                            padding: '0 20px',
-                            borderRadius: '40px',
-                            border: '1px solid #b0e6a0',
-                            background: 'white',
-                            color: '#006A4E',
-                            fontWeight: '600',
-                            fontSize: '14px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}
+                        className="btn-transfer-premium"
                     >
-                        <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>analytics</span>
-                        View Reports & Export
+                        <span className="material-symbols-outlined">analytics</span>
+                        Reports & Export
                     </button>
 
-                    <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+                    <button className="btn-export-premium" onClick={() => setIsModalOpen(true)}>
                         <span className="material-symbols-outlined">add</span>
                         Add Expense
                     </button>

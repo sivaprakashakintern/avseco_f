@@ -1,7 +1,8 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Sidebar from "./components/layout/Sidebar.js";
 import Topbar from "./components/layout/Topbar.js";
+import ScrollToTop from "./components/layout/ScrollToTop.js";
 import Dashboard from "./dashboard/Dashboard.js";
 import ProductList from "./pages/ProductList.js";
 import Employees from "./pages/Employees.js";
@@ -40,6 +41,30 @@ import Clients from "./pages/clients/Clients.js";
 // Help Page
 import Help from "./pages/Help.js";
 
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const location = useLocation();
+
+  if (!isLoggedIn) {
+    // Redirect to login but save the current location they were trying to go to
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
+
+// Public Route Component (Redirects to dashboard if already logged in)
+const PublicRoute = ({ children }) => {
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+
+  if (isLoggedIn) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
+
 const AppLayout = ({ children }) => {
   return (
     <div className="dashboard-wrapper">
@@ -55,62 +80,63 @@ const AppLayout = ({ children }) => {
 const App = () => {
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         {/* Auth */}
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
 
         {/* Dashboard */}
-        <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
+        <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
 
         {/* Stock Management */}
-        <Route path="/stock" element={<AppLayout><StockOverview /></AppLayout>} />
-        <Route path="/expenses" element={<AppLayout><Expenses /></AppLayout>} />
-        <Route path="/expenses/report" element={<AppLayout><ExpenseReport /></AppLayout>} />
-        <Route path="/stock/transfer" element={<AppLayout><StockTransfer /></AppLayout>} />
-        <Route path="/stock/production" element={<AppLayout><Production /></AppLayout>} />
-        <Route path="/stock/low-stock" element={<AppLayout><LowStockAlert /></AppLayout>} />
+        <Route path="/stock" element={<ProtectedRoute><AppLayout><StockOverview /></AppLayout></ProtectedRoute>} />
+        <Route path="/expenses" element={<ProtectedRoute><AppLayout><Expenses /></AppLayout></ProtectedRoute>} />
+        <Route path="/expenses/report" element={<ProtectedRoute><AppLayout><ExpenseReport /></AppLayout></ProtectedRoute>} />
+        <Route path="/stock/transfer" element={<ProtectedRoute><AppLayout><StockTransfer /></AppLayout></ProtectedRoute>} />
+        <Route path="/stock/production" element={<ProtectedRoute><AppLayout><Production /></AppLayout></ProtectedRoute>} />
+        <Route path="/stock/low-stock" element={<ProtectedRoute><AppLayout><LowStockAlert /></AppLayout></ProtectedRoute>} />
 
         {/* Products */}
-        <Route path="/products" element={<AppLayout><ProductList /></AppLayout>} />
+        <Route path="/products" element={<ProtectedRoute><AppLayout><ProductList /></AppLayout></ProtectedRoute>} />
 
         {/* ===== PRODUCTION PLAN - ONLY ROUTE ===== */}
-        <Route path="/production/plan" element={<AppLayout><ProductionPlan /></AppLayout>} />
-        <Route path="/production/daily" element={<AppLayout><DailyProduction /></AppLayout>} />
+        <Route path="/production/plan" element={<ProtectedRoute><AppLayout><ProductionPlan /></AppLayout></ProtectedRoute>} />
+        <Route path="/production/daily" element={<ProtectedRoute><AppLayout><DailyProduction /></AppLayout></ProtectedRoute>} />
 
         {/* Employees */}
-        <Route path="/employees" element={<AppLayout><Employees /></AppLayout>} />
-        <Route path="/employees/:id" element={<AppLayout><ProfilePage /></AppLayout>} />
+        <Route path="/employees" element={<ProtectedRoute><AppLayout><Employees /></AppLayout></ProtectedRoute>} />
+        <Route path="/employees/:id" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
 
         {/* Profile */}
-        <Route path="/profile" element={<AppLayout><ProfilePage /></AppLayout>} />
-        <Route path="/profile/:id" element={<AppLayout><ProfilePage /></AppLayout>} />
+        <Route path="/profile" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
+        <Route path="/profile/:id" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
 
         {/* Clients */}
-        <Route path="/clients" element={<AppLayout><Clients /></AppLayout>} />
+        <Route path="/clients" element={<ProtectedRoute><AppLayout><Clients /></AppLayout></ProtectedRoute>} />
 
         {/* Attendance */}
-        <Route path="/attendance" element={<AppLayout><AttendanceLog /></AppLayout>} />
-        <Route path="/attendance-report" element={<AppLayout><AttendanceReport /></AppLayout>} />
+        <Route path="/attendance" element={<ProtectedRoute><AppLayout><AttendanceLog /></AppLayout></ProtectedRoute>} />
+        <Route path="/attendance-report" element={<ProtectedRoute><AppLayout><AttendanceReport /></AppLayout></ProtectedRoute>} />
 
         {/* Reports */}
-        <Route path="/reports/stock" element={<AppLayout><StockReport /></AppLayout>} />
-        <Route path="/reports/production" element={<AppLayout><ProductionReportPage /></AppLayout>} />
-        <Route path="/reports/sales" element={<AppLayout><SalesReport /></AppLayout>} />
-        <Route path="/reports/employees" element={<AppLayout><EmployeeReport /></AppLayout>} />
-        <Route path="/reports/financial" element={<AppLayout><FinancialReport /></AppLayout>} />
+        <Route path="/reports/stock" element={<ProtectedRoute><AppLayout><StockReport /></AppLayout></ProtectedRoute>} />
+        <Route path="/reports/production" element={<ProtectedRoute><AppLayout><ProductionReportPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/reports/sales" element={<ProtectedRoute><AppLayout><SalesReport /></AppLayout></ProtectedRoute>} />
+        <Route path="/reports/employees" element={<ProtectedRoute><AppLayout><EmployeeReport /></AppLayout></ProtectedRoute>} />
+        <Route path="/reports/financial" element={<ProtectedRoute><AppLayout><FinancialReport /></AppLayout></ProtectedRoute>} />
 
         {/* Check System Status */}
-        <Route path="/check" element={<AppLayout><CheckPage /></AppLayout>} />
+        <Route path="/check" element={<ProtectedRoute><AppLayout><CheckPage /></AppLayout></ProtectedRoute>} />
 
         {/* Settings */}
-        <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
+        <Route path="/settings" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
 
         {/* Help */}
-        <Route path="/help" element={<AppLayout><Help /></AppLayout>} />
+        <Route path="/help" element={<ProtectedRoute><AppLayout><Help /></AppLayout></ProtectedRoute>} />
 
         {/* 404 */}
-        <Route path="*" element={<AppLayout><div>404 - Page Not Found</div></AppLayout>} />
+        <Route path="*" element={<ProtectedRoute><AppLayout><div>404 - Page Not Found</div></AppLayout></ProtectedRoute>} />
       </Routes>
     </Router>
   );

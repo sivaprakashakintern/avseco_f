@@ -75,6 +75,7 @@ const Sidebar = () => {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
     console.log("Logging out...");
     navigate("/login");
   };

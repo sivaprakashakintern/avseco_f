@@ -11,12 +11,12 @@ import './Daily.css';
 
 const Production = () => {
   const navigate = useNavigate();
-  
+
   // ========== STATE MANAGEMENT ==========
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFormat, setExportFormat] = useState('excel');
   const [exportPeriod, setExportPeriod] = useState('daily');
-  
+
   // Date range states for export
   const [exportStartDate, setExportStartDate] = useState(null);
   const [exportEndDate, setExportEndDate] = useState(null);
@@ -24,27 +24,27 @@ const Production = () => {
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [exportYear, setExportYear] = useState(new Date().getFullYear().toString());
   const [showYearPicker, setShowYearPicker] = useState(false);
-  
+
   // Notification State
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
-  
+
   // Search and Filter States for Production History
   const [historySearch, setHistorySearch] = useState('');
   const [historySizeFilter, setHistorySizeFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  
+
   // Summary view state
   const [summaryView, setSummaryView] = useState('daily'); // 'daily', 'weekly', 'monthly'
   const [summaryDate, setSummaryDate] = useState(dayjs());
   const [showSummaryDatePicker, setShowSummaryDatePicker] = useState(false);
-  
+
   // Date selection for adding production
   const [productionDate, setProductionDate] = useState(dayjs());
   const [showProductionDatePicker, setShowProductionDatePicker] = useState(false);
-  
+
   // Form state for production entry
   const [formData, setFormData] = useState({
     product: "Areca Leaf Plate",
@@ -88,7 +88,7 @@ const Production = () => {
     if (savedData) {
       const parsedData = JSON.parse(savedData);
       setProductionHistory(parsedData);
-      
+
       // Calculate stats from loaded data
       calculateStats(parsedData);
     }
@@ -106,35 +106,35 @@ const Production = () => {
   // ========== CALCULATE STATS FUNCTION ==========
   const calculateStats = (data) => {
     const today = formatDate(dayjs());
-    
+
     // Today's totals by size
     const todayData = data.filter(item => item.date === today);
     const todayTotal = todayData.reduce((sum, item) => sum + item.quantity, 0);
-    
+
     const todayBySize = {};
     availableSizes.forEach(size => {
       todayBySize[size] = todayData
         .filter(item => item.size === size)
         .reduce((sum, item) => sum + item.quantity, 0);
     });
-    
+
     // Calculate current week (last 7 days)
     const last7Days = [];
-    for(let i = 0; i < 7; i++) {
+    for (let i = 0; i < 7; i++) {
       const date = dayjs().subtract(i, 'day');
       last7Days.push(formatDate(date));
     }
-    
+
     const weekData = data.filter(item => last7Days.includes(item.date));
     const weekTotal = weekData.reduce((sum, item) => sum + item.quantity, 0);
-    
+
     const weekBySize = {};
     availableSizes.forEach(size => {
       weekBySize[size] = weekData
         .filter(item => item.size === size)
         .reduce((sum, item) => sum + item.quantity, 0);
     });
-    
+
     // Calculate current month
     const currentMonth = dayjs().month() + 1;
     const currentYear = dayjs().year();
@@ -142,19 +142,19 @@ const Production = () => {
       const [day, month, year] = item.date.split('-').map(Number);
       return month === currentMonth && year === currentYear;
     });
-    
+
     const monthTotal = monthData.reduce((sum, item) => sum + item.quantity, 0);
-    
+
     const monthBySize = {};
     availableSizes.forEach(size => {
       monthBySize[size] = monthData
         .filter(item => item.size === size)
         .reduce((sum, item) => sum + item.quantity, 0);
     });
-    
+
     // Calculate total stock (all time production)
     const stockTotal = data.reduce((sum, item) => sum + item.quantity, 0);
-    
+
     setStats({
       today: todayTotal,
       week: weekTotal,
@@ -170,35 +170,35 @@ const Production = () => {
   const getSummaryData = () => {
     let filteredData = [];
 
-    switch(summaryView) {
+    switch (summaryView) {
       case 'daily':
         filteredData = productionHistory.filter(item => item.date === formatDate(summaryDate));
         break;
-      
+
       case 'weekly':
         if (!summaryDate) return { data: [], total: 0, bySize: {} };
-        
+
         const weekStart = summaryDate.startOf('week');
         const weekEnd = summaryDate.endOf('week');
-        
+
         filteredData = productionHistory.filter(item => {
           const itemDate = parseDate(item.date);
           return itemDate && itemDate >= weekStart && itemDate <= weekEnd;
         });
         break;
-      
+
       case 'monthly':
         if (!summaryDate) return { data: [], total: 0, bySize: {} };
-        
+
         const month = summaryDate.month() + 1;
         const year = summaryDate.year();
-        
+
         filteredData = productionHistory.filter(item => {
           const [day, itemMonth, itemYear] = item.date.split('-').map(Number);
           return itemMonth === month && itemYear === year;
         });
         break;
-      
+
       default:
         return { data: [], total: 0, bySize: {} };
     }
@@ -206,7 +206,7 @@ const Production = () => {
     // Calculate totals by size
     const bySize = {};
     let total = 0;
-    
+
     availableSizes.forEach(size => {
       const sizeTotal = filteredData
         .filter(item => item.size === size)
@@ -229,7 +229,7 @@ const Production = () => {
       groupedByDate[item.date].bySize[item.size] = (groupedByDate[item.date].bySize[item.size] || 0) + item.quantity;
     });
 
-    const dailyBreakdown = Object.values(groupedByDate).sort((a, b) => 
+    const dailyBreakdown = Object.values(groupedByDate).sort((a, b) =>
       parseDate(b.date) - parseDate(a.date)
     );
 
@@ -254,7 +254,7 @@ const Production = () => {
     setNotificationMessage(message);
     setNotificationType(type);
     setShowNotification(true);
-    
+
     setTimeout(() => {
       setShowNotification(false);
     }, 3000);
@@ -267,13 +267,13 @@ const Production = () => {
   // ========== FILTER FUNCTIONS FOR PRODUCTION HISTORY ==========
   const getFilteredHistory = () => {
     return productionHistory.filter(item => {
-      const matchesSearch = !historySearch.trim() || 
+      const matchesSearch = !historySearch.trim() ||
         item.product.toLowerCase().includes(historySearch.toLowerCase()) ||
         item.operator.toLowerCase().includes(historySearch.toLowerCase());
-      
+
       const matchesSize = historySizeFilter === 'all' || item.size === historySizeFilter;
       const matchesDate = !selectedDate || item.date === formatDate(selectedDate);
-      
+
       return matchesSearch && matchesSize && matchesDate;
     });
   };
@@ -341,21 +341,21 @@ const Production = () => {
   };
 
   const getFilteredDataForExport = () => {
-    switch(exportPeriod) {
+    switch (exportPeriod) {
       case 'daily':
         return productionHistory.filter(item => item.date === formatDate(exportStartDate));
-      
+
       case 'weekly':
         if (!exportStartDate || !exportEndDate) return [];
-        
+
         return productionHistory.filter(item => {
           const itemDate = parseDate(item.date);
           return itemDate >= exportStartDate && itemDate <= exportEndDate;
         });
-      
+
       case 'monthly':
         if (!exportStartDate || !exportEndDate) return [];
-        
+
         return productionHistory.filter(item => {
           const [day, month, year] = item.date.split('-').map(Number);
           const itemYearMonth = year * 100 + month;
@@ -363,13 +363,13 @@ const Production = () => {
           const endYearMonth = exportEndDate.year() * 100 + (exportEndDate.month() + 1);
           return itemYearMonth >= startYearMonth && itemYearMonth <= endYearMonth;
         });
-      
+
       case 'yearly':
         return productionHistory.filter(item => {
           const [day, month, year] = item.date.split('-').map(Number);
           return year.toString() === exportYear;
         });
-      
+
       case 'overall':
       default:
         return productionHistory;
@@ -378,8 +378,8 @@ const Production = () => {
 
   const getReportTitle = () => {
     const today = formatDate(dayjs());
-    
-    switch(exportPeriod) {
+
+    switch (exportPeriod) {
       case 'daily':
         return `Daily_Production_Report_${formatDate(exportStartDate)}`;
       case 'weekly':
@@ -404,7 +404,7 @@ const Production = () => {
       return;
     }
 
-    switch(exportFormat) {
+    switch (exportFormat) {
       case 'excel':
         exportToExcel(filteredData, title);
         break;
@@ -436,7 +436,7 @@ const Production = () => {
       }));
       const ws = XLSX.utils.json_to_sheet(exportData);
       XLSX.utils.book_append_sheet(wb, ws, 'Production Data');
-      
+
       const totalQuantity = data.reduce((sum, item) => sum + item.quantity, 0);
       const summaryData = [
         { 'Metric': 'Total Records', 'Value': data.length },
@@ -446,7 +446,7 @@ const Production = () => {
       ];
       const summaryWs = XLSX.utils.json_to_sheet(summaryData);
       XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
-      
+
       const filename = `${title}.xlsx`;
       XLSX.writeFile(wb, filename);
       showNotificationMessage(`✅ Excel file downloaded: ${filename}`, 'success');
@@ -461,7 +461,7 @@ const Production = () => {
       const headers = ['Date', 'Time', 'Product', 'Size', 'Quantity', 'Grade', 'Operator', 'Status'];
       const csvRows = [];
       csvRows.push(headers.join(','));
-      
+
       for (const item of data) {
         const values = [
           item.date,
@@ -475,14 +475,14 @@ const Production = () => {
         ];
         csvRows.push(values.join(','));
       }
-      
+
       const totalQuantity = data.reduce((sum, item) => sum + item.quantity, 0);
       csvRows.push('');
       csvRows.push('SUMMARY,,,,,,,');
       csvRows.push(`Total Records,${data.length},,,,,,`);
       csvRows.push(`Total Quantity,${totalQuantity} plates,,,,,,`);
       csvRows.push(`Generated On,${new Date().toLocaleString()},,,,,,`);
-      
+
       const csvString = csvRows.join('\n');
       const blob = new Blob([csvString], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
@@ -491,7 +491,7 @@ const Production = () => {
       a.download = `${title}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
-      
+
       showNotificationMessage(`✅ CSV file downloaded: ${title}.csv`, 'success');
     } catch (error) {
       console.error('CSV export error:', error);
@@ -509,10 +509,10 @@ const Production = () => {
       doc.setTextColor(100);
       doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 22);
       doc.text(`Total Records: ${data.length}`, 14, 28);
-      
+
       const tableColumn = ['Date', 'Time', 'Product', 'Size', 'Qty', 'Grade', 'Operator'];
       const tableRows = [];
-      
+
       for (const item of data) {
         const rowData = [
           item.date,
@@ -525,7 +525,7 @@ const Production = () => {
         ];
         tableRows.push(rowData);
       }
-      
+
       doc.autoTable({
         head: [tableColumn],
         body: tableRows,
@@ -534,10 +534,10 @@ const Production = () => {
         headStyles: { fillColor: [0, 106, 78], textColor: 255 },
         alternateRowStyles: { fillColor: [240, 248, 245] }
       });
-      
+
       const totalQuantity = data.reduce((sum, item) => sum + item.quantity, 0);
       const finalY = doc.lastAutoTable.finalY + 10;
-      
+
       doc.setFontSize(10);
       doc.setTextColor(0, 106, 78);
       doc.text('Summary', 14, finalY);
@@ -545,7 +545,7 @@ const Production = () => {
       doc.setTextColor(0);
       doc.text(`Total Records: ${data.length}`, 14, finalY + 7);
       doc.text(`Total Quantity: ${totalQuantity} plates`, 14, finalY + 14);
-      
+
       doc.save(`${title}.pdf`);
       showNotificationMessage(`✅ PDF report downloaded: ${title}.pdf`, 'success');
     } catch (error) {
@@ -592,7 +592,7 @@ const Production = () => {
     // Add to production history
     const updatedHistory = [newProduction, ...productionHistory];
     setProductionHistory(updatedHistory);
-    
+
     // Recalculate all stats
     calculateStats(updatedHistory);
 
@@ -603,7 +603,7 @@ const Production = () => {
     });
 
     showNotificationMessage(
-      `✅ Production added for ${formatDate(productionDate)}! 📦 +${quantity} plates (${formData.size})`, 
+      `✅ Production added for ${formatDate(productionDate)}! 📦 +${quantity} plates (${formData.size})`,
       'success'
     );
   };
@@ -614,10 +614,10 @@ const Production = () => {
       // Remove from production history
       const updatedHistory = productionHistory.filter(item => item.id !== id);
       setProductionHistory(updatedHistory);
-      
+
       // Recalculate all stats
       calculateStats(updatedHistory);
-      
+
       showNotificationMessage(`🗑️ Production record deleted successfully`, 'warning');
     }
   };
@@ -654,7 +654,7 @@ const Production = () => {
   const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
     <div className="calendar-wrapper">
       <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <DateCalendar 
+        <DateCalendar
           value={selectedDate}
           onChange={(newDate) => {
             onDateChange(newDate);
@@ -686,18 +686,18 @@ const Production = () => {
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="page-header">
+      {/* ===== PREMIUM ANALYTICS HEADER ===== */}
+      <div className="page-header premium-header">
         <div className="header-left">
           <h1 className="page-title">Daily Production</h1>
           <p className="page-subtitle">Track daily production and update stock automatically</p>
         </div>
-        <div className="header-right">
-          <button className="btn-plan" onClick={() => handleNavigation('/production/plan')}>
+        <div className="header-actions">
+          <button className="btn-transfer-premium" onClick={() => handleNavigation('/production/plan')}>
             <span className="material-symbols-outlined">assignment</span>
             Production Plan
           </button>
-          <button className="btn-export" onClick={openExportModal}>
+          <button className="btn-export-premium" onClick={openExportModal}>
             <span className="material-symbols-outlined">description</span>
             Export
           </button>
@@ -707,12 +707,12 @@ const Production = () => {
       {/* Export Modal */}
       {showExportModal && (
         <div className="modal-overlay">
-          <div className="export-modal" style={{maxWidth: '700px'}}>
+          <div className="export-modal" style={{ maxWidth: '700px' }}>
             <div className="export-modal-header">
               <h2>Export Production Report</h2>
               <button className="modal-close" onClick={closeExportModal}>×</button>
             </div>
-            
+
             <div className="export-modal-body">
               <div className="export-section">
                 <h3>Export Format</h3>
@@ -731,7 +731,7 @@ const Production = () => {
                   </label>
                 </div>
               </div>
-              
+
               <div className="export-section">
                 <h3>Report Period</h3>
                 <div className="radio-group">
@@ -763,17 +763,17 @@ const Production = () => {
                 <div className="export-section">
                   <h3>Select Date</h3>
                   <div className="date-picker-container">
-                    <button 
+                    <button
                       className="date-picker-btn"
                       onClick={() => setShowStartDatePicker(!showStartDatePicker)}
                     >
                       <span className="material-symbols-outlined">calendar_today</span>
                       {exportStartDate ? formatDate(exportStartDate) : 'Select Date'}
                     </button>
-                    
+
                     {showStartDatePicker && (
                       <div className="date-dropdown mui-calendar-dropdown">
-                        <CalendarPicker 
+                        <CalendarPicker
                           selectedDate={exportStartDate}
                           onDateChange={(date) => handleExportDateSelect('start', date)}
                           onClose={() => setShowStartDatePicker(false)}
@@ -787,19 +787,19 @@ const Production = () => {
               {exportPeriod === 'weekly' && (
                 <div className="export-section">
                   <h3>Select Date Range</h3>
-                  <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
-                    <div className="date-picker-container" style={{flex: 1}}>
-                      <button 
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                    <div className="date-picker-container" style={{ flex: 1 }}>
+                      <button
                         className="date-picker-btn"
                         onClick={() => setShowStartDatePicker(!showStartDatePicker)}
                       >
                         <span className="material-symbols-outlined">calendar_today</span>
                         {exportStartDate ? formatDate(exportStartDate) : 'Start Date'}
                       </button>
-                      
+
                       {showStartDatePicker && (
                         <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker 
+                          <CalendarPicker
                             selectedDate={exportStartDate}
                             onDateChange={(date) => handleExportDateSelect('start', date)}
                             onClose={() => setShowStartDatePicker(false)}
@@ -808,18 +808,18 @@ const Production = () => {
                       )}
                     </div>
 
-                    <div className="date-picker-container" style={{flex: 1}}>
-                      <button 
+                    <div className="date-picker-container" style={{ flex: 1 }}>
+                      <button
                         className="date-picker-btn"
                         onClick={() => setShowEndDatePicker(!showEndDatePicker)}
                       >
                         <span className="material-symbols-outlined">calendar_today</span>
                         {exportEndDate ? formatDate(exportEndDate) : 'End Date'}
                       </button>
-                      
+
                       {showEndDatePicker && (
                         <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker 
+                          <CalendarPicker
                             selectedDate={exportEndDate}
                             onDateChange={(date) => handleExportDateSelect('end', date)}
                             onClose={() => setShowEndDatePicker(false)}
@@ -834,19 +834,19 @@ const Production = () => {
               {exportPeriod === 'monthly' && (
                 <div className="export-section">
                   <h3>Select Month Range</h3>
-                  <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
-                    <div className="date-picker-container" style={{flex: 1}}>
-                      <button 
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                    <div className="date-picker-container" style={{ flex: 1 }}>
+                      <button
                         className="date-picker-btn"
                         onClick={() => setShowStartDatePicker(!showStartDatePicker)}
                       >
                         <span className="material-symbols-outlined">calendar_today</span>
                         {exportStartDate ? formatDate(exportStartDate) : 'Start Month'}
                       </button>
-                      
+
                       {showStartDatePicker && (
                         <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker 
+                          <CalendarPicker
                             selectedDate={exportStartDate}
                             onDateChange={(date) => handleExportDateSelect('start', date)}
                             onClose={() => setShowStartDatePicker(false)}
@@ -855,18 +855,18 @@ const Production = () => {
                       )}
                     </div>
 
-                    <div className="date-picker-container" style={{flex: 1}}>
-                      <button 
+                    <div className="date-picker-container" style={{ flex: 1 }}>
+                      <button
                         className="date-picker-btn"
                         onClick={() => setShowEndDatePicker(!showEndDatePicker)}
                       >
                         <span className="material-symbols-outlined">calendar_today</span>
                         {exportEndDate ? formatDate(exportEndDate) : 'End Month'}
                       </button>
-                      
+
                       {showEndDatePicker && (
                         <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker 
+                          <CalendarPicker
                             selectedDate={exportEndDate}
                             onDateChange={(date) => handleExportDateSelect('end', date)}
                             onClose={() => setShowEndDatePicker(false)}
@@ -882,19 +882,19 @@ const Production = () => {
                 <div className="export-section">
                   <h3>Select Year</h3>
                   <div className="date-picker-container">
-                    <button 
+                    <button
                       className="date-picker-btn"
                       onClick={() => setShowYearPicker(!showYearPicker)}
                     >
                       <span className="material-symbols-outlined">calendar_today</span>
                       {exportYear || 'Select Year'}
                     </button>
-                    
+
                     {showYearPicker && (
                       <div className="date-dropdown year-dropdown">
                         <div className="year-list">
                           {[2026, 2025, 2024, 2023, 2022, 2021, 2020].map(year => (
-                            <div 
+                            <div
                               key={year}
                               className={`year-item ${exportYear === year.toString() ? 'active' : ''}`}
                               onClick={() => handleYearSelect(year.toString())}
@@ -908,13 +908,13 @@ const Production = () => {
                   </div>
                 </div>
               )}
-              
+
               <p className="export-note">
                 <span className="material-symbols-outlined">info</span>
                 Export production data for the selected period
               </p>
             </div>
-            
+
             <div className="export-modal-footer">
               <button className="btn-cancel" onClick={closeExportModal}>Cancel</button>
               <button className="btn-export-confirm" onClick={handleExport}>
@@ -979,17 +979,17 @@ const Production = () => {
           </h3>
           <div className="date-selector">
             <div className="date-picker-container">
-              <button 
+              <button
                 className="date-picker-btn"
                 onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}
               >
                 <span className="material-symbols-outlined">calendar_today</span>
                 {formatDate(productionDate)}
               </button>
-              
+
               {showProductionDatePicker && (
                 <div className="date-dropdown mui-calendar-dropdown">
-                  <CalendarPicker 
+                  <CalendarPicker
                     selectedDate={productionDate}
                     onDateChange={handleProductionDateSelect}
                     onClose={() => setShowProductionDatePicker(false)}
@@ -999,7 +999,7 @@ const Production = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="form-grid">
           <div className="form-item">
             <label>Product:</label>
@@ -1068,19 +1068,19 @@ const Production = () => {
           </div>
           <div className="summary-controls">
             <div className="view-selector">
-              <button 
+              <button
                 className={`view-btn ${summaryView === 'daily' ? 'active' : ''}`}
                 onClick={() => setSummaryView('daily')}
               >
                 Daily
               </button>
-              <button 
+              <button
                 className={`view-btn ${summaryView === 'weekly' ? 'active' : ''}`}
                 onClick={() => setSummaryView('weekly')}
               >
                 Weekly
               </button>
-              <button 
+              <button
                 className={`view-btn ${summaryView === 'monthly' ? 'active' : ''}`}
                 onClick={() => setSummaryView('monthly')}
               >
@@ -1088,17 +1088,17 @@ const Production = () => {
               </button>
             </div>
             <div className="date-picker-container">
-              <button 
+              <button
                 className="date-picker-btn small"
                 onClick={() => setShowSummaryDatePicker(!showSummaryDatePicker)}
               >
                 <span className="material-symbols-outlined">calendar_today</span>
                 {formatDate(summaryDate)}
               </button>
-              
+
               {showSummaryDatePicker && (
                 <div className="date-dropdown mui-calendar-dropdown">
-                  <CalendarPicker 
+                  <CalendarPicker
                     selectedDate={summaryDate}
                     onDateChange={handleSummaryDateSelect}
                     onClose={() => setShowSummaryDatePicker(false)}
@@ -1201,7 +1201,7 @@ const Production = () => {
         </div>
 
         <div className="date-picker-container">
-          <button 
+          <button
             className="date-picker-btn"
             onClick={() => setShowDatePicker(!showDatePicker)}
           >
@@ -1213,10 +1213,10 @@ const Production = () => {
               </span>
             )}
           </button>
-          
+
           {showDatePicker && (
             <div className="date-dropdown mui-calendar-dropdown">
-              <CalendarPicker 
+              <CalendarPicker
                 selectedDate={selectedDate}
                 onDateChange={handleDateSelect}
                 onClose={() => setShowDatePicker(false)}
@@ -1279,7 +1279,7 @@ const Production = () => {
                       </span>
                     </td>
                     <td>
-                      <button 
+                      <button
                         className="delete-btn"
                         onClick={() => handleDeleteProduction(item.id)}
                         title="Delete Record"
@@ -1299,7 +1299,7 @@ const Production = () => {
             </tbody>
           </table>
         </div>
-        
+
         <div className="table-footer">
           <span>Showing {filteredHistory.length} of {productionHistory.length} production records</span>
           {selectedDate && (

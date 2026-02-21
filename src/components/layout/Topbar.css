@@ -55,7 +55,8 @@
 }
 
 body {
-  font-family: "Manrope", sans-serif;
+  /* Inheriting professional font from body */
+  transition: all var(--transition-fast);
   background-color: var(--background-light);
   color: var(--text-dark);
 }
@@ -373,6 +374,7 @@ body {
   margin-left: auto;
   /* Pushes to the right */
 }
+
 
 /* Icon buttons - Compact */
 .icon-circle {

@@ -377,14 +377,14 @@ const Clients = () => {
         </div>
       )}
 
-      {/* ===== PAGE HEADER ===== */}
-      <div className="page-header">
+      {/* ===== PREMIUM ANALYTICS HEADER ===== */}
+      <div className="page-header premium-header">
         <div>
-          <h1 className="page-title">Clients</h1>
-          <p className="page-subtitle">Manage your client relationships</p>
+          <h1 className="page-title">Client Portfolio</h1>
+          <p className="page-subtitle">Manage and track your client relationships with precision</p>
         </div>
         <div className="header-actions">
-          <button className="btn-primary" onClick={handleAddClient}>
+          <button className="btn-transfer-premium" onClick={handleAddClient}>
             <span className="material-symbols-outlined">person_add</span>
             Add Client
           </button>
@@ -460,7 +460,7 @@ const Clients = () => {
         </div>
 
         <div className="filter-actions">
-          <button className="export-btn" onClick={handleExport}>
+          <button className="btn-export-premium" onClick={handleExport}>
             <span className="material-symbols-outlined">
               {exportLoading ? "hourglass_empty" : "download"}
             </span>
@@ -565,7 +565,8 @@ const Clients = () => {
                         </span>
                         <h4>No clients found</h4>
                         <p>Try adjusting your filters or add a new client</p>
-                        <button className="btn-primary" onClick={handleAddClient}>
+                        <button className="btn-transfer-premium" onClick={handleAddClient} style={{ marginTop: '20px' }}>
+                          <span className="material-symbols-outlined">person_add</span>
                           Add Client
                         </button>
                       </div>

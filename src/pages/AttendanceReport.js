@@ -234,23 +234,25 @@ const AttendanceReport = () => {
     return (
         <div className="attendance-report-page">
             {/* Header */}
-            <div className="report-header">
+            {/* ===== PREMIUM ANALYTICS HEADER ===== */}
+            <div className="page-header premium-header">
                 <div className="report-title-section">
-                    <h1>Attendance Report</h1>
-                    <p>View and export monthly or annual attendance</p>
+                    <h1 className="page-title">Attendance Insights</h1>
+                    <p className="page-subtitle">Analyze and export comprehensive workforce logs</p>
                 </div>
 
-                <div className="report-header-actions">
-                    <button className="back-btn" onClick={() => navigate("/attendance")}>
+                <div className="header-actions">
+                    <button className="btn-transfer-premium" onClick={() => navigate("/attendance")}>
                         <span className="material-symbols-outlined">arrow_back</span>
                         Back
                     </button>
 
-                    <div className="export-group">
+                    <div className="export-group" style={{ display: 'flex', gap: '12px' }}>
                         <div className="custom-dropdown" onClick={(e) => e.stopPropagation()}>
                             <button
                                 className="dropdown-trigger"
                                 onClick={() => setShowRangeDropdown(!showRangeDropdown)}
+                                style={{ height: '44px', borderRadius: '40px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 20px', cursor: 'pointer' }}
                             >
                                 {exportRange === "month" ? "Current Month" : `Full Year ${selectedYear}`}
                                 <span className="material-symbols-outlined">expand_more</span>
@@ -272,9 +274,9 @@ const AttendanceReport = () => {
                                 </div>
                             )}
                         </div>
-                        <button className="export-btn" onClick={handleExport}>
+                        <button className="btn-export-premium" onClick={handleExport}>
                             <span className="material-symbols-outlined">download</span>
-                            Export
+                            Export Data
                         </button>
                     </div>
                 </div>

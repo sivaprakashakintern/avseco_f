@@ -291,15 +291,15 @@ const ProductList = () => {
         </div>
       )}
 
-      {/* ===== PAGE HEADER ===== */}
-      <div className="page-header">
+      {/* ===== PREMIUM ANALYTICS HEADER ===== */}
+      <div className="page-header premium-header">
         <div>
-          <h1 className="page-title">Products</h1>
-          <p className="page-subtitle">Manage and track your product catalog</p>
+          <h1 className="page-title">Products Catalogue</h1>
+          <p className="page-subtitle">Manage and track your areca leaf product catalogue with precision</p>
         </div>
 
         <div className="header-actions">
-          <button className="primary-btn" onClick={handleAddProduct}>
+          <button className="btn-transfer-premium" onClick={handleAddProduct}>
             <span className="material-symbols-outlined">add</span>
             Add Product
           </button>

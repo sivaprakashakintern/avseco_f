@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import logo from '../assets/logo.png';
 import "./Employees.css";
+import "../dashboard/Dashboard.css"; // Reuse dashboard header styles
 
 const Employees = () => {
   const navigate = useNavigate();
@@ -470,16 +472,18 @@ const Employees = () => {
         </div>
       )}
 
-      {/* ===== PAGE HEADER ===== */}
-      <div className="employees-header">
+      {/* ===== PAGE HEADER (Expense Style) ===== */}
+      <div className="page-header premium-header">
         <div>
-          <h1 className="page-title">Employees</h1>
-          <p className="page-subtitle">Manage your workforce</p>
+          <h1 className="page-title">Workforce Management</h1>
+          <p className="page-subtitle">Add, edit or manage your team records and organizational structure</p>
         </div>
-        <button className="add-employee-btn" onClick={handleAddEmployee}>
-          <span className="material-symbols-outlined">add</span>
-          Add Employee
-        </button>
+        <div className="header-actions">
+          <button className="add-employee-btn" onClick={handleAddEmployee}>
+            <span className="material-symbols-outlined">add</span>
+            Add Employee
+          </button>
+        </div>
       </div>
 
       {/* ===== STATS CARDS (UPDATED) ===== */}

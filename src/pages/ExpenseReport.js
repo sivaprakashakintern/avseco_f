@@ -199,16 +199,122 @@ const ExpenseReport = () => {
 
     return (
         <div className="stock-page">
-            {/* Header */}
+            {/* ===== PREMIUM ANALYTICS HEADER ===== */}
             <div className="page-header premium-header">
                 <div>
-                    <h1 className="page-title">Expense Analytics </h1>
-                    <p className="page-subtitle">Comprehensive expense analysis with trends and comparisons</p>
+                    <h1 className="page-title">Expense Intelligence</h1>
+                    <p className="page-subtitle">Understand spending patterns and financial trends with precision</p>
                 </div>
                 <div className="header-actions">
-                    <button className="btn-outline" onClick={() => navigate("/expenses")}>
+                    <button className="btn-transfer-premium" onClick={() => navigate("/expenses")}>
                         <span className="material-symbols-outlined">arrow_back</span>
                         Back
+                    </button>
+                    <button className="btn-export-premium" onClick={() => {
+                        const periodStr = formatPeriod();
+                        const totalStr = totalExpense.toLocaleString();
+
+                        // Category-wise summary rows for Excel
+                        const categoryRows = Object.entries(categoryStats).map(([cat, stat]) => `
+                            <tr>
+                                <td style="border: 1px solid #000; padding: 5px;">${cat}</td>
+                                <td style="border: 1px solid #000; padding: 5px; text-align: right;">₹${stat.total.toLocaleString()}</td>
+                                <td style="border: 1px solid #000; padding: 5px; text-align: center;">${stat.count}</td>
+                            </tr>
+                        `).join('');
+
+                        // Main transaction rows
+                        const transactionRows = filteredExpenses.map(e => `
+                            <tr>
+                                <td style="border: 1px solid #000; padding: 8px; font-size: 11px;">${e.date.replace(/-/g, '/').replace(/\s[AP]M/i, '')}</td>
+                                <td style="border: 1px solid #000; padding: 8px; font-size: 11px;">${e.category}</td>
+                                <td style="border: 1px solid #000; padding: 8px; font-size: 11px;">${e.description}</td>
+                                <td style="border: 1px solid #000; padding: 8px; text-align: right; font-size: 11px;">₹${Number(e.amount).toLocaleString()}</td>
+                                <td style="border: 1px solid #000; padding: 8px; font-size: 11px;">${e.paymentMode}</td>
+                            </tr>
+                        `).join('');
+
+                        const excelHTML = `
+                            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                            <head>
+                                <meta charset="utf-8">
+                                <style>
+                                    .header { font-size: 24px; font-weight: bold; text-align: center; color: #006A4E; }
+                                    .period { font-size: 12px; font-weight: bold; text-align: center; color: #64748b; }
+                                    .table-title { font-size: 14px; font-weight: bold; background-color: #f8fafc; padding: 8px; border: 1px solid #000; }
+                                    .th-main { background-color: #006A4E; color: #ffffff; font-weight: bold; border: 1px solid #000; padding: 8px; }
+                                    .th-sub { background-color: #f1f5f9; font-weight: bold; border: 1px solid #000; padding: 8px; }
+                                    .cell { border: 1px solid #000; padding: 8px; }
+                                    .total-cell { background-color: #e6f4ea; font-weight: bold; color: #006A4E; }
+                                </style>
+                            </head>
+                            <body>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th colspan="5" style="height: 60px; font-size: 24px; font-weight: bold; text-align: center; vertical-align: middle; color: #006A4E;">
+                                                AVSECO - EXPENSE ANALYTICS REPORT
+                                            </th>
+                                        </tr>
+                                        <tr>
+                                            <th colspan="5" style="height: 30px; font-size: 11px; font-weight: bold; text-align: center; vertical-align: middle; color: #64748b; border-bottom: 2px solid #e2e8f0;">
+                                                PERIOD: ${periodStr.toUpperCase()}
+                                            </th>
+                                        </tr>
+                                        <tr><td colspan="5" style="height: 20px;"></td></tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Category Summary -->
+                                        <tr>
+                                            <td colspan="5" style="font-weight: bold; padding: 10px; border: 1px solid #000; font-size: 14px;">CATEGORY SUMMARY</td>
+                                        </tr>
+                                        <tr style="background-color: #f8fafc;">
+                                            <td style="border: 1px solid #000; padding: 8px; font-weight: bold; width: 150px;">Category</td>
+                                            <td style="border: 1px solid #000; padding: 8px; font-weight: bold; text-align: right; width: 150px;">Total Amount</td>
+                                            <td style="border: 1px solid #000; padding: 8px; font-weight: bold; text-align: center; width: 120px;">Transactions</td>
+                                            <td style="border: 1px solid #000; width: 200px;"></td>
+                                            <td style="border: 1px solid #000; width: 150px;"></td>
+                                        </tr>
+                                        ${categoryRows}
+                                        <tr style="font-weight: bold;">
+                                            <td style="border: 1px solid #000; padding: 8px;">GRAND TOTAL</td>
+                                            <td style="border: 1px solid #000; padding: 8px; text-align: right; background-color: #e6f4ea; color: #006A4E;">₹${totalStr}</td>
+                                            <td style="border: 1px solid #000; padding: 8px; text-align: center;">${filteredExpenses.length}</td>
+                                            <td style="border: 1px solid #000;"></td>
+                                            <td style="border: 1px solid #000;"></td>
+                                        </tr>
+                                        
+                                        <tr><td colspan="5" style="height: 40px;"></td></tr>
+
+                                        <!-- Detailed Transactions -->
+                                        <tr>
+                                            <td colspan="5" style="font-weight: bold; padding: 10px; border: 1px solid #000; font-size: 14px;">DETAILED TRANSACTION LIST</td>
+                                        </tr>
+                                        <tr style="background-color: #006A4E; color: #ffffff; font-weight: bold;">
+                                            <td style="border: 1px solid #000; padding: 8px; width: 150px;">Date & Time</td>
+                                            <td style="border: 1px solid #000; padding: 8px; width: 150px;">Category</td>
+                                            <td style="border: 1px solid #000; padding: 8px; width: 400px;">Description</td>
+                                            <td style="border: 1px solid #000; padding: 8px; text-align: right; width: 150px;">Amount</td>
+                                            <td style="border: 1px solid #000; padding: 8px; width: 150px;">Payment Mode</td>
+                                        </tr>
+                                        ${transactionRows}
+                                    </tbody>
+                                </table>
+                            </body>
+                            </html>
+                        `;
+
+                        const blob = new Blob([excelHTML], { type: 'application/vnd.ms-excel' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.download = `Expense_Analytics_Report_${periodStr.replace(/[ ,-]/g, '_')}.xls`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }}>
+                        <span className="material-symbols-outlined">download</span>
+                        Export Report
                     </button>
                 </div>
             </div>
@@ -522,117 +628,6 @@ const ExpenseReport = () => {
                         <span className="material-symbols-outlined">table_chart</span>
                         Detailed Transaction Report
                     </h3>
-                    <div className="table-filters">
-                        <button
-                            className="btn-primary"
-                            onClick={() => {
-                                const periodStr = formatPeriod();
-                                const totalStr = totalExpense.toLocaleString();
-
-                                // Category-wise summary rows for Excel
-                                const categoryRows = Object.entries(categoryStats).map(([cat, stat]) => `
-                                    <tr>
-                                        <td style="border: 1px solid #000; padding: 5px;">${cat}</td>
-                                        <td style="border: 1px solid #000; padding: 5px; text-align: right;">₹${stat.total.toLocaleString()}</td>
-                                        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${stat.count}</td>
-                                    </tr>
-                                `).join('');
-
-                                // Main transaction rows
-                                const transactionRows = filteredExpenses.map(e => `
-                                    <tr>
-                                        <td style="border: 1px solid #000; padding: 8px; font-size: 11px;">${e.date.replace(/-/g, '/').replace(/\s[AP]M/i, '')}</td>
-                                        <td style="border: 1px solid #000; padding: 8px; font-size: 11px;">${e.category}</td>
-                                        <td style="border: 1px solid #000; padding: 8px; font-size: 11px;">${e.description}</td>
-                                        <td style="border: 1px solid #000; padding: 8px; text-align: right; font-size: 11px;">₹${Number(e.amount).toLocaleString()}</td>
-                                        <td style="border: 1px solid #000; padding: 8px; font-size: 11px;">${e.paymentMode}</td>
-                                    </tr>
-                                `).join('');
-
-                                const excelHTML = `
-                                    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-                                    <head>
-                                        <meta charset="utf-8">
-                                        <style>
-                                            .header { font-size: 24px; font-weight: bold; text-align: center; color: #006A4E; }
-                                            .period { font-size: 12px; font-weight: bold; text-align: center; color: #64748b; }
-                                            .table-title { font-size: 14px; font-weight: bold; background-color: #f8fafc; padding: 8px; border: 1px solid #000; }
-                                            .th-main { background-color: #006A4E; color: #ffffff; font-weight: bold; border: 1px solid #000; padding: 8px; }
-                                            .th-sub { background-color: #f1f5f9; font-weight: bold; border: 1px solid #000; padding: 8px; }
-                                            .cell { border: 1px solid #000; padding: 8px; }
-                                            .total-cell { background-color: #e6f4ea; font-weight: bold; color: #006A4E; }
-                                        </style>
-                                    </head>
-                                    <body>
-                                        <table>
-                                            <thead>
-                                                <tr>
-                                                    <th colspan="5" style="height: 60px; font-size: 24px; font-weight: bold; text-align: center; vertical-align: middle; color: #006A4E;">
-                                                        AVSECO - EXPENSE ANALYTICS REPORT
-                                                    </th>
-                                                </tr>
-                                                <tr>
-                                                    <th colspan="5" style="height: 30px; font-size: 11px; font-weight: bold; text-align: center; vertical-align: middle; color: #64748b; border-bottom: 2px solid #e2e8f0;">
-                                                        PERIOD: ${periodStr.toUpperCase()}
-                                                    </th>
-                                                </tr>
-                                                <tr><td colspan="5" style="height: 20px;"></td></tr>
-                                            </thead>
-                                            <tbody>
-                                                <!-- Category Summary -->
-                                                <tr>
-                                                    <td colspan="5" style="font-weight: bold; padding: 10px; border: 1px solid #000; font-size: 14px;">CATEGORY SUMMARY</td>
-                                                </tr>
-                                                <tr style="background-color: #f8fafc;">
-                                                    <td style="border: 1px solid #000; padding: 8px; font-weight: bold; width: 150px;">Category</td>
-                                                    <td style="border: 1px solid #000; padding: 8px; font-weight: bold; text-align: right; width: 150px;">Total Amount</td>
-                                                    <td style="border: 1px solid #000; padding: 8px; font-weight: bold; text-align: center; width: 120px;">Transactions</td>
-                                                    <td style="border: 1px solid #000; width: 200px;"></td>
-                                                    <td style="border: 1px solid #000; width: 150px;"></td>
-                                                </tr>
-                                                ${categoryRows}
-                                                <tr style="font-weight: bold;">
-                                                    <td style="border: 1px solid #000; padding: 8px;">GRAND TOTAL</td>
-                                                    <td style="border: 1px solid #000; padding: 8px; text-align: right; background-color: #e6f4ea; color: #006A4E;">₹${totalStr}</td>
-                                                    <td style="border: 1px solid #000; padding: 8px; text-align: center;">${filteredExpenses.length}</td>
-                                                    <td style="border: 1px solid #000;"></td>
-                                                    <td style="border: 1px solid #000;"></td>
-                                                </tr>
-                                                
-                                                <tr><td colspan="5" style="height: 40px;"></td></tr>
-
-                                                <!-- Detailed Transactions -->
-                                                <tr>
-                                                    <td colspan="5" style="font-weight: bold; padding: 10px; border: 1px solid #000; font-size: 14px;">DETAILED TRANSACTION LIST</td>
-                                                </tr>
-                                                <tr style="background-color: #006A4E; color: #ffffff; font-weight: bold;">
-                                                    <td style="border: 1px solid #000; padding: 8px; width: 150px;">Date & Time</td>
-                                                    <td style="border: 1px solid #000; padding: 8px; width: 150px;">Category</td>
-                                                    <td style="border: 1px solid #000; padding: 8px; width: 400px;">Description</td>
-                                                    <td style="border: 1px solid #000; padding: 8px; text-align: right; width: 150px;">Amount</td>
-                                                    <td style="border: 1px solid #000; padding: 8px; width: 150px;">Payment Mode</td>
-                                                </tr>
-                                                ${transactionRows}
-                                            </tbody>
-                                        </table>
-                                    </body>
-                                    </html>
-                                `;
-
-                                const blob = new Blob([excelHTML], { type: 'application/vnd.ms-excel' });
-                                const url = URL.createObjectURL(blob);
-                                const link = document.createElement("a");
-                                link.href = url;
-                                link.download = `Expense_Analytics_Report_${periodStr.replace(/[ ,-]/g, '_')}.xls`;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                            }}
-                        >
-                            <span className="material-symbols-outlined">download</span>
-                            Export Report
-                        </button>
-                    </div>
                 </div>
 
                 <div className="table-responsive">

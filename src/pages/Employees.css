@@ -15,6 +15,73 @@ body,
   overflow: hidden;
 }
 
+/* ===== PAGE HEADER (Analytics Style) ===== */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  background: #006A4E;
+  padding: 24px 36px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(0, 71, 52, 0.2);
+}
+
+.page-header .page-title {
+  color: #ffffff !important;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.page-header .page-subtitle {
+  color: rgba(255, 255, 255, 0.8) !important;
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.page-header .add-employee-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 40px;
+  box-shadow: none;
+}
+
+.page-header .add-employee-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== SCROLLBAR STYLING - PROFESSIONAL ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+}
+
 .right-area {
   flex: 1;
   display: flex;
@@ -26,13 +93,15 @@ body,
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  /* Add smooth scrolling */
+  scroll-behavior: smooth;
 }
 
 /* ===== MAIN CONTAINER ===== */
 .employees-container {
   padding: 28px 32px;
   background-color: #ffff;
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Inter', sans-serif;
   min-height: 100%;
   box-sizing: border-box;
 }
@@ -52,23 +121,13 @@ body,
 .page-title {
   font-size: 28px;
   font-weight: 800;
-  color: #0a3b2e;
   letter-spacing: -0.025em;
   margin: 0 0 6px 0;
 }
 
-.dark .page-title {
-  color: white;
-}
-
 .page-subtitle {
   font-size: 14px;
-  color: #2a6e4b;
   margin: 0;
-}
-
-.dark .page-subtitle {
-  color: #a1b8a9;
 }
 
 /* ===== ADD EMPLOYEE BUTTON ===== */

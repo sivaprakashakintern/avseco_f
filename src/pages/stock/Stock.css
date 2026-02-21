@@ -8,32 +8,81 @@
   font-family: 'Inter', sans-serif;
 }
 
-/* ===== PAGE HEADER ===== */
-.page-header {
+/* ===== PAGE HEADER (Premium Analytics Style) ===== */
+.page-header.premium-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
+  background: #006A4E;
+  padding: 28px 40px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 30px -5px rgba(0, 71, 52, 0.25);
+  animation: slideFadeIn var(--transition-smooth);
 }
 
-.page-title {
-  font-size: 28px;
+.page-header.premium-header .page-title {
+  font-size: 32px;
   font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 6px 0;
-  letter-spacing: -0.025em;
+  color: #ffffff !important;
+  margin: 0;
+  letter-spacing: -0.02em;
 }
 
-
-.page-subtitle {
-  font-size: 14px;
-  color: #64748b;
-  margin: 0;
+.page-header.premium-header .page-subtitle {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 4px;
 }
 
 .header-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
+  align-items: center;
+}
+
+/* ===== PREMIUM BUTTONS ===== */
+.btn-transfer-premium,
+.btn-export-premium {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-radius: 40px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.btn-transfer-premium:hover,
+.btn-export-premium:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-transfer-premium:active,
+.btn-export-premium:active {
+  transform: scale(0.96);
+}
+
+.btn-transfer-premium {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-export-premium {
+  background: #004d39;
+  border: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.btn-export-premium:hover {
+  background: #003628;
 }
 
 /* ===== BUTTONS ===== */
@@ -85,72 +134,85 @@
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
-/* ===== STATS CARDS ===== */
+/* ===== STATS CARDS (Premium Modern) ===== */
 .stock-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
   margin-bottom: 32px;
 }
 
 .stat-card {
-  background: white;
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 20px;
   padding: 24px;
   display: flex;
   align-items: center;
   gap: 20px;
-  border: 1px solid #e2e8f0;
-  transition: all 0.2s;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+  border-color: #006A4E;
 }
 
 .stat-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon span {
+  font-size: 28px;
 }
 
 .stat-icon.blue {
-  background: #e0f2fe;
-  color: #0284c7;
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
 }
 
 .stat-icon.green {
-  background: #dcfce7;
-  color: #16a34a;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
 }
 
 .stat-icon.yellow {
-  background: #fef9c3;
-  color: #ca8a04;
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
 }
 
 .stat-icon.purple {
-  background: #f3e8ff;
-  color: #9333ea;
+  background: rgba(139, 92, 246, 0.1);
+  color: #7c3aed;
 }
 
 .stat-info {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .stat-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #64748b;
-  margin-bottom: 6px;
-  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
+  margin-bottom: 4px;
 }
 
 .stat-value {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
   color: #0f172a;
+  letter-spacing: -0.02em;
 }
 
 /* ===== FILTERS ===== */

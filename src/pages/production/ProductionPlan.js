@@ -471,16 +471,16 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   return (
     <div className="production-page-wrapper">
       <div className="production-container">
-        {/* Page Header */}
-        <div className="production-header">
+        {/* ===== PREMIUM ANALYTICS HEADER ===== */}
+        <div className="page-header premium-header">
           <div>
-            <h2>Production Plan - Areca Leaf Plates</h2>
-            <p>Set targets and track daily production progress by size</p>
+            <h1 className="page-title">Production Plan - Areca Leaf Plates</h1>
+            <p className="page-subtitle">Set targets and track daily production progress by size</p>
           </div>
           <div className="header-actions">
             {/* Daily Production Button */}
             <button
-              className="daily-production-btn"
+              className="btn-transfer-premium"
               onClick={handleDailyProductionClick}
               title="Go to Daily Production"
             >
@@ -489,7 +489,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             </button>
 
             {/* Date Badge */}
-            <div className="date-badge">
+            <div className="btn-export-premium" style={{ cursor: 'default', background: 'rgba(255, 255, 255, 0.1)' }}>
               <span className="material-symbols-outlined">calendar_today</span>
               {today}
             </div>

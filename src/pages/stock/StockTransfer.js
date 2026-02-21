@@ -372,20 +372,18 @@ const StockTransactions = () => {
         </div>
       )}
 
-      {/* Page Header with Dropdown */}
-      <div className="page-header">
+      {/* ===== PREMIUM ANALYTICS HEADER ===== */}
+      <div className="page-header premium-header">
         <div>
           <h1 className="page-title">Stock Transactions</h1>
           <p className="page-subtitle">Log and monitor your areca leaf product movements in real-time</p>
         </div>
         <div className="header-actions">
-          <button className="btn-stock-overview" onClick={() => navigate('/stock')}>
+          <button className="btn-transfer-premium" onClick={() => navigate('/stock')}>
             <span className="material-symbols-outlined">inventory</span>
             Stock Overview
           </button>
-
-          {/* Export Button */}
-          <button className="btn-outline" onClick={handleExport} disabled={exportLoading}>
+          <button className="btn-export-premium" onClick={handleExport} disabled={exportLoading}>
             <span className="material-symbols-outlined">
               {exportLoading ? "hourglass_empty" : "download"}
             </span>
