@@ -21,6 +21,10 @@ import LowStockAlert from "./pages/stock/LowStockAlert.js";
 
 // ✅ IMPORT PRODUCTION PLAN (ONLY THIS ONE)
 import ProductionPlan from "./pages/production/ProductionPlan.js";
+import DailyProduction from "./pages/production/Daily.js";
+
+// Auth Pages
+import Login from "./pages/Login.js";
 
 // Report Pages
 import StockReport from "./pages/reports/StockReport.js";
@@ -52,8 +56,11 @@ const App = () => {
   return (
     <Router>
       <Routes>
+        {/* Auth */}
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+
         {/* Dashboard */}
-        <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
 
         {/* Stock Management */}
@@ -69,6 +76,7 @@ const App = () => {
 
         {/* ===== PRODUCTION PLAN - ONLY ROUTE ===== */}
         <Route path="/production/plan" element={<AppLayout><ProductionPlan /></AppLayout>} />
+        <Route path="/production/daily" element={<AppLayout><DailyProduction /></AppLayout>} />
 
         {/* Employees */}
         <Route path="/employees" element={<AppLayout><Employees /></AppLayout>} />

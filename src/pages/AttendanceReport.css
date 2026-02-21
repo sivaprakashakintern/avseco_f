@@ -1,10 +1,10 @@
 /* AttendanceReport.css - Premium Designs for Attendance Reports */
 
 .attendance-report-page {
-    padding: 28px 32px;
-    background-color: #f8fafc;
+    padding: 24px 32px;
+    background-color: #f0f4f2;
     min-height: 100vh;
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', -apple-system, sans-serif;
 }
 
 .dark .attendance-report-page {
@@ -15,22 +15,29 @@
 .report-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 32px;
+    align-items: center;
+    margin-bottom: 28px;
+    background: #006A4E;
+    /* Solid premium green as requested */
+    padding: 28px 36px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px -5px rgba(0, 71, 52, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .report-title-section h1 {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 800;
-    color: #0a3b2e;
+    color: #ffffff;
     margin: 0 0 4px 0;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
 }
 
 .report-title-section p {
-    font-size: 15px;
-    color: #475569;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.82);
     margin: 0;
+    font-weight: 500;
 }
 
 .dark .report-title-section h1 {
@@ -53,43 +60,51 @@
     align-items: center;
     gap: 10px;
     padding: 10px 24px;
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 40px;
-    color: #475569;
-    font-weight: 600;
+    color: #ffffff;
+    font-weight: 700;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s ease;
 }
 
 .back-btn:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-    color: #0f172a;
-    transform: translateX(-2px);
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
 }
 
 .export-group {
     display: flex;
     align-items: center;
-    background: white;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
     padding: 6px;
     border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.range-select {
-    padding: 8px 12px;
-    border: none;
+.dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
     background: transparent;
+    border: none;
     font-size: 14px;
-    font-weight: 600;
-    color: #475569;
-    outline: none;
+    font-weight: 700;
+    color: #ffffff;
     cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 8px;
+}
+
+.dropdown-trigger .material-symbols-outlined {
+    font-size: 20px;
+    color: #ffffff;
 }
 
 .export-btn {
@@ -102,28 +117,30 @@
     border: none;
     border-radius: 8px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 10px rgba(0, 106, 78, 0.2);
 }
 
 .export-btn:hover {
-    background: #005a42;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(0, 106, 78, 0.2);
+    background: #004d39;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 15px rgba(0, 106, 78, 0.3);
 }
 
 /* ===== FILTERS CARD ===== */
 .filters-card {
-    background: white;
-    padding: 24px;
-    border-radius: 16px;
-    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 24px 32px;
+    border-radius: 20px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
     margin-bottom: 28px;
     display: flex;
     align-items: center;
-    gap: 40px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    gap: 48px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(10px);
 }
 
 .dark .filters-card {
@@ -138,11 +155,11 @@
 }
 
 .filter-label {
-    font-size: 14px;
-    font-weight: 700;
-    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+    color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.12em;
 }
 
 /* Custom Dropdown System */

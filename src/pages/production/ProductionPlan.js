@@ -92,6 +92,43 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     localStorage.setItem('productionData', JSON.stringify(productionData));
   }, [productionData]);
 
+  // ===== SYNC WITH DAILY PRODUCTION LOGS =====
+  useEffect(() => {
+    const logData = localStorage.getItem('productionHistory');
+    if (logData && productionData.length > 0) {
+      const history = JSON.parse(logData);
+
+      const updatedData = productionData.map(target => {
+        // Calculate total produced for this target's size from history
+        const loggedQty = history
+          .filter(item => item.size === target.productSize)
+          .reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
+
+        // If logged quantity is more than what's currently in target, update it
+        // Or better: log quantity SHOULD be the source of truth for "Produced"
+        if (loggedQty !== target.producedQty) {
+          const remaining = Math.max(target.targetQty - loggedQty, 0);
+          const status = loggedQty >= target.targetQty ? 'completed' :
+            loggedQty > 0 ? 'in-progress' : 'pending';
+
+          return {
+            ...target,
+            producedQty: loggedQty,
+            remainingQty: remaining,
+            status: status
+          };
+        }
+        return target;
+      });
+
+      // Only update state if something actually changed to avoid infinite loops
+      const hasChanged = JSON.stringify(updatedData) !== JSON.stringify(productionData);
+      if (hasChanged) {
+        setProductionData(updatedData);
+      }
+    }
+  }, [productionData]); // Keep productionData in dependency to react to target changes
+
   // ===== HANDLE PRODUCT SELECTION =====
   const handleProductChange = (e) => {
     const productId = e.target.value;

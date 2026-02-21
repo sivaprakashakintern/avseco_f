@@ -1,0 +1,317 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+.login-page {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    /* Shifted to right side */
+    background-color: #001f17;
+    background-image:
+        linear-gradient(270deg, rgba(0, 31, 23, 0.98) 0%, rgba(0, 31, 23, 0.4) 100%),
+        url('../assets/bg1.png');
+    background-size: cover;
+    background-position: right center;
+    /* Show image detail on the right */
+    background-repeat: no-repeat;
+    font-family: 'Inter', -apple-system, sans-serif;
+    padding: 0 80px;
+    /* Shifted further to the right edge */
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 480px;
+    animation: loginFadeUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 40px;
+    padding: 64px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: -20px 0 50px rgba(0, 0, 0, 0.3);
+    /* Shadow shifted to match right align */
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.logo-section {
+    background: rgba(255, 255, 255, 0.08);
+    width: 140px;
+    height: 140px;
+    border-radius: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 32px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.logo-section:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.login-logo {
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.login-logo:hover {
+    transform: scale(1.1);
+}
+
+.login-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 12px 0;
+    letter-spacing: -0.03em;
+}
+
+.admin-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: rgba(0, 106, 78, 0.2);
+    border: 1px solid rgba(0, 106, 78, 0.5);
+    border-radius: 40px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #4ade80;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.login-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 8px;
+    animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin-left: 4px;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 16px;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 20px;
+}
+
+.input-wrapper input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 14px 14px 14px 48px;
+    color: #ffffff;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.input-wrapper input:focus {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #006A4E;
+    box-shadow: 0 0 0 4px rgba(0, 106, 78, 0.2);
+}
+
+.input-wrapper input::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.password-toggle:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.login-submit {
+    background: #006A4E;
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 10px;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.login-submit:hover {
+    background: #00815f;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 106, 78, 0.4);
+}
+
+.login-submit:active {
+    transform: translateY(0);
+}
+
+.login-submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Removed footer as requested */
+
+/* Animations */
+@keyframes loginFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loader */
+.loader {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #ffffff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 1024px) {
+    .login-page {
+        padding: 0 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .login-page {
+        padding: 24px;
+        justify-content: center;
+        /* Center on mobile */
+        background-image:
+            linear-gradient(180deg, rgba(0, 31, 23, 0.8) 0%, rgba(0, 31, 23, 0.95) 100%),
+            url('../assets/bg1.png');
+    }
+
+    .login-card {
+        padding: 40px 24px;
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .logo-section {
+        width: 110px;
+        height: 110px;
+        margin: 0 auto 20px;
+    }
+
+    .login-logo {
+        width: 90px;
+        height: 90px;
+    }
+
+    .login-header h1 {
+        font-size: 26px;
+    }
+}

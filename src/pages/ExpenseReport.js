@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import "./stock/Stock.css";
+import "./ExpenseReport.css";
 
 const ExpenseReport = () => {
     const navigate = useNavigate();
@@ -200,7 +200,7 @@ const ExpenseReport = () => {
     return (
         <div className="stock-page">
             {/* Header */}
-            <div className="page-header">
+            <div className="page-header premium-header">
                 <div>
                     <h1 className="page-title">Expense Analytics </h1>
                     <p className="page-subtitle">Comprehensive expense analysis with trends and comparisons</p>

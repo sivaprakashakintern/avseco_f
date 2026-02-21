@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "./Sidebar.css";
 import logo from "../../assets/avs.png";
+import "./Sidebar.css";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
   const [popupTop, setPopupTop] = useState(0);
   const [popupLeft, setPopupLeft] = useState(0);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-      if (window.innerWidth > 768) {
+      setIsMobile(window.innerWidth <= 1024);
+      if (window.innerWidth > 1024) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -67,14 +67,34 @@ const Sidebar = () => {
     return location.pathname === path;
   };
 
+  const user = {
+    name: "Rajesh Kumar",
+    role: "Plant Manager",
+    initials: "RK",
+    avatar: null,
+  };
+
+  const handleLogout = () => {
+    console.log("Logging out...");
+    navigate("/login");
+  };
+
   // ===== NAVIGATION ITEMS WITH CORRECT PATHS =====
   const navItems = [
     { icon: "dashboard", label: "Dashboard", path: "/dashboard" },
     { icon: "inventory_2", label: "Stock", path: "/stock" },
     { icon: "format_list_bulleted", label: "Product List", path: "/products" },
 
-    // ✅ PRODUCTION - CORRECT PATH (ROUTE, NOT FILENAME)
-    { icon: "factory", label: "Production", path: "/production/plan" },
+    // ✅ PRODUCTION - SUB-MENU
+    {
+      icon: "factory",
+      label: "Production",
+      path: "/production",
+      children: [
+        { label: "Production Plan", path: "/production/plan" },
+        { label: "Daily Production", path: "/production/daily" }
+      ]
+    },
 
     { icon: "payments", label: "Expenses", path: "/expenses" },
     { icon: "badge", label: "Employees", path: "/employees" },
@@ -114,14 +134,16 @@ const Sidebar = () => {
   return (
     <>
       {isMobile && (
-        <button
-          className={`mobile-hamburger ${isMobileMenuOpen ? "active" : ""}`}
-          onClick={toggleMobileMenu}
-        >
-          <span className="hamburger-line"></span>
-          <span className="hamburger-line"></span>
-          <span className="hamburger-line"></span>
-        </button>
+        <div className="mobile-header-bar">
+          <div className="mobile-logo-left" onClick={handleLogoClick}>
+            <img src={logo} alt="AVSECO" className="mobile-header-logo" />
+          </div>
+          <div className="mobile-profile-right" onClick={toggleMobileMenu}>
+            <div className="mobile-avatar-trigger">
+              {user.initials}
+            </div>
+          </div>
+        </div>
       )}
 
       {isMobile && isMobileMenuOpen && (
@@ -132,12 +154,31 @@ const Sidebar = () => {
       )}
 
       <aside
-        className={`sidebar ${isMobile ? "mobile" : ""} ${isMobileMenuOpen ? "mobile-open" : ""
-          }`}
+        className={`sidebar ${isMobile ? "mobile" : ""} ${isMobileMenuOpen ? "mobile-open" : ""}`}
       >
-        <div className="sidebar-header" onClick={handleLogoClick}>
-          <img src={logo} alt="AVSECO Logo" className="logo-full" />
+        <div className="sidebar-header">
+          <div className="logo-container" onClick={handleLogoClick}>
+            <img src={logo} alt="AVSECO Logo" className="logo-full logo-boost" />
+          </div>
+          {isMobile && (
+            <button className="mobile-close" onClick={() => setIsMobileMenuOpen(false)}>
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          )}
         </div>
+
+        {/* Navigation to Profile - Mobile Only */}
+        {isMobile && (
+          <div className="sidebar-profile-box-compact">
+            <div
+              className={`nav-item ${isActive('/profile') ? 'active' : ''}`}
+              onClick={() => handleNavigation('/profile')}
+            >
+              <span className="material-symbols-outlined">person</span>
+              <p className="nav-text">Profile</p>
+            </div>
+          </div>
+        )}
 
         <nav className="sidebar-nav">
           {navItems.map((item) => (
@@ -206,6 +247,16 @@ const Sidebar = () => {
             </React.Fragment>
           ))}
         </nav>
+
+        {/* Sidebar Footer with Logout - Mobile Only */}
+        {isMobile && (
+          <div className="sidebar-footer">
+            <div className="logout-item" onClick={handleLogout}>
+              <span className="material-symbols-outlined">logout</span>
+              <span className="nav-text">Logout</span>
+            </div>
+          </div>
+        )}
       </aside>
     </>
   );

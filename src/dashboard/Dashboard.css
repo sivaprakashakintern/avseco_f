@@ -3,7 +3,7 @@
 :root {
   --avs-green: #006A4E;
   --avs-green-dark: #004d39;
-  --avs-green-light: #e6f4ea;
+  --avs-green-light: #d0fbde;
   --avs-green-muted: #d0fbde;
   --avs-text-dark: #0f172a;
   --avs-text-light: #64748b;
@@ -28,16 +28,17 @@
 
 /* Greetings Header - Updated with Logo on Right */
 .greetings-header {
-  padding: 20px 32px;
-  border-radius: 24px;
+  padding: 24px 40px;
+  border-radius: 28px;
   margin-bottom: 32px;
-  box-shadow: var(--avs-card-shadow);
+  box-shadow: 0 10px 30px -10px rgba(0, 106, 78, 0.2);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #d0fbde !important;
+  background: linear-gradient(135deg, #bbf7d0 0%, #bbf7d0 100%) !important;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 /* Subtle pattern overlay */
@@ -48,7 +49,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.2) 0%, transparent 50%);
+  background: radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.4) 0%, transparent 60%);
   pointer-events: none;
 }
 
@@ -64,20 +65,19 @@
 
 .greetings-left h1 {
   margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #0a3b2e;
+  font-size: 30px;
+  font-weight: 850;
+  color: #064e3b;
   line-height: 1.2;
-  text-shadow: 0 1px 2px rgba(255,255,255,0.5);
+  letter-spacing: -0.03em;
 }
 
 .greetings-left p {
   margin: 8px 0 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  color: #2a6e4b;
-  opacity: 0.9;
-  text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+  color: #166534;
+  opacity: 0.85;
 }
 
 .greetings-right {
@@ -86,22 +86,44 @@
   align-items: center;
 }
 
-/* Logo Styles - On Right */
+/* Logo Styles - Premium Crystal Look */
 .header-logo {
-  height: 70px;
+  height: 75px;
   width: auto;
-  max-width: 200px;
+  max-width: 220px;
   object-fit: contain;
-  transition: all 0.3s ease;
-  filter: drop-shadow(0 4px 8px rgba(0, 106, 78, 0.15));
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 10px 15px rgba(0, 71, 52, 0.15)) brightness(1.05);
   background: transparent;
-  mix-blend-mode: multiply; /* Helps PNG blend with background */
+}
+
+/* Color Boost Effect for Logo */
+.logo-boost {
+  filter: drop-shadow(0 0 15px rgba(0, 255, 127, 0.3)) saturate(1.2) brightness(1.1);
+}
+
+.header-logo-container {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--avs-transition);
+}
+
+.header-logo-container:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
 }
 
 /* Hover effect for logo */
 .header-logo:hover {
-  transform: scale(1.05);
-  filter: drop-shadow(0 8px 16px rgba(0, 106, 78, 0.25));
+  transform: scale(1.08) rotate(-1deg);
+  filter: drop-shadow(0 15px 25px rgba(0, 71, 52, 0.25)) brightness(1.2) saturate(1.3);
 }
 
 /* Metrics Row */
@@ -223,6 +245,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -797,6 +820,7 @@
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -972,7 +996,11 @@
 }
 
 /* RESPONSIVE */
-@media (max-width: 1200px) {
+/* ========== CONSOLIDATED RESPONSIVE DESIGN ========== */
+
+/* Large Tablets & Laptops (1025px - 1200px) */
+@media screen and (max-width: 1200px) {
+
   .metrics-row,
   .stock-grid,
   .expenses-categories-grid {
@@ -984,124 +1012,244 @@
   }
 }
 
-@media (max-width: 992px) {
-  .greetings-left h1 {
-    font-size: 24px;
-  }
-  
-  .header-logo {
-    height: 60px;
-    max-width: 160px;
-  }
-}
-
-@media (max-width: 768px) {
+/* Tablets & Small Laptops (769px - 1024px) */
+@media screen and (max-width: 1024px) {
   .dashboard-container {
-    padding: 16px;
+    padding: 20px;
   }
 
   .greetings-header {
     padding: 20px;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .metrics-row {
+    grid-template-columns: repeat(2, 1fr);
     gap: 16px;
-    align-items: flex-start;
-  }
-
-  .greetings-left h1 {
-    font-size: 22px;
-  }
-
-  .greetings-left p {
-    font-size: 13px;
-  }
-
-  .greetings-right {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .header-logo {
-    height: 55px;
-  }
-
-  .metrics-row,
-  .stock-grid,
-  .expenses-categories-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .fixed-popup {
-    width: 280px;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-  }
-
-  .attendance-pie-container {
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .pie-chart {
-    width: 160px;
-    height: 160px;
-  }
-
-  .pie-center {
-    width: 70px;
-    height: 70px;
-  }
-
-  .pie-total {
-    font-size: 20px;
-  }
-
-  .legend-item {
-    padding: 10px;
-  }
-
-  .legend-label {
-    min-width: 60px;
-    font-size: 11px;
-  }
-
-  .legend-value {
-    font-size: 14px;
-  }
-
-  .attendance-stats-summary {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .pie-tooltip {
-    top: -35px;
-    font-size: 10px;
-    padding: 6px 10px;
-  }
-
-  .pie-segment:hover .pie-tooltip {
-    top: -40px;
   }
 }
 
-@media (max-width: 480px) {
+/* Phones & Small Tablets (Max 768px) */
+@media screen and (max-width: 768px) {
+  .dashboard-container {
+    padding: 12px;
+  }
+
+  .greetings-header {
+    padding: 12px 16px;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
   .greetings-left h1 {
-    font-size: 20px;
+    font-size: 1.1rem;
+    font-weight: 800;
+  }
+
+  .greetings-left p {
+    font-size: 11px;
+    margin-top: 2px;
   }
 
   .header-logo {
-    height: 50px;
+    height: 44px;
+    max-width: 110px;
+  }
+
+  /* ENFORCE 1-COLUMN STACKING FOR MOBILE */
+  .metrics-row,
+  .stock-grid,
+  .expenses-categories-grid,
+  .attendance-stats-summary {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+    display: grid !important;
+    margin-bottom: 24px;
+  }
+
+  .metrics-row>.metric-card:nth-child(3) {
+    grid-column: auto !important;
+  }
+
+  .metric-card {
+    padding: 18px;
+    border-radius: 16px;
+    width: 100%;
+  }
+
+  /* REFINED CHART HEADER & FILTERS - FILTERS ON TOP */
+  .chart-header {
+    flex-direction: column-reverse !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    margin-bottom: 32px;
+    width: 100%;
+  }
+
+  .chart-header h3 {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--avs-text-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+  }
+
+  /* STANDARDIZED VIEW BUTTONS */
+  .view-link,
+  .view-details {
+    background: var(--avs-green) !important;
+    color: white !important;
+    padding: 6px 14px !important;
+    border-radius: 30px !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(0, 106, 78, 0.2);
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .attendance-header {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 24px;
+  }
+
+  .filter-group.small {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    /* FIXED: Ensures Weekly, Monthly, Yearly all fit */
+    width: 100%;
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 12px;
+    gap: 4px;
+  }
+
+  .filter-chip {
+    text-align: center;
+    padding: 10px 0;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    border-radius: 10px;
+    width: 100%;
+  }
+
+  /* ATTENDANCE SECTION MOBILE */
+  .attendance-header {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100%;
+    margin-bottom: 28px;
+  }
+
+  .attendance-pie-container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    /* CENTERED THE PIE */
+    justify-content: center !important;
+    width: 100%;
+    gap: 32px;
+  }
+
+  .pie-chart-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .pie-chart {
+    width: 200px;
+    height: 200px;
+  }
+
+  .pie-total {
+    font-size: 24px;
+  }
+
+  .attendance-legend {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .legend-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 14px 16px;
+    border-radius: 14px;
+    width: 100%;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  }
+
+  .legend-label {
+    font-size: 12px;
+  }
+
+  .attendance-stats-summary {
+    margin-top: 24px;
+    padding-top: 24px;
+  }
+}
+
+/* Extra Small Phones (Max 480px) */
+@media screen and (max-width: 480px) {
+  .greetings-header {
+    padding: 12px 14px;
+  }
+
+  .greetings-left h1 {
+    font-size: 1rem;
+  }
+
+  .header-logo {
+    height: 38px;
+  }
+
+  .metric-card {
+    padding: 14px;
+  }
+
+  .metric-value {
+    font-size: 1.1rem;
+  }
+
+  .filter-chip {
+    padding: 5px 8px;
+    min-width: 55px;
   }
 }
 
 /* For very large screens */
-@media (min-width: 1600px) {
-  .greetings-left h1 {
-    font-size: 32px;
+@media screen and (min-width: 1600px) {
+  .dashboard-container {
+    max-width: 1540px;
+    margin-left: auto;
+    margin-right: auto;
   }
-  
+
+  .greetings-left h1 {
+    font-size: 2.2rem;
+  }
+
   .header-logo {
-    height: 85px;
-    max-width: 240px;
+    height: 90px;
+    max-width: 260px;
   }
 }

@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Topbar.css";
-import logo from "../../assets/avs.png"; // Company logo
 
 const Topbar = () => {
   const [open, setOpen] = useState(false);
@@ -16,20 +15,29 @@ const Topbar = () => {
     avatar: null, // Set to image URL or null
   };
 
-  const handleNavigation = (path) => {
-    setOpen(false);
-    navigate(path);
-  };
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const navItems = [
+    { icon: "dashboard", label: "Dashboard", path: "/dashboard" },
+    { icon: "inventory_2", label: "Stock", path: "/stock" },
+    { icon: "format_list_bulleted", label: "Product List", path: "/products" },
+    { icon: "factory", label: "Production", path: "/production" },
+    { icon: "payments", label: "Expenses", path: "/expenses" },
+    { icon: "badge", label: "Employees", path: "/employees" },
+    { icon: "group", label: "Clients", path: "/clients" },
+    { icon: "event_available", label: "Attendance", path: "/attendance" },
+    { icon: "check_circle", label: "Check", path: "/check" },
+  ];
 
   const handleLogout = () => {
     console.log("Logging out...");
-    // Add your logout logic here
-  };
-
-  // Handle logo click - navigate to dashboard
-  const handleLogoClick = (e) => {
-    e.stopPropagation();
-    navigate("/dashboard");
+    navigate("/login");
   };
 
   // Handle click outside to close dropdown
@@ -89,13 +97,15 @@ const Topbar = () => {
             className="profile-container"
             ref={profileRef}
             onClick={() => setOpen(!open)}
-            onMouseEnter={() => setOpen(true)}
+            onMouseEnter={() => !isMobile && setOpen(true)}
             onMouseLeave={() => {
-              setTimeout(() => {
-                if (!dropdownRef.current?.matches(':hover')) {
-                  setOpen(false);
-                }
-              }, 100);
+              if (!isMobile) {
+                setTimeout(() => {
+                  if (!dropdownRef.current?.matches(':hover')) {
+                    setOpen(false);
+                  }
+                }, 100);
+              }
             }}
           >
             <div className="profile-content">
@@ -110,9 +120,32 @@ const Topbar = () => {
               <div
                 className="profile-dropdown"
                 ref={dropdownRef}
-                onMouseEnter={() => setOpen(true)}
-                onMouseLeave={() => setOpen(false)}
+                onMouseEnter={() => !isMobile && setOpen(true)}
+                onMouseLeave={() => !isMobile && setOpen(false)}
               >
+                {/* User Info Header in Dropdown on Mobile */}
+                {isMobile && (
+                  <div className="dropdown-user-header">
+                    <h4>{user.name}</h4>
+                    <p>{user.role}</p>
+                    <div className="dropdown-divider"></div>
+                  </div>
+                )}
+
+                {/* Nav Items only on Mobile inside profile dropdown */}
+                {isMobile && navItems.map((item) => (
+                  <div
+                    key={item.label}
+                    className="dropdown-item"
+                    onClick={() => handleNavigation(item.path)}
+                  >
+                    <span className="material-symbols-outlined">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </div>
+                ))}
+
+                {isMobile && <div className="dropdown-divider"></div>}
+
                 <div className="dropdown-item" onClick={() => handleNavigation("/profile")}>
                   <span className="material-symbols-outlined">person</span>
                   <span>My Profile</span>
