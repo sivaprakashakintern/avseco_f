@@ -1,44 +1,19 @@
 import { useNavigate } from "react-router-dom";
 import React, { useState } from "react";
+import { useAppContext } from '../context/AppContext.js';
 import "./stock/Stock.css"; // Reuse Stock CSS for consistent theme
 
 const Expenses = () => {
     const navigate = useNavigate();
-    // Initial dummy data for expenses
-    const [expenses, setExpenses] = useState([
-        {
-            id: 1,
-            category: "Machine Maintenance",
-            description: "Repair of CNC Machine",
-            amount: "15000",
-            date: "2026-02-18 10:30 AM",
-            paymentMode: "Bank Transfer",
-        },
-        {
-            id: 2,
-            category: "Stock Purchased",
-            description: "Raw Material - Steel Sheets",
-            amount: "45000",
-            date: "2026-02-19 09:15 AM",
-            paymentMode: "Cheque",
-        },
-        {
-            id: 3,
-            category: "Employee Salary",
-            description: "Advance Salary for Rahul",
-            amount: "5000",
-            date: "2026-02-10 02:45 PM",
-            paymentMode: "Cash",
-        },
-        {
-            id: 4,
-            category: "Others",
-            description: "Office STATIONERY",
-            amount: "1200",
-            date: "2026-01-15 04:00 PM",
-            paymentMode: "UPI",
-        },
-    ]);
+
+    // ── Global shared state ─────────────────────────────────────────────────
+    const {
+        expenses,
+        addExpense: ctxAddExpense,
+        deleteExpense: ctxDeleteExpense,
+        totalExpenseAmount,
+        expenseByCategory,
+    } = useAppContext();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -50,18 +25,12 @@ const Expenses = () => {
         paymentMode: "Cash",
     });
 
-    // ... (Stats Calculation remains same) ...
-    const totalExpense = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
-    const machineMaintTotal = expenses
-        .filter((e) => e.category === "Machine Maintenance")
-        .reduce((acc, curr) => acc + Number(curr.amount), 0);
-    const stockPurchasedTotal = expenses
-        .filter((e) => e.category === "Stock Purchased")
-        .reduce((acc, curr) => acc + Number(curr.amount), 0);
-    const salaryTotal = expenses
-        .filter((e) => e.category === "Employee Salary")
-        .reduce((acc, curr) => acc + Number(curr.amount), 0);
-    const othersTotal = totalExpense - machineMaintTotal - stockPurchasedTotal - salaryTotal;
+    // Stats derived from global state
+    const totalExpense = totalExpenseAmount;
+    const machineMaintTotal = expenseByCategory["Machine Maintenance"] || 0;
+    const materialTotal = expenseByCategory["Material"] || 0;
+    const salaryTotal = expenseByCategory["Salary"] || 0;
+    const othersTotal = totalExpense - machineMaintTotal - materialTotal - salaryTotal;
 
     // --- Form Handlers ---
     const handleInputChange = (e) => {
@@ -77,12 +46,11 @@ const Expenses = () => {
         const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
         const expenseToAdd = {
-            id: expenses.length + 1,
             ...newExpense,
             date: formattedDate,
         };
 
-        setExpenses([expenseToAdd, ...expenses]);
+        ctxAddExpense(expenseToAdd);
         setIsModalOpen(false);
         setNewExpense({ category: "Machine Maintenance", description: "", amount: "", paymentMode: "Cash" });
     };
@@ -93,18 +61,10 @@ const Expenses = () => {
             {/* ===== PREMIUM ANALYTICS HEADER ===== */}
             <div className="page-header premium-header">
                 <div>
-                    <h1 className="page-title">Expense Management</h1>
+                    <h1 className="page-title">Expense Details</h1>
                     <p className="page-subtitle">Track and manage company expenses with precision</p>
                 </div>
                 <div className="header-actions">
-                    <button
-                        onClick={() => navigate("/expenses/report")}
-                        className="btn-transfer-premium"
-                    >
-                        <span className="material-symbols-outlined">analytics</span>
-                        Reports & Export
-                    </button>
-
                     <button className="btn-export-premium" onClick={() => setIsModalOpen(true)}>
                         <span className="material-symbols-outlined">add</span>
                         Add Expense
@@ -137,8 +97,8 @@ const Expenses = () => {
                         <span className="material-symbols-outlined">shopping_cart</span>
                     </div>
                     <div className="stat-info">
-                        <span className="stat-label">Stock Purchased</span>
-                        <span className="stat-value">₹{stockPurchasedTotal.toLocaleString()}</span>
+                        <span className="stat-label">Material Total</span>
+                        <span className="stat-value">₹{materialTotal.toLocaleString()}</span>
                     </div>
                 </div>
                 <div className="stat-card">
@@ -251,8 +211,11 @@ const Expenses = () => {
                                             }}
                                         >
                                             <option value="Machine Maintenance">Machine Maintenance</option>
-                                            <option value="Stock Purchased">Stock Purchased</option>
-                                            <option value="Employee Salary">Employee Salary</option>
+                                            <option value="Material">Material</option>
+                                            <option value="Salary">Salary</option>
+                                            <option value="Electricity">Electricity</option>
+                                            <option value="Transport">Transport</option>
+                                            <option value="Rent">Rent</option>
                                             <option value="Others">Others</option>
                                         </select>
                                     </div>
@@ -286,7 +249,9 @@ const Expenses = () => {
                                 </div>
 
                                 <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>Description</label>
+                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>
+                                        {newExpense.category === 'Others' ? 'Description (Required for Others) *' : 'Description'}
+                                    </label>
                                     <input
                                         type="text"
                                         name="description"

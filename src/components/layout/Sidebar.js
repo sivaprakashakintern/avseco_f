@@ -97,7 +97,16 @@ const Sidebar = () => {
       ]
     },
 
-    { icon: "payments", label: "Expenses", path: "/expenses" },
+    { icon: "sell", label: "Sales", path: "/sales" },
+    {
+      icon: "payments",
+      label: "Expenses",
+      path: "/expenses",
+      children: [
+        { label: "Daily Expenses", path: "/expenses" },
+        { label: "Expense Report", path: "/expenses/report" }
+      ]
+    },
     { icon: "badge", label: "Employees", path: "/employees" },
     { icon: "group", label: "Clients", path: "/clients" },
 
@@ -200,7 +209,7 @@ const Sidebar = () => {
                 >
                   <div
                     className={`nav-item ${isActive(item.path) || location.pathname.includes(item.path) ? "active" : ""}`}
-                    onClick={() => isMobile && toggleSubMenu(item.label)}
+                    onClick={() => toggleSubMenu(item.label)}
                   >
                     <span className="material-symbols-outlined">{item.icon}</span>
                     <p className="nav-text">{item.label}</p>

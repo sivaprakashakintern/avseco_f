@@ -237,15 +237,12 @@ const AttendanceReport = () => {
             {/* ===== PREMIUM ANALYTICS HEADER ===== */}
             <div className="page-header premium-header">
                 <div className="report-title-section">
-                    <h1 className="page-title">Attendance Insights</h1>
+                    <h1 className="page-title">Attendance Reports</h1>
                     <p className="page-subtitle">Analyze and export comprehensive workforce logs</p>
                 </div>
 
                 <div className="header-actions">
-                    <button className="btn-transfer-premium" onClick={() => navigate("/attendance")}>
-                        <span className="material-symbols-outlined">arrow_back</span>
-                        Back
-                    </button>
+                    
 
                     <div className="export-group" style={{ display: 'flex', gap: '12px' }}>
                         <div className="custom-dropdown" onClick={(e) => e.stopPropagation()}>
@@ -346,6 +343,15 @@ const AttendanceReport = () => {
                 </div>
             </div>
 
+            {/* Status Legend */}
+            <div className="status-legend">
+                <div className="legend-item"><span className="legend-box present">P</span> Present</div>
+                <div className="legend-item"><span className="legend-box absent">A</span> Absent</div>
+                <div className="legend-item"><span className="legend-box half">HD</span> Half Day</div>
+                <div className="legend-item"><span className="legend-box stoppage">WS</span> Work Stoppage</div>
+                <div className="legend-item"><span className="legend-box sunday">SUN</span> Sunday</div>
+            </div>
+
             {/* Matrix Table Card */}
             <div className="report-table-card">
                 <div className="table-scroll-container">
@@ -355,7 +361,6 @@ const AttendanceReport = () => {
                                 <th className="sticky-col">Employee</th>
                                 {daysInCurrentView.map(day => (
                                     <th key={day.date} style={{ color: day.isSunday ? '#ef4444' : 'inherit' }}>
-                                        <div style={{ opacity: 0.6, fontSize: '9px' }}>{day.dayName}</div>
                                         <div>{day.date}</div>
                                     </th>
                                 ))}

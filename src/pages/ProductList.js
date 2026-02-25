@@ -31,8 +31,6 @@ const ProductList = () => {
       costPrice: 2.80,
       sellPrice: 5.00,
       margin: "44.0%",
-      stock: 2100,
-      status: "Active",
       image: plate6Img,
     },
     {
@@ -44,8 +42,6 @@ const ProductList = () => {
       costPrice: 3.50,
       sellPrice: 6.50,
       margin: "46.2%",
-      stock: 1850,
-      status: "Active",
       image: plate8Img,
     },
     {
@@ -57,8 +53,6 @@ const ProductList = () => {
       costPrice: 4.50,
       sellPrice: 8.00,
       margin: "43.7%",
-      stock: 1250,
-      status: "Active",
       image: plate10Img,
     },
     {
@@ -70,8 +64,6 @@ const ProductList = () => {
       costPrice: 5.80,
       sellPrice: 10.50,
       margin: "44.8%",
-      stock: 950,
-      status: "Active",
       image: plate12Img,
     },
   ]);
@@ -84,8 +76,6 @@ const ProductList = () => {
     category: "Plates",
     costPrice: "",
     sellPrice: "",
-    stock: "",
-    status: "Active",
     image: plate10Img,
   });
 
@@ -115,8 +105,6 @@ const ProductList = () => {
   // Calculate stats - UPDATED: totalProducts = 1 (single product type), activeProducts removed
   const stats = {
     totalProducts: 1,          // one product with four size variants
-    // activeProducts removed
-    lowStock: products.filter(p => p.stock < 500).length, // kept for potential future use
   };
 
   // ========== HANDLERS ==========
@@ -130,8 +118,6 @@ const ProductList = () => {
       category: "Plates",
       costPrice: "",
       sellPrice: "",
-      stock: "",
-      status: "Active",
       image: plate10Img,
     });
     setShowAddModal(true);
@@ -139,7 +125,7 @@ const ProductList = () => {
 
   const confirmAddProduct = () => {
     // Validate form - SKU no longer checked here as it's auto-generated
-    if (!formData.name || !formData.costPrice || !formData.sellPrice || !formData.stock) {
+    if (!formData.name || !formData.costPrice || !formData.sellPrice) {
       setFeedbackMessage("Please fill all required fields");
       setTimeout(() => setFeedbackMessage(""), 3000);
       return;
@@ -168,8 +154,6 @@ const ProductList = () => {
       costPrice: cost,
       sellPrice: sell,
       margin: margin,
-      stock: parseInt(formData.stock),
-      status: "Active", // Default status
       image: productImage,
     };
 
@@ -190,8 +174,6 @@ const ProductList = () => {
       category: "Plates",
       costPrice: product.costPrice,
       sellPrice: product.sellPrice,
-      stock: product.stock,
-      status: product.status,
       image: product.image,
     });
     setShowEditModal(true);
@@ -222,8 +204,6 @@ const ProductList = () => {
           costPrice: cost,
           sellPrice: sell,
           margin: margin,
-          stock: parseInt(formData.stock),
-          status: formData.status,
           image: productImage,
         }
         : p
@@ -294,7 +274,7 @@ const ProductList = () => {
       {/* ===== PREMIUM ANALYTICS HEADER ===== */}
       <div className="page-header premium-header">
         <div>
-          <h1 className="page-title">Products Catalogue</h1>
+          <h1 className="page-title">Products List</h1>
           <p className="page-subtitle">Manage and track your areca leaf product catalogue with precision</p>
         </div>
 
@@ -402,8 +382,6 @@ const ProductList = () => {
                 <th>Cost</th>
                 <th>Sell</th>
                 <th>Margin</th>
-                <th>Stock</th>
-                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -430,18 +408,6 @@ const ProductList = () => {
                     <td>{formatCurrency(product.costPrice)}</td>
                     <td>{formatCurrency(product.sellPrice)}</td>
                     <td className="product-margin">{product.margin}</td>
-                    <td>
-                      <span className={`stock-badge ${product.stock < 500 ? 'low' : 'normal'}`}>
-                        {product.stock} pcs
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`status-badge ${product.status.toLowerCase()}`}
-                      >
-                        {product.status}
-                      </span>
-                    </td>
                     <td>
                       <div className="action-buttons">
                         <button
@@ -504,9 +470,6 @@ const ProductList = () => {
                     <span className="product-card-price">{formatCurrency(product.sellPrice)}</span>
                   </div>
                   <div className="product-card-footer">
-                    <span className={`stock-indicator ${product.stock < 500 ? 'low' : 'normal'}`}>
-                      Stock: {product.stock} pcs
-                    </span>
                     <div className="product-card-actions">
                       <button
                         className="icon-btn edit"
@@ -540,7 +503,7 @@ const ProductList = () => {
         </div>
       )}
 
-      {/* ===== MODALS (unchanged) ===== */}
+      {/* ===== MODALS ===== */}
       {/* Add Product Modal */}
       {showAddModal && (
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
@@ -602,17 +565,6 @@ const ProductList = () => {
                     className="modal-input"
                   />
                 </div>
-              </div>
-              <div className="modal-form-group">
-                <label>Initial Stock *</label>
-                <input
-                  type="number"
-                  name="stock"
-                  value={formData.stock}
-                  onChange={handleInputChange}
-                  placeholder="0"
-                  className="modal-input"
-                />
               </div>
             </div>
             <div className="modal-footer">
@@ -699,30 +651,6 @@ const ProductList = () => {
                     step="0.01"
                     className="modal-input"
                   />
-                </div>
-              </div>
-              <div className="modal-row">
-                <div className="modal-form-group">
-                  <label>Stock Quantity *</label>
-                  <input
-                    type="number"
-                    name="stock"
-                    value={formData.stock}
-                    onChange={handleInputChange}
-                    className="modal-input"
-                  />
-                </div>
-                <div className="modal-form-group">
-                  <label>Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="modal-select"
-                  >
-                    <option>Active</option>
-                    <option>Inactive</option>
-                  </select>
                 </div>
               </div>
             </div>

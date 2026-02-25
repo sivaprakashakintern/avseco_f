@@ -1,10 +1,19 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAppContext } from '../context/AppContext.js';
 import logo from '../assets/logo.png';
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const {
+    totalExpenseAmount,
+    expenseByCategory,
+    todayStats,
+    employees,
+    last7DaysTrend
+  } = useAppContext();
+
   const [timeFilter, setTimeFilter] = useState("Monthly");
   const [showStockPopup, setShowStockPopup] = useState(false);
   const [showProductionPopup, setShowProductionPopup] = useState(false);
@@ -60,11 +69,11 @@ const Dashboard = () => {
       metrics: {
         stockValue: "₹82.4 L",
         production: "1,25,000 Units",
-        expenses: "₹32.4 L",
+        expenses: `₹${(totalExpenseAmount / 100000).toFixed(1)} L`,
         stockGrowth: "+12.5%",
         prodGrowth: "+8.2%",
-        expStatus: "Over Budget",
-        expColor: "#ef4444"
+        expStatus: totalExpenseAmount > 500000 ? "Over Budget" : "Optimal",
+        expColor: totalExpenseAmount > 500000 ? "#ef4444" : "#10b981"
       },
       plates: [
         { size: "6 Inch", stock: 15200, produced: 45000, sold: 42000 },
@@ -79,20 +88,20 @@ const Dashboard = () => {
         { size: "12 Inch", today: 620, month: 18000, efficiency: "92%" }
       ],
       attendance: {
-        present: 138,
-        absent: 18,
-        onLeave: 12,
-        total: 168,
-        trend: [125, 138, 142, 140, 135, 138, 142],
-        days: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7']
+        present: todayStats.present,
+        absent: todayStats.absent,
+        onLeave: todayStats.half,
+        total: todayStats.total,
+        trend: last7DaysTrend.map(t => t.present),
+        days: last7DaysTrend.map(t => t.label)
       },
       expenses: {
-        total: "₹32.4 L",
+        total: `₹${(totalExpenseAmount / 100000).toFixed(1)} L`,
         categories: [
-          { name: "Machine Maintenance", amount: "₹3.9 L", percentage: 12, color: "#f97316" },
-          { name: "Stock Purchased", amount: "₹16.2 L", percentage: 50, color: "#3b82f6" },
-          { name: "Employee Salary", amount: "₹9.7 L", percentage: 30, color: "#10b981" },
-          { name: "Others", amount: "₹2.6 L", percentage: 8, color: "#8b5cf6" }
+          { name: "Machine Maintenance", amount: `₹${((expenseByCategory["Machine Maintenance"] || 0) / 100000).toFixed(1)} L`, percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
+          { name: "Stock Purchased", amount: `₹${((expenseByCategory["Material"] || 0) / 100000).toFixed(1)} L`, percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
+          { name: "Employee Salary", amount: `₹${((expenseByCategory["Salary"] || 0) / 100000).toFixed(1)} L`, percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Salary"] || 0) / totalExpenseAmount) * 100) : 0, color: "#10b981" },
+          { name: "Others", amount: `₹${((expenseByCategory["Others"] || 0) / 100000).toFixed(1)} L`, percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Others"] || 0) / totalExpenseAmount) * 100) : 0, color: "#8b5cf6" }
         ]
       }
     },
@@ -527,9 +536,7 @@ const Dashboard = () => {
       <div className="expenses-breakdown-section">
         <div className="section-header">
           <h3>THIS MONTH EXPENSES BREAKDOWN</h3>
-          <button className="view-link" onClick={handleExpensesClick}>
-            VIEW ALL EXPENSES →
-          </button>
+
         </div>
 
         <div className="expenses-categories-grid">
