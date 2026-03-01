@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext.js';
 import './Sales.css';
+
+const PRODUCTS_LIST = [
+    { id: 1, name: "Areca Leaf Plate 6\" Round", sku: "FG-PL-006", category: "Finished Goods", unit: "pcs", currentStock: 6000, price: 2.50 },
+    { id: 2, name: "Areca Leaf Plate 8\" Round", sku: "FG-PL-008", category: "Finished Goods", unit: "pcs", currentStock: 5000, price: 4.50 },
+    { id: 3, name: "Areca Leaf Plate 10\" Round", sku: "FG-PL-010", category: "Finished Goods", unit: "pcs", currentStock: 3200, price: 6.50 },
+    { id: 4, name: "Areca Leaf Plate 12\" Round", sku: "FG-PL-012", category: "Finished Goods", unit: "pcs", currentStock: 2500, price: 8.50 },
+];
 
 const Sales = () => {
     const { clients, addClient } = useAppContext();
@@ -32,13 +39,7 @@ const Sales = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState("all");
 
-    // Products list
-    const products = [
-        { id: 1, name: "Areca Leaf Plate 6\" Round", sku: "FG-PL-006", category: "Finished Goods", unit: "pcs", currentStock: 6000, price: 2.50 },
-        { id: 2, name: "Areca Leaf Plate 8\" Round", sku: "FG-PL-008", category: "Finished Goods", unit: "pcs", currentStock: 5000, price: 4.50 },
-        { id: 3, name: "Areca Leaf Plate 10\" Round", sku: "FG-PL-010", category: "Finished Goods", unit: "pcs", currentStock: 3200, price: 6.50 },
-        { id: 4, name: "Areca Leaf Plate 12\" Round", sku: "FG-PL-012", category: "Finished Goods", unit: "pcs", currentStock: 2500, price: 8.50 },
-    ];
+    const products = PRODUCTS_LIST;
 
     // Initialize unit price when product is selected
     useEffect(() => {
@@ -46,7 +47,7 @@ const Sales = () => {
         if (product) {
             setUnitPrice(product.price.toString());
         }
-    }, [selectedProduct, products]);
+    }, [selectedProduct]);
 
     // Auto-calculate Total Amount when Quantity or Unit Price change
     useEffect(() => {
@@ -86,12 +87,6 @@ const Sales = () => {
         if (type === 'all') return allTransactions;
         return allTransactions.filter(t => t.paymentStatus?.toLowerCase() === type.toLowerCase());
     };
-
-    const StatusBadge = ({ status }) => (
-        <span className={`status-badge ${status}`}>
-            {status === 'success' ? '✅' : '❌'} {status.toUpperCase()}
-        </span>
-    );
 
     // Format date for display
     const formatDate = (date) => {
@@ -216,22 +211,6 @@ const Sales = () => {
                 qty: item.qty,
                 amount: item.amount
             }))
-        };
-
-        setSelectedBill(billData);
-        setShowBillModal(true);
-    };
-
-    const openBillFromHistory = (transaction) => {
-        const billData = {
-            company: transaction.company,
-            customer: transaction.customer,
-            date: transaction.date,
-            items: [{
-                product: transaction.product,
-                qty: Math.abs(transaction.quantity),
-                amount: transaction.amount || 0
-            }]
         };
 
         setSelectedBill(billData);

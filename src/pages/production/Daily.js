@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -92,7 +92,7 @@ const Production = () => {
       // Calculate stats from loaded data
       calculateStats(parsedData);
     }
-  }, []);
+  }, [calculateStats]);
 
   // ========== SAVE TO LOCALSTORAGE WHENEVER PRODUCTION HISTORY CHANGES ==========
   useEffect(() => {
@@ -104,7 +104,7 @@ const Production = () => {
   }, [productionHistory]);
 
   // ========== CALCULATE STATS FUNCTION ==========
-  const calculateStats = (data) => {
+  const calculateStats = useCallback((data) => {
     const today = formatDate(dayjs());
 
     // Today's totals by size
@@ -139,7 +139,7 @@ const Production = () => {
     const currentMonth = dayjs().month() + 1;
     const currentYear = dayjs().year();
     const monthData = data.filter(item => {
-      const [day, month, year] = item.date.split('-').map(Number);
+      const [, month, year] = item.date.split('-').map(Number);
       return month === currentMonth && year === currentYear;
     });
 
@@ -164,7 +164,7 @@ const Production = () => {
       weekBySize,
       monthBySize
     });
-  };
+  }, []);
 
   // ========== GET SUMMARY DATA BY SIZE FOR SELECTED VIEW ==========
   const getSummaryData = () => {
@@ -194,7 +194,7 @@ const Production = () => {
         const year = summaryDate.year();
 
         filteredData = productionHistory.filter(item => {
-          const [day, itemMonth, itemYear] = item.date.split('-').map(Number);
+          const [, itemMonth, itemYear] = item.date.split('-').map(Number);
           return itemMonth === month && itemYear === year;
         });
         break;
