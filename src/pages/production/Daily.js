@@ -142,7 +142,7 @@ const Production = () => {
       weekBySize,
       monthBySize
     });
-  }, [AVAILABLE_SIZES]);
+  }, []);
 
   // ========== LOAD DATA FROM LOCALSTORAGE ON INITIAL RENDER ==========
   useEffect(() => {
