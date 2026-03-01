@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext.js';
 import './Sales.css';
 
 const Sales = () => {
-    const navigate = useNavigate();
     const { clients, addClient } = useAppContext();
     const [showAddClientModal, setShowAddClientModal] = useState(false);
     const [newClientData, setNewClientData] = useState({ companyName: "", contactPerson: "" });
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
     const [exportSuccess, setExportSuccess] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -34,7 +31,6 @@ const Sales = () => {
     // Search and Filter states for Recent History
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState("all");
-    const [statusFilter, setStatusFilter] = useState("all");
 
     // Products list
     const products = [
@@ -50,7 +46,7 @@ const Sales = () => {
         if (product) {
             setUnitPrice(product.price.toString());
         }
-    }, [selectedProduct]);
+    }, [selectedProduct, products]);
 
     // Auto-calculate Total Amount when Quantity or Unit Price change
     useEffect(() => {
@@ -308,7 +304,6 @@ const Sales = () => {
     const clearFilters = () => {
         setSearchTerm("");
         setTypeFilter("all");
-        setStatusFilter("all");
     };
 
     // Close dropdown when clicking outside

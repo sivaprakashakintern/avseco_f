@@ -8,7 +8,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const {
     employees,
-    attendanceRecords,
     totalExpenseAmount,
     expenseByCategory,
     todayStats,
