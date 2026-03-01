@@ -69,10 +69,6 @@ const StockOverview = () => {
     plateTypes: 4,
   });
 
-  // Selected product and view state (reserved for future use)
-  const [_selectedProduct, _setSelectedProduct] = useState("Areca Leaf Plate");
-  const [_viewMode, _setViewMode] = useState("product"); // "product" or "size"
-
   // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -180,12 +176,6 @@ const StockOverview = () => {
     setFeedbackMessage("Stock item updated successfully");
 
     setTimeout(() => setFeedbackMessage(""), 3000);
-  };
-
-  // Delete Stock
-  const _handleDeleteStock = (item) => {
-    setSelectedItem(item);
-    setShowDeleteModal(true);
   };
 
   const confirmDeleteStock = () => {

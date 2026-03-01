@@ -9,6 +9,8 @@ import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
 import './Daily.css';
 
+const AVAILABLE_SIZES = ['6-inch', '8-inch', '10-inch', '12-inch'];
+
 const Production = () => {
   const navigate = useNavigate();
 
@@ -68,9 +70,6 @@ const Production = () => {
     monthBySize: {}
   });
 
-  // Available sizes
-  const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
-
   // ========== HELPER FUNCTIONS ==========
   const formatDate = (date) => {
     if (!date) return '';
@@ -91,7 +90,7 @@ const Production = () => {
     const todayTotal = todayData.reduce((sum, item) => sum + item.quantity, 0);
 
     const todayBySize = {};
-    availableSizes.forEach(size => {
+    AVAILABLE_SIZES.forEach(size => {
       todayBySize[size] = todayData
         .filter(item => item.size === size)
         .reduce((sum, item) => sum + item.quantity, 0);
@@ -108,7 +107,7 @@ const Production = () => {
     const weekTotal = weekData.reduce((sum, item) => sum + item.quantity, 0);
 
     const weekBySize = {};
-    availableSizes.forEach(size => {
+    AVAILABLE_SIZES.forEach(size => {
       weekBySize[size] = weekData
         .filter(item => item.size === size)
         .reduce((sum, item) => sum + item.quantity, 0);
@@ -125,7 +124,7 @@ const Production = () => {
     const monthTotal = monthData.reduce((sum, item) => sum + item.quantity, 0);
 
     const monthBySize = {};
-    availableSizes.forEach(size => {
+    AVAILABLE_SIZES.forEach(size => {
       monthBySize[size] = monthData
         .filter(item => item.size === size)
         .reduce((sum, item) => sum + item.quantity, 0);
@@ -143,7 +142,7 @@ const Production = () => {
       weekBySize,
       monthBySize
     });
-  }, []);
+  }, [AVAILABLE_SIZES]);
 
   // ========== LOAD DATA FROM LOCALSTORAGE ON INITIAL RENDER ==========
   useEffect(() => {
@@ -207,7 +206,7 @@ const Production = () => {
     const bySize = {};
     let total = 0;
 
-    availableSizes.forEach(size => {
+    AVAILABLE_SIZES.forEach(size => {
       const sizeTotal = filteredData
         .filter(item => item.size === size)
         .reduce((sum, item) => sum + item.quantity, 0);
@@ -281,11 +280,6 @@ const Production = () => {
   const getUniqueHistorySizes = () => {
     const sizes = productionHistory.map(item => item.size);
     return ['all', ...new Set(sizes)];
-  };
-
-  const getUniqueDates = () => {
-    const dates = productionHistory.map(item => item.date);
-    return [...new Set(dates)].sort().reverse();
   };
 
   // ========== EXPORT MODAL FUNCTIONS ==========
@@ -1117,7 +1111,7 @@ const Production = () => {
           <div className="size-breakdown">
             <h4>Size-wise Breakdown</h4>
             <div className="size-grid">
-              {availableSizes.map(size => (
+              {AVAILABLE_SIZES.map(size => (
                 <div key={size} className="size-card">
                   <div className="size-name">{size}</div>
                   <div className="size-quantity">{summaryData.bySize[size]?.toLocaleString() || 0} plates</div>

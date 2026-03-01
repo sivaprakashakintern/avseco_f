@@ -147,7 +147,6 @@ const Dashboard = () => {
   };
 
   const currentData = dashboardData[timeFilter];
-  const maxPlateStock = Math.max(...currentData.plates.map(p => p.stock));
   const maxSold = Math.max(...currentData.plates.map(p => p.sold));
 
   // Navigation handlers

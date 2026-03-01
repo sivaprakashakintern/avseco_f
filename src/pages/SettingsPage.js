@@ -62,7 +62,7 @@ const SettingsPage = () => {
   });
 
   // Team Members
-  const [teamMembers, _setTeamMembers] = useState([
+  const [teamMembers] = useState([
     {
       id: 1,
       name: "Rajesh Kumar",

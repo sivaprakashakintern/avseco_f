@@ -2,9 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Stock.css';
 
+// Products list (stable reference for useEffect dependency)
+const STOCK_TRANSFER_PRODUCTS = [
+  { id: 1, name: "Areca Leaf Plate 6\" Round", sku: "FG-PL-006", category: "Finished Goods", unit: "pcs", currentStock: 6000, price: 2.50 },
+  { id: 2, name: "Areca Leaf Plate 8\" Round", sku: "FG-PL-008", category: "Finished Goods", unit: "pcs", currentStock: 5000, price: 4.50 },
+  { id: 3, name: "Areca Leaf Plate 10\" Round", sku: "FG-PL-010", category: "Finished Goods", unit: "pcs", currentStock: 3200, price: 6.50 },
+  { id: 4, name: "Areca Leaf Plate 12\" Round", sku: "FG-PL-012", category: "Finished Goods", unit: "pcs", currentStock: 2500, price: 8.50 },
+];
+
 const StockTransactions = () => {
   const navigate = useNavigate();
-  const [_isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [, setIsDropdownOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -31,21 +39,13 @@ const StockTransactions = () => {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Products list
-  const products = [
-    { id: 1, name: "Areca Leaf Plate 6\" Round", sku: "FG-PL-006", category: "Finished Goods", unit: "pcs", currentStock: 6000, price: 2.50 },
-    { id: 2, name: "Areca Leaf Plate 8\" Round", sku: "FG-PL-008", category: "Finished Goods", unit: "pcs", currentStock: 5000, price: 4.50 },
-    { id: 3, name: "Areca Leaf Plate 10\" Round", sku: "FG-PL-010", category: "Finished Goods", unit: "pcs", currentStock: 3200, price: 6.50 },
-    { id: 4, name: "Areca Leaf Plate 12\" Round", sku: "FG-PL-012", category: "Finished Goods", unit: "pcs", currentStock: 2500, price: 8.50 },
-  ];
-
   // Initialize unit price when product is selected
   useEffect(() => {
-    const product = products.find(p => p.name === selectedProduct);
+    const product = STOCK_TRANSFER_PRODUCTS.find(p => p.name === selectedProduct);
     if (product) {
       setUnitPrice(product.price.toString());
     }
-  }, [selectedProduct, products]);
+  }, [selectedProduct]);
 
   // Auto-calculate Total Amount when Quantity or Unit Price change
   useEffect(() => {
@@ -113,7 +113,7 @@ const StockTransactions = () => {
       product: selectedProduct,
       qty: parseFloat(quantity),
       amount: parseFloat(totalAmount) || 0,
-      unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
+      unit: STOCK_TRANSFER_PRODUCTS.find(p => p.name === selectedProduct)?.unit || "pcs"
     };
 
     setBillItems([...billItems, newItem]);
@@ -141,7 +141,7 @@ const StockTransactions = () => {
           product: selectedProduct,
           qty: parseFloat(quantity),
           amount: parseFloat(totalAmount) || 0,
-          unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
+          unit: STOCK_TRANSFER_PRODUCTS.find(p => p.name === selectedProduct)?.unit || "pcs"
         });
       }
 
@@ -425,7 +425,7 @@ const StockTransactions = () => {
                 </button>
                 {isProductDropdownOpen && (
                   <div className="product-dropdown-menu">
-                    {products.map((product) => (
+                    {STOCK_TRANSFER_PRODUCTS.map((product) => (
                       <button
                         key={product.id}
                         onClick={() => {
