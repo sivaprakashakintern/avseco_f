@@ -69,9 +69,9 @@ const StockOverview = () => {
     plateTypes: 4,
   });
 
-  // Selected product and view state
-  const [selectedProduct, setSelectedProduct] = useState("Areca Leaf Plate");
-  const [viewMode, setViewMode] = useState("product"); // "product" or "size"
+  // Selected product and view state (reserved for future use)
+  const [_selectedProduct, _setSelectedProduct] = useState("Areca Leaf Plate");
+  const [_viewMode, _setViewMode] = useState("product"); // "product" or "size"
 
   // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -95,9 +95,6 @@ const StockOverview = () => {
     perPlateRate: "",
   });
 
-  // ========== GET UNIQUE PRODUCTS ==========
-  const uniqueProducts = [...new Set(stockItems.map(item => item.name))];
-
   // ========== FILTER ITEMS BASED ON SELECTION ==========
   const getFilteredItems = () => {
     return stockItems;
@@ -107,9 +104,6 @@ const StockOverview = () => {
 
   // ========== CALCULATE STATS ==========
   useEffect(() => {
-    // Force total products to 1 as requested
-    const totalProducts = 1;
-
     // Tally total stock from filtered items to ensure they match
     const totalStockValue = filteredItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -189,7 +183,7 @@ const StockOverview = () => {
   };
 
   // Delete Stock
-  const handleDeleteStock = (item) => {
+  const _handleDeleteStock = (item) => {
     setSelectedItem(item);
     setShowDeleteModal(true);
   };
@@ -259,38 +253,9 @@ const StockOverview = () => {
     });
   };
 
-  // Get status badge class
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "critical":
-        return "status-badge critical";
-      case "low":
-        return "status-badge low";
-      default:
-        return "status-badge normal";
-    }
-  };
-
-  // Get status text
-  const getStatusText = (status) => {
-    switch (status) {
-      case "critical":
-        return "Critical";
-      case "low":
-        return "Low Stock";
-      default:
-        return "Normal";
-    }
-  };
-
   // Format currency
   const formatCurrency = (value) => {
     return `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
-  // Format quantity with unit
-  const formatQuantity = (quantity, unit) => {
-    return `${quantity.toLocaleString("en-IN")} ${unit}`;
   };
 
   return (

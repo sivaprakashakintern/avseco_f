@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -82,29 +82,8 @@ const Production = () => {
     return dayjs(dateStr, 'DD-MM-YYYY');
   };
 
-  // ========== LOAD DATA FROM LOCALSTORAGE ON INITIAL RENDER ==========
-  useEffect(() => {
-    const savedData = localStorage.getItem('productionHistory');
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      setProductionHistory(parsedData);
-
-      // Calculate stats from loaded data
-      calculateStats(parsedData);
-    }
-  }, []);
-
-  // ========== SAVE TO LOCALSTORAGE WHENEVER PRODUCTION HISTORY CHANGES ==========
-  useEffect(() => {
-    if (productionHistory.length > 0) {
-      localStorage.setItem('productionHistory', JSON.stringify(productionHistory));
-    } else {
-      localStorage.removeItem('productionHistory');
-    }
-  }, [productionHistory]);
-
   // ========== CALCULATE STATS FUNCTION ==========
-  const calculateStats = (data) => {
+  const calculateStats = useCallback((data) => {
     const today = formatDate(dayjs());
 
     // Today's totals by size
@@ -139,7 +118,7 @@ const Production = () => {
     const currentMonth = dayjs().month() + 1;
     const currentYear = dayjs().year();
     const monthData = data.filter(item => {
-      const [day, month, year] = item.date.split('-').map(Number);
+      const [, month, year] = item.date.split('-').map(Number);
       return month === currentMonth && year === currentYear;
     });
 
@@ -164,7 +143,28 @@ const Production = () => {
       weekBySize,
       monthBySize
     });
-  };
+  }, []);
+
+  // ========== LOAD DATA FROM LOCALSTORAGE ON INITIAL RENDER ==========
+  useEffect(() => {
+    const savedData = localStorage.getItem('productionHistory');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      setProductionHistory(parsedData);
+
+      // Calculate stats from loaded data
+      calculateStats(parsedData);
+    }
+  }, [calculateStats]);
+
+  // ========== SAVE TO LOCALSTORAGE WHENEVER PRODUCTION HISTORY CHANGES ==========
+  useEffect(() => {
+    if (productionHistory.length > 0) {
+      localStorage.setItem('productionHistory', JSON.stringify(productionHistory));
+    } else {
+      localStorage.removeItem('productionHistory');
+    }
+  }, [productionHistory]);
 
   // ========== GET SUMMARY DATA BY SIZE FOR SELECTED VIEW ==========
   const getSummaryData = () => {
@@ -194,7 +194,7 @@ const Production = () => {
         const year = summaryDate.year();
 
         filteredData = productionHistory.filter(item => {
-          const [day, itemMonth, itemYear] = item.date.split('-').map(Number);
+          const [, itemMonth, itemYear] = item.date.split('-').map(Number);
           return itemMonth === month && itemYear === year;
         });
         break;
@@ -357,7 +357,7 @@ const Production = () => {
         if (!exportStartDate || !exportEndDate) return [];
 
         return productionHistory.filter(item => {
-          const [day, month, year] = item.date.split('-').map(Number);
+          const [, month, year] = item.date.split('-').map(Number);
           const itemYearMonth = year * 100 + month;
           const startYearMonth = exportStartDate.year() * 100 + (exportStartDate.month() + 1);
           const endYearMonth = exportEndDate.year() * 100 + (exportEndDate.month() + 1);
@@ -366,7 +366,7 @@ const Production = () => {
 
       case 'yearly':
         return productionHistory.filter(item => {
-          const [day, month, year] = item.date.split('-').map(Number);
+          const [, , year] = item.date.split('-').map(Number);
           return year.toString() === exportYear;
         });
 
@@ -647,7 +647,6 @@ const Production = () => {
 
   const filteredHistory = getFilteredHistory();
   const uniqueHistorySizes = getUniqueHistorySizes();
-  const uniqueDates = getUniqueDates();
   const summaryData = getSummaryData();
 
   // Calendar component wrapper

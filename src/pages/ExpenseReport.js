@@ -12,8 +12,6 @@ const CATEGORY_CONFIG = {
     "Others": { bg: "#f3e8ff", color: "#8b5cf6", icon: "more_horiz" },
 };
 
-const CATEGORY_COLORS = Object.values(CATEGORY_CONFIG).map((c) => c.color);
-
 const ExpenseReport = () => {
     // ── Sample data aligned with the new 7-category system ─────────────────────
     const [expenses] = useState([

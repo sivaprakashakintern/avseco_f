@@ -10,7 +10,6 @@ const Dashboard = () => {
     totalExpenseAmount,
     expenseByCategory,
     todayStats,
-    employees,
     last7DaysTrend
   } = useAppContext();
 
@@ -184,21 +183,6 @@ const Dashboard = () => {
     });
     setShowExpensesPopup(true);
   };
-
-  // Get greeting based on time
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 17) return "Good Afternoon";
-    return "Good Evening";
-  };
-
-  const currentDate = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
 
   return (
     <div className="dashboard-container">

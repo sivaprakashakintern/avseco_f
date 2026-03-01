@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from '../assets/logo.png';
 import { useAppContext } from '../context/AppContext.js';
 import "./Employees.css";
 import "../dashboard/Dashboard.css"; // Reuse dashboard header styles
@@ -15,10 +14,6 @@ const Employees = () => {
     updateEmployee: ctxUpdateEmployee,
     deleteEmployee: ctxDeleteEmployee,
     departments,
-    totalExpenseAmount,
-    expenseByCategory,
-    todayStats,
-    employeesByDepartment,
   } = useAppContext();
 
   const [viewMode, setViewMode] = useState("grid");

@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import "./ProductList.css";
 
 // Import local plate images - ONLY 4 PLATES
@@ -9,7 +8,6 @@ import plate10Img from "../assets/plate10.png";
 import plate12Img from "../assets/plate12.png";
 
 const ProductList = () => {
-  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState("grid");
   const [selectedSize, setSelectedSize] = useState("All Sizes");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -78,10 +76,6 @@ const ProductList = () => {
     sellPrice: "",
     image: plate10Img,
   });
-
-  // Filter options - ONLY 4 SIZES
-  const sizeFilters = ["All Sizes", "6-inch", "8-inch", "10-inch", "12-inch"];
-  const categoryFilters = ["all", "Plates"]; // Only Plates category
 
   // Get unique sizes for filter
   const uniqueSizes = ["All Sizes", ...new Set(products.map(p => p.size))].sort();

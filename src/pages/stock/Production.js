@@ -180,7 +180,7 @@ const Production = () => {
         const currentMonth = today.getMonth() + 1;
         const currentYear = today.getFullYear();
         return productionHistory.filter(item => {
-          const [day, month, year] = item.date.split('-').map(Number);
+          const [, month, year] = item.date.split('-').map(Number);
           return month === currentMonth && year === currentYear;
         });
       case 'overall':

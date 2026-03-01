@@ -1,16 +1,12 @@
-import { useNavigate } from "react-router-dom";
 import React, { useState } from "react";
 import { useAppContext } from '../context/AppContext.js';
 import "./stock/Stock.css"; // Reuse Stock CSS for consistent theme
 
 const Expenses = () => {
-    const navigate = useNavigate();
-
     // ── Global shared state ─────────────────────────────────────────────────
     const {
         expenses,
         addExpense: ctxAddExpense,
-        deleteExpense: ctxDeleteExpense,
         totalExpenseAmount,
         expenseByCategory,
     } = useAppContext();

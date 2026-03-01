@@ -4,7 +4,7 @@ import './Stock.css';
 
 const StockTransactions = () => {
   const navigate = useNavigate();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [_isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -45,7 +45,7 @@ const StockTransactions = () => {
     if (product) {
       setUnitPrice(product.price.toString());
     }
-  }, [selectedProduct]);
+  }, [selectedProduct, products]);
 
   // Auto-calculate Total Amount when Quantity or Unit Price change
   useEffect(() => {
@@ -87,18 +87,6 @@ const StockTransactions = () => {
       return allTransactions.filter(t => t.paymentStatus?.toLowerCase() === type.toLowerCase());
     }
     return allTransactions.filter(t => t.type?.toLowerCase() === type.toLowerCase());
-  };
-
-  const StatusBadge = ({ status }) => (
-    <span className={`status-badge ${status}`}>
-      {status === 'success' ? '✅' : '❌'} {status.toUpperCase()}
-    </span>
-  );
-
-  // Navigation handlers
-  const handleNavigation = (path) => {
-    setIsDropdownOpen(false);
-    navigate(path);
   };
 
   // Format date for display
@@ -564,7 +552,7 @@ const StockTransactions = () => {
       {/* Search and Filter Bar - OUTSIDE Container */}
       <div className="history-filters-wrapper">
         <div className="history-filters-header">
-          <h3 className="history-filters-title"></h3>
+          <h3 className="history-filters-title">Recent History</h3>
           {(searchTerm || typeFilter !== "all" || statusFilter !== "all") && (
             <button
               className="clear-filters-btn"

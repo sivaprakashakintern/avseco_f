@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../context/AppContext.js';
 import "./AttendanceLog.css";
 
 const AttendanceLog = () => {
-  const navigate = useNavigate();
-
   // ── Global employees (shared source of truth) ───────────────────────────
-  const { employees: globalEmployees, departments: globalDepts, todayStats } = useAppContext();
+  const { employees: globalEmployees, departments: globalDepts } = useAppContext();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDepartment, setSelectedDepartment] = useState("All Departments");
@@ -22,7 +19,6 @@ const AttendanceLog = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [noteText, setNoteText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [halfDayTime, setHalfDayTime] = useState({ from: "09:00", to: "13:00" });
   const [tempHalfDayTime, setTempHalfDayTime] = useState({ from: "09:00", to: "13:00" });
 
   // Stoppage State
@@ -251,16 +247,6 @@ const AttendanceLog = () => {
     setShowStoppageModal(false);
     setFeedbackMessage(`Work stoppage logged for ${filteredEmployees.length} employees`);
     setTimeout(() => setFeedbackMessage(""), 3000);
-  };
-
-  // Get status badge class
-  const getStatusClass = (status) => {
-    switch (status) {
-      case "present": return "status-badge present";
-      case "half": return "status-badge half";
-      case "absent": return "status-badge absent";
-      default: return "";
-    }
   };
 
   // Get status text

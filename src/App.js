@@ -14,7 +14,6 @@ import SettingsPage from "./pages/SettingsPage.js";
 
 // Stock Pages
 import StockOverview from "./pages/stock/StockOverview.js";
-import StockPurchased from "./pages/stock/StockPurchased.js";
 import Expenses from "./pages/Expenses.js";
 import ExpenseReport from "./pages/ExpenseReport.js";
 import StockTransfer from "./pages/stock/StockTransfer.js";

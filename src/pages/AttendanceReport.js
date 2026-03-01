@@ -1,10 +1,7 @@
-
-import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useMemo, useCallback } from "react";
 import "./AttendanceReport.css";
 
 const AttendanceReport = () => {
-    const navigate = useNavigate();
 
     // State for dates
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -43,7 +40,7 @@ const AttendanceReport = () => {
     const daysInCurrentView = useMemo(() => getDaysInMonth(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
 
     // Data Generation Logic (reusable)
-    const generateMonthData = (year, month) => {
+    const generateMonthData = useCallback((year, month) => {
         const days = getDaysInMonth(year, month);
         const data = {};
 
@@ -78,9 +75,9 @@ const AttendanceReport = () => {
             };
         });
         return data;
-    };
+    }, [employees]);
 
-    const currentMonthData = useMemo(() => generateMonthData(selectedYear, selectedMonth), [selectedYear, selectedMonth, employees]);
+    const currentMonthData = useMemo(() => generateMonthData(selectedYear, selectedMonth), [selectedYear, selectedMonth, generateMonthData]);
 
     const months = [
         "January", "February", "March", "April", "May", "June",
@@ -243,7 +240,6 @@ const AttendanceReport = () => {
 
                 <div className="header-actions">
                     
-
                     <div className="export-group" style={{ display: 'flex', gap: '12px' }}>
                         <div className="custom-dropdown" onClick={(e) => e.stopPropagation()}>
                             <button
