@@ -215,6 +215,18 @@
   letter-spacing: -0.02em;
 }
 
+.stat-value-container {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stat-detail {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
 /* ===== FILTERS ===== */
 .history-filters {
   display: flex;

@@ -37,6 +37,12 @@ const DEFAULT_EMPLOYEES = [
     { id: 11, name: "Suresh Babu", department: "Maitanice", email: "suresh.b@avseco.com", phone: "+91 98765 43220", joinDate: new Date().toISOString().split("T")[0], dob: "1998-05-15", aadhar: "1122 3344 5566", pan: "ZZZZ9999X", address: "12, New Street, Chennai", avatar: "" },
 ];
 
+const DEFAULT_CLIENTS = [
+    { id: 1, companyName: "Reliance Retail", contactPerson: "Ankit Gupta", email: "ankit@reliance.com", phone: "+91 98765 43210", status: "Active", totalOrders: 15, totalSpent: "₹4,50,000", lastOrder: "2026-02-20", address: "Mumbai, MH", gst: "27AAAAA0000A1Z5" },
+    { id: 2, companyName: "Big Bazaar", contactPerson: "Suresh Raina", email: "suresh@futuregroup.com", phone: "+91 98765 43211", status: "Active", totalOrders: 8, totalSpent: "₹2,10,000", lastOrder: "2026-02-15", address: "Bangalore, KA", gst: "29BBBBB1111B2Z6" },
+    { id: 3, companyName: "More Supermarket", contactPerson: "Rahul Dravid", email: "rahul@more.com", phone: "+91 98765 43212", status: "Active", totalOrders: 5, totalSpent: "₹1,25,000", lastOrder: "2026-02-10", address: "Chennai, TN", gst: "33CCCCC2222C3Z7" },
+];
+
 const DEFAULT_EXPENSES = [
     { id: 1, category: "Machine Maintenance", description: "Repair of CNC Machine", amount: "15000", date: "2026-02-18", paymentMode: "Bank Transfer" },
     { id: 2, category: "Material", description: "Raw Material – Steel Sheets", amount: "45000", date: "2026-02-19", paymentMode: "Cheque" },
@@ -57,12 +63,13 @@ export const AppProvider = ({ children }) => {
     const [employees, setEmployeesRaw] = useState(stored?.employees ?? DEFAULT_EMPLOYEES);
     const [expenses, setExpensesRaw] = useState(stored?.expenses ?? DEFAULT_EXPENSES);
     const [attendanceRecords, setAttendanceRecordsRaw] = useState(stored?.attendanceRecords ?? {});
+    const [clients, setClientsRaw] = useState(stored?.clients ?? DEFAULT_CLIENTS);
     // attendanceRecords shape: { "YYYY-MM-DD": [ { empId, status, note, halfDayTime } ] }
 
     // ── Persist every change to localStorage ────────────────────────────────────
     useEffect(() => {
-        saveToStorage({ employees, expenses, attendanceRecords });
-    }, [employees, expenses, attendanceRecords]);
+        saveToStorage({ employees, expenses, attendanceRecords, clients });
+    }, [employees, expenses, attendanceRecords, clients]);
 
     // ══════════════════════════════════════════════════════════
     // EMPLOYEES API
@@ -144,6 +151,24 @@ export const AppProvider = ({ children }) => {
     }, []);
 
     // ══════════════════════════════════════════════════════════
+    // CLIENTS API
+    // ══════════════════════════════════════════════════════════
+    const addClient = useCallback((client) => {
+        setClientsRaw(prev => {
+            const newClient = { ...client, id: Date.now() };
+            return [...prev, newClient];
+        });
+    }, []);
+
+    const updateClient = useCallback((id, updates) => {
+        setClientsRaw(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    }, []);
+
+    const deleteClient = useCallback((id) => {
+        setClientsRaw(prev => prev.filter(c => c.id !== id));
+    }, []);
+
+    // ══════════════════════════════════════════════════════════
     // DERIVED / ANALYTICS
     // ══════════════════════════════════════════════════════════
 
@@ -220,6 +245,12 @@ export const AppProvider = ({ children }) => {
             employeesByDepartment,
             todayStats,
             last7DaysTrend,
+
+            // Clients
+            clients,
+            addClient,
+            updateClient,
+            deleteClient,
         }}>
             {children}
         </AppContext.Provider>

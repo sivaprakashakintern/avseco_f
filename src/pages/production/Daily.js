@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -8,8 +8,6 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
 import './Daily.css';
-
-const AVAILABLE_SIZES = ['6-inch', '8-inch', '10-inch', '12-inch'];
 
 const Production = () => {
   const navigate = useNavigate();
@@ -70,6 +68,9 @@ const Production = () => {
     monthBySize: {}
   });
 
+  // Available sizes
+  const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
+
   // ========== HELPER FUNCTIONS ==========
   const formatDate = (date) => {
     if (!date) return '';
@@ -81,8 +82,29 @@ const Production = () => {
     return dayjs(dateStr, 'DD-MM-YYYY');
   };
 
+  // ========== LOAD DATA FROM LOCALSTORAGE ON INITIAL RENDER ==========
+  useEffect(() => {
+    const savedData = localStorage.getItem('productionHistory');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      setProductionHistory(parsedData);
+
+      // Calculate stats from loaded data
+      calculateStats(parsedData);
+    }
+  }, []);
+
+  // ========== SAVE TO LOCALSTORAGE WHENEVER PRODUCTION HISTORY CHANGES ==========
+  useEffect(() => {
+    if (productionHistory.length > 0) {
+      localStorage.setItem('productionHistory', JSON.stringify(productionHistory));
+    } else {
+      localStorage.removeItem('productionHistory');
+    }
+  }, [productionHistory]);
+
   // ========== CALCULATE STATS FUNCTION ==========
-  const calculateStats = useCallback((data) => {
+  const calculateStats = (data) => {
     const today = formatDate(dayjs());
 
     // Today's totals by size
@@ -90,7 +112,7 @@ const Production = () => {
     const todayTotal = todayData.reduce((sum, item) => sum + item.quantity, 0);
 
     const todayBySize = {};
-    AVAILABLE_SIZES.forEach(size => {
+    availableSizes.forEach(size => {
       todayBySize[size] = todayData
         .filter(item => item.size === size)
         .reduce((sum, item) => sum + item.quantity, 0);
@@ -107,7 +129,7 @@ const Production = () => {
     const weekTotal = weekData.reduce((sum, item) => sum + item.quantity, 0);
 
     const weekBySize = {};
-    AVAILABLE_SIZES.forEach(size => {
+    availableSizes.forEach(size => {
       weekBySize[size] = weekData
         .filter(item => item.size === size)
         .reduce((sum, item) => sum + item.quantity, 0);
@@ -117,14 +139,14 @@ const Production = () => {
     const currentMonth = dayjs().month() + 1;
     const currentYear = dayjs().year();
     const monthData = data.filter(item => {
-      const [, month, year] = item.date.split('-').map(Number);
+      const [day, month, year] = item.date.split('-').map(Number);
       return month === currentMonth && year === currentYear;
     });
 
     const monthTotal = monthData.reduce((sum, item) => sum + item.quantity, 0);
 
     const monthBySize = {};
-    AVAILABLE_SIZES.forEach(size => {
+    availableSizes.forEach(size => {
       monthBySize[size] = monthData
         .filter(item => item.size === size)
         .reduce((sum, item) => sum + item.quantity, 0);
@@ -142,28 +164,7 @@ const Production = () => {
       weekBySize,
       monthBySize
     });
-  }, []);
-
-  // ========== LOAD DATA FROM LOCALSTORAGE ON INITIAL RENDER ==========
-  useEffect(() => {
-    const savedData = localStorage.getItem('productionHistory');
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      setProductionHistory(parsedData);
-
-      // Calculate stats from loaded data
-      calculateStats(parsedData);
-    }
-  }, [calculateStats]);
-
-  // ========== SAVE TO LOCALSTORAGE WHENEVER PRODUCTION HISTORY CHANGES ==========
-  useEffect(() => {
-    if (productionHistory.length > 0) {
-      localStorage.setItem('productionHistory', JSON.stringify(productionHistory));
-    } else {
-      localStorage.removeItem('productionHistory');
-    }
-  }, [productionHistory]);
+  };
 
   // ========== GET SUMMARY DATA BY SIZE FOR SELECTED VIEW ==========
   const getSummaryData = () => {
@@ -193,7 +194,7 @@ const Production = () => {
         const year = summaryDate.year();
 
         filteredData = productionHistory.filter(item => {
-          const [, itemMonth, itemYear] = item.date.split('-').map(Number);
+          const [day, itemMonth, itemYear] = item.date.split('-').map(Number);
           return itemMonth === month && itemYear === year;
         });
         break;
@@ -206,7 +207,7 @@ const Production = () => {
     const bySize = {};
     let total = 0;
 
-    AVAILABLE_SIZES.forEach(size => {
+    availableSizes.forEach(size => {
       const sizeTotal = filteredData
         .filter(item => item.size === size)
         .reduce((sum, item) => sum + item.quantity, 0);
@@ -282,6 +283,11 @@ const Production = () => {
     return ['all', ...new Set(sizes)];
   };
 
+  const getUniqueDates = () => {
+    const dates = productionHistory.map(item => item.date);
+    return [...new Set(dates)].sort().reverse();
+  };
+
   // ========== EXPORT MODAL FUNCTIONS ==========
   const openExportModal = () => {
     // Set default dates
@@ -351,7 +357,7 @@ const Production = () => {
         if (!exportStartDate || !exportEndDate) return [];
 
         return productionHistory.filter(item => {
-          const [, month, year] = item.date.split('-').map(Number);
+          const [day, month, year] = item.date.split('-').map(Number);
           const itemYearMonth = year * 100 + month;
           const startYearMonth = exportStartDate.year() * 100 + (exportStartDate.month() + 1);
           const endYearMonth = exportEndDate.year() * 100 + (exportEndDate.month() + 1);
@@ -360,7 +366,7 @@ const Production = () => {
 
       case 'yearly':
         return productionHistory.filter(item => {
-          const [, , year] = item.date.split('-').map(Number);
+          const [day, month, year] = item.date.split('-').map(Number);
           return year.toString() === exportYear;
         });
 
@@ -641,6 +647,7 @@ const Production = () => {
 
   const filteredHistory = getFilteredHistory();
   const uniqueHistorySizes = getUniqueHistorySizes();
+  const uniqueDates = getUniqueDates();
   const summaryData = getSummaryData();
 
   // Calendar component wrapper
@@ -686,10 +693,6 @@ const Production = () => {
           <p className="page-subtitle">Track daily production and update stock automatically</p>
         </div>
         <div className="header-actions">
-          <button className="btn-transfer-premium" onClick={() => handleNavigation('/production/plan')}>
-            <span className="material-symbols-outlined">assignment</span>
-            Production Plan
-          </button>
           <button className="btn-export-premium" onClick={openExportModal}>
             <span className="material-symbols-outlined">description</span>
             Export
@@ -1111,7 +1114,7 @@ const Production = () => {
           <div className="size-breakdown">
             <h4>Size-wise Breakdown</h4>
             <div className="size-grid">
-              {AVAILABLE_SIZES.map(size => (
+              {availableSizes.map(size => (
                 <div key={size} className="size-card">
                   <div className="size-name">{size}</div>
                   <div className="size-quantity">{summaryData.bySize[size]?.toLocaleString() || 0} plates</div>

@@ -65,14 +65,17 @@ const StockOverview = () => {
   const [stats, setStats] = useState({
     totalProducts: 0,
     lowStock: 0,
+    lowStockDetails: [],
     totalStock: 0,
     plateTypes: 4,
   });
 
+  // Selected product and view state
+  const [selectedProduct, setSelectedProduct] = useState("Areca Leaf Plate");
+  const [viewMode, setViewMode] = useState("product"); // "product" or "size"
+
   // Modal states
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
@@ -91,6 +94,9 @@ const StockOverview = () => {
     perPlateRate: "",
   });
 
+  // ========== GET UNIQUE PRODUCTS ==========
+  const uniqueProducts = [...new Set(stockItems.map(item => item.name))];
+
   // ========== FILTER ITEMS BASED ON SELECTION ==========
   const getFilteredItems = () => {
     return stockItems;
@@ -98,97 +104,36 @@ const StockOverview = () => {
 
   const filteredItems = getFilteredItems();
 
-  // ========== CALCULATE STATS ==========
   useEffect(() => {
+    // Force total products to 1 as requested
+    const totalProducts = 1;
+
     // Tally total stock from filtered items to ensure they match
     const totalStockValue = filteredItems.reduce((sum, item) => sum + item.quantity, 0);
 
+    // Identify low stock items (e.g., threshold < 3000)
+    const lowStockItems = filteredItems.filter(item => item.quantity < 3000);
+    const lowStockSizes = lowStockItems.map(item => item.size);
+
     setStats({
       totalProducts: 1,
-      lowStock: 0,
+      lowStock: lowStockItems.length,
+      lowStockDetails: lowStockSizes,
       totalStock: totalStockValue,
       plateTypes: 4,
     });
   }, [filteredItems]);
 
   // ========== NAVIGATION HANDLERS ==========
-  const handleStockTransfer = () => {
-    navigate('/stock/transfer');
-  };
+
 
   // ========== HANDLERS ==========
 
-  // Edit Stock
-  const handleEditStock = (item) => {
-    setSelectedItem(item);
-    setFormData({
-      name: item.name,
-      sku: item.sku,
-      category: item.category,
-      quantity: item.quantity,
-      unit: item.unit,
-      price: item.price,
-      threshold: item.threshold || 100,
-      size: item.size || "",
-      perPlateRate: item.perPlateRate || "",
-    });
-    setShowEditModal(true);
-  };
 
-  const confirmEditStock = () => {
-    if (!selectedItem) return;
 
-    const quantity = parseInt(formData.quantity);
-    const price = parseFloat(formData.price);
-    const perPlateRate = parseFloat(formData.perPlateRate) || 0;
-    const totalValue = quantity * price;
 
-    // Determine status based on threshold
-    let status = "normal";
-    if (quantity < formData.threshold * 0.5) {
-      status = "critical";
-    } else if (quantity < formData.threshold) {
-      status = "low";
-    }
 
-    const updatedItems = stockItems.map((item) =>
-      item.id === selectedItem.id
-        ? {
-          ...item,
-          name: formData.name,
-          sku: formData.sku,
-          category: formData.category,
-          quantity: quantity,
-          unit: formData.unit,
-          price: price,
-          totalValue: totalValue,
-          status: status,
-          threshold: formData.threshold,
-          size: formData.size,
-          perPlateRate: perPlateRate,
-        }
-        : item
-    );
 
-    setStockItems(updatedItems);
-    setShowEditModal(false);
-    setSelectedItem(null);
-    setFeedbackMessage("Stock item updated successfully");
-
-    setTimeout(() => setFeedbackMessage(""), 3000);
-  };
-
-  const confirmDeleteStock = () => {
-    if (!selectedItem) return;
-
-    const filteredItems = stockItems.filter((item) => item.id !== selectedItem.id);
-    setStockItems(filteredItems);
-    setShowDeleteModal(false);
-    setSelectedItem(null);
-    setFeedbackMessage("Stock item deleted successfully");
-
-    setTimeout(() => setFeedbackMessage(""), 3000);
-  };
 
   // Export Handler
   const handleExport = () => {
@@ -243,9 +188,38 @@ const StockOverview = () => {
     });
   };
 
+  // Get status badge class
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "critical":
+        return "status-badge critical";
+      case "low":
+        return "status-badge low";
+      default:
+        return "status-badge normal";
+    }
+  };
+
+  // Get status text
+  const getStatusText = (status) => {
+    switch (status) {
+      case "critical":
+        return "Critical";
+      case "low":
+        return "Low Stock";
+      default:
+        return "Normal";
+    }
+  };
+
   // Format currency
   const formatCurrency = (value) => {
     return `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  // Format quantity with unit
+  const formatQuantity = (quantity, unit) => {
+    return `${quantity.toLocaleString("en-IN")} ${unit}`;
   };
 
   return (
@@ -279,10 +253,7 @@ const StockOverview = () => {
           <p className="page-subtitle">Real-time inventory management and tracking</p>
         </div>
         <div className="header-actions">
-          <button className="btn-transfer-premium" onClick={handleStockTransfer}>
-            <span className="material-symbols-outlined">swap_horiz</span>
-            Stock Transfer
-          </button>
+
           <button className="btn-export-premium" onClick={handleExport}>
             <span className="material-symbols-outlined">
               {exportLoading ? "hourglass_empty" : "download"}
@@ -313,7 +284,12 @@ const StockOverview = () => {
           </div>
           <div className="stat-info">
             <span className="stat-label">Low Stock</span>
-            <span className="stat-value">{stats.lowStock}</span>
+            <div className="stat-value-container">
+              <span className="stat-value">{stats.lowStock}</span>
+              {stats.lowStockDetails.length > 0 && (
+                <span className="stat-detail">({stats.lowStockDetails.join(", ")})</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -357,7 +333,6 @@ const StockOverview = () => {
                 <th>Size</th>
                 <th>Pieces</th>
                 <th>Per Plate Price</th>
-                <th className="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -373,23 +348,12 @@ const StockOverview = () => {
                     <td>{item.size && item.size !== "-" ? <span className="size-badge">{item.size}</span> : "-"}</td>
                     <td className="quantity-cell">{item.quantity.toLocaleString("en-IN")} Pieces</td>
                     <td className="per-plate-cell">{item.perPlateRate > 0 ? formatCurrency(item.perPlateRate) : "-"}</td>
-                    <td>
-                      <div className="action-buttons-cell">
-                        <button
-                          className="action-btn-minimal edit"
-                          onClick={() => handleEditStock(item)}
-                          title="Edit Item"
-                        >
-                          <span className="material-symbols-outlined">edit_square</span>
-                          Edit
-                        </button>
-                      </div>
-                    </td>
+
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="no-data-cell">
+                  <td colSpan="4" className="no-data-cell">
                     <div className="empty-state">
                       <span className="material-symbols-outlined empty-icon">inventory</span>
                       <h4>No items found</h4>
@@ -404,136 +368,9 @@ const StockOverview = () => {
 
       {/* Results Summary Removed */}
 
-      {/* ========== MODALS ========== */}
-      {/* Edit Stock Modal */}
-      {showEditModal && selectedItem && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Edit Stock Item</h3>
-              <button className="modal-close" onClick={() => setShowEditModal(false)}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="modal-row">
-                <div className="modal-form-group">
-                  <label>Product Name *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="modal-input"
-                  />
-                </div>
-                <div className="modal-form-group">
-                  <label>SKU *</label>
-                  <input
-                    type="text"
-                    name="sku"
-                    value={formData.sku}
-                    onChange={handleInputChange}
-                    className="modal-input"
-                  />
-                </div>
-              </div>
 
-              <div className="modal-row">
-                <div className="modal-form-group">
-                  <label>Size</label>
-                  <select
-                    name="size"
-                    value={formData.size}
-                    onChange={handleInputChange}
-                    className="modal-select"
-                  >
-                    <option value="">Select Size</option>
-                    <option value="6 inch">6 inch</option>
-                    <option value="8 inch">8 inch</option>
-                    <option value="10 inch">10 inch</option>
-                    <option value="12 inch">12 inch</option>
-                    <option value="-">Not Applicable</option>
-                  </select>
-                </div>
-                <div className="modal-form-group">
-                  <label>Per Plate Rate (₹)</label>
-                  <input
-                    type="number"
-                    name="perPlateRate"
-                    value={formData.perPlateRate}
-                    onChange={handleInputChange}
-                    className="modal-input"
-                    step="0.01"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
 
-              <div className="modal-form-group">
-                <label>Pieces (Quantity) *</label>
-                <input
-                  type="number"
-                  name="quantity"
-                  value={formData.quantity}
-                  onChange={handleInputChange}
-                  className="modal-input"
-                  placeholder="Total count of pieces"
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="modal-cancel"
-                onClick={() => setShowEditModal(false)}
-              >
-                Cancel
-              </button>
-              <button className="modal-confirm" onClick={confirmEditStock}>
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedItem && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Delete Stock Item</h3>
-              <button
-                className="modal-close"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="modal-icon warning">
-                <span className="material-symbols-outlined">warning</span>
-              </div>
-              <p className="modal-title">Are you sure?</p>
-              <p className="modal-desc">
-                You are about to delete <strong>{selectedItem.name}</strong> from
-                your inventory. This action cannot be undone.
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="modal-cancel"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Cancel
-              </button>
-              <button className="modal-confirm delete" onClick={confirmDeleteStock}>
-                Delete Item
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Export Modal */}
       {showExportModal && (

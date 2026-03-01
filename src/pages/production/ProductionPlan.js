@@ -141,11 +141,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     setSelectedSize(size);
   };
 
-  // ===== HANDLE DAILY PRODUCTION CLICK =====
-  const handleDailyProductionClick = () => {
-    // Navigate to Daily Production page - Updated to match App.js route
-    navigate('/production/daily');
-  };
+
 
   // ===== GET PRODUCT DETAILS FOR SELECTED SIZE =====
   const getProductDetailsForSize = (size) => {
@@ -478,15 +474,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             <p className="page-subtitle">Set targets and track daily production progress by size</p>
           </div>
           <div className="header-actions">
-            {/* Daily Production Button */}
-            <button
-              className="btn-transfer-premium"
-              onClick={handleDailyProductionClick}
-              title="Go to Daily Production"
-            >
-              <span className="material-symbols-outlined">production_quantity_limits</span>
-              Daily Production
-            </button>
+
 
             {/* Date Badge */}
             <div className="btn-export-premium" style={{ cursor: 'default', background: 'rgba(255, 255, 255, 0.1)' }}>

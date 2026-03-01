@@ -12,6 +12,10 @@
 }
 
 /* Global premium-header will handle these */
+.premium-header {
+    position: relative;
+    z-index: 110;
+}
 
 .report-header-actions {
     display: flex;
@@ -38,19 +42,14 @@
 
 .back-btn:hover {
     background: rgba(255, 255, 255, 0.25);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
 }
 
 .export-group {
     display: flex;
     align-items: center;
-    background: rgba(0, 0, 0, 0.15);
-    /* Darker translucent for better contrast */
-    backdrop-filter: blur(12px);
-    padding: 6px;
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 12px;
 }
 
 .export-group .dropdown-trigger {
@@ -70,9 +69,32 @@
     margin-right: 8px;
 }
 
-.export-group .dropdown-trigger:hover {
+.export-group .range-trigger {
+    height: 44px;
+    border-radius: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 24px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.export-group .range-trigger:hover {
     background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.export-group .range-trigger .material-symbols-outlined {
+    font-size: 20px;
+    transition: transform 0.3s ease;
 }
 
 .export-group .dropdown-trigger .material-symbols-outlined {
@@ -98,28 +120,31 @@
 
 .export-btn:hover {
     background: #004d39;
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 15px rgba(0, 106, 78, 0.3);
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 30px -5px rgba(0, 106, 78, 0.3);
 }
 
 /* ===== FILTERS CARD ===== */
 .filters-card {
-    background: rgba(255, 255, 255, 0.9);
+    background: #ffffff;
     padding: 16px 24px;
     border-radius: 20px;
-    border: 1px solid rgba(226, 232, 240, 0.8);
+    border: 1px solid #e2e8f0;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 32px;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 100;
+    overflow: visible !important;
 }
 
 .dark .filters-card {
     background: #1c2e21;
     border-color: #2a3a2e;
 }
+
 
 .filter-item {
     display: flex;
@@ -139,6 +164,8 @@
 .custom-dropdown {
     position: relative;
     display: inline-block;
+    z-index: 1000;
+    /* Ensure the open dropdown's container is higher than surrounding content */
 }
 
 .dropdown-trigger {
@@ -168,17 +195,27 @@
 
 .dropdown-menu {
     position: absolute;
-    top: calc(100% + 12px);
-    right: 0;
+    top: calc(100% + 8px);
+    left: 0;
+    /* Align to left by default for Year/Month */
     background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.15), 0 12px 20px -10px rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    z-index: 1000;
+    border-radius: 14px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2), 0 5px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    z-index: 10000 !important;
+    /* Extremely high to beat any sticky headers */
     overflow: hidden;
-    min-width: 210px;
-    padding: 6px;
-    animation: dropDownSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    min-width: 200px;
+    padding: 8px;
+    animation: dropDownSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: top left;
+}
+
+/* Specific right-alignment for the header export dropdown */
+.export-group .dropdown-menu {
+    left: auto;
+    right: 0;
+    transform-origin: top right;
 }
 
 .dropdown-menu.scrollable {
@@ -216,6 +253,21 @@
     background: #006A4E;
     color: white;
     font-weight: 700;
+}
+
+.dropdown-menu.scrollable {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+/* Custom scrollbar for dropdown */
+.dropdown-menu.scrollable::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-menu.scrollable::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
 }
 
 @keyframes dropDownSlide {

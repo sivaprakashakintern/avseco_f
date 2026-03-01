@@ -239,13 +239,12 @@ const AttendanceReport = () => {
                 </div>
 
                 <div className="header-actions">
-                    
+
                     <div className="export-group" style={{ display: 'flex', gap: '12px' }}>
-                        <div className="custom-dropdown" onClick={(e) => e.stopPropagation()}>
+                        <div className="custom-dropdown range-selector" onClick={(e) => e.stopPropagation()}>
                             <button
-                                className="dropdown-trigger"
+                                className="dropdown-trigger range-trigger"
                                 onClick={() => setShowRangeDropdown(!showRangeDropdown)}
-                                style={{ height: '44px', borderRadius: '40px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 20px', cursor: 'pointer' }}
                             >
                                 {exportRange === "month" ? "Current Month" : `Full Year ${selectedYear}`}
                                 <span className="material-symbols-outlined">expand_more</span>

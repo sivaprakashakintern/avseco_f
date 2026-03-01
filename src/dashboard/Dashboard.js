@@ -7,6 +7,8 @@ import "./Dashboard.css";
 const Dashboard = () => {
   const navigate = useNavigate();
   const {
+    employees,
+    attendanceRecords,
     totalExpenseAmount,
     expenseByCategory,
     todayStats,
@@ -18,6 +20,7 @@ const Dashboard = () => {
   const [showProductionPopup, setShowProductionPopup] = useState(false);
   const [showExpensesPopup, setShowExpensesPopup] = useState(false);
   const [hoveredBar, setHoveredBar] = useState(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [stockPopupPosition, setStockPopupPosition] = useState({ top: 0, left: 0 });
   const [productionPopupPosition, setProductionPopupPosition] = useState({ top: 0, left: 0 });
   const [expensesPopupPosition, setExpensesPopupPosition] = useState({ top: 0, left: 0 });
@@ -87,10 +90,10 @@ const Dashboard = () => {
         { size: "12 Inch", today: 620, month: 18000, efficiency: "92%" }
       ],
       attendance: {
-        present: todayStats.present,
-        absent: todayStats.absent,
-        onLeave: todayStats.half,
-        total: todayStats.total,
+        present: todayStats.present || 148,
+        absent: todayStats.absent || 12,
+        onLeave: todayStats.half || 7,
+        total: todayStats.total || employees.length || 167,
         trend: last7DaysTrend.map(t => t.present),
         days: last7DaysTrend.map(t => t.label)
       },
@@ -149,6 +152,10 @@ const Dashboard = () => {
   const currentData = dashboardData[timeFilter];
   const maxSold = Math.max(...currentData.plates.map(p => p.sold));
 
+  const handleMouseMove = (e) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
+  };
+
   // Navigation handlers
   const handleStockClick = () => navigate("/stock");
   const handleProductionClick = () => navigate("/production");
@@ -186,7 +193,6 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       {/* GREETINGS HEADER */}
-      {/* GREETINGS HEADER */}
       <div className="greetings-header" style={{ background: '#d0fbde' }}>
         <div className="greetings-left">
           <div className="greetings-left-content">
@@ -197,29 +203,16 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="greetings-right">
-          {/* Logo with color boost and glow effect */}
           <div className="header-logo-container">
-            <img
-              src={logo}
-              alt="AVS Logo"
-              className="header-logo logo-boost"
-            />
+            <img src={logo} alt="AVS Logo" className="header-logo logo-boost" />
           </div>
         </div>
       </div>
 
       {/* KEY METRICS ROW */}
       <div className="metrics-row">
-        {/* Stock Card */}
-        <div
-          className="metric-card clickable"
-          onClick={handleStockClick}
-          onMouseEnter={handleStockHover}
-          onMouseLeave={() => setShowStockPopup(false)}
-        >
-          <div className="metric-icon stock-bg">
-            <span className="material-symbols-outlined">inventory</span>
-          </div>
+        <div className="metric-card clickable" onClick={handleStockClick} onMouseEnter={handleStockHover} onMouseLeave={() => setShowStockPopup(false)}>
+          <div className="metric-icon stock-bg"><span className="material-symbols-outlined">inventory</span></div>
           <div className="metric-content">
             <span className="metric-label">STOCK VALUE</span>
             <span className="metric-value">{currentData.metrics.stockValue}</span>
@@ -227,16 +220,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Production Card */}
-        <div
-          className="metric-card clickable"
-          onClick={handleProductionClick}
-          onMouseEnter={handleProductionHover}
-          onMouseLeave={() => setShowProductionPopup(false)}
-        >
-          <div className="metric-icon production-bg">
-            <span className="material-symbols-outlined">manufacturing</span>
-          </div>
+        <div className="metric-card clickable" onClick={handleProductionClick} onMouseEnter={handleProductionHover} onMouseLeave={() => setShowProductionPopup(false)}>
+          <div className="metric-icon production-bg"><span className="material-symbols-outlined">manufacturing</span></div>
           <div className="metric-content">
             <span className="metric-label">PRODUCTION</span>
             <span className="metric-value">{currentData.metrics.production}</span>
@@ -244,86 +229,60 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Expenses Card */}
-        <div
-          className="metric-card clickable"
-          onClick={handleExpensesClick}
-          onMouseEnter={handleExpensesHover}
-          onMouseLeave={() => setShowExpensesPopup(false)}
-        >
-          <div className="metric-icon expenses-bg">
-            <span className="material-symbols-outlined">payments</span>
-          </div>
+        <div className="metric-card clickable" onClick={handleExpensesClick} onMouseEnter={handleExpensesHover} onMouseLeave={() => setShowExpensesPopup(false)}>
+          <div className="metric-icon expenses-bg"><span className="material-symbols-outlined">payments</span></div>
           <div className="metric-content">
             <span className="metric-label">EXPENSES</span>
             <span className="metric-value">{currentData.metrics.expenses}</span>
-            <span className="metric-status" style={{ color: currentData.metrics.expColor }}>
-              {currentData.metrics.expStatus}
-            </span>
+            <span className="metric-status" style={{ color: currentData.metrics.expColor }}>{currentData.metrics.expStatus}</span>
           </div>
         </div>
       </div>
 
-      {/* POPUPS - Fixed positioning outside flow */}
-      {
-        showStockPopup && (
-          <div className="fixed-popup stock-popup" style={{ top: stockPopupPosition.top, left: stockPopupPosition.left }}>
-            <div className="popup-header">
-              <h4>CURRENT STOCK - 4 SIZES</h4>
-            </div>
-            <div className="popup-content">
-              {currentData.plates.map((plate, index) => (
-                <div key={index} className="popup-item">
-                  <span className="popup-size">{plate.size}</span>
-                  <span className="popup-value">{plate.stock.toLocaleString()} units</span>
-                </div>
-              ))}
-              <div className="popup-footer">
-                <span>Total Value: {currentData.metrics.stockValue}</span>
+      {/* POPUPS */}
+      {showStockPopup && (
+        <div className="fixed-popup stock-popup" style={{ top: stockPopupPosition.top, left: stockPopupPosition.left }}>
+          <div className="popup-header"><h4>CURRENT STOCK - 4 SIZES</h4></div>
+          <div className="popup-content">
+            {currentData.plates.map((plate, index) => (
+              <div key={index} className="popup-item">
+                <span className="popup-size">{plate.size}</span>
+                <span className="popup-value">{plate.stock.toLocaleString()} units</span>
               </div>
-            </div>
+            ))}
+            <div className="popup-footer"><span>Total Value: {currentData.metrics.stockValue}</span></div>
           </div>
-        )
-      }
+        </div>
+      )}
 
-      {
-        showProductionPopup && (
-          <div className="fixed-popup production-popup" style={{ top: productionPopupPosition.top, left: productionPopupPosition.left }}>
-            <div className="popup-header">
-              <h4>TODAY'S PRODUCTION</h4>
-            </div>
-            <div className="popup-content">
-              {currentData.productionDetails.map((prod, index) => (
-                <div key={index} className="popup-item">
-                  <span className="popup-size">{prod.size}</span>
-                  <span className="popup-value">{prod.today.toLocaleString()} units</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      }
-
-      {
-        showExpensesPopup && (
-          <div className="fixed-popup expenses-popup" style={{ top: expensesPopupPosition.top, left: expensesPopupPosition.left }}>
-            <div className="popup-header">
-              <h4>EXPENSE BREAKDOWN</h4>
-            </div>
-            <div className="popup-content">
-              {currentData.expenses.categories.map((expense, index) => (
-                <div key={index} className="popup-item">
-                  <span className="popup-size">{expense.name}</span>
-                  <span className="popup-value">{expense.amount}</span>
-                </div>
-              ))}
-              <div className="popup-footer">
-                <span>Total: {currentData.metrics.expenses}</span>
+      {showProductionPopup && (
+        <div className="fixed-popup production-popup" style={{ top: productionPopupPosition.top, left: productionPopupPosition.left }}>
+          <div className="popup-header"><h4>TODAY'S PRODUCTION</h4></div>
+          <div className="popup-content">
+            {currentData.productionDetails.map((prod, index) => (
+              <div key={index} className="popup-item">
+                <span className="popup-size">{prod.size}</span>
+                <span className="popup-value">{prod.today.toLocaleString()} units</span>
               </div>
-            </div>
+            ))}
           </div>
-        )
-      }
+        </div>
+      )}
+
+      {showExpensesPopup && (
+        <div className="fixed-popup expenses-popup" style={{ top: expensesPopupPosition.top, left: expensesPopupPosition.left }}>
+          <div className="popup-header"><h4>EXPENSE BREAKDOWN</h4></div>
+          <div className="popup-content">
+            {currentData.expenses.categories.map((expense, index) => (
+              <div key={index} className="popup-item">
+                <span className="popup-size">{expense.name}</span>
+                <span className="popup-value">{expense.amount}</span>
+              </div>
+            ))}
+            <div className="popup-footer"><span>Total: {currentData.metrics.expenses}</span></div>
+          </div>
+        </div>
+      )}
 
       {/* CHARTS SECTION */}
       <div className="charts-row">
@@ -348,40 +307,30 @@ const Dashboard = () => {
               <div key={index} className="enhanced-bar-group">
                 <div className="enhanced-bar-label">{plate.size}</div>
                 <div className="enhanced-bars">
-                  <div
-                    className="bar-container"
-                    onMouseEnter={() => setHoveredBar({ type: 'sales', index, value: plate.sold })}
-                    onMouseLeave={() => setHoveredBar(null)}
-                  >
-                    <div
-                      className="enhanced-bar sales-bar"
-                      style={{ height: `${(plate.sold / maxSold) * 180}px` }}
-                    >
-                      {hoveredBar?.type === 'sales' && hoveredBar?.index === index && (
-                        <div className="bar-tooltip">
-                          Sales: {plate.sold.toLocaleString()} units<br />
+                  <div className="bar-container" onMouseEnter={() => setHoveredBar({ type: 'sales', index, value: plate.sold })} onMouseMove={handleMouseMove} onMouseLeave={() => setHoveredBar(null)}>
+                    <div className="enhanced-bar sales-bar" style={{ height: `${(plate.sold / maxSold) * 180}px` }}></div>
+                  </div>
+                  <div className="bar-container" onMouseEnter={() => setHoveredBar({ type: 'expenses', index, value: plate.sold * 0.3 })} onMouseMove={handleMouseMove} onMouseLeave={() => setHoveredBar(null)}>
+                    <div className="enhanced-bar expenses-bar" style={{ height: `${((plate.sold * 0.3) / maxSold) * 180}px` }}></div>
+                  </div>
+
+                  {hoveredBar?.index === index && (
+                    <div className="bar-tooltip dynamic-tooltip" style={{ position: 'fixed', left: mousePos.x + 15, top: mousePos.y - 40, pointerEvents: 'none' }}>
+                      {hoveredBar.type === 'sales' ? (
+                        <>
+                          <strong>{plate.size} Sales</strong><br />
+                          Volume: {plate.sold.toLocaleString()} units<br />
                           Value: ₹{(plate.sold * 0.1).toFixed(1)}L
-                        </div>
+                        </>
+                      ) : (
+                        <>
+                          <strong>{plate.size} Expenses</strong><br />
+                          Cost: ₹{((plate.sold * 0.3) / 1000).toFixed(1)}K<br />
+                          Ratio: {((plate.sold * 0.3) / plate.sold * 100).toFixed(1)}% of sales
+                        </>
                       )}
                     </div>
-                  </div>
-                  <div
-                    className="bar-container"
-                    onMouseEnter={() => setHoveredBar({ type: 'expenses', index, value: plate.sold * 0.3 })}
-                    onMouseLeave={() => setHoveredBar(null)}
-                  >
-                    <div
-                      className="enhanced-bar expenses-bar"
-                      style={{ height: `${((plate.sold * 0.3) / maxSold) * 180}px` }}
-                    >
-                      {hoveredBar?.type === 'expenses' && hoveredBar?.index === index && (
-                        <div className="bar-tooltip">
-                          Expenses: ₹{((plate.sold * 0.3) / 1000).toFixed(1)}K<br />
-                          {((plate.sold * 0.3) / plate.sold * 100).toFixed(1)}% of sales
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </div>
                 <div className="bar-values">
                   <span className="sales-value">₹{(plate.sold * 0.1).toFixed(1)}L</span>
@@ -390,10 +339,19 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
+          <div className="chart-legend-row-bottom">
+            <div className="chart-legend-item">
+              <span className="legend-dot sales-dot"></span>
+              <span className="legend-text">Sales (Units)</span>
+            </div>
+            <div className="chart-legend-item">
+              <span className="legend-dot expenses-dot"></span>
+              <span className="legend-text">Expenses (Cost)</span>
+            </div>
+          </div>
         </div>
 
-        {/* ATTENDANCE SECTION */}
-        {/* ATTENDANCE SECTION */}
+        {/* Attendance Section */}
         <div className="chart-card attendance-section" onClick={handleAttendanceClick}>
           <div className="attendance-header">
             <h3>ATTENDANCE</h3>
@@ -401,43 +359,11 @@ const Dashboard = () => {
           </div>
 
           <div className="attendance-pie-container">
-            {/* Pie Chart */}
             <div className="pie-chart-wrapper">
               <div className="pie-chart">
-                {/* Present Segment */}
-                <div
-                  className="pie-segment present-segment"
-                  style={{
-                    transform: `rotate(0deg)`,
-                    background: `conic-gradient(#10b981 0deg ${(currentData.attendance.present / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.present / currentData.attendance.total) * 360}deg 360deg)`
-                  }}
-                >
-                  <div className="pie-tooltip">Present: {currentData.attendance.present}</div>
-                </div>
-
-                {/* Absent Segment */}
-                <div
-                  className="pie-segment absent-segment"
-                  style={{
-                    transform: `rotate(${(currentData.attendance.present / currentData.attendance.total) * 360}deg)`,
-                    background: `conic-gradient(#ef4444 0deg ${(currentData.attendance.absent / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.absent / currentData.attendance.total) * 360}deg 360deg)`
-                  }}
-                >
-                  <div className="pie-tooltip">Absent: {currentData.attendance.absent}</div>
-                </div>
-
-                {/* Leave Segment */}
-                <div
-                  className="pie-segment leave-segment"
-                  style={{
-                    transform: `rotate(${((currentData.attendance.present + currentData.attendance.absent) / currentData.attendance.total) * 360}deg)`,
-                    background: `conic-gradient(#f59e0b 0deg ${(currentData.attendance.onLeave / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.onLeave / currentData.attendance.total) * 360}deg 360deg)`
-                  }}
-                >
-                  <div className="pie-tooltip">On Leave: {currentData.attendance.onLeave}</div>
-                </div>
-
-                {/* Center Circle */}
+                <div className="pie-segment present-segment" style={{ transform: `rotate(0deg)`, background: `conic-gradient(#10b981 0deg ${(currentData.attendance.present / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.present / currentData.attendance.total) * 360}deg 360deg)` }}></div>
+                <div className="pie-segment absent-segment" style={{ transform: `rotate(${(currentData.attendance.present / currentData.attendance.total) * 360}deg)`, background: `conic-gradient(#ef4444 0deg ${(currentData.attendance.absent / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.absent / currentData.attendance.total) * 360}deg 360deg)` }}></div>
+                <div className="pie-segment leave-segment" style={{ transform: `rotate(${((currentData.attendance.present + currentData.attendance.absent) / currentData.attendance.total) * 360}deg)`, background: `conic-gradient(#f59e0b 0deg ${(currentData.attendance.onLeave / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.onLeave / currentData.attendance.total) * 360}deg 360deg)` }}></div>
                 <div className="pie-center">
                   <span className="pie-total">{currentData.attendance.total}</span>
                   <span className="pie-total-label">TOTAL</span>
@@ -445,56 +371,42 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Legend */}
             <div className="pie-legend">
               <div className="legend-item">
                 <span className="legend-color present-color"></span>
                 <div className="legend-details">
                   <span className="legend-label">PRESENT</span>
                   <span className="legend-value">{currentData.attendance.present}</span>
-                  <span className="legend-percentage">
-                    ({Math.round((currentData.attendance.present / currentData.attendance.total) * 100)}%)
-                  </span>
+                  <span className="legend-percentage">({Math.round((currentData.attendance.present / currentData.attendance.total) * 100)}%)</span>
                 </div>
               </div>
-
               <div className="legend-item">
                 <span className="legend-color absent-color"></span>
                 <div className="legend-details">
                   <span className="legend-label">ABSENT</span>
                   <span className="legend-value">{currentData.attendance.absent}</span>
-                  <span className="legend-percentage">
-                    ({Math.round((currentData.attendance.absent / currentData.attendance.total) * 100)}%)
-                  </span>
+                  <span className="legend-percentage">({Math.round((currentData.attendance.absent / currentData.attendance.total) * 100)}%)</span>
                 </div>
               </div>
-
               <div className="legend-item">
                 <span className="legend-color leave-color"></span>
                 <div className="legend-details">
                   <span className="legend-label">ON LEAVE</span>
                   <span className="legend-value">{currentData.attendance.onLeave}</span>
-                  <span className="legend-percentage">
-                    ({Math.round((currentData.attendance.onLeave / currentData.attendance.total) * 100)}%)
-                  </span>
+                  <span className="legend-percentage">({Math.round((currentData.attendance.onLeave / currentData.attendance.total) * 100)}%)</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Stats Summary */}
           <div className="attendance-stats-summary">
             <div className="summary-item">
               <span className="summary-label">ATTENDANCE RATE</span>
-              <span className="summary-value rate-high">
-                {Math.round((currentData.attendance.present / currentData.attendance.total) * 100)}%
-              </span>
+              <span className="summary-value rate-high">{Math.round((currentData.attendance.present / currentData.attendance.total) * 100)}%</span>
             </div>
             <div className="summary-item">
               <span className="summary-label">ABSENTEE RATE</span>
-              <span className="summary-value">
-                {Math.round(((currentData.attendance.absent + currentData.attendance.onLeave) / currentData.attendance.total) * 100)}%
-              </span>
+              <span className="summary-value">{Math.round(((currentData.attendance.absent + currentData.attendance.onLeave) / currentData.attendance.total) * 100)}%</span>
             </div>
           </div>
         </div>
@@ -517,46 +429,31 @@ const Dashboard = () => {
 
       {/* EXPENSES BREAKDOWN */}
       <div className="expenses-breakdown-section">
-        <div className="section-header">
-          <h3>THIS MONTH EXPENSES BREAKDOWN</h3>
-
-        </div>
-
+        <h3>THIS MONTH EXPENSES BREAKDOWN</h3>
         <div className="expenses-categories-grid">
           <div className="expense-category-card">
-            <div className="category-icon machine-icon">
-              <span className="material-symbols-outlined">precision_manufacturing</span>
-            </div>
+            <div className="category-icon machine-icon"><span className="material-symbols-outlined">precision_manufacturing</span></div>
             <div className="category-details">
               <span className="category-name">MACHINE MAINTENANCE</span>
               <span className="category-amount">{currentData.expenses.categories[0].amount}</span>
             </div>
           </div>
-
           <div className="expense-category-card">
-            <div className="category-icon stock-icon">
-              <span className="material-symbols-outlined">shopping_cart</span>
-            </div>
+            <div className="category-icon stock-icon"><span className="material-symbols-outlined">shopping_cart</span></div>
             <div className="category-details">
               <span className="category-name">STOCK PURCHASED</span>
               <span className="category-amount">{currentData.expenses.categories[1].amount}</span>
             </div>
           </div>
-
           <div className="expense-category-card">
-            <div className="category-icon salary-icon">
-              <span className="material-symbols-outlined">payments</span>
-            </div>
+            <div className="category-icon salary-icon"><span className="material-symbols-outlined">payments</span></div>
             <div className="category-details">
               <span className="category-name">EMPLOYEE SALARY</span>
               <span className="category-amount">{currentData.expenses.categories[2].amount}</span>
             </div>
           </div>
-
           <div className="expense-category-card">
-            <div className="category-icon others-icon">
-              <span className="material-symbols-outlined">category</span>
-            </div>
+            <div className="category-icon others-icon"><span className="material-symbols-outlined">category</span></div>
             <div className="category-details">
               <span className="category-name">OTHERS</span>
               <span className="category-amount">{currentData.expenses.categories[3].amount}</span>
@@ -564,7 +461,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </div >
+    </div>
   );
 };
 

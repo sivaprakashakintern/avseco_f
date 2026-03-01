@@ -113,7 +113,8 @@
 
 .header-logo-container:hover {
   background: rgba(255, 255, 255, 0.4);
-  transform: translateY(-2px);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
 }
 
 /* Hover effect for logo */
@@ -147,8 +148,9 @@
 }
 
 .metric-card.clickable:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--avs-popup-shadow);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 16px 32px -8px rgba(0, 106, 78, 0.18), 0 8px 12px -6px rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 106, 78, 0.25);
 }
 
 .metric-icon {
@@ -214,11 +216,11 @@
 .fixed-popup {
   position: fixed;
   background: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: var(--avs-popup-shadow);
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.2);
   z-index: 10000;
-  width: 320px;
+  width: 340px;
   pointer-events: none;
   border: 1px solid #e2e8f0;
   animation: popupFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -356,6 +358,43 @@
   letter-spacing: 0.5px;
 }
 
+.chart-legend-row-bottom {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.sales-dot {
+  background: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+
+.expenses-dot {
+  background: #f43f5e;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.4);
+}
+
+.legend-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--avs-text-light);
+}
+
 .filter-group.small {
   display: flex;
   gap: 6px;
@@ -463,6 +502,29 @@
   border-top: 6px solid #1e293b;
 }
 
+.dynamic-tooltip {
+  pointer-events: none;
+  z-index: 10000;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  animation: tooltipFadeIn 0.1s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+  background: rgba(30, 41, 59, 0.95);
+  line-height: 1.5;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .bar-values {
   display: flex;
   flex-direction: column;
@@ -490,8 +552,9 @@
 }
 
 .attendance-section:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--avs-popup-shadow);
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.12), 0 8px 12px -6px rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 106, 78, 0.15);
 }
 
 .attendance-header {
@@ -715,9 +778,9 @@
 }
 
 .legend-item:hover {
-  transform: translateX(4px);
+  transform: translateX(4px) translateY(-2px);
   background: #f1f5f9;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.05);
 }
 
 .legend-color {
@@ -790,8 +853,8 @@
 }
 
 .summary-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08);
 }
 
 .summary-label {

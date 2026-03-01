@@ -178,9 +178,9 @@
 
 .metric-card:hover {
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 40px -12px rgba(0, 71, 52, 0.12);
+    box-shadow: 0 20px 40px -10px rgba(0, 106, 78, 0.18), 0 10px 15px -10px rgba(0, 0, 0, 0.08);
     background: #ffffff;
-    border-color: rgba(0, 106, 78, 0.2);
+    border-color: rgba(0, 106, 78, 0.25);
 }
 
 .metric-card.highlight {
