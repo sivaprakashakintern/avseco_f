@@ -4,6 +4,8 @@ import { useAppContext } from '../context/AppContext.js';
 import "./Employees.css";
 import "../dashboard/Dashboard.css"; // Reuse dashboard header styles
 
+import { formatDate } from '../utils/dateUtils.js';
+
 const Employees = () => {
   const navigate = useNavigate();
 
@@ -16,7 +18,7 @@ const Employees = () => {
     departments,
   } = useAppContext();
 
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState(window.innerWidth <= 768 ? "list" : "grid");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -30,8 +32,13 @@ const Employees = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768) setViewMode("list");
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Form state for add/edit
   const [formData, setFormData] = useState({
@@ -77,14 +84,13 @@ const Employees = () => {
     return matchesDepartment && matchesSearch;
   });
 
-  // Pagination
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedEmployees = filteredEmployees.slice(startIndex, startIndex + itemsPerPage);
+  const startIndex = 0;
+  // Use all filtered employees for a single page view
+  const employeesToDisplay = filteredEmployees;
 
-  // Reset page when filters change
+  // Reset scroll or view when filters change if needed
   useEffect(() => {
-    setCurrentPage(1);
+    // Scroll to top or handle view reset
   }, [selectedDepartment, searchTerm]);
 
   // Close dropdown when clicking outside
@@ -268,25 +274,6 @@ const Employees = () => {
     setSearchTerm("");
   };
 
-
-
-  // Pagination Handlers
-  const goToPage = (page) => {
-    setCurrentPage(page);
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
   return (
     <div className="employees-container">
       {/* Feedback Toast */}
@@ -468,11 +455,7 @@ const Employees = () => {
               </button>
             </span>
           </div>
-        ) : (
-          <div className="quick-info">
-            <span className="info-item">Showing all active employees</span>
-          </div>
-        )}
+        ) : null}
       </div >
 
       {/* ===== LIST VIEW ===== */}
@@ -483,23 +466,26 @@ const Employees = () => {
               <table className="employee-table">
                 <thead>
                   <tr>
-                    <th>Employee</th>
-                    <th>Department</th>
-                    <th>Contact</th>
-                    <th>Join Date</th>
-                    <th>Actions</th>
+                    <th className="sticky-col-no">S.No</th>
+                    <th className="sticky-col">Employee</th>
+                    <th className="col-dept">Department</th>
+                    <th className="col-contact">Contact</th>
+                    <th className="col-date">Join Date</th>
+                    <th className="col-actions">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedEmployees.length > 0 ? (
-                    paginatedEmployees.map((employee) => (
+                  {employeesToDisplay.length > 0 ? (
+                    employeesToDisplay.map((employee, index) => (
                       <tr
                         key={employee.id}
                         className="employee-row clickable-row"
                         onClick={() => handleViewEmployee(employee)}
                         style={{ cursor: "pointer" }}
+                        title="Click to view full employee details"
                       >
-                        <td>
+                        <td className="sticky-col-no">{startIndex + index + 1}</td>
+                        <td className="sticky-col">
                           <div className="employee-info">
                             <div className="employee-avatar">
                               {employee.avatar ? (
@@ -511,37 +497,24 @@ const Employees = () => {
                                 <div className="avatar-initials">{getInitials(employee.name)}</div>
                               )}
                             </div>
-                            <div>
-                              <p className="employee-name">{employee.name}</p>
-                              <p className="employee-email">{employee.email}</p>
+                            <div className="employee-details-text">
+                              <p className="employee-name" title={employee.name}>{employee.name}</p>
+                              <p className="employee-email" title={employee.email}>{employee.email}</p>
                             </div>
                           </div>
                         </td>
-                        <td>
-                          <span className="department-badge">{employee.department}</span>
+                        <td className="col-dept">
+                          <span className="department-badge" title={employee.department}>{employee.department}</span>
                         </td>
-                        <td>
+                        <td className="col-contact">
                           <p className="employee-phone">{employee.phone}</p>
                         </td>
-                        <td>
-                          {new Date(employee.joinDate).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
+                        <td className="col-date">
+                          {formatDate(employee.joinDate)}
                         </td>
-                        <td onClick={(e) => e.stopPropagation()}>
+                        <td className="col-actions" onClick={(e) => e.stopPropagation()}>
                           <div className="action-buttons">
-                            <button
-                              className="action-btn edit"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditEmployee(employee);
-                              }}
-                              title="Edit Employee"
-                            >
-                              <span className="material-symbols-outlined">edit</span>
-                            </button>
+
                             <button
                               className="action-btn delete"
                               onClick={(e) => {
@@ -574,136 +547,77 @@ const Employees = () => {
               </table>
             </div>
 
-            {/* Pagination */}
-            {filteredEmployees.length > 0 && (
-              <div className="pagination">
-                <p className="pagination-info">
-                  Showing <span>{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredEmployees.length)}</span> of{" "}
-                  <span>{filteredEmployees.length}</span> employees
-                </p>
-                <div className="pagination-controls">
-                  <button
-                    className="pagination-btn"
-                    onClick={goToPreviousPage}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </button>
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    return (
-                      <button
-                        key={pageNum}
-                        className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`}
-                        onClick={() => goToPage(pageNum)}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                  <button
-                    className="pagination-btn"
-                    onClick={goToNextPage}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+
           </div>
         )
       }
 
       {/* ===== GRID VIEW ===== */}
-      {
-        viewMode === "grid" && (
-          <div className="employee-grid">
-            {paginatedEmployees.length > 0 ? (
-              paginatedEmployees.map((employee) => (
-                <div key={employee.id} className="employee-card" onClick={() => handleViewEmployee(employee)} style={{ cursor: 'pointer' }}>
-                  <div className="employee-card-header">
-                    <div className="employee-card-avatar">
-                      {employee.avatar ? (
-                        <div
-                          className="avatar-image-large"
-                          style={{ backgroundImage: `url("${employee.avatar}")` }}
-                        ></div>
-                      ) : (
-                        <div className="avatar-initials-large">{getInitials(employee.name)}</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="employee-card-content">
-                    <div className="employee-card-main">
-                      <h3 className="employee-card-name">{employee.name}</h3>
-                      <div className="employee-card-dept-tag">
-                        <span className="dept-dot"></span>
-                        {employee.department}
-                      </div>
-                    </div>
-
-                    <div className="employee-card-contact">
-                      <div className="contact-item">
-                        <span className="material-symbols-outlined">mail</span>
-                        <span>{employee.email}</span>
-                      </div>
-                      <div className="contact-item">
-                        <span className="material-symbols-outlined">call</span>
-                        <span>{employee.phone}</span>
-                      </div>
-                      <div className="contact-item">
-                        <span className="material-symbols-outlined">calendar_today</span>
-                        <span>
-                          Joined{" "}
-                          {new Date(employee.joinDate).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="employee-card-actions" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        className="card-view-btn"
-                        onClick={(e) => { e.stopPropagation(); handleViewEmployee(employee) }}
-                      >
-                        View
-                      </button>
-                      <button
-                        className="card-edit-btn"
-                        onClick={(e) => { e.stopPropagation(); handleEditEmployee(employee) }}
-                      >
-                        Edit
-                      </button>
-                    </div>
+      {viewMode === "grid" && (
+        <div className="employee-grid">
+          {employeesToDisplay.length > 0 ? (
+            employeesToDisplay.map((employee) => (
+              <div key={employee.id} className="employee-card" onClick={() => handleViewEmployee(employee)} style={{ cursor: 'pointer' }}>
+                <div className="employee-card-header">
+                  <div className="employee-card-avatar">
+                    {employee.avatar ? (
+                      <div
+                        className="avatar-image-large"
+                        style={{ backgroundImage: `url("${employee.avatar}")` }}
+                      ></div>
+                    ) : (
+                      <div className="avatar-initials-large">{getInitials(employee.name)}</div>
+                    )}
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="empty-state-grid">
-                <span className="material-symbols-outlined empty-icon">group_off</span>
-                <h4>No employees found</h4>
-                <p>Try adjusting your filters or add a new employee</p>
-                <button className="add-employee-btn" onClick={handleAddEmployee}>
-                  Add Employee
-                </button>
+                <div className="employee-card-content">
+                  <div className="employee-card-main">
+                    <h3 className="employee-card-name">{employee.name}</h3>
+                    <div className="employee-card-dept-tag">
+                      <span className="dept-dot"></span>
+                      {employee.department}
+                    </div>
+                  </div>
+
+                  <div className="employee-card-contact">
+                    <div className="contact-item">
+                      <span className="material-symbols-outlined">mail</span>
+                      <span>{employee.email}</span>
+                    </div>
+                    <div className="contact-item">
+                      <span className="material-symbols-outlined">call</span>
+                      <span>{employee.phone}</span>
+                    </div>
+                    <div className="card-detail-item">
+                      <span className="detail-icon material-symbols-outlined">calendar_today</span>
+                      <span>Hired: {formatDate(employee.joinDate)}</span>
+                    </div>
+                  </div>
+
+                  <div className="employee-card-actions" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      className="card-view-btn"
+                      onClick={(e) => { e.stopPropagation(); handleViewEmployee(employee) }}
+                    >
+                      View
+                    </button>
+
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        )
-      }
+            ))
+          ) : (
+            <div className="empty-state-grid">
+              <span className="material-symbols-outlined empty-icon">group_off</span>
+              <h4>No employees found</h4>
+              <p>Try adjusting your filters or add a new employee</p>
+              <button className="add-employee-btn" onClick={handleAddEmployee}>
+                Add Employee
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ===== ADD EMPLOYEE MODAL ===== */}
       {
@@ -1026,11 +940,7 @@ const Employees = () => {
                   <div className="detail-item">
                     <span className="detail-label">Join Date</span>
                     <span className="detail-value">
-                      {new Date(selectedEmployee.joinDate).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
+                      {formatDate(selectedEmployee.joinDate)}
                     </span>
                   </div>
                   <div className="detail-item">
@@ -1039,7 +949,7 @@ const Employees = () => {
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Date of Birth</span>
-                    <span className="detail-value">{selectedEmployee.dob || "N/A"}</span>
+                    <span className="detail-value">{formatDate(selectedEmployee.dob)}</span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Aadhar Number</span>

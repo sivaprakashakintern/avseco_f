@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDate } from '../../utils/dateUtils.js';
 import './ProductionPlan.css';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -265,11 +266,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const totalRemaining = filteredData.reduce((sum, item) => sum + (item.remainingQty || 0), 0);
   const overallProgress = totalTarget > 0 ? ((totalProduced / totalTarget) * 100).toFixed(1) : "0";
 
-  const today = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  const today = formatDate(new Date());
 
   // ===== EXPORT FUNCTIONS =====
   const handleExportClick = () => {

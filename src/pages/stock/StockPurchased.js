@@ -7,7 +7,7 @@ const StockPurchased = () => {
       id: 1,
       supplier: "Green Leaf Supplies",
       poNumber: "PO-2026-001",
-      date: "10 Feb 2026",
+      date: "10-02-2026",
       items: 5,
       totalAmount: "₹45,000",
       status: "Received",
@@ -16,7 +16,7 @@ const StockPurchased = () => {
       id: 2,
       supplier: "EcoPack Solutions",
       poNumber: "PO-2026-002",
-      date: "08 Feb 2026",
+      date: "08-02-2026",
       items: 3,
       totalAmount: "₹12,500",
       status: "Pending",
@@ -25,7 +25,7 @@ const StockPurchased = () => {
       id: 3,
       supplier: "Areca Farmers Co-op",
       poNumber: "PO-2026-003",
-      date: "05 Feb 2026",
+      date: "05-02-2026",
       items: 8,
       totalAmount: "₹78,000",
       status: "Received",
@@ -34,7 +34,7 @@ const StockPurchased = () => {
       id: 4,
       supplier: "Packaging Mart",
       poNumber: "PO-2026-004",
-      date: "02 Feb 2026",
+      date: "02-02-2026",
       items: 2,
       totalAmount: "₹8,900",
       status: "Pending",
@@ -116,7 +116,7 @@ const StockPurchased = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="table-responsive">
           <table className="stock-table">
             <thead>

@@ -5,19 +5,17 @@
     width: 100%;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    /* Shifted to right side */
+    justify-content: center;
+    /* Centered */
     background-color: #001f17;
     background-image:
-        linear-gradient(270deg, rgba(0, 31, 23, 0.98) 0%, rgba(0, 31, 23, 0.4) 100%),
+        linear-gradient(180deg, rgba(0, 31, 23, 0.85) 0%, rgba(0, 31, 23, 0.92) 100%),
         url('../assets/bg1.png');
     background-size: cover;
-    background-position: right center;
-    /* Show image detail on the right */
+    background-position: center center;
     background-repeat: no-repeat;
     font-family: 'Inter', -apple-system, sans-serif;
-    padding: 0 80px;
-    /* Shifted further to the right edge */
+    padding: 24px;
     overflow: hidden;
     position: fixed;
     top: 0;
@@ -26,21 +24,24 @@
 
 .login-container {
     width: 100%;
-    max-width: 480px;
+    max-width: 420px;
+    /* Reduced from 480px */
     animation: loginFadeUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .login-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 40px;
-    padding: 64px;
+    background: rgba(255, 255, 255, 0.08);
+    /* Slightly lighter */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    /* Brighter border */
+    border-radius: 32px;
+    /* Smaller radius */
+    padding: 48px 40px;
+    /* Reduced padding */
     width: 100%;
-    max-width: 460px;
-    box-shadow: -20px 0 50px rgba(0, 0, 0, 0.3);
-    /* Shadow shifted to match right align */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .login-header {
@@ -50,16 +51,17 @@
 
 .logo-section {
     background: rgba(255, 255, 255, 0.08);
-    width: 140px;
-    height: 140px;
-    border-radius: 32px;
+    width: 90px;
+    /* Reduced from 140px */
+    height: 90px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 32px;
+    margin: 0 auto 20px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
 }
 
 .logo-section:hover {
@@ -67,8 +69,8 @@
 }
 
 .login-logo {
-    width: 130px;
-    height: 130px;
+    width: 110px;
+    height: 110px;
     object-fit: contain;
     transition: transform 0.3s ease;
 }
@@ -78,11 +80,11 @@
 }
 
 .login-header h1 {
-    font-size: 32px;
+    font-size: 20px;
     font-weight: 800;
     color: #ffffff;
-    margin: 0 0 12px 0;
-    letter-spacing: -0.03em;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.02em;
 }
 
 .admin-badge {
@@ -141,9 +143,12 @@
 
 .form-group label {
     font-size: 13px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
+    font-weight: 700;
+    color: #ffffff;
+    /* pure white for visibility */
     margin-left: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .input-wrapper {
@@ -155,18 +160,21 @@
 .input-icon {
     position: absolute;
     left: 16px;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+    /* Brighter icon */
     font-size: 20px;
 }
 
 .input-wrapper input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 14px;
-    padding: 14px 14px 14px 48px;
+    background: rgba(255, 255, 255, 0.1);
+    /* Lighter background */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 13px 13px 13px 44px;
+    /* Reduced padding */
     color: #ffffff;
-    font-size: 15px;
+    font-size: 14px;
     transition: all 0.3s ease;
     outline: none;
 }
@@ -178,7 +186,8 @@
 }
 
 .input-wrapper input::placeholder {
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.5);
+    /* Much more visible */
 }
 
 .password-toggle {
@@ -205,21 +214,18 @@
     background: #006A4E;
     color: #ffffff;
     border: none;
-    border-radius: 14px;
-    padding: 16px;
-    font-size: 16px;
+    border-radius: 12px;
+    padding: 14px;
+    /* Reduced padding */
+    font-size: 15px;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-top: 10px;
-    position: relative;
-    overflow: hidden;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    margin-top: 8px;
 }
 
 .login-submit:hover {
@@ -275,18 +281,15 @@
 
 @media (max-width: 1024px) {
     .login-page {
-        padding: 0 40px;
+        padding: 24px;
     }
 }
 
 @media (max-width: 768px) {
     .login-page {
-        padding: 24px;
+        padding: 16px;
+        align-items: center;
         justify-content: center;
-        /* Center on mobile */
-        background-image:
-            linear-gradient(180deg, rgba(0, 31, 23, 0.8) 0%, rgba(0, 31, 23, 0.95) 100%),
-            url('../assets/bg1.png');
     }
 
     .login-card {
@@ -313,5 +316,36 @@
 
     .login-header h1 {
         font-size: 26px;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-page {
+        padding: 12px;
+    }
+
+    .login-card {
+        padding: 32px 20px;
+        border-radius: 20px;
+    }
+
+    .logo-section {
+        width: 90px;
+        height: 90px;
+        margin: 0 auto 16px;
+    }
+
+    .login-logo {
+        width: 70px;
+        height: 70px;
+    }
+
+    .login-header h1 {
+        font-size: 22px;
+    }
+
+    .login-submit {
+        padding: 14px;
+        font-size: 15px;
     }
 }

@@ -1,490 +1,419 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useAppContext } from '../context/AppContext.js';
-import "./AttendanceLog.css";
+import { formatDate } from '../utils/dateUtils.js';
+import './AttendanceLog.css';
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const toDateKey = (date) => date.toISOString().split("T")[0];
+const today = () => new Date(new Date().toDateString());
 
+const getInitials = (name = "") =>
+  name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+
+const getStatusText = (s) =>
+  s === "present" ? "Present" : s === "absent" ? "Absent" : s === "half" ? "Half Day" : "-";
+
+// ─── Toast Component ──────────────────────────────────────────────────────────
+const Toast = ({ message, type, onClose }) => (
+  <div className={`att-toast att-toast-${type}`}>
+    <span className="material-symbols-outlined">
+      {type === "success" ? "check_circle" : type === "error" ? "error" : "info"}
+    </span>
+    <span>{message}</span>
+    <button className="att-toast-close" onClick={onClose}>
+      <span className="material-symbols-outlined">close</span>
+    </button>
+  </div>
+);
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 const AttendanceLog = () => {
-  // ── Global employees (shared source of truth) ───────────────────────────
   const { employees: globalEmployees, departments: globalDepts } = useAppContext();
 
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDepartment, setSelectedDepartment] = useState("All Departments");
+  // ── Date State ──────────────────────────────────────────────────────────────
+  const [currentDate, setCurrentDate] = useState(today());
+  const dateKey = toDateKey(currentDate);
+  const isToday = toDateKey(currentDate) === toDateKey(today());
+
+  const goToPreviousDay = () => setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() - 1); return nd; });
+  const goToNextDay = () => { if (!isToday) setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() + 1); return nd; }); };
+
+  // ── Attendance State (keyed per date) ────────────────────────────────────────
+  const [attendanceByDate, setAttendanceByDate] = useState({});
+
+  // Get or create map for the current date
+  const attendanceMap = attendanceByDate[dateKey] || {};
+
+  const patchAttendance = (empId, patch) => {
+    setAttendanceByDate(prev => ({
+      ...prev,
+      [dateKey]: {
+        ...prev[dateKey],
+        [empId]: { ...(prev[dateKey]?.[empId] || {}), ...patch },
+      },
+    }));
+  };
+
+  // ── Search / Filter State ────────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState("");
-  const [feedbackMessage, setFeedbackMessage] = useState("");
-  const [saveLoading, setSaveLoading] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [showTimeModal, setShowTimeModal] = useState(false);
+  const [selectedDept, setSelectedDept] = useState("All Departments");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // ── Pagination ───────────────────────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  const ITEMS_PER_PAGE = isMobile ? 15 : 10;
+  useEffect(() => setCurrentPage(1), [searchTerm, selectedDept, statusFilter, dateKey]);
+
+  // ── Modal State ───────────────────────────────────────────────────────────────
+  const [showHalfDayModal, setShowHalfDayModal] = useState(false);
+  const [showAbsentModal, setShowAbsentModal] = useState(false);
   const [showStoppageModal, setShowStoppageModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [noteText, setNoteText] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [tempHalfDayTime, setTempHalfDayTime] = useState({ from: "09:00", to: "13:00" });
+  const [halfDayTime, setHalfDayTime] = useState({ from: "09:00", to: "13:00" });
+  const [absentReason, setAbsentReason] = useState("");
+  const [stoppageData, setStoppageData] = useState({ reason: "Machine Breakdown", startTime: "10:00", endTime: "12:00", notes: "" });
 
-  // Stoppage State
-  const [stoppageData, setStoppageData] = useState({
-    reason: "Machine Breakdown",
-    startTime: "10:00",
-    endTime: "12:00",
-    note: ""
-  });
-  const itemsPerPage = 10;
-
-  // ── Local attendance overrides (status/note per employee for the selected date) ─
-  // Keyed by employee id; merges on top of the global list
-  const [attendanceMap, setAttendanceMap] = useState({});
-
-  // Build the displayed employees list from global employees + local attendance overrides
-  const employees = useMemo(() => {
-    return globalEmployees.map(emp => ({
-      id: emp.id,
-      name: emp.name,
-      empId: `EMP-${String(emp.id).padStart(4, '0')}`,
-      department: emp.department,
-      initials: emp.name.split(' ').map(n => n[0]).join('').toUpperCase(),
-      avatar: emp.avatar || null,
-      status: attendanceMap[emp.id]?.status ?? 'present',
-      note: attendanceMap[emp.id]?.note ?? '',
-      halfDayTime: attendanceMap[emp.id]?.halfDayTime ?? null,
-    }));
-  }, [globalEmployees, attendanceMap]);
-
-  // Helper to patch attendance for one employee
-  const patchAttendance = (empId, patch) => {
-    setAttendanceMap(prev => ({
-      ...prev,
-      [empId]: { ...(prev[empId] || {}), ...patch }
-    }));
+  // ── Toast State ───────────────────────────────────────────────────────────────
+  const [toast, setToast] = useState(null);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
-  // Department options derived from context
-  const departments = ["All Departments", ...globalDepts.filter(d => d !== "All Departments")];
+  // ── Derived Employees List ────────────────────────────────────────────────────
+  const employees = useMemo(() =>
+    globalEmployees.map(emp => ({
+      ...emp,
+      empId: emp.empId || `EMP-${String(emp.id).padStart(4, "0")}`,
+      status: attendanceMap[emp.id]?.status || "present",
+      note: attendanceMap[emp.id]?.note || "",
+      halfDayTime: attendanceMap[emp.id]?.halfDayTime || null,
+    })),
+    [globalEmployees, attendanceMap]
+  );
 
-  // Stats
-  const totalEmployees = employees.length;
-  const [stats, setStats] = useState({ present: 0, absent: 0, half: 0 });
-
-  // Update stats when employees change
-  useEffect(() => {
-    setStats({
-      present: employees.filter(e => e.status === "present").length,
-      absent: employees.filter(e => e.status === "absent").length,
-      half: employees.filter(e => e.status === "half").length,
-    });
+  // ── Quick Stats ───────────────────────────────────────────────────────────────
+  const stats = useMemo(() => {
+    const present = employees.filter(e => e.status === "present").length;
+    const absent = employees.filter(e => e.status === "absent").length;
+    const half = employees.filter(e => e.status === "half").length;
+    const total = employees.length;
+    return { total, present, absent, half };
   }, [employees]);
 
-  // Filter employees
-  const filteredEmployees = employees.filter((emp) => {
-    // Department filter
-    const matchesDepartment = selectedDepartment === "All Departments" || emp.department === selectedDepartment;
-
-    // Search filter
-    const matchesSearch = searchTerm === "" ||
-      emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.empId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.department.toLowerCase().includes(searchTerm.toLowerCase());
-
-    return matchesDepartment && matchesSearch;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedEmployees = filteredEmployees.slice(startIndex, startIndex + itemsPerPage);
-
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedDepartment, searchTerm]);
-
-  // Format date
-  const formatDate = (date) => {
-    return date.toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
+  // ── Filtered Employees ────────────────────────────────────────────────────────
+  const filteredEmployees = useMemo(() => {
+    const q = searchTerm.toLowerCase();
+    return employees.filter(emp => {
+      const matchSearch = !q || emp.name.toLowerCase().includes(q) || emp.department.toLowerCase().includes(q) || (emp.empId || "").toLowerCase().includes(q);
+      const matchDept = selectedDept === "All Departments" || emp.department === selectedDept;
+      const matchStatus = statusFilter === "all" || emp.status === statusFilter;
+      return matchSearch && matchDept && matchStatus;
     });
-  };
+  }, [employees, searchTerm, selectedDept, statusFilter]);
 
-  // Handle date navigation
-  const handlePrevDay = () => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(currentDate.getDate() - 1);
-    setCurrentDate(newDate);
-    loadRandomData(newDate);
-  };
+  // ── Paginated ─────────────────────────────────────────────────────────────────
+  const totalPages = Math.ceil(filteredEmployees.length / ITEMS_PER_PAGE);
+  const paginatedEmployees = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredEmployees.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredEmployees, currentPage]);
 
-  const handleNextDay = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const newDate = new Date(currentDate);
-    newDate.setDate(currentDate.getDate() + 1);
+  // ── Departments List ──────────────────────────────────────────────────────────
+  const departments = useMemo(() => {
+    const depts = ["All Departments", ...new Set(globalEmployees.map(e => e.department))];
+    return depts;
+  }, [globalEmployees]);
 
-    // Prevent going beyond today
-    if (newDate <= today) {
-      setCurrentDate(newDate);
-      loadRandomData(newDate);
-    }
-  };
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Handlers
+  // ─────────────────────────────────────────────────────────────────────────────
 
-  // Simulate loading data for a specific date
-  const loadRandomData = (date) => {
-    // In a real app, this would fetch from API
-    // Here we just shuffle status to simulate different days
-    const statuses = ["present", "absent", "half", "present", "present"];
-    const newMap = {};
-    employees.forEach(emp => {
-      newMap[emp.id] = {
-        status: statuses[Math.floor(Math.random() * statuses.length)],
-        note: Math.random() > 0.8 ? "Random note" : "",
-        halfDayTime: null
-      };
-    });
-    setAttendanceMap(newMap);
-  };
-
-  // Handle status change
   const handleStatusChange = (empId, newStatus) => {
-    const employee = employees.find(e => e.id === empId);
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) return;
 
-    // If changing to half day, show time selection modal
-    if (newStatus === "half" && employee.status !== "half") {
-      setSelectedEmployee(employee);
-      // Set default time based on employee's existing halfDayTime or default
-      setTempHalfDayTime(employee.halfDayTime || { from: "09:00", to: "13:00" });
-      setShowTimeModal(true);
-    } else {
-      // For other status changes, update directly
-      patchAttendance(empId, { status: newStatus, halfDayTime: newStatus !== "half" ? null : undefined });
-      setFeedbackMessage(`Status updated for ${employee?.name}`);
-      setTimeout(() => setFeedbackMessage(""), 2000);
+    if (newStatus === "present") {
+      patchAttendance(empId, { status: "present", note: "", halfDayTime: null });
+      showToast(`${emp.name} marked as Present`);
+    } else if (newStatus === "half") {
+      setSelectedEmployee(emp);
+      setHalfDayTime(emp.halfDayTime || { from: "09:00", to: "13:00" });
+      setAbsentReason(emp.note || "");
+      setShowHalfDayModal(true);
+    } else if (newStatus === "absent") {
+      setSelectedEmployee(emp);
+      setAbsentReason(emp.note || "");
+      setShowAbsentModal(true);
     }
   };
 
-  // Handle half-day time save
-  const handleHalfDayTimeSave = () => {
-    if (selectedEmployee) {
-      patchAttendance(selectedEmployee.id, { status: "half", halfDayTime: tempHalfDayTime });
-      setShowTimeModal(false);
-      setFeedbackMessage(`Half-day marked for ${selectedEmployee.name} (${tempHalfDayTime.from} - ${tempHalfDayTime.to})`);
-      setTimeout(() => setFeedbackMessage(""), 3000);
-    }
+  const handleSaveHalfDay = () => {
+    if (!selectedEmployee) return;
+    patchAttendance(selectedEmployee.id, { status: "half", halfDayTime, note: absentReason });
+    showToast(`Half Day marked for ${selectedEmployee.name} (${halfDayTime.from}–${halfDayTime.to})`);
+    setShowHalfDayModal(false);
+    setSelectedEmployee(null);
   };
 
-  // Handle note change
-  const handleNoteChange = (empId, newNote) => {
-    patchAttendance(empId, { note: newNote });
+  const handleSaveAbsent = () => {
+    if (!selectedEmployee) return;
+    patchAttendance(selectedEmployee.id, { status: "absent", note: absentReason, halfDayTime: null });
+    showToast(`${selectedEmployee.name} marked as Absent`);
+    setShowAbsentModal(false);
+    setSelectedEmployee(null);
   };
 
-  // Open note modal
-  const handleOpenNoteModal = (employee) => {
-    setSelectedEmployee(employee);
-    setNoteText(employee.note || "");
-    setShowNoteModal(true);
+  const handleEditHalfDay = (emp) => {
+    setSelectedEmployee(emp);
+    setHalfDayTime(emp.halfDayTime || { from: "09:00", to: "13:00" });
+    setAbsentReason(emp.note || "");
+    setShowHalfDayModal(true);
   };
 
-  // Open time edit modal for half-day employees
-  const handleEditHalfDayTime = (employee) => {
-    setSelectedEmployee(employee);
-    setTempHalfDayTime(employee.halfDayTime || { from: "09:00", to: "13:00" });
-    setShowTimeModal(true);
+  const handleEditAbsent = (emp) => {
+    setSelectedEmployee(emp);
+    setAbsentReason(emp.note || "");
+    setShowAbsentModal(true);
   };
 
-  // Save note from modal
-  const handleSaveNote = () => {
-    if (selectedEmployee) {
-      handleNoteChange(selectedEmployee.id, noteText);
-      setShowNoteModal(false);
-      setFeedbackMessage(`Note updated for ${selectedEmployee.name}`);
-      setTimeout(() => setFeedbackMessage(""), 2000);
-    }
-  };
-
-  // Handle Mark All Present
   const handleMarkAllPresent = () => {
-    const newMap = {};
-    employees.forEach(emp => {
-      newMap[emp.id] = { status: "present", halfDayTime: null, note: emp.note || "" };
-    });
-    setAttendanceMap(newMap);
-    setFeedbackMessage("All employees marked as present");
-    setTimeout(() => setFeedbackMessage(""), 3000);
+    filteredEmployees.forEach(emp => patchAttendance(emp.id, { status: "present", note: "", halfDayTime: null }));
+    showToast(`All ${filteredEmployees.length} employees marked as Present`);
   };
 
-  // Handle Save Attendance
+  const handleStoppageSave = () => {
+    filteredEmployees.forEach(emp => patchAttendance(emp.id, { status: "absent", note: `Work Stoppage: ${stoppageData.reason}`, halfDayTime: null }));
+    showToast(`Work stoppage applied – ${filteredEmployees.length} employees marked Absent`, "warning");
+    setShowStoppageModal(false);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedDept("All Departments");
+    setStatusFilter("all");
+  };
+
+  const [saveLoading, setSaveLoading] = useState(false);
   const handleSaveAttendance = () => {
     setSaveLoading(true);
-
-    // Simulate API call
     setTimeout(() => {
       setSaveLoading(false);
-      setSaveSuccess(true);
-      setFeedbackMessage("Attendance saved successfully");
-
-      setTimeout(() => {
-        setSaveSuccess(false);
-        setFeedbackMessage("");
-      }, 3000);
-    }, 1500);
+      showToast("Attendance saved successfully!", "success");
+    }, 1000);
   };
 
-  // Clear filters
-  const clearFilters = () => {
-    setSelectedDepartment("All Departments");
-    setSearchTerm("");
+  // ── Pagination pages ──────────────────────────────────────────────────────────
+  const pageNumbers = () => {
+    const pages = [];
+    const delta = 1;
+    const left = Math.max(1, currentPage - delta);
+    const right = Math.min(totalPages, currentPage + delta);
+    if (left > 1) { pages.push(1); if (left > 2) pages.push("..."); }
+    for (let i = left; i <= right; i++) pages.push(i);
+    if (right < totalPages) { if (right < totalPages - 1) pages.push("..."); pages.push(totalPages); }
+    return pages;
   };
 
-  // Handle Work Stoppage - Apply to filtered employees
-  const handleApplyStoppage = () => {
-    const reasonText = `[${stoppageData.reason}: ${stoppageData.startTime} - ${stoppageData.endTime}] ${stoppageData.note}`;
-    const filteredIds = filteredEmployees.map(e => e.id);
-
-    filteredIds.forEach(empId => {
-      const currentNote = attendanceMap[empId]?.note ? attendanceMap[empId].note + "; " : "";
-      patchAttendance(empId, { status: "absent", note: currentNote + reasonText });
-    });
-
-    setShowStoppageModal(false);
-    setFeedbackMessage(`Work stoppage logged for ${filteredEmployees.length} employees`);
-    setTimeout(() => setFeedbackMessage(""), 3000);
-  };
-
-  // Get status text
-  const getStatusText = (status) => {
-    switch (status) {
-      case "present": return "Present";
-      case "half": return "Half Day";
-      case "absent": return "Absent";
-      default: return status;
-    }
-  };
-
-  // Get initials
-  const getInitials = (name) => {
-    return name.split(" ").map(n => n[0]).join("").toUpperCase();
-  };
-
-  // Generate time options (every 30 minutes)
-  const generateTimeOptions = () => {
-    const options = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute of [0, 30]) {
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        options.push(timeString);
-      }
-    }
-    return options;
-  };
-
-  const timeOptions = generateTimeOptions();
-
+  // ─────────────────────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <div className="attendance-container">
+    <div className="att-container">
 
-      {/* Feedback Toast */}
-      {feedbackMessage && (
-        <div className="toast-popup">
-          <span className="material-symbols-outlined">
-            {feedbackMessage.includes("saved") ? "save" : "check_circle"}
-          </span>
-          <span>{feedbackMessage}</span>
-        </div>
-      )}
+      {/* ── TOAST ─────────────────────────────────────────────────────────────── */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* Save Success Toast */}
-      {saveSuccess && (
-        <div className="toast-popup success">
-          <span className="material-symbols-outlined">download_done</span>
-          <span>Attendance saved successfully</span>
-        </div>
-      )}
-
-      {/* ===== PREMIUM ANALYTICS HEADER ===== */}
-      <div className="page-header premium-header">
-        <div className="header-content">
-          <div className="header-text">
-            <h1 className="page-title">Daily Attendance</h1>
-            <p className="page-subtitle">Track and manage workforce participation for {formatDate(currentDate)}</p>
-          </div>
-          <div className="header-actions">
-            <button
-              className="save-attendance-btn"
-              onClick={handleSaveAttendance}
-              disabled={saveLoading}
-            >
-              <span className="material-symbols-outlined">
-                {saveLoading ? "hourglass_empty" : "check_circle"}
-              </span>
-              {saveLoading ? "Saving..." : "Save Log"}
-            </button>
-          </div>
+      {/* ── PAGE HEADER BANNER ─────────────────────────────────────────────── */}
+      <div className="att-banner-header">
+        <div className="att-banner-left">
+          <h1 className="att-banner-title">Attendance Management</h1>
+          <p className="att-banner-subtitle">
+            {formatDate(currentDate)}
+          </p>
         </div>
       </div>
 
-      {/* ===== ACTION BAR (DATE SELECTOR) ===== */}
-      <div className="attendance-date-bar">
-        <div className="date-controls-wrapper">
-          <button className="date-step-btn" onClick={handlePrevDay}>
+      {/* ── DATE NAVIGATOR ────────────────────────────────────────────────────── */}
+      <div className="att-date-nav">
+        <div className="att-date-controls">
+          <button className="att-date-btn" onClick={goToPreviousDay}>
             <span className="material-symbols-outlined">chevron_left</span>
           </button>
-          <div className="current-date-box">
-            <span className="material-symbols-outlined">calendar_month</span>
-            <span className="date-text">{formatDate(currentDate)}</span>
+          <div className="att-date-display">
+            <span className="material-symbols-outlined">calendar_today</span>
+            <span>{formatDate(currentDate)}</span>
+            {isToday && <span className="att-today-badge">Today</span>}
           </div>
-          <button
-            className="date-step-btn"
-            onClick={handleNextDay}
-            disabled={new Date(currentDate).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0)}
-          >
+          <button className="att-date-btn" onClick={goToNextDay} disabled={isToday}>
             <span className="material-symbols-outlined">chevron_right</span>
           </button>
         </div>
-
-        <div className="quick-stats-pills">
-          <div className="stat-pill-item present">
-            <span className="dot"></span>
-            Present: <strong>{stats.present}</strong>
-          </div>
-          <div className="stat-pill-item absent">
-            <span className="dot"></span>
-            Absent: <strong>{stats.absent}</strong>
-          </div>
-          <div className="stat-pill-item half">
-            <span className="dot"></span>
-            Half Day: <strong>{stats.half}</strong>
-          </div>
+        <div className="att-date-actions">
+          <button className="att-btn att-btn-outline" onClick={() => setShowStoppageModal(true)}>
+            <span className="material-symbols-outlined">warning</span>
+            Work Stoppage
+          </button>
+          <button className="att-btn att-btn-primary" onClick={handleSaveAttendance} disabled={saveLoading}>
+            <span className="material-symbols-outlined">{saveLoading ? "hourglass_top" : "save"}</span>
+            {saveLoading ? "Saving…" : "Save Attendance"}
+          </button>
         </div>
       </div>
 
-      {/* ===== STATS CARDS (Refined) ===== */}
-      <div className="attendance-stats">
-        <div className="stat-card total-card">
-          <div className="stat-icon blue">
-            <span className="material-symbols-outlined">group</span>
+      {/* ── STATS CARDS ───────────────────────────────────────────────────────── */}
+      <div className="att-stats-grid">
+        <div className="att-stat-card">
+          <div className="att-stat-icon blue"><span className="material-symbols-outlined">group</span></div>
+          <div className="att-stat-info">
+            <p className="att-stat-label">Total Staff</p>
+            <h3 className="att-stat-number">{stats.total}</h3>
           </div>
-          <div className="stat-info">
-            <p className="stat-label">Total Workforce</p>
-            <h2 className="stat-number">{totalEmployees}</h2>
-            <p className="stat-subtext">Registered Staff</p>
+        </div>
+        <div className="att-stat-card">
+          <div className="att-stat-icon green"><span className="material-symbols-outlined">check_circle</span></div>
+          <div className="att-stat-info">
+            <p className="att-stat-label">Present</p>
+            <h3 className="att-stat-number">{stats.present}</h3>
+          </div>
+        </div>
+        <div className="att-stat-card">
+          <div className="att-stat-icon red"><span className="material-symbols-outlined">cancel</span></div>
+          <div className="att-stat-info">
+            <p className="att-stat-label">Absent</p>
+            <h3 className="att-stat-number">{stats.absent}</h3>
+          </div>
+        </div>
+        <div className="att-stat-card">
+          <div className="att-stat-icon amber"><span className="material-symbols-outlined">schedule</span></div>
+          <div className="att-stat-info">
+            <p className="att-stat-label">Half Day</p>
+            <h3 className="att-stat-number">{stats.half}</h3>
           </div>
         </div>
 
-        <div className="stat-card attendance-rate-card">
-          <div className="stat-icon green">
-            <span className="material-symbols-outlined">trending_up</span>
-          </div>
-          <div className="stat-info">
-            <p className="stat-label">Attendance Rate</p>
-            <h2 className="stat-number">
-              {totalEmployees > 0 ? Math.round(((stats.present + stats.half * 0.5) / totalEmployees) * 100) : 0}%
-            </h2>
-            <p className="stat-subtext">Productivity index</p>
-          </div>
-        </div>
       </div>
 
-
-
-      {/* ===== SEARCH AND FILTERS (Refined) ===== */}
-      <div className="attendance-filters">
-        <div className="search-wrapper">
+      {/* ── FILTERS + BULK ACTIONS ────────────────────────────────────────────── */}
+      <div className="att-filter-row">
+        {/* Search */}
+        <div className="att-search-box">
           <span className="material-symbols-outlined">search</span>
           <input
             type="text"
-            placeholder="Find employee by name, ID or department..."
+            placeholder="Search by name, dept, or ID…"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
           />
+          {searchTerm && (
+            <button className="att-search-clear" onClick={() => setSearchTerm("")}>
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          )}
         </div>
 
-        <div className="filter-controls">
-          <select
-            className="dept-select"
-            value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-          >
-            {departments.map((dept) => (
-              <option key={dept} value={dept}>
-                {dept === "All Departments" ? "All Departments" : dept}
-              </option>
-            ))}
-          </select>
+        {/* Department Filter */}
+        <select className="att-select att-select-dept" value={selectedDept} onChange={e => setSelectedDept(e.target.value)}>
+          {departments.map(d => <option key={d} value={d}>{d}</option>)}
+        </select>
 
-          <div className="bulk-actions">
-            <button className="bulk-btn present" onClick={handleMarkAllPresent}>
-              <span className="material-symbols-outlined">done_all</span>
-              All Present
-            </button>
-            <button className="bulk-btn stoppage" onClick={() => setShowStoppageModal(true)}>
-              <span className="material-symbols-outlined">warning</span>
-              Stoppage
-            </button>
-          </div>
-        </div>
+        {/* Status Filter */}
+        <select className="att-select att-select-status" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="all">All Status</option>
+          <option value="present">Present</option>
+          <option value="half">Half Day</option>
+          <option value="absent">Absent</option>
+        </select>
+
+        {/* Clear */}
+        {(searchTerm || selectedDept !== "All Departments" || statusFilter !== "all") && (
+          <button className="att-btn att-btn-ghost" onClick={clearFilters}>
+            <span className="material-symbols-outlined">filter_list_off</span>
+            Clear
+          </button>
+        )}
+
+        <div className="att-filter-spacer" />
+
+        {/* Bulk: Mark All Present */}
+        <button className="att-btn att-btn-success-outline" onClick={handleMarkAllPresent}>
+          <span className="material-symbols-outlined">done_all</span>
+          Mark All Present
+        </button>
       </div>
 
-      <div className="attendance-table-container">
-        <div className="table-header-row">
-          <div className="title-area">
-            <h3>Workforce Records</h3>
-            <span className="count-tag">{filteredEmployees.length} Found</span>
+      {/* ── TABLE ─────────────────────────────────────────────────────────────── */}
+      <div className="att-table-card">
+        {/* Table header */}
+        <div className="att-table-header">
+          <div>
+            <h3>Employee Attendance</h3>
+            <span className="att-count-badge">{filteredEmployees.length} employees</span>
           </div>
         </div>
 
-        <div className="table-wrapper">
-          <table className="custom-attendance-table">
+        <div className="att-table-wrap">
+          <table className="att-table">
             <thead>
               <tr>
-                <th className="th-employee">Employee Details</th>
-                <th className="th-dept">Department</th>
-                <th className="th-status">Current Status</th>
-                <th className="th-action text-center">Mark Attendance</th>
-                <th className="th-notes">Remarks</th>
+                <th className="text-center" style={{ width: '50px' }}>S.NO</th>
+                <th>Employee</th>
+                <th>Department</th>
+                <th>Status</th>
+                <th className="text-center">Mark Attendance</th>
               </tr>
             </thead>
             <tbody>
               {paginatedEmployees.length > 0 ? (
-                paginatedEmployees.map((employee) => (
-                  <tr key={employee.id} className="employee-row">
-                    <td>
-                      <div className="employee-cell">
-                        <div className="employee-avatar">
-                          {employee.avatar ? (
-                            <div
-                              className="avatar-image"
-                              style={{ backgroundImage: `url(${employee.avatar})` }}
-                            ></div>
-                          ) : (
-                            <div className="avatar-initials">
-                              {employee.initials || getInitials(employee.name)}
-                            </div>
-                          )}
+                paginatedEmployees.map((emp, index) => (
+                  <tr key={emp.id} className="att-table-row">
+                    <td className="text-center" style={{ color: '#64748b', fontWeight: '600', fontSize: '13px' }}>
+                      {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                    </td>
+                    {/* Employee Name */}
+                    <td className="att-td-name">
+                      <div className="att-emp-cell">
+                        <div className={`att-avatar att-avatar-${emp.status}`}>
+                          {getInitials(emp.name)}
                         </div>
-                        <div className="employee-info">
-                          <span className="employee-name">{employee.name}</span>
-                          <span className="employee-id">{employee.empId}</span>
+                        <div className="att-emp-info">
+                          <span className="att-emp-name">{emp.name}</span>
+                          <span className="att-emp-dept">{emp.department}</span>
                         </div>
                       </div>
                     </td>
 
+                    {/* Department Badge */}
                     <td>
-                      <div className="department-cell">
-                        <span className="department-badge">
-                          {employee.department}
-                        </span>
-                      </div>
+                      <span className="att-dept-badge">{emp.department}</span>
                     </td>
 
-                    <td className="td-status">
-                      <div className="status-display">
-                        <span className={`status-badge-premium ${employee.status}`}>
-                          <span className="dot"></span>
-                          {employee.status === "half" ? "Half Day" : getStatusText(employee.status)}
+                    {/* Status */}
+                    <td>
+                      <div className="att-status-cell">
+                        <span className={`att-status-badge att-status-${emp.status}`}>
+                          <span className="att-status-dot"></span>
+                          {getStatusText(emp.status)}
                         </span>
-                        {employee.status === "half" && employee.halfDayTime && (
-                          <div className="half-day-info">
-                            <span className="time-range">{employee.halfDayTime.from} - {employee.halfDayTime.to}</span>
-                            <button className="btn-edit-mini" onClick={() => handleEditHalfDayTime(employee)}>
+                        {/* Show half day time */}
+                        {emp.status === "half" && emp.halfDayTime && (
+                          <div className="att-sub-info">
+                            <span className="att-sub-text">{emp.halfDayTime.from} – {emp.halfDayTime.to}</span>
+                            <button className="att-edit-btn" onClick={() => handleEditHalfDay(emp)}>
+                              <span className="material-symbols-outlined">edit</span>
+                            </button>
+                          </div>
+                        )}
+                        {/* Show absent reason snippet */}
+                        {emp.status === "absent" && emp.note && (
+                          <div className="att-sub-info">
+                            <span className="att-sub-text" title={emp.note}>{emp.note.slice(0, 28)}{emp.note.length > 28 ? "…" : ""}</span>
+                            <button className="att-edit-btn" onClick={() => handleEditAbsent(emp)}>
                               <span className="material-symbols-outlined">edit</span>
                             </button>
                           </div>
@@ -492,56 +421,34 @@ const AttendanceLog = () => {
                       </div>
                     </td>
 
-                    <td className="td-action">
-                      <div className="attendance-toggle">
+                    {/* P / H / A Toggle */}
+                    <td className="text-center">
+                      <div className="att-toggle-group">
                         <button
-                          className={`toggle-btn p ${employee.status === "present" ? "active" : ""}`}
-                          onClick={() => handleStatusChange(employee.id, "present")}
+                          className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`}
+                          onClick={() => handleStatusChange(emp.id, "present")}
                           title="Present"
                         >P</button>
                         <button
-                          className={`toggle-btn h ${employee.status === "half" ? "active" : ""}`}
-                          onClick={() => handleStatusChange(employee.id, "half")}
+                          className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`}
+                          onClick={() => handleStatusChange(emp.id, "half")}
                           title="Half Day"
                         >H</button>
                         <button
-                          className={`toggle-btn a ${employee.status === "absent" ? "active" : ""}`}
-                          onClick={() => handleStatusChange(employee.id, "absent")}
+                          className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`}
+                          onClick={() => handleStatusChange(emp.id, "absent")}
                           title="Absent"
                         >A</button>
-                      </div>
-                    </td>
-
-                    <td className="td-notes">
-                      <div className="note-container">
-                        {employee.note ? (
-                          <div className="active-note" onClick={() => handleOpenNoteModal(employee)}>
-                            <span className="material-symbols-outlined">description</span>
-                            <span className="truncate">{employee.note}</span>
-                          </div>
-                        ) : (
-                          <button className="add-note-inline" onClick={() => handleOpenNoteModal(employee)}>
-                            <span className="material-symbols-outlined">add_comment</span>
-                            Remark
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="no-data">
-                    <div className="empty-state">
-                      <span className="material-symbols-outlined empty-icon">
-                        group_off
-                      </span>
-                      <h4>No employees found</h4>
-                      <p>Try adjusting your filters</p>
-                      <button className="btn-primary" onClick={clearFilters}>
-                        Clear Filters
-                      </button>
-                    </div>
+                  <td colSpan="5" className="att-empty">
+                    <span className="material-symbols-outlined">search_off</span>
+                    <p>No employees match the current filters</p>
+                    <button className="att-btn att-btn-ghost" onClick={clearFilters}>Clear Filters</button>
                   </td>
                 </tr>
               )}
@@ -549,341 +456,215 @@ const AttendanceLog = () => {
           </table>
         </div>
 
-        {/* Bottom Save Action */}
-        <div className="table-footer-actions" style={{ display: 'flex', justifyContent: 'flex-end', padding: '20px 24px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
-          <button
-            className="btn-export-premium"
-            onClick={handleSaveAttendance}
-            disabled={saveLoading}
-          >
-            <span className="material-symbols-outlined">
-              {saveLoading ? "hourglass_empty" : "check_circle"}
-            </span>
-            {saveLoading ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-
         {/* Pagination */}
-        {filteredEmployees.length > 0 && (
-          <div className="pagination">
-            <p className="pagination-info">
-              Showing <span>{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredEmployees.length)}</span> of{" "}
-              <span>{filteredEmployees.length}</span> employees
+        {totalPages > 1 && (
+          <div className="att-pagination">
+            <p className="att-pagination-info">
+              Showing <strong>{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong>–<strong>{Math.min(currentPage * ITEMS_PER_PAGE, filteredEmployees.length)}</strong> of <strong>{filteredEmployees.length}</strong> employees
             </p>
-            <div className="pagination-controls">
-              <button
-                className="pagination-btn"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
+            <div className="att-pagination-controls">
+              <button className="att-page-btn" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+                <span className="material-symbols-outlined">chevron_left</span>
               </button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-                return (
+              {pageNumbers().map((p, i) =>
+                p === "..." ? (
+                  <span key={`dots-${i}`} className="att-page-dots">…</span>
+                ) : (
                   <button
-                    key={pageNum}
-                    className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`}
-                    onClick={() => setCurrentPage(pageNum)}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-              <button
-                className="pagination-btn"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                Next
+                    key={p}
+                    className={`att-page-btn${currentPage === p ? " active" : ""}`}
+                    onClick={() => setCurrentPage(p)}
+                  >{p}</button>
+                )
+              )}
+              <button className="att-page-btn" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>
+                <span className="material-symbols-outlined">chevron_right</span>
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* ===== FILTER MODAL ===== */}
-      {
-        showFilterModal && (
-          <div className="modal-overlay" onClick={() => setShowFilterModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>Filter Employees</h3>
-                <button className="modal-close" onClick={() => setShowFilterModal(false)}>
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-              <div className="modal-body">
-                <div className="filter-section">
-                  <h4>Department</h4>
-                  <div className="filter-options">
-                    {departments.map((dept) => (
-                      <button
-                        key={dept}
-                        className={`filter-option-btn ${selectedDepartment === dept ? "active" : ""}`}
-                        onClick={() => {
-                          setSelectedDepartment(dept);
-                          setShowFilterModal(false);
-                        }}
-                      >
-                        {dept}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+      {/* ═══════════════════════════════════════════════════════════════════════
+          MODALS
+      ═══════════════════════════════════════════════════════════════════════ */}
 
-                <div className="filter-section">
-                  <h4>Attendance Status</h4>
-                  <div className="filter-options">
-                    <button className="filter-option-btn">All</button>
-                    <button className="filter-option-btn">Present</button>
-                    <button className="filter-option-btn">Half Day</button>
-                    <button className="filter-option-btn">Absent</button>
-                  </div>
+      {/* ── HALF DAY MODAL ────────────────────────────────────────────────────── */}
+      {showHalfDayModal && selectedEmployee && (
+        <div className="att-modal-overlay" onClick={() => setShowHalfDayModal(false)}>
+          <div className="att-modal" onClick={e => e.stopPropagation()}>
+            <div className="att-modal-header">
+              <div>
+                <h3>Half Day – {selectedEmployee.name}</h3>
+                <p className="att-modal-sub">Select time range and optional reason</p>
+              </div>
+              <button className="att-modal-close" onClick={() => setShowHalfDayModal(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="att-modal-body">
+              {/* Employee info */}
+              <div className="att-modal-emp-row">
+                <div className="att-avatar att-avatar-half">{getInitials(selectedEmployee.name)}</div>
+                <div>
+                  <strong>{selectedEmployee.name}</strong>
+                  <p className="att-modal-sub">{selectedEmployee.department}</p>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button className="modal-cancel" onClick={() => setShowFilterModal(false)}>
-                  Cancel
-                </button>
-                <button className="modal-confirm" onClick={() => setShowFilterModal(false)}>
-                  Apply Filters
-                </button>
+
+              {/* Presets */}
+              <p className="att-field-label">Quick Presets</p>
+              <div className="att-presets">
+                {[
+                  { label: "9AM–1PM", from: "09:00", to: "13:00" },
+                  { label: "1PM–6PM", from: "13:00", to: "18:00" },
+                  { label: "9AM–12PM", from: "09:00", to: "12:00" },
+                  { label: "2PM–6PM", from: "14:00", to: "18:00" },
+                ].map(p => (
+                  <button
+                    key={p.label}
+                    className={`att-preset-btn${halfDayTime.from === p.from && halfDayTime.to === p.to ? " selected" : ""}`}
+                    onClick={() => setHalfDayTime({ from: p.from, to: p.to })}
+                  >{p.label}</button>
+                ))}
               </div>
+
+              {/* Time pickers */}
+              <div className="att-time-row">
+                <div className="att-time-group">
+                  <label className="att-field-label">From</label>
+                  <input type="time" className="att-time-input" value={halfDayTime.from} onChange={e => setHalfDayTime(t => ({ ...t, from: e.target.value }))} />
+                </div>
+                <span className="att-time-sep">to</span>
+                <div className="att-time-group">
+                  <label className="att-field-label">To</label>
+                  <input type="time" className="att-time-input" value={halfDayTime.to} onChange={e => setHalfDayTime(t => ({ ...t, to: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Reason */}
+              <label className="att-field-label">Reason <span className="att-optional">(optional)</span></label>
+              <textarea
+                className="att-textarea"
+                rows={3}
+                placeholder="Enter reason for half day…"
+                value={absentReason}
+                onChange={e => setAbsentReason(e.target.value)}
+              />
+            </div>
+            <div className="att-modal-footer">
+              <button className="att-btn att-btn-ghost" onClick={() => setShowHalfDayModal(false)}>Cancel</button>
+              <button className="att-btn att-btn-amber" onClick={handleSaveHalfDay}>
+                <span className="material-symbols-outlined">schedule</span>
+                Save Half Day
+              </button>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
 
-      {/* ===== NOTE MODAL ===== */}
-      {
-        showNoteModal && selectedEmployee && (
-          <div className="modal-overlay" onClick={() => setShowNoteModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>Add Note</h3>
-                <button className="modal-close" onClick={() => setShowNoteModal(false)}>
-                  <span className="material-symbols-outlined">close</span>
-                </button>
+      {/* ── ABSENT MODAL ──────────────────────────────────────────────────────── */}
+      {showAbsentModal && selectedEmployee && (
+        <div className="att-modal-overlay" onClick={() => setShowAbsentModal(false)}>
+          <div className="att-modal" onClick={e => e.stopPropagation()}>
+            <div className="att-modal-header att-modal-header-red">
+              <div>
+                <h3>Mark Absent – {selectedEmployee.name}</h3>
+                <p className="att-modal-sub">Provide an optional reason for absence</p>
               </div>
-              <div className="modal-body">
-                <div className="employee-info-header">
-                  <div className="employee-avatar large">
-                    <div className="avatar-initials">
-                      {selectedEmployee.initials || getInitials(selectedEmployee.name)}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="employee-name-large">{selectedEmployee.name}</h4>
-                    <p className="employee-id-large">{selectedEmployee.empId}</p>
-                  </div>
-                </div>
-
-                <div className="modal-form-group">
-                  <label>Attendance Note</label>
-                  <textarea
-                    className="modal-textarea"
-                    rows="4"
-                    placeholder="Enter remarks or notes..."
-                    value={noteText}
-                    onChange={(e) => setNoteText(e.target.value)}
-                  ></textarea>
+              <button className="att-modal-close" onClick={() => setShowAbsentModal(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="att-modal-body">
+              <div className="att-modal-emp-row">
+                <div className="att-avatar att-avatar-absent">{getInitials(selectedEmployee.name)}</div>
+                <div>
+                  <strong>{selectedEmployee.name}</strong>
+                  <p className="att-modal-sub">{selectedEmployee.department} • Marking Absent</p>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button className="modal-cancel" onClick={() => setShowNoteModal(false)}>
-                  Cancel
-                </button>
-                <button className="modal-confirm" onClick={handleSaveNote}>
-                  Save Note
-                </button>
-              </div>
+              <label className="att-field-label">Reason for Absence <span className="att-optional">(optional)</span></label>
+              <textarea
+                className="att-textarea"
+                rows={4}
+                placeholder="Enter reason for leave, sick day, etc…"
+                value={absentReason}
+                onChange={e => setAbsentReason(e.target.value)}
+              />
+            </div>
+            <div className="att-modal-footer">
+              <button className="att-btn att-btn-ghost" onClick={() => setShowAbsentModal(false)}>Cancel</button>
+              <button className="att-btn att-btn-danger" onClick={handleSaveAbsent}>
+                <span className="material-symbols-outlined">cancel</span>
+                Confirm Absent
+              </button>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
 
-      {/* ===== HALF-DAY TIME MODAL ===== */}
-      {
-        showTimeModal && selectedEmployee && (
-          <div className="modal-overlay" onClick={() => setShowTimeModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>Select Half-Day Time</h3>
-                <button className="modal-close" onClick={() => setShowTimeModal(false)}>
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-              <div className="modal-body">
-                <div className="employee-info-header">
-                  <div className="employee-avatar large">
-                    <div className="avatar-initials">
-                      {selectedEmployee.initials || getInitials(selectedEmployee.name)}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="employee-name-large">{selectedEmployee.name}</h4>
-                    <p className="employee-id-large">{selectedEmployee.empId}</p>
-                  </div>
-                </div>
-
-                <div className="time-selection-container">
-                  <div className="time-select-group">
-                    <label>From</label>
-                    <select
-                      className="time-select"
-                      value={tempHalfDayTime.from}
-                      onChange={(e) => setTempHalfDayTime({ ...tempHalfDayTime, from: e.target.value })}
-                    >
-                      {timeOptions.map(time => (
-                        <option key={`from-${time}`} value={time}>{time}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="time-select-group">
-                    <label>To</label>
-                    <select
-                      className="time-select"
-                      value={tempHalfDayTime.to}
-                      onChange={(e) => setTempHalfDayTime({ ...tempHalfDayTime, to: e.target.value })}
-                    >
-                      {timeOptions.map(time => (
-                        <option key={`to-${time}`} value={time}>{time}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="time-presets">
-                    <button
-                      className="time-preset-btn"
-                      onClick={() => setTempHalfDayTime({ from: "09:00", to: "13:00" })}
-                    >
-                      Morning (9AM - 1PM)
-                    </button>
-                    <button
-                      className="time-preset-btn"
-                      onClick={() => setTempHalfDayTime({ from: "13:00", to: "17:00" })}
-                    >
-                      Afternoon (1PM - 5PM)
-                    </button>
-                    <button
-                      className="time-preset-btn"
-                      onClick={() => setTempHalfDayTime({ from: "09:00", to: "12:00" })}
-                    >
-                      9AM - 12PM
-                    </button>
-                    <button
-                      className="time-preset-btn"
-                      onClick={() => setTempHalfDayTime({ from: "14:00", to: "18:00" })}
-                    >
-                      2PM - 6PM
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button className="modal-cancel" onClick={() => setShowTimeModal(false)}>
-                  Cancel
-                </button>
-                <button className="modal-confirm" onClick={handleHalfDayTimeSave}>
-                  Confirm Half-Day
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-      {/* ===== WORK STOPPAGE MODAL ===== */}
-      {
-        showStoppageModal && (
-          <div className="modal-overlay" onClick={() => setShowStoppageModal(false)}>
-            <div className="modal-content warning-theme" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
+      {/* ── WORK STOPPAGE MODAL ───────────────────────────────────────────────── */}
+      {showStoppageModal && (
+        <div className="att-modal-overlay" onClick={() => setShowStoppageModal(false)}>
+          <div className="att-modal att-modal-lg" onClick={e => e.stopPropagation()}>
+            <div className="att-modal-header att-modal-header-orange">
+              <div>
                 <h3>Log Work Stoppage</h3>
-                <button className="modal-close" onClick={() => setShowStoppageModal(false)}>
-                  <span className="material-symbols-outlined">close</span>
-                </button>
+                <p className="att-modal-sub">This will mark all {filteredEmployees.length} filtered employees as Absent</p>
               </div>
-              <div className="modal-body">
-                <div className="info-box">
-                  <span className="material-symbols-outlined">info</span>
-                  <p>
-                    <strong>HR Policy Note:</strong> Work stoppages due to company issues (breakdown, power cut)
-                    will be marked as <strong>Absent</strong> (Company Issue - Unpaid). This action will apply to all
-                    <strong> {filteredEmployees.length} </strong> filtered employees.
-                  </p>
-                </div>
+              <button className="att-modal-close" onClick={() => setShowStoppageModal(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="att-modal-body">
+              <label className="att-field-label">Reason for Stoppage</label>
+              <select className="att-select att-select-full" value={stoppageData.reason} onChange={e => setStoppageData(s => ({ ...s, reason: e.target.value }))}>
+                <option>Machine Breakdown</option>
+                <option>Power Failure</option>
+                <option>Raw Material Shortage</option>
+                <option>Safety Inspection</option>
+                <option>Government Holiday</option>
+                <option>Other</option>
+              </select>
 
-                <div className="modal-form-group">
-                  <label>Reason for Stoppage</label>
-                  <select
-                    className="modal-select"
-                    value={stoppageData.reason}
-                    onChange={(e) => setStoppageData({ ...stoppageData, reason: e.target.value })}
-                  >
-                    <option value="Machine Breakdown">Machine Breakdown</option>
-                    <option value="Power Failure">Power Failure</option>
-                    <option value="Raw Material Shortage">Raw Material Shortage</option>
-                    <option value="Safety Incident">Safety Incident</option>
-                    <option value="Other">Other</option>
-                  </select>
+              <div className="att-time-row" style={{ marginTop: 16 }}>
+                <div className="att-time-group">
+                  <label className="att-field-label">Start Time</label>
+                  <input type="time" className="att-time-input" value={stoppageData.startTime} onChange={e => setStoppageData(s => ({ ...s, startTime: e.target.value }))} />
                 </div>
-
-                <div className="modal-row">
-                  <div className="modal-form-group">
-                    <label>Start Time</label>
-                    <input
-                      type="time"
-                      className="modal-input"
-                      value={stoppageData.startTime}
-                      onChange={(e) => setStoppageData({ ...stoppageData, startTime: e.target.value })}
-                    />
-                  </div>
-                  <div className="modal-form-group">
-                    <label>End Time</label>
-                    <input
-                      type="time"
-                      className="modal-input"
-                      value={stoppageData.endTime}
-                      onChange={(e) => setStoppageData({ ...stoppageData, endTime: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="modal-form-group">
-                  <label>Additional Notes</label>
-                  <textarea
-                    className="modal-textarea"
-                    rows="2"
-                    placeholder="Details about the incident..."
-                    value={stoppageData.note}
-                    onChange={(e) => setStoppageData({ ...stoppageData, note: e.target.value })}
-                  ></textarea>
+                <span className="att-time-sep">to</span>
+                <div className="att-time-group">
+                  <label className="att-field-label">End Time</label>
+                  <input type="time" className="att-time-input" value={stoppageData.endTime} onChange={e => setStoppageData(s => ({ ...s, endTime: e.target.value }))} />
                 </div>
               </div>
-              <div className="modal-footer">
-                <button className="modal-cancel" onClick={() => setShowStoppageModal(false)}>
-                  Cancel
-                </button>
-                <button className="modal-confirm warning" onClick={handleApplyStoppage}>
-                  Apply Log
-                </button>
+
+              <label className="att-field-label" style={{ marginTop: 16 }}>Additional Notes <span className="att-optional">(optional)</span></label>
+              <textarea
+                className="att-textarea"
+                rows={3}
+                placeholder="Add notes about the stoppage…"
+                value={stoppageData.notes}
+                onChange={e => setStoppageData(s => ({ ...s, notes: e.target.value }))}
+              />
+
+              <div className="att-stoppage-warn">
+                <span className="material-symbols-outlined">warning</span>
+                <span>This will mark <strong>{filteredEmployees.length} employees</strong> as Absent for this date.</span>
               </div>
             </div>
+            <div className="att-modal-footer">
+              <button className="att-btn att-btn-ghost" onClick={() => setShowStoppageModal(false)}>Cancel</button>
+              <button className="att-btn att-btn-orange" onClick={handleStoppageSave}>
+                <span className="material-symbols-outlined">warning</span>
+                Apply Stoppage
+              </button>
+            </div>
           </div>
-        )
-      }
+        </div>
+      )}
+
     </div>
   );
 };

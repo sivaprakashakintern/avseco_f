@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAppContext } from '../context/AppContext.js';
+import { formatDate } from '../utils/dateUtils.js';
 import "./stock/Stock.css"; // Reuse Stock CSS for consistent theme
 
 const Expenses = () => {
@@ -38,12 +39,9 @@ const Expenses = () => {
         e.preventDefault();
 
         // Use current date/time for new entry
-        const now = new Date();
-        const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-
         const expenseToAdd = {
             ...newExpense,
-            date: formattedDate,
+            date: formatDate(new Date()),
         };
 
         ctxAddExpense(expenseToAdd);
@@ -132,7 +130,7 @@ const Expenses = () => {
                         <tbody>
                             {expenses.slice(0, 10).map((expense) => (
                                 <tr key={expense.id}>
-                                    <td style={{ fontWeight: '500' }}>{expense.date}</td>
+                                    <td style={{ fontWeight: '500' }}>{formatDate(expense.date)}</td>
                                     <td>
                                         <span className={`status-badge ${expense.category === 'Machine Maintenance' ? 'low' :
                                             expense.category === 'Stock Purchased' ? 'normal' :

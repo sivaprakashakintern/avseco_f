@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { formatDate } from "../../utils/dateUtils.js";
 import "./Clients.css";
 
 const Clients = () => {
@@ -15,7 +16,15 @@ const Clients = () => {
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [exportLoading, setExportLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(window.innerWidth <= 768 ? 15 : 10);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerPage(window.innerWidth <= 768 ? 15 : 10);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Clients Data with State
   const [clients, setClients] = useState([
@@ -488,7 +497,8 @@ const Clients = () => {
             <table className="clients-table">
               <thead>
                 <tr>
-                  <th>Company Name</th>
+                  <th className="sticky-col-no">#</th>
+                  <th className="sticky-col">Company Name</th>
                   <th>Contact Person</th>
                   <th>Email</th>
                   <th>Phone</th>
@@ -499,9 +509,10 @@ const Clients = () => {
               </thead>
               <tbody>
                 {paginatedClients.length > 0 ? (
-                  paginatedClients.map((client) => (
+                  paginatedClients.map((client, index) => (
                     <tr key={client.id} className="client-row">
-                      <td>
+                      <td className="sticky-col-no">{startIndex + index + 1}</td>
+                      <td className="sticky-col">
                         <div className="company-info">
                           <div className="company-icon">
                             <span className="material-symbols-outlined">business</span>
@@ -531,13 +542,6 @@ const Clients = () => {
                       </td>
                       <td>
                         <div className="action-buttons">
-                          <button
-                            className="action-btn view"
-                            onClick={() => handleViewClient(client)}
-                            title="View Details"
-                          >
-                            <span className="material-symbols-outlined">visibility</span>
-                          </button>
                           <button
                             className="action-btn edit"
                             onClick={() => handleEditClient(client)}
@@ -959,7 +963,7 @@ const Clients = () => {
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Last Order</span>
-                  <span className="detail-value">{selectedClient.lastOrder}</span>
+                  <span className="detail-value">{formatDate(selectedClient.lastOrder)}</span>
                 </div>
                 <div className="detail-item full-width">
                   <span className="detail-label">Address</span>

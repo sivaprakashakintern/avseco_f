@@ -216,26 +216,26 @@
 .fixed-popup {
   position: fixed;
   background: white;
-  border-radius: 18px;
-  padding: 28px;
-  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   z-index: 10000;
-  width: 340px;
+  width: 280px;
   pointer-events: none;
   border: 1px solid #e2e8f0;
-  animation: popupFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: popupFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .stock-popup {
-  border-top: 5px solid #6366f1;
+  border-left: 4px solid #6366f1;
 }
 
 .production-popup {
-  border-top: 5px solid #f43f5e;
+  border-left: 4px solid #f43f5e;
 }
 
 .expenses-popup {
-  border-top: 5px solid #10b981;
+  border-left: 4px solid #10b981;
 }
 
 @keyframes popupFadeIn {
@@ -251,17 +251,18 @@
 }
 
 .popup-header {
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #f1f5f9;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .popup-header h4 {
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--avs-text-dark);
+  font-size: 13px;
+  font-weight: 800;
+  color: #64748b;
   letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .popup-content {
@@ -279,7 +280,7 @@
 .popup-size {
   font-size: 14px;
   font-weight: 600;
-  color: var(--avs-text-light);
+  color: #1e293b;
 }
 
 .popup-value {

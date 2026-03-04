@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/avs.png";
+import bgImage from "../assets/bg1.png";
 import "./Login.css";
 
 const Login = () => {
@@ -24,7 +25,7 @@ const Login = () => {
             if (username === envUsername && password === envPassword) {
                 localStorage.setItem("isLoggedIn", "true"); // Save login status
                 setIsLoading(false);
-                navigate("/dashboard");
+                navigate("/stock");
             } else {
                 setIsLoading(false);
                 setError("Invalid Admin Credentials");
@@ -33,7 +34,11 @@ const Login = () => {
     };
 
     return (
-        <div className="login-page">
+        <div className="login-page" style={{
+            backgroundImage: `linear-gradient(180deg, rgba(0, 31, 23, 0.4) 0%, rgba(0, 15, 10, 0.75) 100%), url(${bgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+        }}>
             <div className="login-container">
                 <div className="login-card">
                     <div className="login-header">

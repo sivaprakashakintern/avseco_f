@@ -220,3 +220,49 @@
     background: rgba(239, 68, 68, 0.1);
     color: #fca5a5;
 }
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .check-page-container {
+        padding: 1.5rem;
+        height: auto;
+        min-height: calc(100vh - 80px);
+    }
+
+    .check-card {
+        padding: 2.5rem 2rem;
+        gap: 1.5rem;
+    }
+
+    .icon-large {
+        font-size: 4rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .check-page-container {
+        padding: 1rem;
+    }
+
+    .check-card {
+        padding: 2rem 1.5rem;
+        border-radius: 16px;
+    }
+
+    .check-title {
+        font-size: 1.25rem;
+    }
+
+    .icon-large {
+        font-size: 3.5rem !important;
+    }
+
+    .status-indicator-wrapper {
+        min-height: 150px;
+    }
+
+    .retry-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

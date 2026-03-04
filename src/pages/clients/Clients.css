@@ -393,6 +393,30 @@
   background: #f0ffe8;
 }
 
+.sticky-col-no {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: white;
+  min-width: 40px;
+  width: 40px;
+  text-align: center;
+}
+
+.sticky-col {
+  position: sticky;
+  left: 40px;
+  z-index: 10;
+  background: white;
+  min-width: 150px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+}
+
+.dark .sticky-col-no,
+.dark .sticky-col {
+  background: #1c2e21;
+}
+
 .dark .client-row:hover {
   background: #1d3324;
 }
@@ -1304,35 +1328,7 @@
   }
 }
 
-/* ===== SCROLL HINT FOR MOBILE ===== */
-@media (max-width: 768px) {
-  .table-responsive {
-    position: relative;
-  }
 
-  .table-responsive::after {
-    content: '←→ Swipe to scroll';
-    position: sticky;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: block;
-    text-align: center;
-    padding: 12px;
-    background: linear-gradient(to right, rgba(0, 106, 78, 0.1), #f0ffe8);
-    color: #006A4E;
-    font-size: 12px;
-    font-weight: 600;
-    border-top: 1px solid #b0e6a0;
-    z-index: 10;
-  }
-
-  .dark .table-responsive::after {
-    background: linear-gradient(to right, rgba(0, 106, 78, 0.2), #1d3324);
-    color: white;
-    border-top-color: #2a3a2e;
-  }
-}
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
@@ -1380,102 +1376,198 @@
 
 @media (max-width: 768px) {
   .clients-container {
-    padding: 20px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 24px !important;
-  }
-
-  /* Global button takes care of this */
-
-  .subheader {
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 12px;
     gap: 16px;
   }
 
+  /* ── Premium Header ── */
+  .premium-header {
+    background: #006A4E;
+    padding: 24px 16px !important;
+    border-radius: 20px;
+    text-align: center;
+    flex-direction: column !important;
+    gap: 8px !important;
+    margin-bottom: 0px;
+    box-shadow: 0 10px 30px rgba(0, 106, 78, 0.15);
+  }
+
+  .premium-header .page-title {
+    color: white;
+    margin: 0;
+  }
+
+  .premium-header .page-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+  }
+
+  .header-actions {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  /* Translucent Action Box */
+  .btn-transfer-premium {
+    width: 100%;
+    justify-content: center;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    border-radius: 14px !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+  }
+
+  /* ── Stats: Side by Side ── */
   .clients-stats {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 12px;
   }
 
-  .clients-grid {
-    grid-template-columns: 1fr;
+  .stat-card {
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
   }
 
+  .stat-icon {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 0;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  /* ── Subheader ── */
+  .subheader {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+  }
+
+  /* ── Filters: Side by Side ── */
+  .filters-section {
+    display: flex;
+    flex-direction: row;
+    /* Match side-by-side pattern */
+    gap: 8px;
+    background: #ffffff;
+    padding: 8px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    margin-top: 8px;
+  }
+
+  .search-box {
+    flex: 2;
+    min-width: 0;
+    height: 44px;
+  }
+
+  .btn-export-premium {
+    flex: 1;
+    height: 44px;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+    justify-content: center;
+  }
+
+  /* ── Table & Columns ── */
+  .table-container {
+    margin-top: 12px;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .clients-table th,
+  .clients-table td {
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+
+  .clients-table th.sticky-col-no,
+  .clients-table td.sticky-col-no {
+    left: 0 !important;
+    min-width: 40px;
+    width: 40px;
+    background: white;
+  }
+
+  .clients-table th.sticky-col,
+  .clients-table td.sticky-col {
+    left: 40px !important;
+    min-width: 150px;
+    /* Widened for full company name */
+    background: white;
+    border-right: 2px solid #f1f5f9;
+  }
+
+  .dark th.sticky-col-no,
+  .dark td.sticky-col-no,
+  .dark th.sticky-col,
+  .dark td.sticky-col {
+    background: #1c2e21 !important;
+  }
+
+  .company-name {
+    white-space: nowrap;
+    font-weight: 800;
+    font-size: 12px;
+  }
+
+  .contact-person {
+    white-space: nowrap;
+  }
+
+  .client-email,
+  .client-phone {
+    white-space: nowrap;
+  }
+
+  /* ── Modals & Pagination ── */
   .modal-row {
     grid-template-columns: 1fr;
-  }
-
-  .pagination {
-    flex-direction: column;
-    gap: 16px;
-    align-items: flex-start;
-  }
-
-  .pagination-controls {
-    flex-wrap: wrap;
-  }
-
-  .export-options {
-    flex-direction: column;
-  }
-
-  .client-profile-header {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .client-details-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .detail-item.full-width {
-    grid-column: span 1;
   }
 }
 
 @media (max-width: 480px) {
-  .clients-container {
-    padding: 16px;
+  .premium-header {
+    padding: 20px 12px !important;
   }
 
   .page-title {
-    font-size: 24px;
-  }
-
-  .stat-card {
-    padding: 16px;
-  }
-
-  .stat-icon {
-    width: 48px;
-    height: 48px;
-  }
-
-  .stat-value {
     font-size: 20px;
   }
 
-  .client-card-avatar {
-    width: 60px;
-    height: 60px;
+  .clients-stats {
+    grid-template-columns: 1fr;
+    /* Switch to single if too tight */
   }
 
-  .client-card-avatar .material-symbols-outlined {
-    font-size: 36px;
+  .btn-export-premium span:last-child {
+    display: none;
+    /* Icon only if very small */
   }
 
-  .client-profile-avatar {
-    width: 80px;
-    height: 80px;
+  .btn-export-premium {
+    flex: 0 0 50px;
   }
 
-  .client-profile-avatar .material-symbols-outlined {
-    font-size: 48px;
+  .clients-table th.sticky-col,
+  .clients-table td.sticky-col {
+    min-width: 130px;
   }
 }
 

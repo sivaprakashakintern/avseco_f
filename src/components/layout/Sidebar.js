@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import AppContext from "../../context/AppContext.js";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../../assets/avs.png";
+import avatar from "../../assets/avatar.png";
 import "./Sidebar.css";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isMobileMenuOpen, setIsMobileMenuOpen } = useContext(AppContext);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
   const [popupTop, setPopupTop] = useState(0);
   const [popupLeft, setPopupLeft] = useState(0);
@@ -68,10 +70,10 @@ const Sidebar = () => {
   };
 
   const user = {
-    name: "Rajesh Kumar",
+    name: "Arun Kumar",
     role: "Plant Manager",
-    initials: "RK",
-    avatar: null,
+    initials: "AK",
+    avatar: avatar,
   };
 
   const handleLogout = () => {
@@ -133,28 +135,18 @@ const Sidebar = () => {
 
   const [expandedMenu, setExpandedMenu] = useState(null);
 
-  const toggleSubMenu = (label) => {
-    if (expandedMenu === label) {
-      setExpandedMenu(null);
+  const toggleSubMenu = (item) => {
+    if (item.children && item.children.length > 0) {
+      // On mobile: just expand/collapse the submenu — do NOT navigate
+      setExpandedMenu(prev => prev === item.label ? null : item.label);
     } else {
-      setExpandedMenu(label);
+      // No children: navigate directly
+      handleNavigation(item.path);
     }
   };
 
   return (
     <>
-      {isMobile && (
-        <div className="mobile-header-bar">
-          <div className="mobile-logo-left" onClick={handleLogoClick}>
-            <img src={logo} alt="AVSECO" className="mobile-header-logo" />
-          </div>
-          <div className="mobile-profile-right" onClick={toggleMobileMenu}>
-            <div className="mobile-avatar-trigger">
-              {user.initials}
-            </div>
-          </div>
-        </div>
-      )}
 
       {isMobile && isMobileMenuOpen && (
         <div
@@ -167,8 +159,8 @@ const Sidebar = () => {
         className={`sidebar ${isMobile ? "mobile" : ""} ${isMobileMenuOpen ? "mobile-open" : ""}`}
       >
         <div className="sidebar-header">
-          <div className="logo-container" onClick={handleLogoClick}>
-            <img src={logo} alt="AVSECO Logo" className="logo-full logo-boost" />
+          <div className="logo-container logo-container-mobile-fix" onClick={handleLogoClick}>
+            <img src={logo} alt="AVSECO Logo" className="logo-full logo-mobile-enhanced" />
           </div>
           {isMobile && (
             <button className="mobile-close" onClick={() => setIsMobileMenuOpen(false)}>
@@ -177,18 +169,6 @@ const Sidebar = () => {
           )}
         </div>
 
-        {/* Navigation to Profile - Mobile Only */}
-        {isMobile && (
-          <div className="sidebar-profile-box-compact">
-            <div
-              className={`nav-item ${isActive('/profile') ? 'active' : ''}`}
-              onClick={() => handleNavigation('/profile')}
-            >
-              <span className="material-symbols-outlined">person</span>
-              <p className="nav-text">Profile</p>
-            </div>
-          </div>
-        )}
 
         <nav className="sidebar-nav">
           {navItems.map((item) => (
@@ -209,7 +189,7 @@ const Sidebar = () => {
                 >
                   <div
                     className={`nav-item ${isActive(item.path) || location.pathname.includes(item.path) ? "active" : ""}`}
-                    onClick={() => toggleSubMenu(item.label)}
+                    onClick={() => toggleSubMenu(item)}
                   >
                     <span className="material-symbols-outlined">{item.icon}</span>
                     <p className="nav-text">{item.label}</p>
@@ -218,7 +198,7 @@ const Sidebar = () => {
                     </span>
                   </div>
 
-                  {/* Popup Submenu */}
+                  {/* Submenu Logic */}
                   {(expandedMenu === item.label) && (
                     <div
                       className={`submenu ${!isMobile ? 'popup-menu' : ''}`}
@@ -245,7 +225,7 @@ const Sidebar = () => {
                   <span className="material-symbols-outlined">{item.icon}</span>
                   <p className="nav-text">{item.label}</p>
 
-                  {/* API Status Indicator for Reports */}
+                  {/* API Status Indicator */}
                   {item.apiStatus !== undefined && (
                     <span
                       className={`api-status-dot ${item.apiStatus ? "connected" : "disconnected"}`}
@@ -256,17 +236,8 @@ const Sidebar = () => {
               )}
             </React.Fragment>
           ))}
-        </nav>
 
-        {/* Sidebar Footer with Logout - Mobile Only */}
-        {isMobile && (
-          <div className="sidebar-footer">
-            <div className="logout-item" onClick={handleLogout}>
-              <span className="material-symbols-outlined">logout</span>
-              <span className="nav-text">Logout</span>
-            </div>
-          </div>
-        )}
+        </nav>
       </aside>
     </>
   );

@@ -1,26 +1,14 @@
 import React, { useState, useMemo, useCallback } from "react";
+import { useAppContext } from '../context/AppContext.js';
 import "./AttendanceReport.css";
 
 const AttendanceReport = () => {
+    const { employees } = useAppContext();
 
     // State for dates
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-11
     const [exportRange, setExportRange] = useState("month"); // 'month' or 'year'
-
-    // Generate dummy employees
-    const employees = useMemo(() => [
-        { id: 1, name: "Arjun Kumar", empId: "EMP-001" },
-        { id: 2, name: "Sita Devi", empId: "EMP-042" },
-        { id: 3, name: "Rajesh Singh", empId: "EMP-089" },
-        { id: 4, name: "Priya Sharma", empId: "EMP-102" },
-        { id: 5, name: "Vikram Mehta", empId: "EMP-056" },
-        { id: 6, name: "Lakshmi Nair", empId: "EMP-078" },
-        { id: 7, name: "Karthik Rajan", empId: "EMP-091" },
-        { id: 8, name: "Manoj Kumar", empId: "EMP-112" },
-        { id: 9, name: "Divya Krishnan", empId: "EMP-124" },
-        { id: 10, name: "Amit Patel", empId: "EMP-130" },
-    ], []);
 
     // Helper to get days in a specific month
     const getDaysInMonth = (year, month) => {
@@ -109,11 +97,17 @@ const AttendanceReport = () => {
 
         return `
             <tr>
-                <td colspan="${totalColumns + 5}" style="height: 50px; font-size: 24px; font-weight: bold; text-align: center; vertical-align: middle; border: none; color: #006A4E;">
+                <td colspan="${totalColumns + 6}" style="height: 50px; font-size: 24px; font-weight: bold; text-align: center; vertical-align: middle; border: none; color: #006A4E;">
+                    AVSECO ECO INDUSTRIES - ATTENDANCE REPORT
+                </td>
+            </tr>
+            <tr>
+                <td colspan="${totalColumns + 6}" style="height: 50px; font-size: 24px; font-weight: bold; text-align: center; vertical-align: middle; border: none; color: #006A4E;">
                     ${monthName.toUpperCase()} ${year}
                 </td>
             </tr>
             <tr>
+                <th style="background-color: #006A4E; color: white; border: 1px solid #000; font-weight: bold; width: 50px;">S.No</th>
                 <th style="background-color: #006A4E; color: white; border: 1px solid #000; font-weight: bold; width: 100px;">Employee ID</th>
                 <th style="background-color: #006A4E; color: white; border: 1px solid #000; font-weight: bold; width: 200px;">Employee Name</th>
                 ${Array.from({ length: totalColumns }).map((_, i) => {
@@ -129,11 +123,12 @@ const AttendanceReport = () => {
                 <th style="background-color: #fee2e2; border: 1px solid #000; font-weight: bold; width: 60px; text-align: center; color: #991b1b;">ABSENT</th>
                 <th style="background-color: #ffedd5; border: 1px solid #000; font-weight: bold; width: 60px; text-align: center; color: #9a3412;">HALF</th>
             </tr>
-            ${employees.map(emp => {
+            ${employees.map((emp, index) => {
             const empData = data[emp.id];
             return `
                     <tr>
-                        <td style="border: 1px solid #000; padding: 5px;">${emp.empId}</td>
+                        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${index + 1}</td>
+                        <td style="border: 1px solid #000; padding: 5px;">${emp.empId || '-'}</td>
                         <td style="border: 1px solid #000; padding: 5px; font-weight: 600;">${emp.name}</td>
                         ${Array.from({ length: totalColumns }).map((_, i) => {
                 const status = empData.daily[i];
@@ -163,7 +158,7 @@ const AttendanceReport = () => {
                     </tr>
                 `;
         }).join('')}
-            <tr><td colspan="${totalColumns + 5}" style="border: none; height: 30px;"></td></tr> 
+            <tr><td colspan="${totalColumns + 6}" style="border: none; height: 30px;"></td></tr> 
         `;
     };
 
@@ -230,47 +225,41 @@ const AttendanceReport = () => {
 
     return (
         <div className="attendance-report-page">
-            {/* Header */}
-            {/* ===== PREMIUM ANALYTICS HEADER ===== */}
-            <div className="page-header premium-header">
-                <div className="report-title-section">
-                    <h1 className="page-title">Attendance Reports</h1>
-                    <p className="page-subtitle">Analyze and export comprehensive workforce logs</p>
+            <div className="ar-banner-header">
+                <div className="ar-banner-left">
+                    <h1 className="ar-banner-title">Attendance Reports</h1>
+                    <p className="ar-banner-subtitle">Analyze and export comprehensive workforce logs</p>
                 </div>
-
-                <div className="header-actions">
-
-                    <div className="export-group" style={{ display: 'flex', gap: '12px' }}>
-                        <div className="custom-dropdown range-selector" onClick={(e) => e.stopPropagation()}>
-                            <button
-                                className="dropdown-trigger range-trigger"
-                                onClick={() => setShowRangeDropdown(!showRangeDropdown)}
-                            >
-                                {exportRange === "month" ? "Current Month" : `Full Year ${selectedYear}`}
-                                <span className="material-symbols-outlined">expand_more</span>
-                            </button>
-                            {showRangeDropdown && (
-                                <div className="dropdown-menu">
-                                    <div
-                                        className={`dropdown-item ${exportRange === "month" ? "active" : ""}`}
-                                        onClick={() => { setExportRange("month"); setShowRangeDropdown(false); }}
-                                    >
-                                        Current Month
-                                    </div>
-                                    <div
-                                        className={`dropdown-item ${exportRange === "year" ? "active" : ""}`}
-                                        onClick={() => { setExportRange("year"); setShowRangeDropdown(false); }}
-                                    >
-                                        Full Year {selectedYear}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <button className="btn-export-premium" onClick={handleExport}>
-                            <span className="material-symbols-outlined">download</span>
-                            Export Data
+                <div className="ar-banner-actions">
+                    <div className="custom-dropdown range-selector" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            className="ar-banner-btn"
+                            onClick={() => setShowRangeDropdown(!showRangeDropdown)}
+                        >
+                            {exportRange === "month" ? "Current Month" : `Full Year ${selectedYear}`}
+                            <span className="material-symbols-outlined">expand_more</span>
                         </button>
+                        {showRangeDropdown && (
+                            <div className="dropdown-menu">
+                                <div
+                                    className={`dropdown-item ${exportRange === "month" ? "active" : ""}`}
+                                    onClick={() => { setExportRange("month"); setShowRangeDropdown(false); }}
+                                >
+                                    Current Month
+                                </div>
+                                <div
+                                    className={`dropdown-item ${exportRange === "year" ? "active" : ""}`}
+                                    onClick={() => { setExportRange("year"); setShowRangeDropdown(false); }}
+                                >
+                                    Full Year {selectedYear}
+                                </div>
+                            </div>
+                        )}
                     </div>
+                    <button className="ar-banner-btn ar-banner-btn-solid" onClick={handleExport}>
+                        <span className="material-symbols-outlined">download</span>
+                        Export Data
+                    </button>
                 </div>
             </div>
 
@@ -315,6 +304,7 @@ const AttendanceReport = () => {
                                 onClick={() => setShowMonthDropdown(!showMonthDropdown)}
                             >
                                 {months[selectedMonth]}
+                                <span className="material-symbols-outlined month-arrow">expand_more</span>
                             </button>
                             {showMonthDropdown && (
                                 <div className="dropdown-menu scrollable">
@@ -344,7 +334,6 @@ const AttendanceReport = () => {
                 <div className="legend-item"><span className="legend-box absent">A</span> Absent</div>
                 <div className="legend-item"><span className="legend-box half">HD</span> Half Day</div>
                 <div className="legend-item"><span className="legend-box stoppage">WS</span> Work Stoppage</div>
-                <div className="legend-item"><span className="legend-box sunday">SUN</span> Sunday</div>
             </div>
 
             {/* Matrix Table Card */}
@@ -353,6 +342,7 @@ const AttendanceReport = () => {
                     <table className="matrix-table">
                         <thead>
                             <tr>
+                                <th className="sticky-col-no" style={{ left: 0 }}>#</th>
                                 <th className="sticky-col">Employee</th>
                                 {daysInCurrentView.map(day => (
                                     <th key={day.date} style={{ color: day.isSunday ? '#ef4444' : 'inherit' }}>
@@ -364,14 +354,16 @@ const AttendanceReport = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {employees.map((emp) => {
+                            {employees.map((emp, index) => {
                                 const data = currentMonthData[emp.id];
                                 return (
                                     <tr key={emp.id}>
-                                        <td className="sticky-col">
+                                        <td className="sticky-col-no" style={{ left: 0 }}>
+                                            {index + 1}
+                                        </td>
+                                        <td className="sticky-col" style={{ left: '40px' }}>
                                             <div className="emp-cell-info">
                                                 <span className="emp-name">{emp.name}</span>
-                                                <span className="emp-id">{emp.empId}</span>
                                             </div>
                                         </td>
 
@@ -386,7 +378,9 @@ const AttendanceReport = () => {
 
                                             return (
                                                 <td key={idx} className={statusClass}>
-                                                    {status === 'Sunday' ? 'SUN' : status}
+                                                    <div className="status-indicator">
+                                                        {status === 'Sunday' ? 'S' : status}
+                                                    </div>
                                                 </td>
                                             );
                                         })}

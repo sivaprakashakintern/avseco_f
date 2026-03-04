@@ -4,31 +4,32 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import './Stock.css';  // Make sure this points to your CSS file
+import { formatDate } from '../../utils/dateUtils.js';
 
 const Production = () => {
   const navigate = useNavigate();
-  
+
   // ========== STATE MANAGEMENT ==========
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFormat, setExportFormat] = useState('excel');
   const [exportPeriod, setExportPeriod] = useState('daily');
-  
+
   // Notification State
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success'); // success, error, warning, info
-  
+
   // Search and Filter States for Today's Production
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [sizeFilter, setSizeFilter] = useState('all');
-  
+
   // Search and Filter States for Production History
   const [historySearch, setHistorySearch] = useState('');
   const [historySizeFilter, setHistorySizeFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
-  
+
   // Form state for production entry
   const [formData, setFormData] = useState({
     product: "Areca Leaf Plate",
@@ -94,7 +95,7 @@ const Production = () => {
     setNotificationMessage(message);
     setNotificationType(type);
     setShowNotification(true);
-    
+
     // Auto hide after 3 seconds
     setTimeout(() => {
       setShowNotification(false);
@@ -108,7 +109,7 @@ const Production = () => {
   // ========== FILTER FUNCTIONS FOR TODAY'S PRODUCTION ==========
   const getFilteredProduction = () => {
     return todayProduction.filter(item => {
-      const matchesEmployee = !employeeSearch.trim() || 
+      const matchesEmployee = !employeeSearch.trim() ||
         item.operator.toLowerCase().includes(employeeSearch.toLowerCase());
       const matchesSize = sizeFilter === 'all' || item.size === sizeFilter;
       return matchesEmployee && matchesSize;
@@ -127,14 +128,14 @@ const Production = () => {
   // ========== FILTER FUNCTIONS FOR PRODUCTION HISTORY ==========
   const getFilteredHistory = () => {
     return productionHistory.filter(item => {
-      const matchesSearch = !historySearch.trim() || 
+      const matchesSearch = !historySearch.trim() ||
         item.product.toLowerCase().includes(historySearch.toLowerCase()) ||
         item.operator.toLowerCase().includes(historySearch.toLowerCase());
-      
+
       const matchesSize = historySizeFilter === 'all' || item.size === historySizeFilter;
-      
+
       const matchesDate = !selectedDate || item.date === selectedDate;
-      
+
       return matchesSearch && matchesSize && matchesDate;
     });
   };
@@ -161,18 +162,17 @@ const Production = () => {
   };
 
   const getFilteredData = () => {
-    const today = new Date();
-    const todayStr = today.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
-    
-    switch(exportPeriod) {
+    const todayStr = formatDate(new Date());
+
+    switch (exportPeriod) {
       case 'daily':
         return productionHistory.filter(item => item.date === todayStr);
       case 'weekly':
         const last7Days = [];
-        for(let i = 0; i < 7; i++) {
+        for (let i = 0; i < 7; i++) {
           const d = new Date(today);
           d.setDate(d.getDate() - i);
-          const dateStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+          const dateStr = formatDate(d);
           last7Days.push(dateStr);
         }
         return productionHistory.filter(item => last7Days.includes(item.date));
@@ -190,10 +190,9 @@ const Production = () => {
   };
 
   const getReportTitle = () => {
-    const today = new Date();
-    const dateStr = today.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
-    
-    switch(exportPeriod) {
+    const dateStr = formatDate(new Date());
+
+    switch (exportPeriod) {
       case 'daily':
         return `Daily_Production_Report_${dateStr}`;
       case 'weekly':
@@ -224,7 +223,7 @@ const Production = () => {
       return;
     }
 
-    switch(exportFormat) {
+    switch (exportFormat) {
       case 'excel':
         exportToExcel(filteredData, title);
         break;
@@ -255,7 +254,7 @@ const Production = () => {
       }));
       const ws = XLSX.utils.json_to_sheet(exportData);
       XLSX.utils.book_append_sheet(wb, ws, 'Production Data');
-      
+
       const totalQuantity = data.reduce((sum, item) => sum + item.quantity, 0);
       const summaryData = [
         { 'Metric': 'Total Records', 'Value': data.length },
@@ -265,7 +264,7 @@ const Production = () => {
       ];
       const summaryWs = XLSX.utils.json_to_sheet(summaryData);
       XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
-      
+
       const filename = `${title}.xlsx`;
       XLSX.writeFile(wb, filename);
       showNotificationMessage(`✅ Excel file downloaded: ${filename}`, 'success');
@@ -280,7 +279,7 @@ const Production = () => {
       const headers = ['Date', 'Product', 'Size', 'Quantity', 'Grade', 'Operator', 'Status'];
       const csvRows = [];
       csvRows.push(headers.join(','));
-      
+
       for (const item of data) {
         const values = [
           item.date,
@@ -293,14 +292,14 @@ const Production = () => {
         ];
         csvRows.push(values.join(','));
       }
-      
+
       const totalQuantity = data.reduce((sum, item) => sum + item.quantity, 0);
       csvRows.push('');
       csvRows.push('SUMMARY,,,,,,');
       csvRows.push(`Total Records,${data.length},,,,,`);
       csvRows.push(`Total Quantity,${totalQuantity},,,,,`);
       csvRows.push(`Generated On,${new Date().toLocaleString()},,,,,`);
-      
+
       const csvString = csvRows.join('\n');
       const blob = new Blob([csvString], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
@@ -309,7 +308,7 @@ const Production = () => {
       a.download = `${title}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
-      
+
       showNotificationMessage(`✅ CSV file downloaded: ${title}.csv`, 'success');
     } catch (error) {
       console.error('CSV export error:', error);
@@ -327,10 +326,10 @@ const Production = () => {
       doc.setTextColor(100);
       doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 22);
       doc.text(`Total Records: ${data.length}`, 14, 28);
-      
+
       const tableColumn = ['Date', 'Product', 'Size', 'Qty', 'Grade', 'Operator'];
       const tableRows = [];
-      
+
       for (const item of data) {
         const rowData = [
           item.date,
@@ -342,7 +341,7 @@ const Production = () => {
         ];
         tableRows.push(rowData);
       }
-      
+
       doc.autoTable({
         head: [tableColumn],
         body: tableRows,
@@ -351,10 +350,10 @@ const Production = () => {
         headStyles: { fillColor: [0, 106, 78], textColor: 255 },
         alternateRowStyles: { fillColor: [240, 248, 245] }
       });
-      
+
       const totalQuantity = data.reduce((sum, item) => sum + item.quantity, 0);
       const finalY = doc.lastAutoTable.finalY + 10;
-      
+
       doc.setFontSize(10);
       doc.setTextColor(0, 106, 78);
       doc.text('Summary', 14, finalY);
@@ -362,7 +361,7 @@ const Production = () => {
       doc.setTextColor(0);
       doc.text(`Total Records: ${data.length}`, 14, finalY + 7);
       doc.text(`Total Quantity: ${totalQuantity} pcs`, 14, finalY + 14);
-      
+
       doc.save(`${title}.pdf`);
       showNotificationMessage(`✅ PDF report downloaded: ${title}.pdf`, 'success');
     } catch (error) {
@@ -406,14 +405,10 @@ const Production = () => {
 
     setTodayProduction([...todayProduction, newProduction]);
 
-    const today = now.toLocaleDateString('en-IN', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
-    }).replace(/\//g, '-');
+    const todayDate = formatDate(now);
 
     const historyEntry = {
-      date: today,
+      date: todayDate,
       product: formData.product,
       size: formData.size,
       quantity: quantity,
@@ -437,7 +432,7 @@ const Production = () => {
     });
 
     showNotificationMessage(
-      `✅ Production added successfully!\n📦 Stock updated: +${quantity} pcs`, 
+      `✅ Production added successfully!\n📦 Stock updated: +${quantity} pcs`,
       'success'
     );
   };
@@ -452,7 +447,7 @@ const Production = () => {
         month: stats.month - quantity,
         stock: stats.stock - quantity
       });
-      
+
       showNotificationMessage(`🗑️ Production removed: -${quantity} pcs`, 'warning');
     }
   };
@@ -524,12 +519,12 @@ const Production = () => {
           <div className="dropdown-container">
             <button className="btn-outline dropdown-toggle" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
               <span className="material-symbols-outlined">menu</span>
-              View 
+              View
               <span className="material-symbols-outlined dropdown-arrow">
                 {isDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
               </span>
             </button>
-            
+
             {isDropdownOpen && (
               <div className="dropdown-menu">
                 <button className="dropdown-item" onClick={() => handleNavigation('/stock')}>
@@ -563,10 +558,10 @@ const Production = () => {
               <h2>Export Production Report</h2>
               <button className="modal-close" onClick={closeExportModal}>×</button>
             </div>
-            
+
             <div className="export-modal-body">
               <p className="export-subtitle">Choose Export Format</p>
-              
+
               <div className="export-section">
                 <h3>Export Format</h3>
                 <div className="radio-group">
@@ -587,7 +582,7 @@ const Production = () => {
                   </label>
                 </div>
               </div>
-              
+
               <div className="export-section">
                 <h3>Report Period</h3>
                 <div className="radio-group">
@@ -613,13 +608,13 @@ const Production = () => {
                   </label>
                 </div>
               </div>
-              
+
               <p className="export-note">
                 <span className="material-symbols-outlined">info</span>
                 Export all production transactions with current data
               </p>
             </div>
-            
+
             <div className="export-modal-footer">
               <button className="btn-outline" onClick={closeExportModal}>Cancel</button>
               <button className="btn-primary" onClick={handleExport}>
@@ -683,10 +678,10 @@ const Production = () => {
             Add Today's Production
           </h3>
           <span className="production-date">
-            📅 {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            📅 {formatDate(new Date())}
           </span>
         </div>
-        
+
         <div className="production-form-container">
           <div className="production-form-item">
             <span className="production-form-label">Product:</span>
@@ -781,11 +776,11 @@ const Production = () => {
         <div className="table-header">
           <h3>
             <span className="material-symbols-outlined">today</span>
-            Today's Production ({new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })})
+            Today's Production ({formatDate(new Date())})
           </h3>
           <span className="records-count">
             Showing {filteredProduction.length} of {todayProduction.length} records
-          </span>  
+          </span>
         </div>
 
         {/* Table Headers */}
@@ -814,7 +809,7 @@ const Production = () => {
                 </div>
                 <div className="row-cell operator">{item.operator}</div>
                 <div className="row-cell action">
-                  <button 
+                  <button
                     className="delete-btn"
                     onClick={() => handleRemoveProduction(item.id, item.quantity)}
                     title="Delete Record"
@@ -913,7 +908,7 @@ const Production = () => {
           </div>
 
           <div className="date-picker-container">
-            <button 
+            <button
               className="date-picker-btn"
               onClick={() => setShowDatePicker(!showDatePicker)}
             >
@@ -925,7 +920,7 @@ const Production = () => {
                 </span>
               )}
             </button>
-            
+
             {showDatePicker && (
               <div className="date-dropdown">
                 <div className="date-dropdown-header">
@@ -933,14 +928,14 @@ const Production = () => {
                   <button onClick={() => setShowDatePicker(false)}>×</button>
                 </div>
                 <div className="date-list">
-                  <div 
+                  <div
                     className={`date-item ${!selectedDate ? 'active' : ''}`}
                     onClick={() => handleDateSelect('')}
                   >
                     All Dates
                   </div>
                   {uniqueDates.map(date => (
-                    <div 
+                    <div
                       key={date}
                       className={`date-item ${selectedDate === date ? 'active' : ''}`}
                       onClick={() => handleDateSelect(date)}
@@ -1015,7 +1010,7 @@ const Production = () => {
             </tbody>
           </table>
         </div>
-        
+
         <div className="table-footer">
           <div className="pagination-info">
             Showing {filteredHistory.length} of {productionHistory.length} production records

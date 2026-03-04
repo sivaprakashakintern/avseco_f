@@ -37,16 +37,16 @@ const Dashboard = () => {
         expColor: "#10b981"
       },
       plates: [
-        { size: "6 Inch", stock: 5200, produced: 8500, sold: 7800 },
-        { size: "8 Inch", stock: 4100, produced: 6200, sold: 5900 },
-        { size: "10 Inch", stock: 3200, produced: 4800, sold: 4500 },
-        { size: "12 Inch", stock: 2100, produced: 3500, sold: 3200 },
+        { size: "6-inch", stock: 5200, produced: 8500, sold: 7800 },
+        { size: "8-inch", stock: 4100, produced: 6200, sold: 5900 },
+        { size: "10-inch", stock: 3200, produced: 4800, sold: 4500 },
+        { size: "12-inch", stock: 2100, produced: 3500, sold: 3200 },
       ],
       productionDetails: [
-        { size: "6 Inch", today: 1250, week: 8500, efficiency: "94%" },
-        { size: "8 Inch", today: 980, week: 6200, efficiency: "92%" },
-        { size: "10 Inch", today: 720, week: 4800, efficiency: "88%" },
-        { size: "12 Inch", today: 550, week: 3500, efficiency: "91%" }
+        { size: "6-inch", today: 1250, week: 8500, efficiency: "94%" },
+        { size: "8-inch", today: 980, week: 6200, efficiency: "92%" },
+        { size: "10-inch", today: 720, week: 4800, efficiency: "88%" },
+        { size: "12-inch", today: 550, week: 3500, efficiency: "91%" }
       ],
       attendance: {
         present: 142,
@@ -77,22 +77,22 @@ const Dashboard = () => {
         expColor: totalExpenseAmount > 500000 ? "#ef4444" : "#10b981"
       },
       plates: [
-        { size: "6 Inch", stock: 15200, produced: 45000, sold: 42000 },
-        { size: "8 Inch", stock: 11800, produced: 38000, sold: 36500 },
-        { size: "10 Inch", stock: 9200, produced: 25000, sold: 22000 },
-        { size: "12 Inch", stock: 7600, produced: 18000, sold: 16500 },
+        { size: "6-inch", stock: 15200, produced: 45000, sold: 42000 },
+        { size: "8-inch", stock: 11800, produced: 38000, sold: 36500 },
+        { size: "10-inch", stock: 9200, produced: 25000, sold: 22000 },
+        { size: "12-inch", stock: 7600, produced: 18000, sold: 16500 },
       ],
       productionDetails: [
-        { size: "6 Inch", today: 1450, month: 45000, efficiency: "96%" },
-        { size: "8 Inch", today: 1220, month: 38000, efficiency: "94%" },
-        { size: "10 Inch", today: 850, month: 25000, efficiency: "89%" },
-        { size: "12 Inch", today: 620, month: 18000, efficiency: "92%" }
+        { size: "6-inch", today: 1450, month: 45000, efficiency: "96%" },
+        { size: "8-inch", today: 1220, month: 38000, efficiency: "94%" },
+        { size: "10-inch", today: 850, month: 25000, efficiency: "89%" },
+        { size: "12-inch", today: 620, month: 18000, efficiency: "92%" }
       ],
       attendance: {
         present: todayStats.present || 148,
         absent: todayStats.absent || 12,
         onLeave: todayStats.half || 7,
-        total: todayStats.total || employees.length || 167,
+        total: (todayStats.present || 148) + (todayStats.absent || 12) + (todayStats.half || 7),
         trend: last7DaysTrend.map(t => t.present),
         days: last7DaysTrend.map(t => t.label)
       },
@@ -117,16 +117,16 @@ const Dashboard = () => {
         expColor: "#10b981"
       },
       plates: [
-        { size: "6 Inch", stock: 45000, produced: 520000, sold: 510000 },
-        { size: "8 Inch", stock: 38000, produced: 410000, sold: 395000 },
-        { size: "10 Inch", stock: 25000, produced: 320000, sold: 305000 },
-        { size: "12 Inch", stock: 18000, produced: 210000, sold: 198000 },
+        { size: "6-inch", stock: 15200, produced: 545000, sold: 520000 },
+        { size: "8-inch", stock: 11800, produced: 438000, sold: 416500 },
+        { size: "10-inch", stock: 9200, produced: 325000, sold: 312000 },
+        { size: "12-inch", stock: 7600, produced: 218000, sold: 206500 },
       ],
       productionDetails: [
-        { size: "6 Inch", today: 1500, year: 520000, efficiency: "97%" },
-        { size: "8 Inch", today: 1250, year: 410000, efficiency: "95%" },
-        { size: "10 Inch", today: 920, year: 320000, efficiency: "91%" },
-        { size: "12 Inch", today: 680, year: 210000, efficiency: "93%" }
+        { size: "6-inch", today: 1450, year: 545000, efficiency: "97%" },
+        { size: "8-inch", today: 1220, year: 438000, efficiency: "96%" },
+        { size: "10-inch", today: 850, year: 325000, efficiency: "92%" },
+        { size: "12-inch", today: 620, year: 218000, efficiency: "95%" }
       ],
       attendance: {
         present: 145,
@@ -157,7 +157,7 @@ const Dashboard = () => {
 
   // Navigation handlers
   const handleStockClick = () => navigate("/stock");
-  const handleProductionClick = () => navigate("/production");
+  const handleProductionClick = () => navigate("/production/plan");
   const handleExpensesClick = () => navigate("/expenses");
   const handleAttendanceClick = () => navigate("/attendance");
 
@@ -416,9 +416,9 @@ const Dashboard = () => {
         <h3>STOCK OVERVIEW - 4 PLATE SIZES</h3>
         <div className="stock-grid">
           {currentData.plates.map((plate, index) => (
-            <div key={index} className="stock-item-card">
+            <div key={index} className="stock-item-card" onClick={handleStockClick} style={{ cursor: 'pointer' }}>
               <div className="stock-item-header">
-                <span className="stock-size">{plate.size.split(' ')[0]}</span>
+                <span className="stock-size">{plate.size}</span>
                 <span className="stock-value">{plate.stock.toLocaleString()} units</span>
               </div>
             </div>

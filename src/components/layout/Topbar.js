@@ -1,18 +1,22 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import logo from "../../assets/avs.png";
+import avatar from "../../assets/avatar.png";
+import AppContext from "../../context/AppContext.js";
 import "./Topbar.css";
 
 const Topbar = () => {
+  const { setIsMobileMenuOpen } = useContext(AppContext);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const profileRef = useRef(null);
 
   const user = {
-    name: "Rajesh Kumar",
+    name: "Arun Kumar",
     role: "Plant Manager",
-    initials: "RK",
-    avatar: null, // Set to image URL or null
+    initials: "AK",
+    avatar: avatar, // Set to image URL or null
   };
 
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
@@ -24,7 +28,7 @@ const Topbar = () => {
   }, []);
 
   const navItems = [
-    { icon: "dashboard", label: "Dashboard", path: "/dashboard" },
+
     { icon: "inventory_2", label: "Stock", path: "/stock" },
     { icon: "format_list_bulleted", label: "Product List", path: "/products" },
     { icon: "factory", label: "Production", path: "/production" },
@@ -46,26 +50,24 @@ const Topbar = () => {
     navigate("/login");
   };
 
-  // Handle click outside to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target) &&
-        profileRef.current &&
-        !profileRef.current.contains(event.target)
-      ) {
-        setOpen(false);
-      }
-    };
+  const handleClickOutside = (event) => {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(event.target) &&
+      profileRef.current &&
+      !profileRef.current.contains(event.target)
+    ) {
+      setOpen(false);
+    }
+  };
 
+  useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
-  // Close dropdown when Escape key is pressed
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === "Escape") {
@@ -82,9 +84,15 @@ const Topbar = () => {
   return (
     <header className="topbar-fixed">
       <div className="topbar-inner">
-        {/* Left Section: Greeting & Date */}
-        {/* Left Section: Logo */}
-        {/* Left Section: Intentional Blank */}
+        {/* Mobile Logo on the Left */}
+        {isMobile && (
+          <div className="mobile-logo-left" onClick={() => navigate("/stock")}>
+            <img src={logo} alt="AVSECO" className="mobile-header-logo" />
+          </div>
+        )}
+
+
+
         <div className="topbar-left-auto"></div>
 
         {/* Right Section: Notification & Profile */}
@@ -96,13 +104,13 @@ const Topbar = () => {
             <span className="notification-dot"></span>
           </button>
 
-          <div className="v-divider"></div>
+          {!isMobile && <div className="v-divider"></div>}
 
           {/* Profile Container - Interactive */}
           <div
             className="profile-container"
             ref={profileRef}
-            onClick={() => setOpen(!open)}
+            onClick={() => isMobile ? setIsMobileMenuOpen(true) : setOpen(!open)}
             onMouseEnter={() => !isMobile && setOpen(true)}
             onMouseLeave={() => {
               if (!isMobile) {
@@ -115,9 +123,16 @@ const Topbar = () => {
             }}
           >
             <div className="profile-content">
-
+              <div className="profile-text-hover">
+                <span className="profile-name-hover">{user.name}</span>
+                <span className="profile-role-hover">{user.role}</span>
+              </div>
               <div className="profile-avatar-modern">
-                {user.initials}
+                {user.avatar ? (
+                  <img src={user.avatar} alt={user.name} className="avatar-image-modern" />
+                ) : (
+                  user.initials
+                )}
               </div>
             </div>
 

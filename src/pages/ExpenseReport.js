@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
 import "./ExpenseReport.css";
+import { formatDate } from '../utils/dateUtils.js';
 
 // ── Category config: colour palette for all 7 categories ──────────────────────
 const CATEGORY_CONFIG = {
@@ -134,7 +134,7 @@ const ExpenseReport = () => {
 
     // ── Period helpers ───────────────────────────────────────────────────────────
     const formatPeriod = () =>
-        `${dateRange.startDate.toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })} – ${dateRange.endDate.toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}`;
+        `${formatDate(dateRange.startDate)} – ${formatDate(dateRange.endDate)}`;
 
     const getMonthName = () =>
         dateRange.startDate.toLocaleString("default", { month: "long", year: "numeric" });
@@ -507,7 +507,7 @@ const ExpenseReport = () => {
                             {filteredExpenses.length > 0 ? (
                                 filteredExpenses.map((ex) => (
                                     <tr key={ex.id}>
-                                        <td style={{ fontWeight: 500 }}>{ex.date}</td>
+                                        <td style={{ fontWeight: 500 }}>{formatDate(ex.date)}</td>
                                         <td>
                                             <span className="status-badge" style={catStyle(ex.category)}>
                                                 {ex.category}

@@ -82,28 +82,7 @@ const Production = () => {
     return dayjs(dateStr, 'DD-MM-YYYY');
   };
 
-  // ========== LOAD DATA FROM LOCALSTORAGE ON INITIAL RENDER ==========
-  useEffect(() => {
-    const savedData = localStorage.getItem('productionHistory');
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      setProductionHistory(parsedData);
-
-      // Calculate stats from loaded data
-      calculateStats(parsedData);
-    }
-  }, [calculateStats]);
-
-  // ========== SAVE TO LOCALSTORAGE WHENEVER PRODUCTION HISTORY CHANGES ==========
-  useEffect(() => {
-    if (productionHistory.length > 0) {
-      localStorage.setItem('productionHistory', JSON.stringify(productionHistory));
-    } else {
-      localStorage.removeItem('productionHistory');
-    }
-  }, [productionHistory]);
-
-  // ========== CALCULATE STATS FUNCTION ==========
+  // ========== CALCULATE STATS FUNCTION (DEFINED BEFORE USE) ==========
   const calculateStats = useCallback((data) => {
     const today = formatDate(dayjs());
 
@@ -139,7 +118,9 @@ const Production = () => {
     const currentMonth = dayjs().month() + 1;
     const currentYear = dayjs().year();
     const monthData = data.filter(item => {
-      const [, month, year] = item.date.split('-').map(Number);
+      const parts = item.date.split('-');
+      const month = parseInt(parts[1]);
+      const year = parseInt(parts[2]);
       return month === currentMonth && year === currentYear;
     });
 
@@ -165,6 +146,27 @@ const Production = () => {
       monthBySize
     });
   }, []);
+
+  // ========== LOAD DATA FROM LOCALSTORAGE ON INITIAL RENDER ==========
+  useEffect(() => {
+    const savedData = localStorage.getItem('productionHistory');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      setProductionHistory(parsedData);
+
+      // Calculate stats from loaded data
+      calculateStats(parsedData);
+    }
+  }, [calculateStats]);
+
+  // ========== SAVE TO LOCALSTORAGE WHENEVER PRODUCTION HISTORY CHANGES ==========
+  useEffect(() => {
+    if (productionHistory.length > 0) {
+      localStorage.setItem('productionHistory', JSON.stringify(productionHistory));
+    } else {
+      localStorage.removeItem('productionHistory');
+    }
+  }, [productionHistory]);
 
   // ========== GET SUMMARY DATA BY SIZE FOR SELECTED VIEW ==========
   const getSummaryData = () => {
@@ -194,7 +196,9 @@ const Production = () => {
         const year = summaryDate.year();
 
         filteredData = productionHistory.filter(item => {
-          const [, itemMonth, itemYear] = item.date.split('-').map(Number);
+          const parts = item.date.split('-');
+          const itemMonth = parseInt(parts[1]);
+          const itemYear = parseInt(parts[2]);
           return itemMonth === month && itemYear === year;
         });
         break;
@@ -241,7 +245,7 @@ const Production = () => {
     };
   };
 
-  // ========== PRODUCT OPTIONS ===== =====
+  // ========== PRODUCT OPTIONS ==========
   const products = [
     { name: "Areca Leaf Plate", sizes: ['6-inch', '8-inch', '10-inch', '12-inch'] },
   ];
@@ -290,7 +294,6 @@ const Production = () => {
 
   // ========== EXPORT MODAL FUNCTIONS ==========
   const openExportModal = () => {
-    // Set default dates
     const today = dayjs();
     setExportStartDate(today);
     setExportEndDate(today);
@@ -357,7 +360,9 @@ const Production = () => {
         if (!exportStartDate || !exportEndDate) return [];
 
         return productionHistory.filter(item => {
-          const [day, month, year] = item.date.split('-').map(Number);
+          const parts = item.date.split('-');
+          const month = parseInt(parts[1]);
+          const year = parseInt(parts[2]);
           const itemYearMonth = year * 100 + month;
           const startYearMonth = exportStartDate.year() * 100 + (exportStartDate.month() + 1);
           const endYearMonth = exportEndDate.year() * 100 + (exportEndDate.month() + 1);
@@ -366,8 +371,9 @@ const Production = () => {
 
       case 'yearly':
         return productionHistory.filter(item => {
-          const [day, month, year] = item.date.split('-').map(Number);
-          return year.toString() === exportYear;
+          const parts = item.date.split('-');
+          const year = parts[2];
+          return year === exportYear;
         });
 
       case 'overall':
@@ -377,7 +383,7 @@ const Production = () => {
   };
 
   const getReportTitle = () => {
-    const today = formatDate(dayjs());
+    const todayStr = formatDate(dayjs());
 
     switch (exportPeriod) {
       case 'daily':
@@ -389,9 +395,9 @@ const Production = () => {
       case 'yearly':
         return `Yearly_Production_Report_${exportYear}`;
       case 'overall':
-        return `Complete_Production_History_${today}`;
+        return `Complete_Production_History_${todayStr}`;
       default:
-        return `Production_Report_${today}`;
+        return `Production_Report_${todayStr}`;
     }
   };
 
@@ -576,7 +582,6 @@ const Production = () => {
     const now = dayjs();
     const timeString = now.format('hh:mm A');
 
-    // Create new production record with unique ID
     const newProduction = {
       id: productionHistory.length > 0 ? Math.max(...productionHistory.map(item => item.id)) + 1 : 1,
       date: formatDate(productionDate),
@@ -589,14 +594,10 @@ const Production = () => {
       status: "completed"
     };
 
-    // Add to production history
     const updatedHistory = [newProduction, ...productionHistory];
     setProductionHistory(updatedHistory);
-
-    // Recalculate all stats
     calculateStats(updatedHistory);
 
-    // Reset form
     setFormData({
       ...formData,
       quantity: ""
@@ -608,16 +609,11 @@ const Production = () => {
     );
   };
 
-  // ========== DELETE FUNCTION ==========
   const handleDeleteProduction = (id) => {
     if (window.confirm("Are you sure you want to delete this production record?")) {
-      // Remove from production history
       const updatedHistory = productionHistory.filter(item => item.id !== id);
       setProductionHistory(updatedHistory);
-
-      // Recalculate all stats
       calculateStats(updatedHistory);
-
       showNotificationMessage(`🗑️ Production record deleted successfully`, 'warning');
     }
   };
@@ -650,7 +646,6 @@ const Production = () => {
   const uniqueDates = getUniqueDates();
   const summaryData = getSummaryData();
 
-  // Calendar component wrapper
   const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
     <div className="calendar-wrapper">
       <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -667,7 +662,6 @@ const Production = () => {
 
   return (
     <div className="daily-production-page">
-      {/* Notification Popup */}
       {showNotification && (
         <div className={`notification-popup ${notificationType}`}>
           <div className="notification-content">
@@ -686,7 +680,6 @@ const Production = () => {
         </div>
       )}
 
-      {/* ===== PREMIUM ANALYTICS HEADER ===== */}
       <div className="page-header premium-header">
         <div className="header-left">
           <h1 className="page-title">Daily Production</h1>
@@ -700,7 +693,6 @@ const Production = () => {
         </div>
       </div>
 
-      {/* Export Modal */}
       {showExportModal && (
         <div className="modal-overlay">
           <div className="export-modal" style={{ maxWidth: '700px' }}>
@@ -754,26 +746,17 @@ const Production = () => {
                 </div>
               </div>
 
-              {/* Dynamic Date Selection based on Period */}
               {exportPeriod === 'daily' && (
                 <div className="export-section">
                   <h3>Select Date</h3>
                   <div className="date-picker-container">
-                    <button
-                      className="date-picker-btn"
-                      onClick={() => setShowStartDatePicker(!showStartDatePicker)}
-                    >
+                    <button className="date-picker-btn" onClick={() => setShowStartDatePicker(!showStartDatePicker)}>
                       <span className="material-symbols-outlined">calendar_today</span>
                       {exportStartDate ? formatDate(exportStartDate) : 'Select Date'}
                     </button>
-
                     {showStartDatePicker && (
                       <div className="date-dropdown mui-calendar-dropdown">
-                        <CalendarPicker
-                          selectedDate={exportStartDate}
-                          onDateChange={(date) => handleExportDateSelect('start', date)}
-                          onClose={() => setShowStartDatePicker(false)}
-                        />
+                        <CalendarPicker selectedDate={exportStartDate} onDateChange={(date) => handleExportDateSelect('start', date)} onClose={() => setShowStartDatePicker(false)} />
                       </div>
                     )}
                   </div>
@@ -785,525 +768,298 @@ const Production = () => {
                   <h3>Select Date Range</h3>
                   <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                     <div className="date-picker-container" style={{ flex: 1 }}>
-                      <button
-                        className="date-picker-btn"
-                        onClick={() => setShowStartDatePicker(!showStartDatePicker)}
-                      >
+                      <button className="date-picker-btn" onClick={() => setShowStartDatePicker(!showStartDatePicker)}>
                         <span className="material-symbols-outlined">calendar_today</span>
                         {exportStartDate ? formatDate(exportStartDate) : 'Start Date'}
                       </button>
-
                       {showStartDatePicker && (
                         <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker
-                            selectedDate={exportStartDate}
-                            onDateChange={(date) => handleExportDateSelect('start', date)}
-                            onClose={() => setShowStartDatePicker(false)}
-                          />
+                          <CalendarPicker selectedDate={exportStartDate} onDateChange={(date) => handleExportDateSelect('start', date)} onClose={() => setShowStartDatePicker(false)} />
                         </div>
                       )}
                     </div>
-
                     <div className="date-picker-container" style={{ flex: 1 }}>
-                      <button
-                        className="date-picker-btn"
-                        onClick={() => setShowEndDatePicker(!showEndDatePicker)}
-                      >
+                      <button className="date-picker-btn" onClick={() => setShowEndDatePicker(!showEndDatePicker)}>
                         <span className="material-symbols-outlined">calendar_today</span>
                         {exportEndDate ? formatDate(exportEndDate) : 'End Date'}
                       </button>
-
                       {showEndDatePicker && (
                         <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker
-                            selectedDate={exportEndDate}
-                            onDateChange={(date) => handleExportDateSelect('end', date)}
-                            onClose={() => setShowEndDatePicker(false)}
-                          />
+                          <CalendarPicker selectedDate={exportEndDate} onDateChange={(date) => handleExportDateSelect('end', date)} onClose={() => setShowEndDatePicker(false)} />
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
               )}
-
-              {exportPeriod === 'monthly' && (
-                <div className="export-section">
-                  <h3>Select Month Range</h3>
-                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                    <div className="date-picker-container" style={{ flex: 1 }}>
-                      <button
-                        className="date-picker-btn"
-                        onClick={() => setShowStartDatePicker(!showStartDatePicker)}
-                      >
-                        <span className="material-symbols-outlined">calendar_today</span>
-                        {exportStartDate ? formatDate(exportStartDate) : 'Start Month'}
-                      </button>
-
-                      {showStartDatePicker && (
-                        <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker
-                            selectedDate={exportStartDate}
-                            onDateChange={(date) => handleExportDateSelect('start', date)}
-                            onClose={() => setShowStartDatePicker(false)}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="date-picker-container" style={{ flex: 1 }}>
-                      <button
-                        className="date-picker-btn"
-                        onClick={() => setShowEndDatePicker(!showEndDatePicker)}
-                      >
-                        <span className="material-symbols-outlined">calendar_today</span>
-                        {exportEndDate ? formatDate(exportEndDate) : 'End Month'}
-                      </button>
-
-                      {showEndDatePicker && (
-                        <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker
-                            selectedDate={exportEndDate}
-                            onDateChange={(date) => handleExportDateSelect('end', date)}
-                            onClose={() => setShowEndDatePicker(false)}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {exportPeriod === 'yearly' && (
-                <div className="export-section">
-                  <h3>Select Year</h3>
-                  <div className="date-picker-container">
-                    <button
-                      className="date-picker-btn"
-                      onClick={() => setShowYearPicker(!showYearPicker)}
-                    >
-                      <span className="material-symbols-outlined">calendar_today</span>
-                      {exportYear || 'Select Year'}
-                    </button>
-
-                    {showYearPicker && (
-                      <div className="date-dropdown year-dropdown">
-                        <div className="year-list">
-                          {[2026, 2025, 2024, 2023, 2022, 2021, 2020].map(year => (
-                            <div
-                              key={year}
-                              className={`year-item ${exportYear === year.toString() ? 'active' : ''}`}
-                              onClick={() => handleYearSelect(year.toString())}
-                            >
-                              {year}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <p className="export-note">
-                <span className="material-symbols-outlined">info</span>
-                Export production data for the selected period
-              </p>
             </div>
 
             <div className="export-modal-footer">
-              <button className="btn-cancel" onClick={closeExportModal}>Cancel</button>
-              <button className="btn-export-confirm" onClick={handleExport}>
+              <button className="btn-outline" onClick={closeExportModal}>Cancel</button>
+              <button className="btn-primary" onClick={handleExport}>
                 <span className="material-symbols-outlined">download</span>
-                Export
+                Export Report
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Production Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon green">
+      <div className="production-stats-grid">
+        <div className="stat-card today">
+          <div className="stat-icon">
             <span className="material-symbols-outlined">today</span>
           </div>
           <div className="stat-info">
             <span className="stat-label">Today's Production</span>
-            <span className="stat-value">{stats.today.toLocaleString()} plates</span>
-            <span className="stat-trend positive">Today</span>
+            <span className="stat-value">{stats.today.toLocaleString()}</span>
+            <div className="stat-breakdown">
+              {availableSizes.map(size => (
+                <span key={size}>{size.split('-')[0]}: {stats.todayBySize[size] || 0}</span>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon blue">
+
+        <div className="stat-card week">
+          <div className="stat-icon">
             <span className="material-symbols-outlined">date_range</span>
           </div>
           <div className="stat-info">
-            <span className="stat-label">This Week</span>
-            <span className="stat-value">{stats.week.toLocaleString()} plates</span>
-            <span className="stat-trend positive">Last 7 days</span>
+            <span className="stat-label">Last 7 Days</span>
+            <span className="stat-value">{stats.week.toLocaleString()}</span>
+            <div className="stat-breakdown">
+              {availableSizes.map(size => (
+                <span key={size}>{size.split('-')[0]}: {stats.weekBySize[size] || 0}</span>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon orange">
+
+        <div className="stat-card month">
+          <div className="stat-icon">
             <span className="material-symbols-outlined">calendar_month</span>
           </div>
           <div className="stat-info">
             <span className="stat-label">This Month</span>
-            <span className="stat-value">{stats.month.toLocaleString()} plates</span>
-            <span className="stat-trend positive">Current month</span>
+            <span className="stat-value">{stats.month.toLocaleString()}</span>
+            <div className="stat-breakdown">
+              {availableSizes.map(size => (
+                <span key={size}>{size.split('-')[0]}: {stats.monthBySize[size] || 0}</span>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon purple">
-            <span className="material-symbols-outlined">inventory</span>
+
+        <div className="stat-card stock">
+          <div className="stat-icon">
+            <span className="material-symbols-outlined">inventory_2</span>
           </div>
           <div className="stat-info">
-            <span className="stat-label">Total Stock</span>
-            <span className="stat-value">{stats.stock.toLocaleString()} plates</span>
-            <span className="stat-trend">All time</span>
+            <span className="stat-label">Total Produced</span>
+            <span className="stat-value">{stats.stock.toLocaleString()}</span>
+            <span className="stat-tag">All time</span>
           </div>
         </div>
       </div>
 
-      {/* Add Production Form */}
-      <div className="form-card">
-        <div className="form-header">
-          <h3>
-            <span className="material-symbols-outlined">add_circle</span>
-            Add Production
-          </h3>
-          <div className="date-selector">
-            <div className="date-picker-container">
-              <button
-                className="date-picker-btn"
-                onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}
-              >
-                <span className="material-symbols-outlined">calendar_today</span>
-                {formatDate(productionDate)}
-              </button>
-
-              {showProductionDatePicker && (
-                <div className="date-dropdown mui-calendar-dropdown">
-                  <CalendarPicker
-                    selectedDate={productionDate}
-                    onDateChange={handleProductionDateSelect}
-                    onClose={() => setShowProductionDatePicker(false)}
-                  />
-                </div>
-              )}
+      <div className="production-main-grid">
+        <div className="production-form-section">
+          <div className="premium-card">
+            <div className="card-header">
+              <h3>
+                <span className="material-symbols-outlined">add_circle</span>
+                New Production Entry
+              </h3>
             </div>
-          </div>
-        </div>
-
-        <div className="form-grid">
-          <div className="form-item">
-            <label>Product:</label>
-            <select name="product" value={formData.product} onChange={handleInputChange} className="form-select">
-              {products.map(product => (
-                <option key={product.name} value={product.name}>{product.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-item">
-            <label>Size:</label>
-            <select name="size" value={formData.size} onChange={handleInputChange} className="form-select">
-              {getSizesForProduct().map(size => (
-                <option key={size} value={size}>{size}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-item">
-            <label>Quantity:</label>
-            <div className="quantity-input">
-              <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} placeholder="0" />
-              <span className="unit">plates</span>
-            </div>
-          </div>
-
-          <div className="form-item">
-            <label>Grade:</label>
-            <div className="grade-options">
-              {grades.map(grade => (
-                <label key={grade} className="grade-option">
-                  <input type="radio" name="grade" value={grade} checked={formData.grade === grade} onChange={handleInputChange} />
-                  <span>{grade}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="form-item">
-            <label>Operator:</label>
-            <select name="operator" value={formData.operator} onChange={handleInputChange} className="form-select">
-              {operators.map(op => (
-                <option key={op} value={op}>{op}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-item button-item">
-            <button className="btn-add" onClick={handleAddProduction}>
-              <span className="material-symbols-outlined">add</span>
-              ADD PRODUCTION
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Production Summary Section */}
-      <div className="summary-section">
-        <div className="summary-header">
-          <div className="summary-title">
-            <h3>
-              <span className="material-symbols-outlined">insights</span>
-              Production Summary
-            </h3>
-          </div>
-          <div className="summary-controls">
-            <div className="view-selector">
-              <button
-                className={`view-btn ${summaryView === 'daily' ? 'active' : ''}`}
-                onClick={() => setSummaryView('daily')}
-              >
-                Daily
-              </button>
-              <button
-                className={`view-btn ${summaryView === 'weekly' ? 'active' : ''}`}
-                onClick={() => setSummaryView('weekly')}
-              >
-                Weekly
-              </button>
-              <button
-                className={`view-btn ${summaryView === 'monthly' ? 'active' : ''}`}
-                onClick={() => setSummaryView('monthly')}
-              >
-                Monthly
-              </button>
-            </div>
-            <div className="date-picker-container">
-              <button
-                className="date-picker-btn small"
-                onClick={() => setShowSummaryDatePicker(!showSummaryDatePicker)}
-              >
-                <span className="material-symbols-outlined">calendar_today</span>
-                {formatDate(summaryDate)}
-              </button>
-
-              {showSummaryDatePicker && (
-                <div className="date-dropdown mui-calendar-dropdown">
-                  <CalendarPicker
-                    selectedDate={summaryDate}
-                    onDateChange={handleSummaryDateSelect}
-                    onClose={() => setShowSummaryDatePicker(false)}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="summary-content">
-          <div className="summary-total-card">
-            <div className="total-label">Total Production</div>
-            <div className="total-value">{summaryData.total.toLocaleString()} plates</div>
-          </div>
-
-          <div className="size-breakdown">
-            <h4>Size-wise Breakdown</h4>
-            <div className="size-grid">
-              {availableSizes.map(size => (
-                <div key={size} className="size-card">
-                  <div className="size-name">{size}</div>
-                  <div className="size-quantity">{summaryData.bySize[size]?.toLocaleString() || 0} plates</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {summaryView !== 'daily' && summaryData.data.length > 0 && (
-            <div className="daily-breakdown">
-              <h4>Daily Breakdown</h4>
-              <table className="breakdown-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>6-inch</th>
-                    <th>8-inch</th>
-                    <th>10-inch</th>
-                    <th>12-inch</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {summaryData.data.map((day, index) => (
-                    <tr key={index}>
-                      <td>{day.date}</td>
-                      <td className="text-right">{day.bySize['6-inch']?.toLocaleString() || 0}</td>
-                      <td className="text-right">{day.bySize['8-inch']?.toLocaleString() || 0}</td>
-                      <td className="text-right">{day.bySize['10-inch']?.toLocaleString() || 0}</td>
-                      <td className="text-right">{day.bySize['12-inch']?.toLocaleString() || 0}</td>
-                      <td className="text-right total">{day.total.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <th>Total</th>
-                    <th className="text-right">{summaryData.bySize['6-inch']?.toLocaleString() || 0}</th>
-                    <th className="text-right">{summaryData.bySize['8-inch']?.toLocaleString() || 0}</th>
-                    <th className="text-right">{summaryData.bySize['10-inch']?.toLocaleString() || 0}</th>
-                    <th className="text-right">{summaryData.bySize['12-inch']?.toLocaleString() || 0}</th>
-                    <th className="text-right total">{summaryData.total.toLocaleString()}</th>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* History Filters */}
-      <div className="history-filters">
-        <div className="search-box">
-          <span className="material-symbols-outlined search-icon">search</span>
-          <input
-            type="text"
-            placeholder="Search by product or operator..."
-            value={historySearch}
-            onChange={(e) => setHistorySearch(e.target.value)}
-          />
-          {historySearch && (
-            <button className="clear-search" onClick={() => setHistorySearch('')}>
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          )}
-        </div>
-
-        <div className="filter-box">
-          <span className="material-symbols-outlined filter-icon">filter_list</span>
-          <select
-            value={historySizeFilter}
-            onChange={(e) => setHistorySizeFilter(e.target.value)}
-          >
-            {uniqueHistorySizes.map(size => (
-              <option key={size} value={size}>
-                {size === 'all' ? 'All Sizes' : size}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="date-picker-container">
-          <button
-            className="date-picker-btn"
-            onClick={() => setShowDatePicker(!showDatePicker)}
-          >
-            <span className="material-symbols-outlined">calendar_today</span>
-            {selectedDate ? formatDate(selectedDate) : 'Select Date'}
-            {selectedDate && (
-              <span className="clear-date" onClick={(e) => { e.stopPropagation(); clearDateFilter(); }}>
-                ×
-              </span>
-            )}
-          </button>
-
-          {showDatePicker && (
-            <div className="date-dropdown mui-calendar-dropdown">
-              <CalendarPicker
-                selectedDate={selectedDate}
-                onDateChange={handleDateSelect}
-                onClose={() => setShowDatePicker(false)}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Production History Table - MASTER STORAGE */}
-      <div className="table-container">
-        <div className="table-header">
-          <h3>
-            <span className="material-symbols-outlined">history</span>
-            Complete Production History
-          </h3>
-          <span className="records-count">
-            Total Records: {productionHistory.length}
-          </span>
-        </div>
-
-        <div className="table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>DATE</th>
-                <th>TIME</th>
-                <th>PRODUCT</th>
-                <th>SIZE</th>
-                <th>QUANTITY</th>
-                <th>GRADE</th>
-                <th>OPERATOR</th>
-                <th>STATUS</th>
-                <th>ACTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredHistory.length > 0 ? (
-                filteredHistory.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.date}</td>
-                    <td>{item.time}</td>
-                    <td>
-                      <div className="product-info">
-                        <span className="product-icon material-symbols-outlined">production_quantity_limits</span>
-                        <span>{item.product}</span>
+            <div className="card-body">
+              <div className="entry-form">
+                <div className="form-group">
+                  <label>Production Date</label>
+                  <div className="date-picker-container">
+                    <button className="date-btn-large" onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}>
+                      <span className="material-symbols-outlined">event</span>
+                      {formatDate(productionDate)}
+                    </button>
+                    {showProductionDatePicker && (
+                      <div className="date-dropdown mui-calendar-dropdown">
+                        <CalendarPicker selectedDate={productionDate} onDateChange={(date) => handleProductionDateSelect(date)} onClose={() => setShowProductionDatePicker(false)} />
                       </div>
-                    </td>
-                    <td>{item.size}</td>
-                    <td className="text-right">{item.quantity.toLocaleString()} plates</td>
-                    <td>
-                      <span className={`grade-badge grade-${item.grade.toLowerCase()}`}>
-                        Grade {item.grade}
-                      </span>
-                    </td>
-                    <td>{item.operator}</td>
-                    <td>
-                      <span className="status-badge completed">
-                        ✓ Completed
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="delete-btn"
-                        onClick={() => handleDeleteProduction(item.id)}
-                        title="Delete Record"
-                      >
-                        <span className="material-symbols-outlined">delete</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="9" className="no-records">
-                    No production records found. Add your first production entry!
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Product</label>
+                    <select name="product" value={formData.product} onChange={handleInputChange}>
+                      {products.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Size</label>
+                    <select name="size" value={formData.size} onChange={handleInputChange}>
+                      {getSizesForProduct().map(size => <option key={size} value={size}>{size}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Quantity (pcs)</label>
+                  <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} placeholder="Enter quantity..." />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Grade</label>
+                    <select name="grade" value={formData.grade} onChange={handleInputChange}>
+                      {grades.map(g => <option key={g} value={g}>Grade {g}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Operator</label>
+                    <select name="operator" value={formData.operator} onChange={handleInputChange}>
+                      {operators.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <button className="btn-add-production" onClick={handleAddProduction}>
+                  <span className="material-symbols-outlined">rocket_launch</span>
+                  SUBMIT PRODUCTION
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="table-footer">
-          <span>Showing {filteredHistory.length} of {productionHistory.length} production records</span>
-          {selectedDate && (
-            <div className="active-filter">
-              Filtering by: <strong>{formatDate(selectedDate)}</strong>
-              <button onClick={clearDateFilter} className="clear-filter">Clear</button>
+        <div className="production-summary-section">
+          <div className="premium-card">
+            <div className="card-header summary-header">
+              <h3>
+                <span className="material-symbols-outlined">analytics</span>
+                Production Analytics
+              </h3>
+              <div className="summary-controls">
+                <select value={summaryView} onChange={(e) => setSummaryView(e.target.value)}>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+                <div className="date-picker-container">
+                  <button className="date-summary-btn" onClick={() => setShowSummaryDatePicker(!showSummaryDatePicker)}>
+                    <span className="material-symbols-outlined">calendar_month</span>
+                    {summaryView === 'daily' ? formatDate(summaryDate) :
+                      summaryView === 'weekly' ? `Week of ${summaryDate.startOf('week').format('DD MMM')}` :
+                        summaryDate.format('MMMM YYYY')}
+                  </button>
+                  {showSummaryDatePicker && (
+                    <div className="date-dropdown mui-calendar-dropdown right">
+                      <CalendarPicker selectedDate={summaryDate} onDateChange={(date) => handleSummaryDateSelect(date)} onClose={() => setShowSummaryDatePicker(false)} />
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
+
+            <div className="card-body">
+              <div className="summary-total-banner">
+                <span className="label">PERIOD TOTAL</span>
+                <span className="value">{summaryData.total.toLocaleString()} pcs</span>
+              </div>
+
+              <div className="summary-grid">
+                {availableSizes.map(size => (
+                  <div key={size} className="summary-item">
+                    <div className="item-label">{size}</div>
+                    <div className="item-value">{summaryData.bySize[size] || 0}</div>
+                    <div className="item-progress">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${summaryData.total > 0 ? (summaryData.bySize[size] / summaryData.total * 100) : 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="summary-history">
+                <h4>Recent Breakdown</h4>
+                <div className="history-list">
+                  {summaryData.data.length > 0 ? (
+                    summaryData.data.slice(0, 5).map((item, idx) => (
+                      <div key={idx} className="history-item">
+                        <span className="date">{item.date}</span>
+                        <span className="count">{item.total.toLocaleString()} pcs</span>
+                        <span className="trend">
+                          {availableSizes.map(size => item.bySize[size] ? `${size.split('-')[0]}: ${item.bySize[size]} ` : '').join('| ')}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="no-history">No data for this period</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="history-section">
+        <div className="premium-card">
+          <div className="card-header table-header">
+            <h3>
+              <span className="material-symbols-outlined">history</span>
+              Transaction History
+            </h3>
+            <div className="table-actions">
+              <div className="search-box">
+                <span className="material-symbols-outlined">search</span>
+                <input type="text" placeholder="Search operator..." value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} />
+              </div>
+              <select value={historySizeFilter} onChange={(e) => setHistorySizeFilter(e.target.value)}>
+                <option value="all">All Sizes</option>
+                {availableSizes.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="table-wrapper">
+            <table className="premium-table">
+              <thead>
+                <tr>
+                  <th>DATE</th>
+                  <th>TIME</th>
+                  <th>SIZE</th>
+                  <th>QTY</th>
+                  <th>GRADE</th>
+                  <th>OPERATOR</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredHistory.length > 0 ? (
+                  filteredHistory.map((item) => (
+                    <tr key={item.id}>
+                      <td className="bold">{item.date}</td>
+                      <td>{item.time}</td>
+                      <td><span className="size-badge">{item.size}</span></td>
+                      <td className="bold highlight">{item.quantity.toLocaleString()}</td>
+                      <td><span className={`grade-badge ${item.grade.toLowerCase()}`}>{item.grade}</span></td>
+                      <td>{item.operator}</td>
+                      <td>
+                        <button className="btn-delete" onClick={() => handleDeleteProduction(item.id)}>
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr><td colSpan="7" className="empty">No records found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

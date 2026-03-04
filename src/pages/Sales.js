@@ -10,17 +10,21 @@ const PRODUCTS_LIST = [
 ];
 
 const Sales = () => {
-    const { clients, addClient } = useAppContext();
+    const { clients, addClient, employees } = useAppContext();
     const [showAddClientModal, setShowAddClientModal] = useState(false);
-    const [newClientData, setNewClientData] = useState({ companyName: "", contactPerson: "" });
+    const [newClientData, setNewClientData] = useState({
+        companyName: "",
+        contactPerson: "",
+        email: "",
+        phone: "",
+        address: ""
+    });
     const [exportLoading, setExportLoading] = useState(false);
     const [exportSuccess, setExportSuccess] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState("");
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportFormat, setExportFormat] = useState('excel');
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
-
-    // Product dropdown state
     const [selectedProduct, setSelectedProduct] = useState("Areca Leaf Plate 10\" Round");
     const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
     const [quantity, setQuantity] = useState("");
@@ -30,6 +34,12 @@ const Sales = () => {
     const [companyName, setCompanyName] = useState("");
     const [customerName, setCustomerName] = useState("");
     const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+    const [deliveryEmployee, setDeliveryEmployee] = useState("");
+    const [isEmployeeDropdownOpen, setIsEmployeeDropdownOpen] = useState(false);
+    const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
+    const [paidStatus, setPaidStatus] = useState("Paid");
+    const [isPaidStatusDropdownOpen, setIsPaidStatusDropdownOpen] = useState(false);
+    const [isHistoryFilterDropdownOpen, setIsHistoryFilterDropdownOpen] = useState(false);
     const [isLogging, setIsLogging] = useState(false);
     const [showBillModal, setShowBillModal] = useState(false);
     const [selectedBill, setSelectedBill] = useState(null);
@@ -59,11 +69,35 @@ const Sales = () => {
         }
     }, [quantity, unitPrice]);
 
-    const [allTransactions, setAllTransactions] = useState([
-        { id: 1, date: "Oct 24, 2023 14:32 PM", product: "Areca Leaf Plate 10\" Round", type: "SALE", quantity: -1200, unit: "pcs", balance: 4500, status: "success", customer: "Global Exports", company: "AVS Eco", amount: 7800, paymentStatus: "UPI" },
-        { id: 2, date: "Oct 24, 2023 12:15 PM", product: "Raw Areca Sheaths (Grade A)", type: "SALE", quantity: -500, unit: "kg", balance: 2100, status: "success", customer: "Local Vendor", company: "AVS Eco", amount: 3250, paymentStatus: "Cash" },
-        { id: 3, date: "Oct 23, 2023 16:20 PM", product: "Areca Leaf Bowl 6\"", type: "SALE", quantity: -800, unit: "pcs", balance: 1850, status: "success", customer: "Bulk Supplier", company: "AVS Eco", amount: 2000, paymentStatus: "Card" },
-    ]);
+    const [allTransactions, setAllTransactions] = useState([]);
+
+    // ========== PERSISTENCE ==========
+    const [dataLoaded, setDataLoaded] = useState(false);
+
+    useEffect(() => {
+        const savedSales = localStorage.getItem('salesHistory');
+        if (savedSales) {
+            try {
+                setAllTransactions(JSON.parse(savedSales));
+            } catch (e) {
+                console.error("Error loading sales history:", e);
+            }
+        } else {
+            // Initial default data if none exists
+            setAllTransactions([
+                { id: 1, date: "Oct 24, 2023 14:32 PM", product: "Areca Leaf Plate 10\" Round", type: "SALE", quantity: -1200, unit: "pcs", balance: 4500, status: "success", customer: "Global Exports", company: "AVS Eco", amount: 7800, paymentStatus: "UPI" },
+                { id: 2, date: "Oct 24, 2023 12:15 PM", product: "Raw Areca Sheaths (Grade A)", type: "SALE", quantity: -500, unit: "kg", balance: 2100, status: "success", customer: "Local Vendor", company: "AVS Eco", amount: 3250, paymentStatus: "Cash" },
+                { id: 3, date: "Oct 23, 2023 16:20 PM", product: "Areca Leaf Bowl 6\"", type: "SALE", quantity: -800, unit: "pcs", balance: 1850, status: "success", customer: "Bulk Supplier", company: "AVS Eco", amount: 2000, paymentStatus: "Card" },
+            ]);
+        }
+        setDataLoaded(true);
+    }, []);
+
+    useEffect(() => {
+        if (dataLoaded) {
+            localStorage.setItem('salesHistory', JSON.stringify(allTransactions));
+        }
+    }, [allTransactions, dataLoaded]);
 
     // Filtered transactions based on search and filters
     const getFilteredTransactions = () => {
@@ -93,91 +127,80 @@ const Sales = () => {
         return date.toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            year: 'numeric'
         });
     };
 
     // Add item to current bill session
     const handleAddItem = () => {
-        if (!quantity || parseFloat(quantity) <= 0) {
-            setFeedbackMessage("Please enter pieces");
-            setTimeout(() => setFeedbackMessage(""), 3000);
-            return;
-        }
+        const qtyToAdd = parseFloat(quantity) || 1; // Default to 1 if empty
 
         const newItem = {
             id: Date.now(),
             product: selectedProduct,
-            qty: parseFloat(quantity),
-            amount: parseFloat(totalAmount) || 0,
+            qty: qtyToAdd,
+            amount: (parseFloat(unitPrice) * qtyToAdd) || 0,
             unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
         };
 
         setBillItems([...billItems, newItem]);
         setQuantity("");
-        setTotalAmount("");
-        setFeedbackMessage(`Added ${selectedProduct} to bill`);
-        setTimeout(() => setFeedbackMessage(""), 2000);
+        // No feedback message for a smoother experience
     };
 
     const handleLogTransaction = () => {
         if (billItems.length === 0 && (!quantity || parseFloat(quantity) <= 0)) {
-            setFeedbackMessage("Please add items to bill or enter current item details");
-            setTimeout(() => setFeedbackMessage(""), 3000);
             return;
         }
 
-        setIsLogging(true);
+        let itemsToLog = [...billItems];
 
-        setTimeout(() => {
-            let itemsToLog = [...billItems];
+        // If there's something currently entered but not "Added", include it
+        if (quantity && parseFloat(quantity) > 0) {
+            itemsToLog.push({
+                product: selectedProduct,
+                qty: parseFloat(quantity),
+                amount: (parseFloat(unitPrice) * parseFloat(quantity)) || 0,
+                unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
+            });
+        }
 
-            // If there's something currently entered but not "Added", include it
-            if (quantity && parseFloat(quantity) > 0) {
-                itemsToLog.push({
-                    product: selectedProduct,
-                    qty: parseFloat(quantity),
-                    amount: parseFloat(totalAmount) || 0,
-                    unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
-                });
-            }
+        const totalPieces = itemsToLog.reduce((sum, item) => sum + item.qty, 0);
+        const totalBillAmount = itemsToLog.reduce((sum, item) => sum + item.amount, 0);
 
-            const totalPieces = itemsToLog.reduce((sum, item) => sum + item.qty, 0);
-            const totalBillAmount = itemsToLog.reduce((sum, item) => sum + item.amount, 0);
+        const productSummary = itemsToLog.map(item =>
+            `${item.qty}x${item.product.replace('Areca Leaf Plate ', '').replace(' Round', '')}`
+        ).join(', ');
 
-            const productSummary = itemsToLog.map(item =>
-                `${item.qty}x${item.product.replace('Areca Leaf Plate ', '').replace(' Round', '')}`
-            ).join(', ');
+        const newHistoryEntry = {
+            id: Date.now(),
+            date: formatDate(new Date()),
+            product: productSummary,
+            type: "SALE",
+            quantity: -totalPieces,
+            unit: "pcs",
+            balance: (allTransactions[0]?.balance || 10000) - totalPieces,
+            status: "success",
+            company: companyName,
+            customer: customerName,
+            amount: totalBillAmount,
+            paymentStatus: paymentMode,
+            saleItems: itemsToLog.map(item => ({
+                productName: item.product,
+                qty: item.qty
+            })),
+            deliveredBy: deliveryEmployee
+        };
 
-            const newHistoryEntry = {
-                id: allTransactions.length + 1,
-                date: formatDate(new Date()),
-                product: productSummary,
-                type: "SALE",
-                quantity: -totalPieces,
-                unit: "pcs",
-                balance: (allTransactions[0]?.balance || 10000) - totalPieces,
-                status: "success",
-                company: companyName,
-                customer: customerName,
-                amount: totalBillAmount,
-                paymentStatus: paymentMode
-            };
-
-            setAllTransactions([newHistoryEntry, ...allTransactions]);
-            setBillItems([]);
-            setQuantity("");
-            setTotalAmount("");
-            setCompanyName("");
-            setCustomerName("");
-            setPaymentMode("Cash");
-            setIsLogging(false);
-            setFeedbackMessage(`✅ Sale saved for ${companyName}! Total: ₹${totalBillAmount}`);
-
-            setTimeout(() => setFeedbackMessage(""), 3000);
-        }, 800);
+        setAllTransactions([newHistoryEntry, ...allTransactions]);
+        setBillItems([]);
+        setQuantity("");
+        setTotalAmount("");
+        setCompanyName("");
+        setCustomerName("");
+        setDeliveryEmployee("");
+        setPaymentMode("Cash");
+        setPaidStatus("Paid");
     };
 
     const handleGenerateBill = () => {
@@ -210,7 +233,8 @@ const Sales = () => {
                 product: item.product,
                 qty: item.qty,
                 amount: item.amount
-            }))
+            })),
+            deliveredBy: deliveryEmployee
         };
 
         setSelectedBill(billData);
@@ -218,6 +242,31 @@ const Sales = () => {
     };
 
 
+
+    // View a transaction's bill details
+    const handleViewBill = (transaction) => {
+        const billData = {
+            company: transaction.company,
+            customer: transaction.customer,
+            date: transaction.date,
+            items: transaction.saleItems?.map(item => ({
+                product: item.productName,
+                qty: item.qty,
+                amount: transaction.amount
+            })) || [{ product: transaction.product, qty: Math.abs(transaction.quantity), amount: transaction.amount }],
+            totalAmount: transaction.amount,
+            paymentMode: transaction.paymentStatus,
+            deliveredBy: transaction.deliveredBy
+        };
+        setSelectedBill(billData);
+        setShowBillModal(true);
+    };
+
+    // Delete a transaction from history
+    const handleDeleteTransaction = (id) => {
+        const updatedTransactions = allTransactions.filter(t => t.id !== id);
+        setAllTransactions(updatedTransactions);
+    };
 
     // Export Handler
     const handleExport = () => {
@@ -293,6 +342,15 @@ const Sales = () => {
             }
             if (!event.target.closest('.client-dropdown')) {
                 setIsClientDropdownOpen(false);
+            }
+            if (!event.target.closest('.employee-dropdown')) {
+                setIsEmployeeDropdownOpen(false);
+            }
+            if (!event.target.closest('.payment-dropdown')) {
+                setIsPaymentDropdownOpen(false);
+            }
+            if (!event.target.closest('.history-filter-dropdown')) {
+                setIsHistoryFilterDropdownOpen(false);
             }
         };
 
@@ -431,20 +489,20 @@ const Sales = () => {
                         </div>
 
                         <div className="quick-entry-item">
-                            <span className="quick-entry-label">Customer:</span>
-                            <input
-                                type="text"
-                                placeholder="Customer Name"
-                                className="quick-entry-input"
-                                value={customerName}
-                                onChange={(e) => setCustomerName(e.target.value)}
-                            />
+                            <span className="quick-entry-label">Customer Name:</span>
+                            <div style={{ width: '100%' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Enter customer name"
+                                    className="quick-entry-input"
+                                    value={customerName}
+                                    onChange={(e) => setCustomerName(e.target.value)}
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="quick-entry-row">
                         <div className="quick-entry-item">
-                            <span className="quick-entry-label">Product:</span>
+                            <span className="quick-entry-label">Product Selection:</span>
                             <div className="product-dropdown">
                                 <button
                                     onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
@@ -474,22 +532,32 @@ const Sales = () => {
                                 )}
                             </div>
                         </div>
-
-                        <div className="quick-entry-item">
-                            <span className="quick-entry-label">Total Pieces:</span>
-                            <input
-                                type="number"
-                                placeholder="0"
-                                className="quick-entry-input"
-                                value={quantity}
-                                onChange={(e) => setQuantity(e.target.value)}
-                            />
-                        </div>
                     </div>
 
                     <div className="quick-entry-row">
                         <div className="quick-entry-item">
-                            <span className="quick-entry-label">Rate/Pc:</span>
+                            <span className="quick-entry-label">Total Pieces:</span>
+                            <div style={{ width: '100%', display: 'flex', gap: '8px' }}>
+                                <input
+                                    type="number"
+                                    placeholder="0"
+                                    className="quick-entry-input flex-1"
+                                    style={{ flex: 1, minWidth: 0 }}
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(e.target.value)}
+                                />
+                                <button
+                                    className="btn-outline quick-entry-btn add-btn-colored mobile-only-add-btn"
+                                    onClick={handleAddItem}
+                                    title="Add Item"
+                                >
+                                    <span className="material-symbols-outlined">add_circle</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="quick-entry-item">
+                            <span className="quick-entry-label">Rate Per Piece:</span>
                             <div className="amount-input-wrapper">
                                 <span className="currency-prefix">₹</span>
                                 <input
@@ -503,7 +571,7 @@ const Sales = () => {
                         </div>
 
                         <div className="quick-entry-item">
-                            <span className="quick-entry-label">Total Amount:</span>
+                            <span className="quick-entry-label">Total Bill Amount:</span>
                             <div className="amount-input-wrapper">
                                 <span className="currency-prefix">₹</span>
                                 <input
@@ -517,25 +585,131 @@ const Sales = () => {
                         </div>
                     </div>
 
-                    <div className="quick-entry-footer">
-                        <div className="quick-entry-item payment-status-item">
-                            <span className="quick-entry-label">Payment Mode:</span>
-                            <div className="payment-mode-selector">
-                                {['UPI', 'Cash', 'Card'].map(mode => (
+                    <div className="quick-entry-row">
+                        <div className="quick-entry-item">
+                            <span className="quick-entry-label">Delivered By:</span>
+                            <div className="product-dropdown employee-dropdown">
+                                <div className="dropdown-input-wrapper">
                                     <button
-                                        key={mode}
-                                        className={`mode-btn ${paymentMode === mode ? 'active' : ''}`}
-                                        onClick={() => setPaymentMode(mode)}
+                                        onClick={() => setIsEmployeeDropdownOpen(!isEmployeeDropdownOpen)}
+                                        className="product-dropdown-toggle"
                                     >
-                                        {mode}
+                                        <span className="product-dropdown-text">{deliveryEmployee || "Select Employee"}</span>
+                                        <span className="material-symbols-outlined product-dropdown-arrow">
+                                            {isEmployeeDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                        </span>
                                     </button>
-                                ))}
+                                    {deliveryEmployee && (
+                                        <button className="clear-selection-btn" onClick={(e) => { e.stopPropagation(); setDeliveryEmployee(""); }}>
+                                            <span className="material-symbols-outlined">close</span>
+                                        </button>
+                                    )}
+                                </div>
+                                {isEmployeeDropdownOpen && (
+                                    <div className="product-dropdown-menu">
+                                        <div className="dropdown-search-wrapper">
+                                            <input
+                                                type="text"
+                                                placeholder="Search employees..."
+                                                className="dropdown-search-input"
+                                                autoFocus
+                                                onClick={(e) => e.stopPropagation()}
+                                                onChange={(e) => setDeliveryEmployee(e.target.value)}
+                                            />
+                                        </div>
+                                        {employees.filter(emp =>
+                                            emp.name.toLowerCase().includes((deliveryEmployee || "").toLowerCase())
+                                        ).length > 0 ? (
+                                            employees
+                                                .filter(emp => emp.name.toLowerCase().includes((deliveryEmployee || "").toLowerCase()))
+                                                .map((emp) => (
+                                                    <button
+                                                        key={emp.id}
+                                                        onClick={() => {
+                                                            setDeliveryEmployee(emp.name);
+                                                            setIsEmployeeDropdownOpen(false);
+                                                        }}
+                                                        className={`product-dropdown-item ${deliveryEmployee === emp.name ? 'active' : ''}`}
+                                                    >
+                                                        <span className="product-name-text">{emp.name}</span>
+                                                        <span className="product-sku-category">{emp.department}</span>
+                                                    </button>
+                                                ))
+                                        ) : (
+                                            <div className="no-clients-found">No employees matching "{deliveryEmployee}"</div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
+                        <div className="quick-entry-item">
+                            <span className="quick-entry-label">Payment Mode:</span>
+                            <div className="product-dropdown payment-dropdown">
+                                <button
+                                    onClick={() => setIsPaymentDropdownOpen(!isPaymentDropdownOpen)}
+                                    className="product-dropdown-toggle"
+                                >
+                                    <span className="product-dropdown-text">{paymentMode}</span>
+                                    <span className="material-symbols-outlined product-dropdown-arrow">
+                                        {isPaymentDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                    </span>
+                                </button>
+                                {isPaymentDropdownOpen && (
+                                    <div className="product-dropdown-menu">
+                                        {['UPI', 'Cash', 'Card'].map(mode => (
+                                            <button
+                                                key={mode}
+                                                className={`product-dropdown-item ${paymentMode === mode ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setPaymentMode(mode);
+                                                    setIsPaymentDropdownOpen(false);
+                                                }}
+                                            >
+                                                <span className="product-name-text">{mode}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="quick-entry-item">
+                            <span className="quick-entry-label">Payment Status:</span>
+                            <div className="product-dropdown payment-dropdown">
+                                <button
+                                    onClick={() => setIsPaidStatusDropdownOpen(!isPaidStatusDropdownOpen)}
+                                    className="product-dropdown-toggle"
+                                >
+                                    <span className="product-dropdown-text">{paidStatus}</span>
+                                    <span className="material-symbols-outlined product-dropdown-arrow">
+                                        {isPaidStatusDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                    </span>
+                                </button>
+                                {isPaidStatusDropdownOpen && (
+                                    <div className="product-dropdown-menu">
+                                        {['Paid', 'Unpaid'].map(status => (
+                                            <button
+                                                key={status}
+                                                className={`product-dropdown-item ${paidStatus === status ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setPaidStatus(status);
+                                                    setIsPaidStatusDropdownOpen(false);
+                                                }}
+                                            >
+                                                <span className="product-name-text">{status}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="quick-entry-footer">
                         <div className="quick-entry-action-group">
                             <button
-                                className="btn-outline quick-entry-btn add-btn-colored"
+                                className="btn-outline quick-entry-btn add-btn-colored add-btn-pc"
                                 onClick={handleAddItem}
                             >
                                 <span className="material-symbols-outlined">add_circle</span>
@@ -558,7 +732,7 @@ const Sales = () => {
                                 <span className="material-symbols-outlined">
                                     {isLogging ? "hourglass_empty" : "done_all"}
                                 </span>
-                                {isLogging ? "SAVING..." : "SAVE SALE ENTRY"}
+                                {isLogging ? "SAVING..." : "SAVE ENTRY"}
                             </button>
                         </div>
                     </div>
@@ -589,15 +763,6 @@ const Sales = () => {
             <div className="history-filters-wrapper">
                 <div className="history-filters-header">
                     <h3 className="section-title">Recent Sales History</h3>
-                    {(searchTerm || typeFilter !== "all") && (
-                        <button
-                            className="clear-filters-btn"
-                            onClick={clearFilters}
-                        >
-                            <span className="material-symbols-outlined">clear_all</span>
-                            Clear Filters
-                        </button>
-                    )}
                 </div>
 
                 <div className="history-filters">
@@ -618,16 +783,50 @@ const Sales = () => {
                     </div>
 
                     <div className="filter-group">
-                        <select
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value)}
-                            className="filter-select"
-                        >
-                            <option value="all">All Modes</option>
-                            <option value="upi">UPI</option>
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
-                        </select>
+                        <div className="product-dropdown history-filter-dropdown">
+                            <button
+                                onClick={() => setIsHistoryFilterDropdownOpen(!isHistoryFilterDropdownOpen)}
+                                className="product-dropdown-toggle filter-dropdown-toggle"
+                            >
+                                <span className="product-dropdown-text">
+                                    {typeFilter === 'all' ? 'All Modes' : typeFilter.toUpperCase()}
+                                </span>
+                                <div className="filter-controls-inside">
+                                    {typeFilter !== 'all' && (
+                                        <span
+                                            className="material-symbols-outlined clear-filter-inside"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setTypeFilter('all');
+                                            }}
+                                        >
+                                            close
+                                        </span>
+                                    )}
+                                    <span className="material-symbols-outlined product-dropdown-arrow">
+                                        {isHistoryFilterDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                    </span>
+                                </div>
+                            </button>
+                            {isHistoryFilterDropdownOpen && (
+                                <div className="product-dropdown-menu">
+                                    {['all', 'upi', 'cash', 'card'].map((mode) => (
+                                        <button
+                                            key={mode}
+                                            onClick={() => {
+                                                setTypeFilter(mode);
+                                                setIsHistoryFilterDropdownOpen(false);
+                                            }}
+                                            className={`product-dropdown-item ${typeFilter === mode ? 'active' : ''}`}
+                                        >
+                                            <span className="product-name-text">
+                                                {mode === 'all' ? 'All Modes' : mode.toUpperCase()}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -637,46 +836,77 @@ const Sales = () => {
                     <table className="stock-table">
                         <thead>
                             <tr>
-                                <th>DATE & TIME</th>
-                                <th>CUSTOMER / COMPANY</th>
-                                <th>PRODUCT DESCRIPTION</th>
-                                <th>PIECES</th>
-                                <th>AMOUNT</th>
-                                <th>PAYMENT</th>
+                                <th>DATE</th>
+                                <th>COMPANY</th>
+                                <th className="hide-mobile">CUSTOMER NAME</th>
+                                <th className="hide-mobile">PRODUCT</th>
+                                <th className="hide-mobile">PIECES</th>
+                                <th className="hide-mobile">AMOUNT</th>
+                                <th className="hide-mobile">PAYMENT</th>
+                                <th className="hide-mobile">DELIVERED BY</th>
+
+                                <th className="text-center">DELETE</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredTransactions.length > 0 ? (
                                 filteredTransactions.map((transaction) => (
                                     <tr key={transaction.id}>
-                                        <td>{transaction.date}</td>
                                         <td>
-                                            <div className="party-info">
-                                                <span className="customer-text">{transaction.customer || '-'}</span>
-                                                <span className="company-text">{transaction.company || '-'}</span>
-                                            </div>
+                                            {(() => {
+                                                const parts = transaction.date?.split(', ') || [transaction.date || ''];
+                                                const datePart = parts.slice(0, 2).join(', ');
+                                                const timePart = parts.slice(2).join(', ');
+                                                return (
+                                                    <>
+                                                        {datePart}
+                                                        {timePart && <span className="hide-mobile">, {timePart}</span>}
+                                                    </>
+                                                );
+                                            })()}
                                         </td>
-                                        <td>
+                                        <td onClick={() => handleViewBill(transaction)} style={{ cursor: 'pointer' }}>
+                                            <span className="company-text clickable-company">{transaction.company || '-'}</span>
+                                        </td>
+                                        <td className="hide-mobile">
+                                            <span className="customer-text">{transaction.customer || '-'}</span>
+                                        </td>
+                                        <td className="hide-mobile">
                                             <div className="product-info">
                                                 <span className="product-name">{transaction.product}</span>
                                             </div>
                                         </td>
-                                        <td className="quantity-cell">
+                                        <td className="quantity-cell hide-mobile">
                                             {Math.abs(transaction.quantity)}
                                         </td>
-                                        <td className="amount-cell">
+                                        <td className="amount-cell hide-mobile">
                                             ₹{transaction.amount?.toLocaleString() || '0'}
                                         </td>
-                                        <td>
+                                        <td className="hide-mobile">
                                             <span className={`payment-badge ${transaction.paymentStatus?.toLowerCase()}`}>
                                                 {transaction.paymentStatus || 'Unpaid'}
                                             </span>
+                                        </td>
+                                        <td className="hide-mobile">
+                                            <div className="delivery-info">
+                                                <span className="delivery-person">{transaction.deliveredBy || '-'}</span>
+                                            </div>
+                                        </td>
+
+                                        <td className="text-center">
+                                            <button
+                                                className="icon-action-btn delete"
+                                                onClick={() => handleDeleteTransaction(transaction.id)}
+                                                title="Delete Record"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" className="no-data">
+                                    <td colSpan="10" className="no-data">
                                         <div className="empty-state">
                                             <span className="material-symbols-outlined empty-icon">search_off</span>
                                             <h4>No sales records found</h4>
@@ -757,6 +987,8 @@ const Sales = () => {
                 </div>
             )}
 
+
+
             {showBillModal && selectedBill && (
                 <div className="bill-modal-overlay" onClick={() => setShowBillModal(false)}>
                     <div className="bill-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -769,6 +1001,7 @@ const Sales = () => {
                                 <p><strong>Date:</strong> {selectedBill.date}</p>
                                 <p><strong>Company:</strong> {selectedBill.company}</p>
                                 <p><strong>Customer:</strong> {selectedBill.customer}</p>
+                                <p><strong>Delivered By:</strong> {selectedBill.deliveredBy || '-'}</p>
                             </div>
                         </div>
                         <div className="bill-table-container">
@@ -815,53 +1048,91 @@ const Sales = () => {
             {/* Add New Client Modal */}
             {showAddClientModal && (
                 <div className="modal-overlay">
-                    <div className="export-modal quick-add-client-modal" style={{ maxWidth: '450px' }}>
-                        <div className="export-modal-header">
-                            <h2>Quick Add Client</h2>
-                            <button className="modal-close" onClick={() => setShowAddClientModal(false)}>×</button>
+                    <div className="modal-content quick-add-client-modal" style={{ maxWidth: '450px' }}>
+                        <div className="modal-header">
+                            <h3 className="section-title">Add New Client</h3>
+                            <button className="modal-close" onClick={() => setShowAddClientModal(false)}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
                         </div>
-                        <div className="export-modal-body">
-                            <div className="quick-entry-item" style={{ marginBottom: '15px' }}>
-                                <span className="quick-entry-label">Company Name:</span>
+                        <div className="modal-body">
+                            <div className="modal-form-group">
+                                <label>COMPANY NAME *</label>
                                 <input
                                     type="text"
-                                    className="quick-entry-input"
+                                    className="modal-input"
+                                    placeholder="Enter company name"
                                     value={newClientData.companyName}
                                     onChange={(e) => setNewClientData({ ...newClientData, companyName: e.target.value })}
                                 />
                             </div>
-                            <div className="quick-entry-item">
-                                <span className="quick-entry-label">Contact Person:</span>
+                            <div className="modal-form-group">
+                                <label>CONTACT PERSON *</label>
                                 <input
                                     type="text"
-                                    className="quick-entry-input"
-                                    placeholder="Enter contact person name"
+                                    className="modal-input"
+                                    placeholder="Enter contact person"
                                     value={newClientData.contactPerson}
                                     onChange={(e) => setNewClientData({ ...newClientData, contactPerson: e.target.value })}
                                 />
                             </div>
+                            <div className="modal-row">
+                                <div className="modal-form-group">
+                                    <label>EMAIL ADDRESS *</label>
+                                    <input
+                                        type="email"
+                                        className="modal-input"
+                                        placeholder="Enter email address"
+                                        value={newClientData.email}
+                                        onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })}
+                                    />
+                                </div>
+                                <div className="modal-form-group">
+                                    <label>PHONE NUMBER</label>
+                                    <input
+                                        type="tel"
+                                        className="modal-input"
+                                        placeholder="Enter phone number"
+                                        value={newClientData.phone}
+                                        onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-form-group">
+                                <label>ADDRESS</label>
+                                <textarea
+                                    className="modal-textarea"
+                                    placeholder="Enter complete address"
+                                    rows="3"
+                                    value={newClientData.address}
+                                    onChange={(e) => setNewClientData({ ...newClientData, address: e.target.value })}
+                                ></textarea>
+                            </div>
                         </div>
-                        <div className="export-modal-footer">
-                            <button className="btn-cancel" onClick={() => setShowAddClientModal(false)}>Cancel</button>
+                        <div className="modal-footer">
+                            <button className="modal-cancel" onClick={() => setShowAddClientModal(false)}>Cancel</button>
                             <button
-                                className="btn-submit"
-                                disabled={!newClientData.companyName || !newClientData.contactPerson}
+                                className="modal-confirm"
+                                disabled={!newClientData.companyName || !newClientData.contactPerson || !newClientData.email}
                                 onClick={() => {
                                     const newClient = {
                                         ...newClientData,
-                                        email: "",
-                                        phone: "",
-                                        status: "Active",
                                         totalOrders: 0,
                                         totalSpent: "₹0",
                                         lastOrder: "Never",
-                                        address: "",
-                                        gst: ""
                                     };
                                     addClient(newClient);
                                     setCompanyName(newClientData.companyName);
                                     setCustomerName(newClientData.contactPerson);
                                     setShowAddClientModal(false);
+                                    // Reset form
+                                    setNewClientData({
+                                        companyName: "",
+                                        contactPerson: "",
+                                        email: "",
+                                        phone: "",
+                                        address: ""
+                                    });
                                 }}
                             >
                                 Add Client

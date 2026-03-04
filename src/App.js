@@ -17,7 +17,7 @@ import StockOverview from "./pages/stock/StockOverview.js";
 import Expenses from "./pages/Expenses.js";
 import ExpenseReport from "./pages/ExpenseReport.js";
 import StockTransfer from "./pages/stock/StockTransfer.js";
-import Production from "./pages/stock/Production.js";
+import Production from "./pages/production/ProductionPlan.js";
 import LowStockAlert from "./pages/stock/LowStockAlert.js";
 
 // ✅ IMPORT PRODUCTION PLAN (ONLY THIS ONE)
@@ -95,7 +95,7 @@ const App = () => {
           <Route path="/expenses" element={<ProtectedRoute><AppLayout><Expenses /></AppLayout></ProtectedRoute>} />
           <Route path="/expenses/report" element={<ProtectedRoute><AppLayout><ExpenseReport /></AppLayout></ProtectedRoute>} />
           <Route path="/stock/transfer" element={<ProtectedRoute><AppLayout><StockTransfer /></AppLayout></ProtectedRoute>} />
-          <Route path="/stock/production" element={<ProtectedRoute><AppLayout><Production /></AppLayout></ProtectedRoute>} />
+          <Route path="/stock/plan" element={<ProtectedRoute><AppLayout><Production /></AppLayout></ProtectedRoute>} />
           <Route path="/stock/low-stock" element={<ProtectedRoute><AppLayout><LowStockAlert /></AppLayout></ProtectedRoute>} />
 
           {/* Products */}
