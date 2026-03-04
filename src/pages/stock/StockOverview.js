@@ -6,7 +6,7 @@ const StockOverview = () => {
   const navigate = useNavigate();
 
   // ========== STATE MANAGEMENT ==========
-  const [stockItems, setStockItems] = useState([
+  const [stockItems] = useState([
     {
       id: 1,
       name: "Areca Leaf Plate",
@@ -61,7 +61,6 @@ const StockOverview = () => {
     }
   ]);
 
-  // Stats state
   const [stats, setStats] = useState({
     totalProducts: 0,
     lowStock: 0,
@@ -70,51 +69,17 @@ const StockOverview = () => {
     plateTypes: 4,
   });
 
-  // Selected product and view state
-  const [selectedProduct, setSelectedProduct] = useState("Areca Leaf Plate");
-  const [viewMode, setViewMode] = useState("product"); // "product" or "size"
-
-  // Modal states
   const [showExportModal, setShowExportModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  // Form states for edit
-  const [formData, setFormData] = useState({
-    name: "",
-    sku: "",
-    category: "Raw Material",
-    quantity: "",
-    unit: "kg",
-    price: "",
-    threshold: 100,
-    size: "",
-    perPlateRate: "",
-  });
-
-  // ========== GET UNIQUE PRODUCTS ==========
-  const uniqueProducts = [...new Set(stockItems.map(item => item.name))];
-
-  // ========== FILTER ITEMS BASED ON SELECTION ==========
-  const getFilteredItems = () => {
-    return stockItems;
-  };
-
-  const filteredItems = getFilteredItems();
+  const filteredItems = stockItems;
 
   useEffect(() => {
-    // Force total products to 1 as requested
-    const totalProducts = 1;
-
-    // Tally total stock from filtered items to ensure they match
     const totalStockValue = filteredItems.reduce((sum, item) => sum + item.quantity, 0);
-
-    // Identify low stock items (e.g., threshold < 3000)
     const lowStockItems = filteredItems.filter(item => item.quantity < 3000);
     const lowStockSizes = lowStockItems.map(item => item.size);
-
     setStats({
       totalProducts: 1,
       lowStock: lowStockItems.length,
@@ -124,25 +89,11 @@ const StockOverview = () => {
     });
   }, [filteredItems]);
 
-  // ========== NAVIGATION HANDLERS ==========
-
-
   // ========== HANDLERS ==========
-
-
-
-
-
-
-
-  // Export Handler
-  const handleExport = () => {
-    setShowExportModal(true);
-  };
+  const handleExport = () => setShowExportModal(true);
 
   const confirmExport = (format) => {
     setExportLoading(true);
-
     setTimeout(() => {
       setExportLoading(false);
       setShowExportModal(false);
@@ -162,7 +113,6 @@ const StockOverview = () => {
           `₹${item.totalValue}`,
           item.status,
         ]);
-
         const csvContent = [headers, ...csvData].map((e) => e.join(",")).join("\n");
         const blob = new Blob([csvContent], { type: "text/csv" });
         const url = URL.createObjectURL(blob);
@@ -179,66 +129,22 @@ const StockOverview = () => {
     }, 1500);
   };
 
-  // Form input change handler
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  // Get status badge class
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "critical":
-        return "status-badge critical";
-      case "low":
-        return "status-badge low";
-      default:
-        return "status-badge normal";
-    }
-  };
-
-  // Get status text
-  const getStatusText = (status) => {
-    switch (status) {
-      case "critical":
-        return "Critical";
-      case "low":
-        return "Low Stock";
-      default:
-        return "Normal";
-    }
-  };
-
-  // Format currency
-  const formatCurrency = (value) => {
-    return `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
-  // Format quantity with unit
-  const formatQuantity = (quantity, unit) => {
-    return `${quantity.toLocaleString("en-IN")} ${unit}`;
-  };
+  const formatCurrency = (value) =>
+    `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <div className="stock-page">
+
       {/* Feedback Toast */}
       {feedbackMessage && (
         <div className="feedback-toast">
           <span className="material-symbols-outlined">
-            {feedbackMessage.includes("deleted")
-              ? "delete"
-              : feedbackMessage.includes("updated")
-                ? "edit"
-                : "check_circle"}
+            {feedbackMessage.includes("deleted") ? "delete" : feedbackMessage.includes("updated") ? "edit" : "check_circle"}
           </span>
           <span>{feedbackMessage}</span>
         </div>
       )}
 
-      {/* Export Success Toast */}
       {exportSuccess && (
         <div className="feedback-toast success">
           <span className="material-symbols-outlined">download_done</span>
@@ -246,24 +152,23 @@ const StockOverview = () => {
         </div>
       )}
 
-      {/* ===== PREMIUM ANALYTICS HEADER ===== */}
+      {/* ===== HEADER ===== */}
       <div className="page-header premium-header">
         <div>
           <h1 className="page-title">Stock Overview</h1>
           <p className="page-subtitle">Real-time inventory management and tracking</p>
         </div>
         <div className="header-actions">
-
           <button className="btn-export-premium" onClick={handleExport}>
             <span className="material-symbols-outlined">
-              {exportLoading ? "hourglass_empty" : "download"}
+              {exportLoading ? "hourglass_empty" : "file_download"}
             </span>
             {exportLoading ? "Exporting..." : "Export"}
           </button>
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* ===== STATS CARDS ===== */}
       <div className="stock-stats">
         <div className="stat-card">
           <div className="stat-icon blue">
@@ -275,10 +180,7 @@ const StockOverview = () => {
           </div>
         </div>
 
-        <div
-          className="stat-card clickable"
-          onClick={() => {/* You can add low stock filter logic here if needed */ }}
-        >
+        <div className="stat-card clickable">
           <div className="stat-icon yellow">
             <span className="material-symbols-outlined">warning</span>
           </div>
@@ -314,24 +216,20 @@ const StockOverview = () => {
         </div>
       </div>
 
-      {/* Product Selection Removed */}
-
-      {/* Selection Summary Section removed as requested */}
-
-      {/* Stock Table View */}
+      {/* ===== STOCK DETAILS ===== */}
       <div className="stock-table-container">
         <div className="table-header">
-          <h2 className="section-title">
-            Stock Details
-          </h2>
+          <h2 className="section-title">Stock Details</h2>
         </div>
-        <div className="table-responsive">
+
+        {/* DESKTOP TABLE */}
+        <div className="table-responsive desktop-table-view">
           <table className="stock-table">
             <thead>
               <tr>
-                <th>Product & SKU</th>
+                <th>Product &amp; SKU</th>
                 <th>Size</th>
-                <th>Pieces</th>
+                <th>Stock</th>
                 <th>Per Plate Price</th>
               </tr>
             </thead>
@@ -345,15 +243,16 @@ const StockOverview = () => {
                         <span className="product-sku">{item.sku}</span>
                       </div>
                     </td>
-                    <td>{item.size && item.size !== "-" ? <span className="size-badge">{item.size}</span> : "-"}</td>
+                    <td>
+                      {item.size && item.size !== "-" ? <span className="size-badge">{item.size}</span> : "-"}
+                    </td>
                     <td className="quantity-cell">{item.quantity.toLocaleString("en-IN")} Pieces</td>
                     <td className="per-plate-cell">{item.perPlateRate > 0 ? formatCurrency(item.perPlateRate) : "-"}</td>
-
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="no-data-cell">
+                  <td colSpan="4">
                     <div className="empty-state">
                       <span className="material-symbols-outlined empty-icon">inventory</span>
                       <h4>No items found</h4>
@@ -364,24 +263,52 @@ const StockOverview = () => {
             </tbody>
           </table>
         </div>
+
+        {/* MOBILE CARDS — renders natively, no CSS hacks */}
+        <div className="mobile-cards-view">
+          {filteredItems.length > 0 ? (
+            filteredItems.map((item) => (
+              <div key={item.id} className="stock-mobile-card">
+                {/* Card Header */}
+                <div className="smc-header">
+                  <span className="smc-name">{item.name}</span>
+                  <span className="smc-sku">{item.sku}</span>
+                </div>
+                {/* Card Rows */}
+                <div className="smc-body">
+                  <div className="smc-row">
+                    <span className="smc-label">Size</span>
+                    <span className="size-badge">{item.size || "-"}</span>
+                  </div>
+                  <div className="smc-row">
+                    <span className="smc-label">Stock</span>
+                    <span className="smc-value">{item.quantity.toLocaleString("en-IN")} Pieces</span>
+                  </div>
+                  <div className="smc-row">
+                    <span className="smc-label">Price</span>
+                    <span className="smc-price">
+                      {item.perPlateRate > 0 ? formatCurrency(item.perPlateRate) : "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="empty-state">
+              <span className="material-symbols-outlined empty-icon">inventory</span>
+              <h4>No items found</h4>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Results Summary Removed */}
-
-
-
-
-
-      {/* Export Modal */}
+      {/* ===== EXPORT MODAL ===== */}
       {showExportModal && (
         <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Export Stock Report</h3>
-              <button
-                className="modal-close"
-                onClick={() => setShowExportModal(false)}
-              >
+              <button className="modal-close" onClick={() => setShowExportModal(false)}>
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -390,38 +317,24 @@ const StockOverview = () => {
                 <span className="material-symbols-outlined">download</span>
               </div>
               <p className="modal-title">Choose Export Format</p>
-              <p className="modal-desc">
-                Export all stock items with current quantities and values
-              </p>
+              <p className="modal-desc">Export all stock items with current quantities and values</p>
               <div className="export-options">
-                <button
-                  className="export-option-btn"
-                  onClick={() => confirmExport("CSV")}
-                >
+                <button className="export-option-btn" onClick={() => confirmExport("CSV")}>
                   <span className="material-symbols-outlined">description</span>
                   <span>CSV File</span>
                 </button>
-                <button
-                  className="export-option-btn"
-                  onClick={() => confirmExport("PDF")}
-                >
+                <button className="export-option-btn" onClick={() => confirmExport("PDF")}>
                   <span className="material-symbols-outlined">picture_as_pdf</span>
                   <span>PDF Report</span>
                 </button>
-                <button
-                  className="export-option-btn"
-                  onClick={() => confirmExport("Excel")}
-                >
+                <button className="export-option-btn" onClick={() => confirmExport("Excel")}>
                   <span className="material-symbols-outlined">grid_on</span>
                   <span>Excel File</span>
                 </button>
               </div>
             </div>
             <div className="modal-footer">
-              <button
-                className="modal-cancel"
-                onClick={() => setShowExportModal(false)}
-              >
+              <button className="modal-cancel" onClick={() => setShowExportModal(false)}>
                 Cancel
               </button>
             </div>

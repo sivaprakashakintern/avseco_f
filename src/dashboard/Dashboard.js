@@ -307,10 +307,10 @@ const Dashboard = () => {
                 <div className="enhanced-bar-label">{plate.size}</div>
                 <div className="enhanced-bars">
                   <div className="bar-container" onMouseEnter={() => setHoveredBar({ type: 'sales', index, value: plate.sold })} onMouseMove={handleMouseMove} onMouseLeave={() => setHoveredBar(null)}>
-                    <div className="enhanced-bar sales-bar" style={{ height: `${(plate.sold / maxSold) * 180}px` }}></div>
+                    <div className="enhanced-bar sales-bar" style={{ height: `calc(${plate.sold / maxSold} * var(--bar-max-height))` }}></div>
                   </div>
                   <div className="bar-container" onMouseEnter={() => setHoveredBar({ type: 'expenses', index, value: plate.sold * 0.3 })} onMouseMove={handleMouseMove} onMouseLeave={() => setHoveredBar(null)}>
-                    <div className="enhanced-bar expenses-bar" style={{ height: `${((plate.sold * 0.3) / maxSold) * 180}px` }}></div>
+                    <div className="enhanced-bar expenses-bar" style={{ height: `calc(${(plate.sold * 0.3) / maxSold} * var(--bar-max-height))` }}></div>
                   </div>
 
                   {hoveredBar?.index === index && (

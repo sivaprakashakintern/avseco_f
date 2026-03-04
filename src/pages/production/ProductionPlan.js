@@ -544,12 +544,26 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
         {/* Summary Cards */}
         <div className="production-stats">
-          <div className="prod-stat-card">
-            <p className="prod-stat-label">🎯 TOTAL TARGET</p>
-            <div className="prod-stat-value">
-              <h3 className="prod-stat-number">{totalTarget.toLocaleString()}</h3>
-              <span className="prod-stat-badge badge-target">Units</span>
+          <div className="prod-stat-card" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <p className="prod-stat-label">🎯 TOTAL TARGET</p>
+              <div className="prod-stat-value">
+                <h3 className="prod-stat-number">{totalTarget.toLocaleString()}</h3>
+                <span className="prod-stat-badge badge-target" style={{ marginLeft: '10px' }}>Units</span>
+              </div>
             </div>
+
+            {/* Size-wise Target Breakdown (Side) */}
+            {filteredData.length > 0 && (
+              <div className="prod-target-breakdown" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '3px', paddingLeft: '16px', borderLeft: '1px dashed rgba(0,0,0,0.15)', minWidth: '90px' }}>
+                {filteredData.map(item => (
+                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', fontSize: '10.5px', fontWeight: '700', color: '#5a7b6c' }}>
+                    <span>{item.productSize}</span>
+                    <span style={{ color: '#064e3b' }}>{item.targetQty.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="prod-stat-card">
             <p className="prod-stat-label">⚡ PRODUCED</p>
@@ -640,14 +654,14 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             <table className="prod-table">
               <thead>
                 <tr>
-                  <th>Product</th>
+                  <th className="hide-mobile">Product</th>
                   <th>Size</th>
-                  <th>SKU</th>
+                  <th className="hide-mobile">SKU</th>
                   <th className="text-right">Target</th>
                   <th className="text-right">Produced</th>
                   <th className="text-right">Balance</th>
-                  <th>Progress</th>
-                  <th>Status</th>
+                  <th className="hide-mobile">Progress</th>
+                  <th className="hide-mobile">Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -657,7 +671,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                     const progress = ((item.producedQty / item.targetQty) * 100).toFixed(1);
                     return (
                       <tr key={item.id}>
-                        <td>
+                        <td className="hide-mobile">
                           <div className="prod-product-cell">
                             <div className="prod-icon">
                               <span className="material-symbols-outlined">eco</span>
@@ -666,7 +680,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                           </div>
                         </td>
                         <td><strong>{item.productSize}</strong></td>
-                        <td><span className="prod-sku">{item.sku}</span></td>
+                        <td className="hide-mobile"><span className="prod-sku">{item.sku}</span></td>
                         <td className="text-right">{item.targetQty.toLocaleString()}</td>
                         <td className="text-right">
                           {editingProduced === item.id ? (
@@ -702,7 +716,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                         <td className="text-right" style={{ color: item.remainingQty > 0 ? '#856404' : '#7f8c8d' }}>
                           {item.remainingQty.toLocaleString()}
                         </td>
-                        <td>
+                        <td className="hide-mobile">
                           <div className="prod-progress">
                             <div className="prod-progress-bar">
                               <div className="prod-progress-fill" style={{ width: `${progress}%` }}></div>
@@ -710,7 +724,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                             <span className="prod-progress-text">{progress}%</span>
                           </div>
                         </td>
-                        <td>
+                        <td className="hide-mobile">
                           <span className={`prod-status ${item.status}`}>
                             <span className="prod-status-dot"></span>
                             {item.status === 'completed' ? 'Completed' :

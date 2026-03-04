@@ -275,7 +275,7 @@ const ProductList = () => {
         <div className="header-actions">
           <button className="btn-transfer-premium" onClick={handleAddProduct}>
             <span className="material-symbols-outlined">add</span>
-            Add Product
+            <span className="btn-text">Add Product</span>
           </button>
         </div>
       </div>

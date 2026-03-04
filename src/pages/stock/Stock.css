@@ -76,13 +76,30 @@
 }
 
 .btn-export-premium {
-  background: #004d39;
+  background: white !important;
+  /* White background makes it pop against green header */
   border: none;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  color: #006A4E !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 10px 20px;
+  border-radius: 50px;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-weight: 700;
+  transition: all 0.2s ease;
 }
 
 .btn-export-premium:hover {
-  background: #003628;
+  background: #f8fafc !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.btn-export-premium .material-symbols-outlined {
+  font-size: 20px !important;
+  display: block !important;
+  color: #006A4E !important;
 }
 
 /* ===== BUTTONS ===== */
@@ -943,10 +960,97 @@
   margin-bottom: 16px;
 }
 
+/* ===== MOBILE CARD LAYOUT ===== */
+
+/* By default: show table, hide cards */
+.desktop-table-view {
+  display: block;
+}
+
+.mobile-cards-view {
+  display: none;
+}
+
+/* Mobile card component styles */
+.stock-mobile-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.smc-header {
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.smc-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #006A4E;
+  line-height: 1.3;
+}
+
+.smc-sku {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.smc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.smc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.smc-row:last-child {
+  border-bottom: none;
+}
+
+.smc-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+
+.smc-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.smc-price {
+  font-size: 18px;
+  font-weight: 800;
+  color: #006A4E;
+  white-space: nowrap;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
+  .stock-page {
+    padding: 24px;
+  }
+
   .stock-stats {
     grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
   }
 
   .quick-entry-row {
@@ -956,41 +1060,350 @@
   }
 }
 
-@media (max-width: 640px) {
-  .stock-stats {
-    grid-template-columns: 1fr;
+@media (max-width: 768px) {
+  .stock-page {
+    padding: 16px;
+  }
+
+  /* Switch: hide table, show mobile cards */
+  .desktop-table-view {
+    display: none;
+  }
+
+  .mobile-cards-view {
+    display: block;
+    padding: 16px;
   }
 
   .page-header.premium-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 20px;
-    border-radius: 20px;
+    padding: 12px 16px !important;
+    border-radius: 12px !important;
+    flex-direction: row !important;
+    /* Force single line */
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: linear-gradient(135deg, #006A4E 0%, #004d39 100%) !important;
+    margin-bottom: 20px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .page-header.premium-header .page-title {
-    font-size: 22px;
+    font-size: 16px !important;
+    /* Smaller text to ensure single line fit */
+    white-space: nowrap !important;
+  }
+
+  .page-header.premium-header .page-subtitle {
+    display: none !important;
   }
 
   .header-actions {
-    width: 100%;
-    flex-wrap: wrap;
-    gap: 8px;
+    width: auto !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
   }
 
-  .btn-outline,
-  .btn-primary {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .btn-transfer-premium,
   .btn-export-premium {
-    flex: 1;
-    justify-content: center;
-    padding: 10px 12px;
-    font-size: 13px;
+    background: white !important;
+    color: #006A4E !important;
+    padding: 6px 14px !important;
+    border-radius: 30px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    border: none !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .btn-export-premium .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined' !important;
+    font-size: 20px !important;
+    display: block !important;
+    color: #006A4E !important;
+    font-weight: normal !important;
+  }
+
+  .stock-stats {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+    margin-bottom: 24px !important;
+    width: 100% !important;
+  }
+
+  .stat-card {
+    padding: 16px 12px !important;
+    flex-direction: column !important;
+    /* Stack icon and text for 2-column grid */
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    gap: 8px !important;
+    border-radius: 16px !important;
+    min-height: 130px !important;
+  }
+
+  .stat-icon {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .stat-info {
+    align-items: center !important;
+  }
+
+  .stat-label {
+    font-size: 10px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .stat-value {
+    font-size: 22px !important;
+  }
+
+  .stat-detail {
+    font-size: 11px !important;
+  }
+
+  /* --- TABLE TO CARDS CONVERSION --- */
+  .table-responsive {
+    overflow: visible;
+  }
+
+  .stock-table {
+    display: block;
+    border: none;
+    background: transparent;
+  }
+
+  .stock-table thead {
+    display: none;
+    /* Hide header on mobile */
+  }
+
+  .stock-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: transparent;
+  }
+
+  .stock-table tr {
+    display: block;
+    background: #ffffff !important;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  /* --- BASIC MOBILE CARD VIEW --- */
+  .stock-table tr {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff !important;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Product Name (Card Header) */
+  .stock-table td:first-child {
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+    display: block;
+    width: 100%;
+    text-align: left;
+  }
+
+  .stock-table td:first-child::before {
+    display: none !important;
+    /* Hide Product label on mobile card header */
+  }
+
+  .stock-table td .product-info-cell {
+    align-items: flex-start !important;
+    text-align: left !important;
+    width: 100% !important;
+  }
+
+  .stock-table td .product-name {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #006A4E !important;
+    line-height: 1.2;
+    display: block;
+  }
+
+  .stock-table td .product-sku {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* Other Fields (Size, Stock, Price) */
+  /* --- BASIC MOBILE CARD VIEW --- */
+  .stock-table tr {
+    display: block !important;
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 16px !important;
+    margin-bottom: 20px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Product Name (Card Header) */
+  .stock-table td:first-child {
+    display: block !important;
+    border-bottom: 2px solid #f1f5f9 !important;
+    padding: 0 0 12px 0 !important;
+    margin-bottom: 12px !important;
+    width: 100% !important;
+    text-align: left !important;
+  }
+
+  .no-data-cell {
+    display: block !important;
+    text-align: center !important;
+    padding: 40px !important;
+  }
+
+  .no-data-cell::before {
+    display: none !important;
+  }
+
+  /* --- BASIC MOBILE CARD VIEW --- */
+  .stock-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    background: transparent !important;
+  }
+
+  .stock-table tr {
+    display: block !important;
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 16px !important;
+    margin-bottom: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Product Name (Card Header) */
+  .stock-table td:first-child {
+    display: block !important;
+    border-bottom: 2px solid #f1f5f9 !important;
+    padding: 0 0 12px 0 !important;
+    margin-bottom: 12px !important;
+    width: 100% !important;
+    text-align: left !important;
+  }
+
+  .stock-table td:first-child::before {
+    display: none !important;
+  }
+
+  .stock-table td .product-info-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    width: 100% !important;
+    gap: 4px !important;
+  }
+
+  .stock-table td .product-name {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #006A4E !important;
+    line-height: 1.4 !important;
+    display: block !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    width: 100% !important;
+  }
+
+  .stock-table td .product-sku {
+    font-size: 11px !important;
+    color: #94a3b8 !important;
+    display: block !important;
+  }
+
+  /* Other Fields (Size, Stock, Price) */
+  .stock-table td:not(:first-child) {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 14px 0 !important;
+    border-bottom: 1px solid #f8fafc !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 12px !important;
+  }
+
+  .stock-table td:last-child {
+    border-bottom: none !important;
+  }
+
+  .stock-table td::before {
+    content: attr(data-label) !important;
+    font-weight: 700 !important;
+    font-size: 11px !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    flex-shrink: 0 !important;
+    text-align: left !important;
+  }
+
+  /* Values Aligned & Pushed to Right */
+  .stock-table td>span,
+  .stock-table td>.size-badge {
+    text-align: right !important;
+    margin-left: auto !important;
+    font-weight: 700 !important;
+  }
+
+  .stock-table td .size-badge {
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    background: #ecfdf5 !important;
+    color: #059669 !important;
+    border: 1px solid #10b981 !important;
+    display: inline-block !important;
+  }
+
+  .stock-value-text {
+    color: #0f172a !important;
+    font-size: 15px !important;
+  }
+
+  .price-value-text {
+    color: #006A4E !important;
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
   }
 
   .modal-row {
@@ -1004,16 +1417,10 @@
 
   .search-box {
     max-width: 100%;
-    min-width: 100%;
   }
 
-  .filter-select {
-    width: 100%;
-    min-width: unset;
-  }
-
+  .filter-select,
   .payment-toggle {
-    min-width: unset;
     width: 100%;
   }
 
@@ -1030,6 +1437,24 @@
   .quick-entry-action-group button {
     flex: 1;
     justify-content: center;
+  }
+
+  .export-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .stock-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .page-header.premium-header .page-title {
+    font-size: 20px;
+  }
+
+  .stock-table tr {
+    padding: 12px;
   }
 }
 

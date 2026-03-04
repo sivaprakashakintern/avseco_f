@@ -1499,3 +1499,355 @@ body,
     justify-content: center;
   }
 }
+
+/* ========== COMPREHENSIVE MOBILE & TABLET RESPONSIVE ========== */
+@media (max-width: 1024px) {
+
+  /* --- Container --- */
+  .production-container {
+    padding: 12px;
+  }
+
+  /* --- Page Header --- */
+  .page-header.premium-header {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 14px 16px;
+    border-radius: 16px;
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+
+  .page-header.premium-header h1.page-title {
+    font-size: 16px !important;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .page-header.premium-header .page-subtitle {
+    display: none;
+  }
+
+  .header-actions {
+    flex-direction: row !important;
+    width: auto !important;
+    gap: 8px;
+  }
+
+  .btn-export-premium {
+    padding: 8px 12px;
+    font-size: 11px;
+    gap: 4px;
+    border-radius: 20px;
+    white-space: nowrap;
+    height: 34px;
+  }
+
+  .btn-export-premium .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  /* --- Target Entry Section --- */
+  .target-entry-section {
+    padding: 14px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+
+  .target-entry-section h3 {
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .target-form {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px;
+  }
+
+  .form-group label {
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+
+  .form-select,
+  .form-input {
+    padding: 8px 10px;
+    font-size: 13px;
+    border-radius: 8px;
+    height: 38px;
+  }
+
+  .btn-add-target {
+    height: 38px;
+    font-size: 13px;
+    padding: 0 12px;
+    border-radius: 8px;
+    gap: 6px;
+  }
+
+  .btn-add-target .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  /* --- General Mobile utility --- */
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* --- Stats Cards: Total Target full width, others 50/50 --- */
+  .production-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .production-stats>.prod-stat-card:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .prod-stat-card {
+    padding: 12px 10px;
+    border-radius: 14px;
+    border-left-width: 5px !important;
+  }
+
+  .prod-stat-label {
+    font-size: 8px;
+    margin-bottom: 6px;
+  }
+
+  .prod-stat-number {
+    font-size: 20px;
+  }
+
+  .prod-stat-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 20px;
+  }
+
+  /* --- Search & Filter: Search hidden, Filters single line --- */
+  .search-filter-section {
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow-x: auto;
+  }
+
+  .search-box {
+    display: none !important;
+  }
+
+  .search-input {
+    height: 38px;
+    font-size: 13px;
+    padding: 0 12px 0 38px;
+    border-radius: 10px;
+  }
+
+  .search-icon {
+    left: 12px;
+    font-size: 18px;
+  }
+
+  .filter-box {
+    min-width: 0;
+    height: 38px;
+    flex: 1;
+    border-radius: 10px;
+  }
+
+  .filter-icon {
+    left: 10px;
+    font-size: 16px;
+  }
+
+  .filter-select {
+    font-size: 12px;
+    padding: 0 32px 0 34px;
+    background-position: right 8px center;
+  }
+
+  .clear-all-btn {
+    height: 38px;
+    padding: 0 12px;
+    font-size: 12px;
+    border-radius: 10px;
+    gap: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .clear-all-btn .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  /* --- Production Table Container --- */
+  .production-table-container {
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .production-table-header {
+    padding: 12px 14px;
+  }
+
+  .production-table-header h3 {
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  .production-table-header .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  /* Export button in table header */
+  .icon-btn.export-btn {
+    padding: 0 14px;
+    height: 34px;
+    font-size: 12px;
+    min-width: auto;
+    border-radius: 20px;
+    gap: 4px;
+  }
+
+  .icon-btn.export-btn .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  /* Table scroll */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .prod-table {
+    min-width: 700px;
+  }
+
+  .prod-table th {
+    padding: 10px 8px;
+    font-size: 10px;
+  }
+
+  .prod-table td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .prod-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+  }
+
+  .prod-icon .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  .prod-name {
+    font-size: 12px;
+  }
+
+  .prod-sku {
+    font-size: 10px;
+  }
+
+  .prod-progress {
+    min-width: 80px;
+    gap: 6px;
+  }
+
+  .prod-progress-bar {
+    height: 5px;
+  }
+
+  .prod-progress-text {
+    font-size: 10px;
+    min-width: 30px;
+  }
+
+  .prod-status {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .prod-status-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Action buttons in table */
+  .icon-btn-small {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+  }
+
+  .icon-btn-small .material-symbols-outlined {
+    font-size: 15px;
+  }
+
+  /* Table footer - All totals single line */
+  .prod-table-footer {
+    padding: 10px 14px;
+    overflow-x: auto;
+  }
+
+  .prod-total-info {
+    display: flex;
+    gap: 12px;
+    font-size: 10px;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .prod-total-info span {
+    white-space: nowrap;
+  }
+
+  /* --- Export Modal: Bottom sheet --- */
+  .report-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .report-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 20px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .report-modal-title {
+    font-size: 18px;
+  }
+
+  .format-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .format-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .report-modal-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .modal-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
+}
