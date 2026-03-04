@@ -1,3 +1,4 @@
+import React, { useState, useMemo } from 'react';
 import "./ExpenseReport.css";
 import { formatDate } from '../utils/dateUtils.js';
 
@@ -32,16 +33,30 @@ const ExpenseReport = () => {
     // ── Date range state ─────────────────────────────────────────────────────────
     const [dateRange, setDateRange] = useState(() => {
         const now = new Date();
-        return {
-            startDate: new Date(now.getFullYear(), now.getMonth(), 1),
-            endDate: new Date(now.getFullYear(), now.getMonth() + 1, 0),
-        };
+        // Default to showing last 30 days or at least this and last month to catch sample data (Feb)
+        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        return { startDate: start, endDate: end };
     });
     const [viewType, setViewType] = useState("monthly");
     const [selectedChart, setSelectedChart] = useState("category");
     const [showCustomRange, setShowCustomRange] = useState(false);
     const [customStart, setCustomStart] = useState("");
     const [customEnd, setCustomEnd] = useState("");
+    const [expandedExpenseId, setExpandedExpenseId] = useState(null);
+
+    // ── Toggle Expansion ──
+    const toggleExpenseExpansion = (id) => {
+        setExpandedExpenseId(expandedExpenseId === id ? null : id);
+    };
+
+    const handleDeleteExpense = (id) => {
+        alert("Delete feature coming soon!");
+    };
+
+    const handleEditExpense = (id) => {
+        alert("Edit feature coming soon!");
+    };
 
     // ── Preset helpers ───────────────────────────────────────────────────────────
     const handlePreset = (preset) => {
@@ -492,7 +507,7 @@ const ExpenseReport = () => {
                         {filteredExpenses.length} records · {formatPeriod()}
                     </span>
                 </div>
-                <div className="table-responsive">
+                <div className="table-responsive desktop-only-table">
                     <table className="stock-table">
                         <thead>
                             <tr>
@@ -542,6 +557,75 @@ const ExpenseReport = () => {
                             </tr>
                         </tfoot>
                     </table>
+                </div>
+
+                <div className="mobile-history-cards">
+                    {filteredExpenses.length > 0 ? (
+                        filteredExpenses.map((ex, index) => {
+                            const cfg = CATEGORY_CONFIG[ex.category] || { icon: "payments", color: "#006A4E" };
+                            const isExpanded = expandedExpenseId === ex.id;
+
+                            return (
+                                <div
+                                    key={ex.id}
+                                    className={`mobile-expense-card-minimal ${isExpanded ? 'expanded' : ''}`}
+                                    onClick={() => toggleExpenseExpansion(ex.id)}
+                                >
+                                    <div className="expense-card-main">
+                                        <div className="expense-sno">{index + 1}</div>
+                                        <div className="expense-category-lite">
+                                            <div className="category-marker" style={{ backgroundColor: cfg.color }} />
+                                            {ex.category}
+                                        </div>
+                                        <div className="expense-amount-lite">₹{Number(ex.amount).toLocaleString()}</div>
+                                        <span className="material-symbols-outlined expand-icon">
+                                            {isExpanded ? 'expand_less' : 'expand_more'}
+                                        </span>
+                                    </div>
+
+                                    {isExpanded && (
+                                        <div className="expense-card-details-expanded">
+                                            <div className="expanded-info-grid">
+                                                <div className="info-row">
+                                                    <span className="info-label">Description</span>
+                                                    <span className="info-value">{ex.description}</span>
+                                                </div>
+                                                <div className="info-row">
+                                                    <span className="info-label">Date</span>
+                                                    <span className="info-value">{formatDate(ex.date)}</span>
+                                                </div>
+                                                <div className="info-row">
+                                                    <span className="info-label">Payment</span>
+                                                    <span className="info-value">{ex.paymentMode}</span>
+                                                </div>
+                                            </div>
+                                            <div className="expense-action-buttons">
+                                                <button
+                                                    className="expense-mini-btn edit"
+                                                    onClick={(e) => { e.stopPropagation(); handleEditExpense(ex.id); }}
+                                                >
+                                                    <span className="material-symbols-outlined">edit</span>
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    className="expense-mini-btn delete"
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteExpense(ex.id); }}
+                                                >
+                                                    <span className="material-symbols-outlined">delete</span>
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="no-data-mobile">
+                            <span className="material-symbols-outlined">search_off</span>
+                            <p>No expense records found</p>
+                        </div>
+                    )}
                 </div>
             </div>
 

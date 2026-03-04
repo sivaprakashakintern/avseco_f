@@ -157,7 +157,7 @@ const Dashboard = () => {
 
   // Navigation handlers
   const handleStockClick = () => navigate("/stock");
-  const handleProductionClick = () => navigate("/production/plan");
+  const handleProductionClick = () => navigate("/production/daily");
   const handleExpensesClick = () => navigate("/expenses");
   const handleAttendanceClick = () => navigate("/attendance");
 

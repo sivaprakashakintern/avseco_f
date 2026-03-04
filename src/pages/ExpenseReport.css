@@ -704,50 +704,386 @@
     }
 }
 
+/* ---- Desktop/Mobile Toggle ---- */
+.desktop-only-table {
+    display: block !important;
+}
+
+.mobile-history-cards {
+    display: none !important;
+}
+
 @media (max-width: 1024px) {
-    .metrics-grid {
-        grid-template-columns: 1fr 1fr;
+    .desktop-only-table {
+        display: none !important;
+    }
+
+    .mobile-history-cards {
+        display: flex !important;
+        flex-direction: column;
+        gap: 12px;
+        padding: 0 4px 24px;
     }
 }
 
-@media (max-width: 768px) {
+/* =============================================
+   PREMIUM MOBILE REDESIGN (≤768px)
+   ============================================= */
+@media (max-width: 1024px) {
     .metrics-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 1024px) {
+    .stock-page {
+        padding: 12px;
+        background-color: #f4f9f7;
     }
 
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
+    /* ---- Premium Header ---- */
+    .page-header.premium-header {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 14px 16px;
+        border-radius: 18px;
+        margin-bottom: 14px;
+        text-align: left !important;
+    }
+
+    .page-header.premium-header .page-title {
+        font-size: 16px !important;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .page-header.premium-header .page-subtitle {
+        display: none;
     }
 
     .header-actions {
-        width: 100%;
+        width: auto !important;
     }
 
-    .btn-outline {
-        width: 100%;
-        justify-content: center;
+    .btn-export-premium {
+        padding: 7px 12px;
+        font-size: 11px;
+        border-radius: 20px;
+        gap: 5px;
     }
 
+    .btn-export-premium span {
+        font-size: 16px;
+    }
+
+    /* ---- Date Range Selector ---- */
     .date-range-selector {
-        padding: 16px;
+        padding: 14px;
+        margin-bottom: 14px;
+        border-radius: 16px;
     }
 
-    .custom-range-inputs {
-        flex-direction: column;
-        align-items: stretch;
+    .preset-buttons {
+        gap: 6px;
+        margin-bottom: 14px;
+    }
+
+    .preset-btn {
+        padding: 6px 12px;
+        font-size: 11px;
     }
 
     .selected-range {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+        gap: 10px;
+        padding-top: 10px;
+    }
+
+    .range-label {
+        font-size: 12px;
+    }
+
+    .range-value {
+        font-size: 13px;
     }
 
     .month-navigation {
-        margin-left: 0;
         width: 100%;
         justify-content: space-between;
-        margin-top: 12px;
+        margin-top: 5px;
+        background: #f8fafc;
+        padding: 6px 10px;
+        border-radius: 12px;
+        margin-left: 0;
+    }
+
+    .current-month {
+        font-size: 13px;
+        min-width: 0;
+    }
+
+    .month-nav-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* ---- Metrics Grid ---- */
+    .metrics-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .metric-card {
+        padding: 16px;
+        gap: 14px;
+        border-radius: 18px;
+    }
+
+    .metric-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+    }
+
+    .metric-icon span {
+        font-size: 20px;
+    }
+
+    .metric-value {
+        font-size: 20px;
+        margin: 2px 0;
+    }
+
+    .metric-label {
+        font-size: 9px;
+    }
+
+    .metric-sub {
+        font-size: 10px;
+    }
+
+    /* ---- Charts ---- */
+    .chart-selector {
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .chart-btn {
+        padding: 8px 14px;
+        font-size: 11px;
+        border-radius: 10px;
+    }
+
+    .chart-card {
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    .chart-header {
+        margin-bottom: 20px;
+    }
+
+    .chart-header h3 {
+        font-size: 14px;
+    }
+
+    .category-chart {
+        gap: 16px;
+    }
+
+    .category-name {
+        font-size: 12px;
+    }
+
+    .category-amount {
+        font-size: 12px;
+    }
+
+    .category-percentage,
+    .category-count {
+        font-size: 10px;
+    }
+
+    .bar-chart {
+        height: 220px;
+        gap: 12px;
+        padding-top: 30px;
+    }
+
+    .chart-group {
+        min-width: 50px;
+    }
+
+    .bar {
+        width: 28px;
+    }
+
+    /* ---- Minimal Transaction Cards (SNO, Category, Amount) ---- */
+    .desktop-only-table {
+        display: none !important;
+    }
+
+    .mobile-history-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 0 2px 20px;
+    }
+
+    .mobile-expense-card-minimal {
+        background: white;
+        border-radius: 14px;
+        border: 1px solid #eef5f0;
+        box-shadow: 0 4px 10px rgba(0, 80, 60, 0.04);
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .mobile-expense-card-minimal.expanded {
+        border-color: #10b981;
+        box-shadow: 0 8px 20px rgba(0, 106, 78, 0.08);
+    }
+
+    .expense-card-main {
+        display: grid;
+        grid-template-columns: 36px 1fr 100px 32px;
+        align-items: center;
+        padding: 14px;
+    }
+
+    .expense-sno {
+        font-size: 11px;
+        font-weight: 800;
+        color: #94a3b8;
+    }
+
+    .expense-category-lite {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .category-marker {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .expense-amount-lite {
+        text-align: right;
+        font-size: 14px;
+        font-weight: 800;
+        color: #006A4E;
+        padding-right: 8px;
+    }
+
+    .expand-icon {
+        color: #94a3b8;
+        font-size: 20px !important;
+        justify-self: end;
+    }
+
+    /* Expanded Details */
+    .expense-card-details-expanded {
+        padding: 0 14px 16px;
+        background: #fcfdfc;
+        border-top: 1px dashed #eef5f0;
+    }
+
+    .expanded-info-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 14px 0;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+    .info-label {
+        font-size: 10px;
+        font-weight: 800;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .info-value {
+        font-size: 12px;
+        color: #1e293b;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    .expense-action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 4px;
+    }
+
+    .expense-mini-btn {
+        flex: 1;
+        height: 40px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .expense-mini-btn.edit {
+        color: #3b82f6;
+        border-color: #dbeafe;
+        background: #eff6ff;
+    }
+
+    .expense-mini-btn.delete {
+        color: #ef4444;
+        border-color: #fee2e2;
+        background: #fef2f2;
+    }
+
+    .expense-mini-btn span {
+        font-size: 18px !important;
+    }
+
+    .no-data-mobile {
+        padding: 40px;
+        text-align: center;
+        background: white;
+        border-radius: 18px;
+        color: #94a3b8;
+    }
+}
+
+@media (max-width: 480px) {
+    .stock-page {
+        padding: 10px;
+    }
+
+    .metric-card {
+        padding: 14px;
+    }
+
+    .metric-value {
+        font-size: 18px;
     }
 }

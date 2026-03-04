@@ -1734,3 +1734,377 @@
     font-size: 12px;
   }
 }
+
+/* =====================================================
+   MOBILE PREMIUM REDESIGN (≤ 1024px)
+   Same pattern as Sales.css / ExpenseReport.css
+   ===================================================== */
+@media (max-width: 1024px) {
+
+  /* --- Page Layout --- */
+  .daily-production-page {
+    padding: 12px;
+  }
+
+  /* --- Page Header --- */
+  .page-header.premium-header {
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    padding: 14px 16px !important;
+    border-radius: 16px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .page-header.premium-header .page-title {
+    font-size: 18px !important;
+  }
+
+  .page-header.premium-header .page-subtitle {
+    display: none !important;
+  }
+
+  /* --- Stats Grid: 2x2 --- */
+  .production-stats-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 14px;
+  }
+
+  .stat-card {
+    flex-direction: column !important;
+    gap: 8px !important;
+    padding: 14px 12px !important;
+    border-radius: 14px !important;
+  }
+
+  .stat-icon {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+  }
+
+  .stat-value {
+    font-size: 20px !important;
+  }
+
+  .stat-label {
+    font-size: 11px !important;
+  }
+
+  .stat-breakdown {
+    display: none !important;
+  }
+
+  /* --- Main Grid → stack vertically --- */
+  .production-main-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  /* --- Entry Form Card --- */
+  .premium-card {
+    border-radius: 16px !important;
+  }
+
+  .card-header {
+    padding: 14px 16px !important;
+  }
+
+  .card-body {
+    padding: 14px 16px !important;
+  }
+
+  .entry-form {
+    gap: 12px !important;
+  }
+
+  .form-group label {
+    font-size: 11px !important;
+  }
+
+  .form-group select,
+  .form-group input {
+    height: 44px !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+  }
+
+  .date-btn-large {
+    height: 44px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+  }
+
+  .btn-add-production {
+    height: 48px !important;
+    font-size: 14px !important;
+    border-radius: 12px !important;
+  }
+
+  /* --- Analytics Card: controls in a row --- */
+  .card-header.summary-header {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+
+  .summary-controls {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .summary-controls>select {
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 40px !important;
+    font-size: 13px !important;
+  }
+
+  .date-summary-btn {
+    flex: 1 !important;
+    height: 40px !important;
+    font-size: 13px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .summary-grid {
+    gap: 10px !important;
+  }
+
+  .summary-total-banner {
+    padding: 12px 16px !important;
+    border-radius: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* --- History Section --- */
+  .history-section .premium-card {
+    overflow: visible !important;
+  }
+
+  .card-header.table-header {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+  }
+
+  .card-header.table-header h3 {
+    font-size: 14px !important;
+  }
+
+  .table-actions {
+    width: 100% !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+  }
+
+  .table-actions .search-box {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .table-actions select {
+    height: 40px !important;
+    border-radius: 10px !important;
+    border: 1px solid #d1e7d6 !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+    background: white !important;
+    color: #1e3a2f !important;
+    min-width: 110px !important;
+  }
+
+  /* HIDE desktop table on mobile */
+  .table-wrapper {
+    display: none !important;
+  }
+
+  /* SHOW mobile cards */
+  .mobile-production-cards {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 4px 16px;
+  }
+
+  /* Export Modal → bottom sheet */
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .export-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 24px 24px 0 0 !important;
+    margin: 0 !important;
+    padding-bottom: 8px;
+  }
+
+  .export-modal::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #d1e7d6;
+    border-radius: 4px;
+    margin: 12px auto 4px;
+  }
+
+  .export-modal-footer {
+    flex-direction: row !important;
+    gap: 10px !important;
+  }
+}
+
+/* =====================================================
+   MOBILE PRODUCTION CARD COMPONENT STYLES
+   ===================================================== */
+
+/* Hidden on desktop */
+.mobile-production-cards {
+  display: none;
+}
+
+.mobile-prod-card-item {
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #eef5f0;
+  box-shadow: 0 4px 10px rgba(0, 80, 60, 0.04);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.mobile-prod-card-item.expanded {
+  border-color: #2e8b66;
+  box-shadow: 0 8px 20px rgba(46, 139, 102, 0.08);
+}
+
+.prod-card-main {
+  display: grid;
+  grid-template-columns: 40px 1fr 90px 32px;
+  align-items: center;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.prod-card-sno {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.prod-card-size-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prod-size-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.prod-card-size-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a2f;
+  white-space: nowrap;
+}
+
+.prod-card-qty {
+  text-align: right;
+  font-size: 14px;
+  font-weight: 800;
+  color: #2e8b66;
+  padding-right: 6px;
+}
+
+.prod-card-expand-icon {
+  color: #94a3b8;
+  font-size: 20px !important;
+  justify-self: end;
+  transition: transform 0.2s;
+}
+
+.mobile-prod-card-item.expanded .prod-card-expand-icon {
+  transform: rotate(180deg);
+}
+
+/* Expanded Details */
+.prod-card-details {
+  padding: 0 14px 14px;
+  background: #fcfdfc;
+  border-top: 1px dashed #eef5f0;
+}
+
+.prod-card-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+.prod-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.prod-info-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.prod-info-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e3a2f;
+}
+
+.prod-card-delete-btn {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid #fee2e2;
+  background: #fef2f2;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.prod-card-delete-btn span {
+  font-size: 18px !important;
+}
+
+.no-prod-mobile {
+  padding: 40px 20px;
+  text-align: center;
+  background: white;
+  border-radius: 16px;
+  color: #94a3b8;
+}
+
+.no-prod-mobile span {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}

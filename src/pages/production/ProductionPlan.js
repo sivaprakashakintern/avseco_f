@@ -467,7 +467,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
         {/* ===== PREMIUM ANALYTICS HEADER ===== */}
         <div className="page-header premium-header">
           <div>
-            <h1 className="page-title">Production Plan - Areca Leaf Plates</h1>
+            <h1 className="page-title">Production Plan</h1>
             <p className="page-subtitle">Set targets and track daily production progress by size</p>
           </div>
           <div className="header-actions">
@@ -767,12 +767,115 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             </table>
           </div>
 
+          {/* ===== MOBILE CARD LAYOUT (shown on ≤1024px, hidden on desktop) ===== */}
+          <div className="mobile-prod-card">
+            {filteredData.length > 0 ? (
+              filteredData.map(item => {
+                const progress = ((item.producedQty / item.targetQty) * 100).toFixed(1);
+                return (
+                  <div className="mobile-card-row" key={`mob-${item.id}`}>
+                    {/* Card Header: icon + name + status badge */}
+                    <div className="mobile-card-header">
+                      <div className="mobile-card-title-group">
+                        <div className="mobile-card-icon">
+                          <span className="material-symbols-outlined">eco</span>
+                        </div>
+                        <div>
+                          <div className="mobile-card-name">{item.productName} — {item.productSize}</div>
+                          <div className="mobile-card-sku">{item.sku}</div>
+                        </div>
+                      </div>
+                      <span className={`mobile-card-status ${item.status}`}>
+                        <span className="mobile-card-status-dot"></span>
+                        {item.status === 'completed' ? 'Completed' :
+                          item.status === 'in-progress' ? 'In Progress' : 'Pending'}
+                      </span>
+                    </div>
+
+                    {/* Stats: Target / Produced / Balance */}
+                    <div className="mobile-card-stats">
+                      <div className="mobile-card-stat">
+                        <span className="mobile-card-stat-label">🎯 Target</span>
+                        <div className="mobile-card-stat-value">{item.targetQty.toLocaleString()}</div>
+                      </div>
+                      <div className="mobile-card-stat">
+                        <span className="mobile-card-stat-label">⚡ Produced</span>
+                        <div className="mobile-card-stat-value produced">{item.producedQty.toLocaleString()}</div>
+                      </div>
+                      <div className="mobile-card-stat">
+                        <span className="mobile-card-stat-label">⏳ Balance</span>
+                        <div className="mobile-card-stat-value balance">{item.remainingQty.toLocaleString()}</div>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mobile-card-progress">
+                      <div className="mobile-card-progress-header">
+                        <span className="mobile-card-progress-label">Progress</span>
+                        <span className="mobile-card-progress-pct">{progress}%</span>
+                      </div>
+                      <div className="mobile-progress-bar">
+                        <div className="mobile-progress-fill" style={{ width: `${progress}%` }}></div>
+                      </div>
+                    </div>
+
+                    {/* Inline Edit Produced */}
+                    {editingProduced === item.id && (
+                      <div className="mobile-edit-produced">
+                        <label>Update Produced:</label>
+                        <input
+                          type="number"
+                          defaultValue={item.producedQty}
+                          onChange={(e) => setManualUpdateQty({ ...manualUpdateQty, [item.id]: e.target.value })}
+                          min="0"
+                          max={item.targetQty}
+                          autoFocus
+                        />
+                        <button
+                          className="mobile-edit-save-btn"
+                          onClick={() => handleProducedUpdate(item.id, manualUpdateQty[item.id])}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="mobile-card-actions">
+                      <button
+                        className="mobile-card-action-btn edit"
+                        onClick={() => {
+                          setEditingProduced(item.id);
+                          setManualUpdateQty({ ...manualUpdateQty, [item.id]: item.producedQty });
+                        }}
+                      >
+                        <span className="material-symbols-outlined">edit_note</span>
+                        Update Qty
+                      </button>
+                      <button
+                        className="mobile-card-action-btn delete"
+                        onClick={() => handleDeleteTarget(item.id)}
+                      >
+                        <span className="material-symbols-outlined">delete</span>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="no-data" style={{ padding: '32px 16px', textAlign: 'center', color: '#8a9e94', fontSize: '13px', fontStyle: 'italic' }}>
+                No production targets set. Please add targets using the form above.
+              </div>
+            )}
+          </div>
+
           <div className="prod-table-footer">
             <div className="prod-total-info">
-              <span>Total Items: <strong>{filteredData.length}</strong></span>
-              <span className="total-target">Target: <strong>{totalTarget.toLocaleString()}</strong></span>
-              <span className="total-produced">Produced: <strong>{totalProduced.toLocaleString()}</strong></span>
-              <span className="total-balance">Balance: <strong>{totalRemaining.toLocaleString()}</strong></span>
+              <span>Item: <strong>{filteredData.length}</strong></span>
+              <span className="total-target">Tgt: <strong>{totalTarget.toLocaleString()}</strong></span>
+              <span className="total-produced">Prod: <strong>{totalProduced.toLocaleString()}</strong></span>
+              <span className="total-balance">Bal: <strong>{totalRemaining.toLocaleString()}</strong></span>
             </div>
           </div>
         </div>

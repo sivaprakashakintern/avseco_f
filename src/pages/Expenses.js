@@ -1,7 +1,18 @@
 import React, { useState } from "react";
 import { useAppContext } from '../context/AppContext.js';
 import { formatDate } from '../utils/dateUtils.js';
-import "./stock/Stock.css"; // Reuse Stock CSS for consistent theme
+import "./stock/Stock.css";
+import "./ExpenseReport.css";
+
+const CATEGORY_CONFIG = {
+    "Machine Maintenance": { color: "#006A4E", icon: "build" },
+    "Material": { color: "#3b82f6", icon: "inventory_2" },
+    "Salary": { color: "#d97706", icon: "payments" },
+    "Electricity": { color: "#db2777", icon: "bolt" },
+    "Transport": { color: "#16a34a", icon: "local_shipping" },
+    "Rent": { color: "#7c3aed", icon: "home" },
+    "Others": { color: "#8b5cf6", icon: "more_horiz" },
+};
 
 const Expenses = () => {
     // ── Global shared state ─────────────────────────────────────────────────
@@ -13,6 +24,20 @@ const Expenses = () => {
     } = useAppContext();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [expandedExpenseId, setExpandedExpenseId] = useState(null);
+
+    // ── Toggle Expansion ──
+    const toggleExpenseExpansion = (id) => {
+        setExpandedExpenseId(expandedExpenseId === id ? null : id);
+    };
+
+    const handleDeleteExpense = (id) => {
+        alert("Delete feature coming soon!");
+    };
+
+    const handleEditExpense = (id) => {
+        alert("Edit feature coming soon!");
+    };
 
     // Add Expense Form State
     const [newExpense, setNewExpense] = useState({
@@ -115,10 +140,11 @@ const Expenses = () => {
                     </h3>
                 </div>
 
-                <div className="table-responsive">
+                <div className="table-responsive desktop-only-table">
                     <table className="stock-table">
                         <thead>
                             <tr>
+                                <th>S.No</th>
                                 <th>Date & Time</th>
                                 <th>Category</th>
                                 <th>Description</th>
@@ -128,8 +154,9 @@ const Expenses = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {expenses.slice(0, 10).map((expense) => (
+                            {expenses.slice(0, 10).map((expense, index) => (
                                 <tr key={expense.id}>
+                                    <td style={{ fontWeight: '700', color: '#94a3b8' }}>{index + 1}</td>
                                     <td style={{ fontWeight: '500' }}>{formatDate(expense.date)}</td>
                                     <td>
                                         <span className={`status-badge ${expense.category === 'Machine Maintenance' ? 'low' :
@@ -167,6 +194,76 @@ const Expenses = () => {
                             ))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Cards View */}
+                <div className="mobile-history-cards">
+                    {expenses.length > 0 ? (
+                        expenses.slice(0, 10).map((ex, index) => {
+                            const cfg = CATEGORY_CONFIG[ex.category] || { icon: "payments", color: "#006A4E" };
+                            const isExpanded = expandedExpenseId === ex.id;
+
+                            return (
+                                <div
+                                    key={ex.id}
+                                    className={`mobile-expense-card-minimal ${isExpanded ? 'expanded' : ''}`}
+                                    onClick={() => toggleExpenseExpansion(ex.id)}
+                                >
+                                    <div className="expense-card-main">
+                                        <div className="expense-sno">{index + 1}</div>
+                                        <div className="expense-category-lite">
+                                            <div className="category-marker" style={{ backgroundColor: cfg.color }} />
+                                            {ex.category}
+                                        </div>
+                                        <div className="expense-amount-lite">₹{Number(ex.amount).toLocaleString()}</div>
+                                        <span className="material-symbols-outlined expand-icon">
+                                            {isExpanded ? 'expand_less' : 'expand_more'}
+                                        </span>
+                                    </div>
+
+                                    {isExpanded && (
+                                        <div className="expense-card-details-expanded">
+                                            <div className="expanded-info-grid">
+                                                <div className="info-row">
+                                                    <span className="info-label">Description</span>
+                                                    <span className="info-value">{ex.description}</span>
+                                                </div>
+                                                <div className="info-row">
+                                                    <span className="info-label">Date</span>
+                                                    <span className="info-value">{formatDate(ex.date)}</span>
+                                                </div>
+                                                <div className="info-row">
+                                                    <span className="info-label">Payment</span>
+                                                    <span className="info-value">{ex.paymentMode}</span>
+                                                </div>
+                                            </div>
+                                            <div className="expense-action-buttons">
+                                                <button
+                                                    className="expense-mini-btn edit"
+                                                    onClick={(e) => { e.stopPropagation(); handleEditExpense(ex.id); }}
+                                                >
+                                                    <span className="material-symbols-outlined">edit</span>
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    className="expense-mini-btn delete"
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteExpense(ex.id); }}
+                                                >
+                                                    <span className="material-symbols-outlined">delete</span>
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="no-data-mobile">
+                            <span className="material-symbols-outlined">search_off</span>
+                            <p>No expense records found</p>
+                        </div>
+                    )}
                 </div>
             </div>
 

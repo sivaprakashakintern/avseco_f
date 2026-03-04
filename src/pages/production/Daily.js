@@ -12,6 +12,18 @@ import './Daily.css';
 const Production = () => {
   const navigate = useNavigate();
 
+  // Colour mapping for sizes
+  const SIZE_COLOR = {
+    '6-inch': '#10b981',
+    '8-inch': '#3b82f6',
+    '10-inch': '#f59e0b',
+    '12-inch': '#8b5cf6',
+  };
+
+  // Mobile card expand state
+  const [expandedProdId, setExpandedProdId] = useState(null);
+  const toggleProdCard = (id) => setExpandedProdId(prev => prev === id ? null : id);
+
   // ========== STATE MANAGEMENT ==========
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFormat, setExportFormat] = useState('excel');
@@ -1059,6 +1071,72 @@ const Production = () => {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* ── Mobile Cards ── */}
+          <div className="mobile-production-cards">
+            {filteredHistory.length > 0 ? (
+              filteredHistory.map((item, index) => (
+                <div
+                  key={item.id}
+                  className={`mobile-prod-card-item ${expandedProdId === item.id ? 'expanded' : ''}`}
+                >
+                  {/* Compact row */}
+                  <div className="prod-card-main" onClick={() => toggleProdCard(item.id)}>
+                    <span className="prod-card-sno">#{index + 1}</span>
+                    <div className="prod-card-size-wrap">
+                      <span
+                        className="prod-size-dot"
+                        style={{ backgroundColor: SIZE_COLOR[item.size] || '#10b981' }}
+                      />
+                      <span className="prod-card-size-label">{item.size}</span>
+                    </div>
+                    <span className="prod-card-qty">{item.quantity.toLocaleString()} pcs</span>
+                    <span className="material-symbols-outlined prod-card-expand-icon">
+                      {expandedProdId === item.id ? 'expand_less' : 'expand_more'}
+                    </span>
+                  </div>
+
+                  {/* Expanded details */}
+                  {expandedProdId === item.id && (
+                    <div className="prod-card-details">
+                      <div className="prod-card-info-grid">
+                        <div className="prod-info-row">
+                          <span className="prod-info-label">Date</span>
+                          <span className="prod-info-value">{item.date}</span>
+                        </div>
+                        <div className="prod-info-row">
+                          <span className="prod-info-label">Time</span>
+                          <span className="prod-info-value">{item.time}</span>
+                        </div>
+                        <div className="prod-info-row">
+                          <span className="prod-info-label">Grade</span>
+                          <span className="prod-info-value">
+                            <span className={`grade-badge grade-${item.grade.toLowerCase()}`}>{item.grade}</span>
+                          </span>
+                        </div>
+                        <div className="prod-info-row">
+                          <span className="prod-info-label">Operator</span>
+                          <span className="prod-info-value">{item.operator}</span>
+                        </div>
+                      </div>
+                      <button
+                        className="prod-card-delete-btn"
+                        onClick={() => handleDeleteProduction(item.id)}
+                      >
+                        <span className="material-symbols-outlined">delete</span>
+                        Delete Record
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="no-prod-mobile">
+                <span className="material-symbols-outlined">inventory_2</span>
+                <p>No production records found</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

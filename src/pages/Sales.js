@@ -832,7 +832,7 @@ const Sales = () => {
             </div>
 
             <div className="stock-table-container">
-                <div className="table-responsive">
+                <div className="table-responsive desktop-only-table">
                     <table className="stock-table">
                         <thead>
                             <tr>
@@ -917,6 +917,60 @@ const Sales = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile History Cards */}
+                <div className="mobile-history-cards">
+                    {filteredTransactions.length > 0 ? (
+                        filteredTransactions.map((transaction) => (
+                            <div key={transaction.id} className="mobile-sale-card" onClick={() => handleViewBill(transaction)}>
+                                <div className="sale-card-header">
+                                    <div className="sale-date">
+                                        <span className="material-symbols-outlined">calendar_today</span>
+                                        {transaction.date?.split(', ')[0]}
+                                    </div>
+                                    <span className={`payment-badge ${transaction.paymentStatus?.toLowerCase()}`}>
+                                        {transaction.paymentStatus}
+                                    </span>
+                                </div>
+                                <div className="sale-card-body">
+                                    <div className="company-info">
+                                        <h4 className="sale-company">{transaction.company || 'Direct Sale'}</h4>
+                                        <p className="sale-customer">{transaction.customer || 'No Customer'}</p>
+                                    </div>
+                                    <div className="sale-details-grid">
+                                        <div className="detail-item">
+                                            <span className="detail-label">AMOUNT</span>
+                                            <span className="detail-value amount">₹{transaction.amount?.toLocaleString()}</span>
+                                        </div>
+                                        <div className="detail-item">
+                                            <span className="detail-label">QUANTITY</span>
+                                            <span className="detail-value">{Math.abs(transaction.quantity)} Pcs</span>
+                                        </div>
+                                    </div>
+                                    <div className="sale-product-line">
+                                        <span className="material-symbols-outlined">inventory_2</span>
+                                        {transaction.product}
+                                    </div>
+                                </div>
+                                <div className="sale-card-actions" onClick={(e) => e.stopPropagation()}>
+                                    <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id)}>
+                                        <span className="material-symbols-outlined">delete</span>
+                                        Delete
+                                    </button>
+                                    <button className="sale-action-btn view" onClick={() => handleViewBill(transaction)}>
+                                        <span className="material-symbols-outlined">receipt_long</span>
+                                        Bill
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="no-data-mobile">
+                            <span className="material-symbols-outlined">search_off</span>
+                            <p>No sales records found</p>
+                        </div>
+                    )}
                 </div>
                 <div className="table-footer">
                     <div className="pagination-info">
