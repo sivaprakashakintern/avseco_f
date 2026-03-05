@@ -33,7 +33,6 @@ const Production = () => {
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [exportYear, setExportYear] = useState(new Date().getFullYear().toString());
-  const [showYearPicker, setShowYearPicker] = useState(false);
 
   // Notification State
   const [showNotification, setShowNotification] = useState(false);
@@ -44,7 +43,6 @@ const Production = () => {
   const [historySearch, setHistorySearch] = useState('');
   const [historySizeFilter, setHistorySizeFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Summary view state
   const [summaryView, setSummaryView] = useState('daily'); // 'daily', 'weekly', 'monthly'
@@ -329,15 +327,7 @@ const Production = () => {
     }
   };
 
-  const handleYearSelect = (year) => {
-    setExportYear(year);
-    setShowYearPicker(false);
-  };
 
-  const handleDateSelect = (date) => {
-    setSelectedDate(date);
-    setShowDatePicker(false);
-  };
 
   const handleProductionDateSelect = (date) => {
     setProductionDate(date);
@@ -349,9 +339,7 @@ const Production = () => {
     setShowSummaryDatePicker(false);
   };
 
-  const clearDateFilter = () => {
-    setSelectedDate(null);
-  };
+
 
   const getFilteredDataForExport = () => {
     switch (exportPeriod) {
