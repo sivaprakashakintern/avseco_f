@@ -5,17 +5,16 @@ import Sidebar from "./components/layout/Sidebar.js";
 import Topbar from "./components/layout/Topbar.js";
 import ScrollToTop from "./components/layout/ScrollToTop.js";
 import Dashboard from "./dashboard/Dashboard.js";
-import ProductList from "./pages/ProductList.js";
-import Employees from "./pages/Employees.js";
-import AttendanceLog from "./pages/AttendanceLog.js";
-import AttendanceReport from "./pages/AttendanceReport.js";
-import ProfilePage from "./pages/ProfilePage.js";
-import SettingsPage from "./pages/SettingsPage.js";
+import ProductList from "./pages/products/ProductList.js";
+import Employees from "./pages/employee/Employees.js";
+import AttendanceLog from "./pages/attendance/AttendanceLog.js";
+import AttendanceReport from "./pages/attendance/AttendanceReport.js";
+import ProfilePage from "./pages/profile/ProfilePage.js";
 
 // Stock Pages
 import StockOverview from "./pages/stock/StockOverview.js";
-import Expenses from "./pages/Expenses.js";
-import ExpenseReport from "./pages/ExpenseReport.js";
+import Expenses from "./pages/expenses/Expenses.js";
+import ExpenseReport from "./pages/expenses/ExpenseReport.js";
 import StockTransfer from "./pages/stock/StockTransfer.js";
 import LowStockAlert from "./pages/stock/LowStockAlert.js";
 
@@ -24,7 +23,7 @@ import ProductionPlan from "./pages/production/ProductionPlan.js";
 import DailyProduction from "./pages/production/Daily.js";
 
 // Auth Pages
-import Login from "./pages/Login.js";
+import Login from "./pages/login/Login.js";
 
 // Report Pages
 import StockReport from "./pages/reports/StockReport.js";
@@ -37,7 +36,7 @@ import CheckPage from "./pages/CheckPage.js";
 // Client Pages
 import Clients from "./pages/clients/Clients.js";
 
-import Sales from "./pages/Sales.js";
+import Sales from "./pages/sales/Sales.js";
 import Help from "./pages/Help.js";
 
 // Protected Route Component
@@ -128,8 +127,7 @@ const App = () => {
           {/* Check System Status */}
           <Route path="/check" element={<ProtectedRoute><AppLayout><CheckPage /></AppLayout></ProtectedRoute>} />
 
-          {/* Settings */}
-          <Route path="/settings" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
+
 
           {/* Help */}
           <Route path="/help" element={<ProtectedRoute><AppLayout><Help /></AppLayout></ProtectedRoute>} />

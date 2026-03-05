@@ -630,11 +630,12 @@ td.text-center {
 }
 
 .att-emp-name {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   color: #0f172a;
   display: block;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
+  max-width: 220px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -649,6 +650,11 @@ td.text-center {
   text-overflow: ellipsis;
 }
 
+/* Employee column — always has a minimum width */
+.att-td-name {
+  min-width: 160px;
+}
+
 /* Department Badge */
 .att-dept-badge {
   display: inline-block;
@@ -659,6 +665,83 @@ td.text-center {
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* ── Mobile List Layout ───────────────────────────────────── */
+.att-mobile-list {
+  padding: 0;
+}
+
+.att-mobile-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  background: white;
+}
+
+.att-mobile-row:last-child {
+  border-bottom: none;
+}
+
+.att-mobile-row:active {
+  background: #f8fafc;
+}
+
+.att-mobile-sno {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  min-width: 26px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.att-mobile-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.att-mobile-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.att-mobile-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.att-mobile-dept {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.att-mobile-extra {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #f59e0b;
+  margin-top: 1px;
+}
+
+.att-mobile-toggle {
+  flex-shrink: 0;
 }
 
 /* Status Badge */
@@ -845,8 +928,9 @@ td.text-center {
 }
 
 .att-page-btn {
-  width: 36px;
-  height: 36px;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 4px;
   border-radius: 9px;
   border: 1.5px solid var(--att-border);
   background: white;
@@ -858,6 +942,14 @@ td.text-center {
   align-items: center;
   justify-content: center;
   transition: var(--att-transition);
+}
+
+.att-page-btn.nav-btn {
+  padding: 0 16px;
+  width: auto;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
 }
 
 .att-page-btn:hover:not(:disabled) {
@@ -1427,39 +1519,90 @@ td.text-center {
     justify-content: center;
   }
 
-  /* Table: only name + actions on mobile */
-  .att-table th:nth-child(2),
-  .att-table td:nth-child(2),
+  /* Fit all columns on one screen on mobile */
+  .att-table-wrap {
+    overflow-x: hidden;
+  }
+
+  .att-table {
+    width: 100%;
+    min-width: unset;
+    table-layout: fixed;
+  }
+
+  /* Hide only the standalone Department badge column (col 3) on mobile
+     — dept is already shown under the employee name */
   .att-table th:nth-child(3),
   .att-table td:nth-child(3) {
     display: none;
   }
 
+  /* Column widths to fit entire screen */
+  .att-table th:nth-child(1),
+  .att-table td:nth-child(1) {
+    width: 36px;
+  }
+
+  .att-td-name {
+    width: auto;
+    min-width: 0;
+  }
+
+  .att-table th:last-child,
+  .att-table td:last-child {
+    width: 100px;
+  }
+
   /* Table row tighter padding */
   .att-table th,
   .att-table-row td {
-    padding: 12px 14px;
+    padding: 10px 8px;
   }
 
-  /* Employee cell: show compact avatar on mobile */
+  .att-table th:nth-child(1),
+  .att-table td:nth-child(1) {
+    padding: 10px 4px;
+    text-align: center;
+  }
+
+  /* Employee cell: compact but visible avatar and name */
   .att-table-row .att-avatar {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
-    font-size: 12px;
+    font-size: 13px;
+    flex-shrink: 0;
   }
 
   .att-emp-name {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    max-width: none;
   }
 
   .att-emp-dept {
-    display: none;
+    display: block;
+    font-size: 11px;
+    opacity: 0.8;
+    white-space: normal;
+  }
+
+  .att-td-name {
+    min-width: 120px;
+    max-width: 200px;
   }
 
   .att-table-row .att-emp-cell {
-    gap: 0;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .att-emp-info {
+    min-width: 0;
+    flex: 1;
   }
 
   /* Smaller toggle buttons */
@@ -1674,8 +1817,13 @@ td.text-center {
 
   /* Pagination buttons */
   .att-page-btn {
-    width: 30px;
-    height: 30px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 4px;
     font-size: 12px;
+  }
+
+  .att-page-btn.nav-btn {
+    padding: 0 10px;
   }
 }

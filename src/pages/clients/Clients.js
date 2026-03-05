@@ -423,15 +423,8 @@ const Clients = () => {
         </div>
       </div>
 
-      {/* ===== BREADCRUMBS & VIEW TOGGLE ===== */}
-      <div className="subheader">
-        <div className="breadcrumb">
-          <span className="breadcrumb-link" onClick={() => navigate("/")}>
-            Home
-          </span>
-          <span className="breadcrumb-separator">/</span>
-          <span className="breadcrumb-current">Clients</span>
-        </div>
+      {/* Subheader: hidden on mobile via .desktop-only */}
+      <div className="subheader desktop-only">
         <div className="view-toggle">
           <button
             className={`view-btn ${viewMode === "list" ? "active" : ""}`}
@@ -468,7 +461,7 @@ const Clients = () => {
           )}
         </div>
 
-        <div className="filter-actions">
+        <div className="filter-actions desktop-only">
           <button className="btn-export-premium" onClick={handleExport}>
             <span className="material-symbols-outlined">
               {exportLoading ? "hourglass_empty" : "download"}
@@ -493,7 +486,8 @@ const Clients = () => {
       {/* ===== LIST VIEW ===== */}
       {viewMode === "list" && (
         <div className="table-container">
-          <div className="table-responsive">
+          {/* ── Desktop Table (hidden on mobile) ── */}
+          <div className="table-responsive desktop-table-view">
             <table className="clients-table">
               <thead>
                 <tr>
@@ -581,7 +575,44 @@ const Clients = () => {
             </table>
           </div>
 
-          {/* Pagination */}
+          {/* ── Mobile Client Cards (shown on mobile only) ── */}
+          <div className="mobile-client-cards">
+            {paginatedClients.length > 0 ? (
+              paginatedClients.map((client, index) => (
+                <div key={client.id} className="mobile-client-card" onClick={() => handleViewClient(client)}>
+                  <span className="mobile-client-sno">#{startIndex + index + 1}</span>
+                  <div className="mobile-client-icon">
+                    <span className="material-symbols-outlined">business</span>
+                  </div>
+                  <div className="mobile-client-info">
+                    <p className="mobile-client-name">{client.companyName}</p>
+                    <span className="mobile-client-contact">{client.contactPerson}</span>
+                    <span className="mobile-client-phone">{client.phone}</span>
+                  </div>
+                  <div className="mobile-client-orders">
+                    <span className="mobile-orders-count">{client.totalOrders}</span>
+                    <span className="mobile-orders-label">Orders</span>
+                  </div>
+                  <div className="mobile-client-actions" onClick={(e) => e.stopPropagation()}>
+                    <button className="mobile-client-edit" onClick={(e) => { e.stopPropagation(); handleEditClient(client); }}>
+                      <span className="material-symbols-outlined">edit</span>
+                    </button>
+                    <button className="mobile-client-delete" onClick={(e) => { e.stopPropagation(); handleDeleteClient(client); }}>
+                      <span className="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="mobile-client-empty">
+                <span className="material-symbols-outlined">groups_off</span>
+                <p>No clients found</p>
+                <button className="btn-transfer-premium" onClick={handleAddClient}>
+                  <span className="material-symbols-outlined">person_add</span> Add Client
+                </button>
+              </div>
+            )}
+          </div>
           {filteredClients.length > 0 && (
             <div className="pagination">
               <p className="pagination-info">
@@ -590,7 +621,7 @@ const Clients = () => {
               </p>
               <div className="pagination-controls">
                 <button
-                  className="pagination-btn"
+                  className="pagination-btn nav-btn"
                   onClick={goToPreviousPage}
                   disabled={currentPage === 1}
                 >
@@ -618,7 +649,7 @@ const Clients = () => {
                   );
                 })}
                 <button
-                  className="pagination-btn"
+                  className="pagination-btn nav-btn"
                   onClick={goToNextPage}
                   disabled={currentPage === totalPages || totalPages === 0}
                 >

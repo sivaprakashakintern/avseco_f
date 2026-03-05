@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { useAppContext } from '../context/AppContext.js';
-import { formatDate } from '../utils/dateUtils.js';
-import "./stock/Stock.css";
+import { useAppContext } from '../../context/AppContext.js';
+import { formatDate } from '../../utils/dateUtils.js';
+import "../stock/Stock.css";
 import "./ExpenseReport.css";
 
 const CATEGORY_CONFIG = {

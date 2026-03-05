@@ -955,6 +955,10 @@ body,
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .prod-stat-card:nth-child(1) {
+    grid-column: span 2;
+  }
+
   .target-form {
     grid-template-columns: 1fr 1fr !important;
   }
@@ -999,9 +1003,13 @@ body,
 
   /* Stats in a single line */
   .production-stats {
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(2, 1fr) !important;
     gap: 8px !important;
     margin-bottom: 15px !important;
+  }
+
+  .prod-stat-card:nth-child(1) {
+    grid-column: span 2 !important;
   }
 
   .prod-stat-card {

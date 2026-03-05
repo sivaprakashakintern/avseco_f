@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/avs.png";
-import bgImage from "../assets/bg1.png";
+import logo from "../../assets/avs.png";
+import bgImage from "../../assets/bg1.png";
 import "./Login.css";
 
 const Login = () => {
@@ -25,7 +25,7 @@ const Login = () => {
             if (username === envUsername && password === envPassword) {
                 localStorage.setItem("isLoggedIn", "true"); // Save login status
                 setIsLoading(false);
-                navigate("/stock");
+                navigate("/dashboard"); // Go to dashboard after login
             } else {
                 setIsLoading(false);
                 setError("Invalid Admin Credentials");

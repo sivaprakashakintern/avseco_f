@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppContext } from '../context/AppContext.js';
+import { useAppContext } from '../../context/AppContext.js';
 import "./Employees.css";
-import "../dashboard/Dashboard.css"; // Reuse dashboard header styles
+import "../../dashboard/Dashboard.css"; // Reuse dashboard header styles
 
-import { formatDate } from '../utils/dateUtils.js';
+import { formatDate } from '../../utils/dateUtils.js';
 
 const Employees = () => {
   const navigate = useNavigate();
@@ -356,16 +356,7 @@ const Employees = () => {
       </div>
 
 
-      {/* ===== BREADCRUMBS & VIEW TOGGLE ===== */}
-      <div className="employees-subheader">
-        <div className="breadcrumb">
-          <span className="breadcrumb-link" onClick={() => navigate("/")}>
-            Dashboard
-          </span>
-          <span className="breadcrumb-separator">/</span>
-          <span className="breadcrumb-current">Employees</span>
-        </div>
-      </div>
+
 
       {/* ===== SEARCH AND FILTERS (UPDATED) ===== */}
       <div className="filters-section">
@@ -459,98 +450,133 @@ const Employees = () => {
       </div >
 
       {/* ===== LIST VIEW ===== */}
-      {
-        viewMode === "list" && (
-          <div className="employee-table-container">
-            <div className="table-responsive">
-              <table className="employee-table">
-                <thead>
-                  <tr>
-                    <th className="sticky-col-no">S.No</th>
-                    <th className="sticky-col">Employee</th>
-                    <th className="col-dept">Department</th>
-                    <th className="col-contact">Contact</th>
-                    <th className="col-date">Join Date</th>
-                    <th className="col-actions">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employeesToDisplay.length > 0 ? (
-                    employeesToDisplay.map((employee, index) => (
-                      <tr
-                        key={employee.id}
-                        className="employee-row clickable-row"
-                        onClick={() => handleViewEmployee(employee)}
-                        style={{ cursor: "pointer" }}
-                        title="Click to view full employee details"
-                      >
-                        <td className="sticky-col-no">{startIndex + index + 1}</td>
-                        <td className="sticky-col">
-                          <div className="employee-info">
-                            <div className="employee-avatar">
-                              {employee.avatar ? (
-                                <div
-                                  className="avatar-image"
-                                  style={{ backgroundImage: `url("${employee.avatar}")` }}
-                                ></div>
-                              ) : (
-                                <div className="avatar-initials">{getInitials(employee.name)}</div>
-                              )}
-                            </div>
-                            <div className="employee-details-text">
-                              <p className="employee-name" title={employee.name}>{employee.name}</p>
-                              <p className="employee-email" title={employee.email}>{employee.email}</p>
-                            </div>
+      {viewMode === "list" && (
+        <div className="employee-table-container">
+          {/* ── Desktop Table ── */}
+          <div className="table-responsive desktop-table-view">
+            <table className="employee-table">
+              <thead>
+                <tr>
+                  <th className="sticky-col-no">S.No</th>
+                  <th className="sticky-col">Employee</th>
+                  <th className="col-dept">Department</th>
+                  <th className="col-contact">Contact</th>
+                  <th className="col-date">Join Date</th>
+                  <th className="col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {employeesToDisplay.length > 0 ? (
+                  employeesToDisplay.map((employee, index) => (
+                    <tr
+                      key={employee.id}
+                      className="employee-row clickable-row"
+                      onClick={() => handleViewEmployee(employee)}
+                      style={{ cursor: "pointer" }}
+                      title="Click to view full employee details"
+                    >
+                      <td className="sticky-col-no">{startIndex + index + 1}</td>
+                      <td className="sticky-col">
+                        <div className="employee-info">
+                          <div className="employee-avatar">
+                            {employee.avatar ? (
+                              <div className="avatar-image" style={{ backgroundImage: `url("${employee.avatar}")` }}></div>
+                            ) : (
+                              <div className="avatar-initials">{getInitials(employee.name)}</div>
+                            )}
                           </div>
-                        </td>
-                        <td className="col-dept">
-                          <span className="department-badge" title={employee.department}>{employee.department}</span>
-                        </td>
-                        <td className="col-contact">
-                          <p className="employee-phone">{employee.phone}</p>
-                        </td>
-                        <td className="col-date">
-                          {formatDate(employee.joinDate)}
-                        </td>
-                        <td className="col-actions" onClick={(e) => e.stopPropagation()}>
-                          <div className="action-buttons">
-
-                            <button
-                              className="action-btn delete"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteEmployee(employee);
-                              }}
-                              title="Delete Employee"
-                            >
-                              <span className="material-symbols-outlined">delete</span>
-                            </button>
+                          <div className="employee-details-text">
+                            <p className="employee-name" title={employee.name}>{employee.name}</p>
+                            <p className="employee-email" title={employee.email}>{employee.email}</p>
                           </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="no-data">
-                        <div className="empty-state">
-                          <span className="material-symbols-outlined empty-icon">group_off</span>
-                          <h4>No employees found</h4>
-                          <p>Try adjusting your filters or add a new employee</p>
-                          <button className="add-employee-btn" onClick={handleAddEmployee}>
-                            Add Employee
+                        </div>
+                      </td>
+                      <td className="col-dept">
+                        <span className="department-badge" title={employee.department}>{employee.department}</span>
+                      </td>
+                      <td className="col-contact">
+                        <p className="employee-phone">{employee.phone}</p>
+                      </td>
+                      <td className="col-date">{formatDate(employee.joinDate)}</td>
+                      <td className="col-actions" onClick={(e) => e.stopPropagation()}>
+                        <div className="action-buttons">
+                          <button
+                            className="action-btn delete"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteEmployee(employee); }}
+                            title="Delete Employee"
+                          >
+                            <span className="material-symbols-outlined">delete</span>
                           </button>
                         </div>
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="no-data">
+                      <div className="empty-state">
+                        <span className="material-symbols-outlined empty-icon">group_off</span>
+                        <h4>No employees found</h4>
+                        <p>Try adjusting your filters or add a new employee</p>
+                        <button className="add-employee-btn" onClick={handleAddEmployee}>Add Employee</button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        )
-      }
+
+          {/* ── Mobile Card List ── */}
+          <div className="mobile-employee-cards">
+            {employeesToDisplay.length > 0 ? (
+              employeesToDisplay.map((employee, index) => (
+                <div
+                  key={employee.id}
+                  className="mobile-emp-card"
+                  onClick={() => handleViewEmployee(employee)}
+                >
+                  {/* Serial number */}
+                  <span className="mobile-emp-sno">#{index + 1}</span>
+
+                  {/* Avatar */}
+                  <div className="mobile-emp-avatar">
+                    {employee.avatar ? (
+                      <div className="avatar-image" style={{ backgroundImage: `url("${employee.avatar}")`, width: '100%', height: '100%', borderRadius: '50%', backgroundSize: 'cover' }}></div>
+                    ) : (
+                      <div className="mobile-emp-initials">{getInitials(employee.name)}</div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="mobile-emp-info">
+                    <p className="mobile-emp-name">{employee.name}</p>
+                    <span className="mobile-emp-dept">{employee.department}</span>
+                  </div>
+
+                  {/* Phone */}
+                  <span className="mobile-emp-phone">{employee.phone}</span>
+
+                  {/* Delete */}
+                  <button
+                    className="mobile-emp-delete"
+                    onClick={(e) => { e.stopPropagation(); handleDeleteEmployee(employee); }}
+                    title="Delete"
+                  >
+                    <span className="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="mobile-emp-empty">
+                <span className="material-symbols-outlined">group_off</span>
+                <p>No employees found</p>
+                <button className="add-employee-btn" onClick={handleAddEmployee}>Add Employee</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ===== GRID VIEW ===== */}
       {viewMode === "grid" && (

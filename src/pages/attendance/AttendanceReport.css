@@ -682,15 +682,12 @@
     /* ── Header: Title separate from Buttons ── */
     .ar-banner-header {
         background: #006A4E;
-        padding: 20px 16px;
-        border-radius: 16px;
-        text-align: center;
         padding: 24px 16px;
         border-radius: 20px;
         text-align: center;
         flex-direction: column;
-        gap: 6px;
-        margin-bottom: 0px;
+        gap: 16px;
+        margin-bottom: 12px;
         box-shadow: 0 10px 30px rgba(0, 106, 78, 0.15);
     }
 
@@ -699,150 +696,108 @@
     }
 
     .ar-banner-title {
-        font-size: 20px;
-        letter-spacing: -0.3px;
+        font-size: 22px;
+        letter-spacing: -0.5px;
     }
 
     .ar-banner-subtitle {
-        font-size: 12px;
+        font-size: 13px;
+        opacity: 0.9;
     }
 
     .ar-banner-actions {
         width: 100%;
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        /* Equal side-by-side */
-        gap: 8px;
-        margin-top: 10px;
-        background: rgba(255, 255, 255, 0.12);
-        padding: 8px;
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(12px);
-    }
-
-    .range-select-trigger,
-    .ar-banner-btn {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 44px;
-        font-size: 11px;
-        border-radius: 10px;
-        border: none;
-        background: white;
-        color: #006A4E;
-        font-weight: 800;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        padding: 0 6px;
-        white-space: nowrap;
-    }
-
-    .ar-banner-btn {
-        background: #f0fdf4 !important;
-        border: none !important;
-    }
-
-    .ar-banner-btn .material-symbols-outlined {
-        font-size: 18px;
-        color: #006A4E;
-        margin-right: 4px;
+        display: block;
+        /* Export button will be full width via inline style or here */
+        margin-top: 4px;
     }
 
     /* ── Filters card ── */
     .filters-card {
-        flex-direction: column;
-        gap: 16px;
-        padding: 16px;
-        align-items: stretch;
+        flex-direction: row;
+        gap: 8px;
+        padding: 12px;
+        background: #ffffff;
         border-radius: 16px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        align-items: stretch;
     }
 
     .filter-item {
-        flex: none;
+        flex: 1;
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .filter-label {
+        font-size: 9px;
+        color: #94a3b8;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        margin-left: 2px;
+        text-transform: uppercase;
+        width: auto;
+    }
+
+    /* Year dropdown mobile */
+    .report-select {
+        height: 48px;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        color: #0f172a;
+        font-size: 15px;
+        font-weight: 700;
+        padding: 0 34px 0 12px;
+        display: flex;
         align-items: center;
-        gap: 12px;
+        justify-content: flex-start;
+        position: relative;
         min-width: 0;
         width: 100%;
     }
 
-    .filter-label {
-        width: 55px;
-        /* Enough for "Month:" */
-        min-width: 55px;
-        font-size: 11px;
-        font-weight: 800;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0;
-        /* Remove bottom margin from desktop */
+    .report-select .select-arrow {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+        color: #94a3b8;
+        pointer-events: none;
     }
 
-    /* Year dropdown */
-    .report-select {
-        flex: 1;
-        min-width: 0;
-        height: 48px;
-        font-size: 15px;
-        font-weight: 700;
-        border-radius: 12px;
-        border: 1.5px solid #b7e4cf;
-        background: #f0fdf4;
-        color: #006A4E;
-        padding: 0 16px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        box-shadow: 0 2px 4px rgba(0, 106, 78, 0.04);
-    }
-
-    /* Month nav group */
+    /* Month nav group mobile */
     .month-nav-group {
-        flex: 1;
-        width: auto;
+        height: 48px;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 2px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        border-radius: 12px;
-        border: 1.5px solid #e2e8f0;
-        background: #f8fafc;
-        padding: 4px;
-        height: 48px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
     }
 
     .nav-arrow-btn {
-        width: 34px;
-        height: 34px;
+        width: 32px;
+        height: 32px;
+        background: #ffffff;
         border-radius: 8px;
-        border: none;
-        background: white;
-        color: #006A4E;
-        flex-shrink: 0;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
     }
 
     .month-display-select {
         flex: 1;
         font-size: 14px;
-        font-weight: 700;
-        color: #006A4E;
-        text-align: center;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        min-width: 0;
+        color: #0f172a;
+        padding: 0 4px;
     }
 
-    /* ── Status legend: Single line compact ── */
     /* ── Legend: Two columns ── */
     .status-legend {
         display: grid;
@@ -854,6 +809,24 @@
         background: #ffffff;
         border: 1px solid #e2e8f0;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .legend-item {
+        font-size: 11px;
+        padding: 10px 12px;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .legend-box {
+        width: 22px;
+        height: 22px;
+        font-size: 9px;
+        border-radius: 6px;
     }
 
     .status-legend::-webkit-scrollbar {

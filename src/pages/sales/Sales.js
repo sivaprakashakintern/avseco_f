@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAppContext } from '../context/AppContext.js';
+import { useAppContext } from '../../context/AppContext.js';
 import './Sales.css';
 
 const PRODUCTS_LIST = [

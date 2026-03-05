@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import "./ProductList.css";
 
 // Import local plate images - ONLY 4 PLATES
-import plate6Img from "../assets/plate6.png";
-import plate8Img from "../assets/plate8.png";
-import plate10Img from "../assets/plate10.png";
-import plate12Img from "../assets/plate12.png";
+import plate6Img from "../../assets/plate6.png";
+import plate8Img from "../../assets/plate8.png";
+import plate10Img from "../../assets/plate10.png";
+import plate12Img from "../../assets/plate12.png";
 
 const ProductList = () => {
   const [viewMode, setViewMode] = useState("grid");

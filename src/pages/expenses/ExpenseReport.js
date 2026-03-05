@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import "./ExpenseReport.css";
-import { formatDate } from '../utils/dateUtils.js';
+import { formatDate } from '../../utils/dateUtils.js';
 
 // ── Category config: colour palette for all 7 categories ──────────────────────
 const CATEGORY_CONFIG = {

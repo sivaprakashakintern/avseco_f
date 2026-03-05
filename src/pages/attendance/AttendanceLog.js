@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useAppContext } from '../context/AppContext.js';
-import { formatDate } from '../utils/dateUtils.js';
+import { useAppContext } from '../../context/AppContext.js';
+import { formatDate } from '../../utils/dateUtils.js';
 import './AttendanceLog.css';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const toDateKey = (date) => date.toISOString().split("T")[0];
@@ -357,104 +357,105 @@ const AttendanceLog = () => {
           </div>
         </div>
 
-        <div className="att-table-wrap">
-          <table className="att-table">
-            <thead>
-              <tr>
-                <th className="text-center" style={{ width: '50px' }}>S.NO</th>
-                <th>Employee</th>
-                <th>Department</th>
-                <th>Status</th>
-                <th className="text-center">Mark Attendance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedEmployees.length > 0 ? (
-                paginatedEmployees.map((emp, index) => (
-                  <tr key={emp.id} className="att-table-row">
-                    <td className="text-center" style={{ color: '#64748b', fontWeight: '600', fontSize: '13px' }}>
-                      {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
-                    </td>
-                    {/* Employee Name */}
-                    <td className="att-td-name">
-                      <div className="att-emp-cell">
-                        <div className={`att-avatar att-avatar-${emp.status}`}>
-                          {getInitials(emp.name)}
-                        </div>
-                        <div className="att-emp-info">
-                          <span className="att-emp-name">{emp.name}</span>
-                          <span className="att-emp-dept">{emp.department}</span>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Department Badge */}
-                    <td>
-                      <span className="att-dept-badge">{emp.department}</span>
-                    </td>
-
-                    {/* Status */}
-                    <td>
-                      <div className="att-status-cell">
-                        <span className={`att-status-badge att-status-${emp.status}`}>
-                          <span className="att-status-dot"></span>
-                          {getStatusText(emp.status)}
-                        </span>
-                        {/* Show half day time */}
-                        {emp.status === "half" && emp.halfDayTime && (
-                          <div className="att-sub-info">
-                            <span className="att-sub-text">{emp.halfDayTime.from} – {emp.halfDayTime.to}</span>
-                            <button className="att-edit-btn" onClick={() => handleEditHalfDay(emp)}>
-                              <span className="material-symbols-outlined">edit</span>
-                            </button>
+        {/* ───── DESKTOP TABLE ───── */}
+        {!isMobile && (
+          <div className="att-table-wrap">
+            <table className="att-table">
+              <thead>
+                <tr>
+                  <th className="text-center" style={{ width: '50px' }}>S.NO</th>
+                  <th>Employee</th>
+                  <th>Department</th>
+                  <th className="text-center">Mark Attendance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedEmployees.length > 0 ? (
+                  paginatedEmployees.map((emp, index) => (
+                    <tr key={emp.id} className="att-table-row">
+                      <td className="text-center" style={{ color: '#64748b', fontWeight: '600', fontSize: '13px' }}>
+                        {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                      </td>
+                      <td className="att-td-name">
+                        <div className="att-emp-cell">
+                          <div className={`att-avatar att-avatar-${emp.status}`}>
+                            {getInitials(emp.name)}
                           </div>
-                        )}
-                        {/* Show absent reason snippet */}
-                        {emp.status === "absent" && emp.note && (
-                          <div className="att-sub-info">
-                            <span className="att-sub-text" title={emp.note}>{emp.note.slice(0, 28)}{emp.note.length > 28 ? "…" : ""}</span>
-                            <button className="att-edit-btn" onClick={() => handleEditAbsent(emp)}>
-                              <span className="material-symbols-outlined">edit</span>
-                            </button>
+                          <div className="att-emp-info">
+                            <span className="att-emp-name">{emp.name}</span>
+                            <span className="att-emp-dept">{emp.department}</span>
                           </div>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* P / H / A Toggle */}
-                    <td className="text-center">
-                      <div className="att-toggle-group">
-                        <button
-                          className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`}
-                          onClick={() => handleStatusChange(emp.id, "present")}
-                          title="Present"
-                        >P</button>
-                        <button
-                          className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`}
-                          onClick={() => handleStatusChange(emp.id, "half")}
-                          title="Half Day"
-                        >H</button>
-                        <button
-                          className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`}
-                          onClick={() => handleStatusChange(emp.id, "absent")}
-                          title="Absent"
-                        >A</button>
-                      </div>
+                        </div>
+                      </td>
+                      <td><span className="att-dept-badge">{emp.department}</span></td>
+                      <td className="text-center">
+                        <div className="att-toggle-group">
+                          <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "present")} title="Present">P</button>
+                          <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "half")} title="Half Day">H</button>
+                          <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "absent")} title="Absent">A</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="att-empty">
+                      <span className="material-symbols-outlined">search_off</span>
+                      <p>No employees match the current filters</p>
+                      <button className="att-btn att-btn-ghost" onClick={clearFilters}>Clear Filters</button>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="att-empty">
-                    <span className="material-symbols-outlined">search_off</span>
-                    <p>No employees match the current filters</p>
-                    <button className="att-btn att-btn-ghost" onClick={clearFilters}>Clear Filters</button>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ───── MOBILE LIST ───── */}
+        {isMobile && (
+          <div className="att-mobile-list">
+            {paginatedEmployees.length > 0 ? (
+              paginatedEmployees.map((emp, index) => (
+                <div key={emp.id} className="att-mobile-row">
+                  {/* S.NO */}
+                  <span className="att-mobile-sno">
+                    #{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                  </span>
+
+                  {/* Avatar */}
+                  <div className={`att-avatar att-avatar-${emp.status} att-mobile-avatar`}>
+                    {getInitials(emp.name)}
+                  </div>
+
+                  {/* Name + Dept */}
+                  <div className="att-mobile-info">
+                    <span className="att-mobile-name">{emp.name}</span>
+                    <span className="att-mobile-dept">{emp.department}</span>
+                    {emp.status === "half" && emp.halfDayTime && (
+                      <span className="att-mobile-extra">{emp.halfDayTime.from}–{emp.halfDayTime.to}</span>
+                    )}
+                    {emp.status === "absent" && emp.note && (
+                      <span className="att-mobile-extra">{emp.note.slice(0, 18)}{emp.note.length > 18 ? "…" : ""}</span>
+                    )}
+                  </div>
+
+                  {/* P / H / A */}
+                  <div className="att-toggle-group att-mobile-toggle">
+                    <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "present")}>P</button>
+                    <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "half")}>H</button>
+                    <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "absent")}>A</button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="att-empty" style={{ padding: '40px 20px', textAlign: 'center' }}>
+                <span className="material-symbols-outlined">search_off</span>
+                <p>No employees match the current filters</p>
+              </div>
+            )}
+          </div>
+        )}
+
 
         {/* Pagination */}
         {totalPages > 1 && (
@@ -463,8 +464,12 @@ const AttendanceLog = () => {
               Showing <strong>{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong>–<strong>{Math.min(currentPage * ITEMS_PER_PAGE, filteredEmployees.length)}</strong> of <strong>{filteredEmployees.length}</strong> employees
             </p>
             <div className="att-pagination-controls">
-              <button className="att-page-btn" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
-                <span className="material-symbols-outlined">chevron_left</span>
+              <button
+                className="att-page-btn nav-btn"
+                onClick={() => setCurrentPage(p => p - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
               </button>
               {pageNumbers().map((p, i) =>
                 p === "..." ? (
@@ -477,8 +482,12 @@ const AttendanceLog = () => {
                   >{p}</button>
                 )
               )}
-              <button className="att-page-btn" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>
-                <span className="material-symbols-outlined">chevron_right</span>
+              <button
+                className="att-page-btn nav-btn"
+                onClick={() => setCurrentPage(p => p + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
               </button>
             </div>
           </div>

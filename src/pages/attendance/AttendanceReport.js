@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { useAppContext } from '../context/AppContext.js';
+import { useAppContext } from '../../context/AppContext.js';
 import "./AttendanceReport.css";
 
 const AttendanceReport = () => {
@@ -9,6 +9,13 @@ const AttendanceReport = () => {
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-11
     const [exportRange, setExportRange] = useState("month"); // 'month' or 'year'
+
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    React.useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     // Helper to get days in a specific month
     const getDaysInMonth = (year, month) => {
@@ -230,37 +237,39 @@ const AttendanceReport = () => {
                     <h1 className="ar-banner-title">Attendance Reports</h1>
                     <p className="ar-banner-subtitle">Analyze and export comprehensive workforce logs</p>
                 </div>
-                <div className="ar-banner-actions">
-                    <div className="custom-dropdown range-selector" onClick={(e) => e.stopPropagation()}>
-                        <button
-                            className="ar-banner-btn"
-                            onClick={() => setShowRangeDropdown(!showRangeDropdown)}
-                        >
-                            {exportRange === "month" ? "Current Month" : `Full Year ${selectedYear}`}
-                            <span className="material-symbols-outlined">expand_more</span>
+                {!isMobile && (
+                    <div className="ar-banner-actions">
+                        <div className="custom-dropdown range-selector" onClick={(e) => e.stopPropagation()}>
+                            <button
+                                className="ar-banner-btn"
+                                onClick={() => setShowRangeDropdown(!showRangeDropdown)}
+                            >
+                                {exportRange === "month" ? "Current Month" : `Full Year ${selectedYear}`}
+                                <span className="material-symbols-outlined">expand_more</span>
+                            </button>
+                            {showRangeDropdown && (
+                                <div className="dropdown-menu">
+                                    <div
+                                        className={`dropdown-item ${exportRange === "month" ? "active" : ""}`}
+                                        onClick={() => { setExportRange("month"); setShowRangeDropdown(false); }}
+                                    >
+                                        Current Month
+                                    </div>
+                                    <div
+                                        className={`dropdown-item ${exportRange === "year" ? "active" : ""}`}
+                                        onClick={() => { setExportRange("year"); setShowRangeDropdown(false); }}
+                                    >
+                                        Full Year {selectedYear}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <button className="ar-banner-btn ar-banner-btn-solid" onClick={handleExport}>
+                            <span className="material-symbols-outlined">download</span>
+                            Export Data
                         </button>
-                        {showRangeDropdown && (
-                            <div className="dropdown-menu">
-                                <div
-                                    className={`dropdown-item ${exportRange === "month" ? "active" : ""}`}
-                                    onClick={() => { setExportRange("month"); setShowRangeDropdown(false); }}
-                                >
-                                    Current Month
-                                </div>
-                                <div
-                                    className={`dropdown-item ${exportRange === "year" ? "active" : ""}`}
-                                    onClick={() => { setExportRange("year"); setShowRangeDropdown(false); }}
-                                >
-                                    Full Year {selectedYear}
-                                </div>
-                            </div>
-                        )}
                     </div>
-                    <button className="ar-banner-btn ar-banner-btn-solid" onClick={handleExport}>
-                        <span className="material-symbols-outlined">download</span>
-                        Export Data
-                    </button>
-                </div>
+                )}
             </div>
 
             {/* Filters Card */}
