@@ -622,12 +622,10 @@ const Production = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.date-picker-container')) {
-        setShowDatePicker(false);
         setShowProductionDatePicker(false);
         setShowSummaryDatePicker(false);
         setShowStartDatePicker(false);
         setShowEndDatePicker(false);
-        setShowYearPicker(false);
       }
     };
 
