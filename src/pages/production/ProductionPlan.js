@@ -4,10 +4,9 @@ import './ProductionPlan.css';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+
 
 const ProductionPlan = ({ onNavigate, currentPage }) => {
-  const navigate = useNavigate(); // Initialize navigate
 
   // ===== PRODUCT MASTER DATA =====
   const [productMaster] = useState([

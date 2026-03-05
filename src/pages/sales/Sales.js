@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
 import './Sales.css';
 
@@ -40,7 +40,7 @@ const Sales = () => {
     const [paidStatus, setPaidStatus] = useState("Paid");
     const [isPaidStatusDropdownOpen, setIsPaidStatusDropdownOpen] = useState(false);
     const [isHistoryFilterDropdownOpen, setIsHistoryFilterDropdownOpen] = useState(false);
-    const [isLogging, setIsLogging] = useState(false);
+    const isLogging = false;
     const [showBillModal, setShowBillModal] = useState(false);
     const [selectedBill, setSelectedBill] = useState(null);
     const [billItems, setBillItems] = useState([]);
@@ -57,7 +57,7 @@ const Sales = () => {
         if (product) {
             setUnitPrice(product.price.toString());
         }
-    }, [selectedProduct]);
+    }, [selectedProduct, products]);
 
     // Auto-calculate Total Amount when Quantity or Unit Price change
     useEffect(() => {
@@ -328,11 +328,7 @@ const Sales = () => {
         URL.revokeObjectURL(url);
     };
 
-    // Clear all filters
-    const clearFilters = () => {
-        setSearchTerm("");
-        setTypeFilter("all");
-    };
+
 
     // Close dropdown when clicking outside
     useEffect(() => {

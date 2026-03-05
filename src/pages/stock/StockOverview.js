@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import "./Stock.css";
 
 const StockOverview = () => {
-  const navigate = useNavigate();
 
   // ========== STATE MANAGEMENT ==========
   const [stockItems] = useState([

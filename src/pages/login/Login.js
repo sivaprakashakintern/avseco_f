@@ -23,7 +23,7 @@ const Login = () => {
         // Simulate login delay
         setTimeout(() => {
             if (username === envUsername && password === envPassword) {
-                localStorage.setItem("isLoggedIn", "true"); // Save login status
+                sessionStorage.setItem("isLoggedIn", "true"); // Save login status
                 setIsLoading(false);
                 navigate("/dashboard"); // Go to dashboard after login
             } else {

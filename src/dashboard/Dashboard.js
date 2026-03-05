@@ -7,7 +7,6 @@ import "./Dashboard.css";
 const Dashboard = () => {
   const navigate = useNavigate();
   const {
-    employees,
     totalExpenseAmount,
     expenseByCategory,
     todayStats,

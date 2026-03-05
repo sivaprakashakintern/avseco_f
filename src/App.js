@@ -41,7 +41,7 @@ import Help from "./pages/Help.js";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const isLoggedIn = sessionStorage.getItem("isLoggedIn") === "true";
   const location = useLocation();
 
   if (!isLoggedIn) {
@@ -54,7 +54,7 @@ const ProtectedRoute = ({ children }) => {
 
 // Public Route Component (Redirects to dashboard if already logged in)
 const PublicRoute = ({ children }) => {
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const isLoggedIn = sessionStorage.getItem("isLoggedIn") === "true";
 
   if (isLoggedIn) {
     return <Navigate to="/dashboard" replace />;

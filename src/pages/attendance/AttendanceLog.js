@@ -9,8 +9,7 @@ const today = () => new Date(new Date().toDateString());
 const getInitials = (name = "") =>
   name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
-const getStatusText = (s) =>
-  s === "present" ? "Present" : s === "absent" ? "Absent" : s === "half" ? "Half Day" : "-";
+
 
 // ─── Toast Component ──────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => (

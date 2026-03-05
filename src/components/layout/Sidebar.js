@@ -14,6 +14,7 @@ const Sidebar = () => {
   const [popupTop, setPopupTop] = useState(0);
   const [popupLeft, setPopupLeft] = useState(0);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 1024);
@@ -26,10 +27,9 @@ const Sidebar = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
 
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isMobile && isMobileMenuOpen) {
@@ -77,7 +77,7 @@ const Sidebar = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
+    sessionStorage.removeItem("isLoggedIn");
     console.log("Logging out...");
     navigate("/login");
   };

@@ -45,7 +45,7 @@ const Topbar = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn"); // Clear login status
+    sessionStorage.removeItem("isLoggedIn"); // Clear login status
     console.log("Logging out...");
     navigate("/login");
   };
