@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/dateUtils.js";
 import "./Clients.css";
 
 const Clients = () => {
-  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState("list");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);

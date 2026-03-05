@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -9,9 +8,8 @@ import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
 import './Daily.css';
 
-const Production = () => {
-  const navigate = useNavigate();
 
+const Production = () => {
   // Colour mapping for sizes
   const SIZE_COLOR = {
     '6-inch': '#10b981',
@@ -157,7 +155,7 @@ const Production = () => {
       weekBySize,
       monthBySize
     });
-  }, []);
+  }, [availableSizes]);
 
   // ========== LOAD DATA FROM LOCALSTORAGE ON INITIAL RENDER ==========
   useEffect(() => {
@@ -572,9 +570,7 @@ const Production = () => {
     }
   };
 
-  const handleNavigation = (path) => {
-    navigate(path);
-  };
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -654,8 +650,6 @@ const Production = () => {
   }, []);
 
   const filteredHistory = getFilteredHistory();
-  const uniqueHistorySizes = getUniqueHistorySizes();
-  const uniqueDates = getUniqueDates();
   const summaryData = getSummaryData();
 
   const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (

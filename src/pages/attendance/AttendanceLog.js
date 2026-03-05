@@ -26,7 +26,7 @@ const Toast = ({ message, type, onClose }) => (
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const AttendanceLog = () => {
-  const { employees: globalEmployees, departments: globalDepts } = useAppContext();
+  const { employees: globalEmployees } = useAppContext();
 
   // ── Date State ──────────────────────────────────────────────────────────────
   const [currentDate, setCurrentDate] = useState(today());
@@ -40,7 +40,7 @@ const AttendanceLog = () => {
   const [attendanceByDate, setAttendanceByDate] = useState({});
 
   // Get or create map for the current date
-  const attendanceMap = attendanceByDate[dateKey] || {};
+
 
   const patchAttendance = (empId, patch) => {
     setAttendanceByDate(prev => ({
@@ -85,16 +85,16 @@ const AttendanceLog = () => {
   };
 
   // ── Derived Employees List ────────────────────────────────────────────────────
-  const employees = useMemo(() =>
-    globalEmployees.map(emp => ({
+  const employees = useMemo(() => {
+    const attendanceMap = attendanceByDate[dateKey] || {};
+    return globalEmployees.map(emp => ({
       ...emp,
       empId: emp.empId || `EMP-${String(emp.id).padStart(4, "0")}`,
       status: attendanceMap[emp.id]?.status || "present",
       note: attendanceMap[emp.id]?.note || "",
       halfDayTime: attendanceMap[emp.id]?.halfDayTime || null,
-    })),
-    [globalEmployees, attendanceMap]
-  );
+    }));
+  }, [globalEmployees, attendanceByDate, dateKey]);
 
   // ── Quick Stats ───────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -121,7 +121,7 @@ const AttendanceLog = () => {
   const paginatedEmployees = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredEmployees.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredEmployees, currentPage]);
+  }, [filteredEmployees, currentPage, ITEMS_PER_PAGE]);
 
   // ── Departments List ──────────────────────────────────────────────────────────
   const departments = useMemo(() => {
@@ -168,18 +168,7 @@ const AttendanceLog = () => {
     setSelectedEmployee(null);
   };
 
-  const handleEditHalfDay = (emp) => {
-    setSelectedEmployee(emp);
-    setHalfDayTime(emp.halfDayTime || { from: "09:00", to: "13:00" });
-    setAbsentReason(emp.note || "");
-    setShowHalfDayModal(true);
-  };
 
-  const handleEditAbsent = (emp) => {
-    setSelectedEmployee(emp);
-    setAbsentReason(emp.note || "");
-    setShowAbsentModal(true);
-  };
 
   const handleMarkAllPresent = () => {
     filteredEmployees.forEach(emp => patchAttendance(emp.id, { status: "present", note: "", halfDayTime: null }));
