@@ -207,7 +207,7 @@ const Clients = () => {
     // Validate form
     if (!formData.companyName || !formData.contactPerson || !formData.email) {
       setFeedbackMessage("Please fill all required fields");
-      setTimeout(() => setFeedbackMessage(""), 3000);
+      setTimeout(() => setFeedbackMessage(""), 2000);
       return;
     }
 
@@ -217,7 +217,7 @@ const Clients = () => {
       contactPerson: formData.contactPerson,
       email: formData.email,
       phone: formData.phone || "+91 00000 00000",
-      status: formData.status,
+      status: "Active",
       totalOrders: 0,
       totalSpent: "₹0",
       lastOrder: "N/A",
@@ -227,9 +227,8 @@ const Clients = () => {
 
     setClients([...clients, newClient]);
     setShowAddModal(false);
-    setFeedbackMessage("Client added successfully");
-
-    setTimeout(() => setFeedbackMessage(""), 3000);
+    setFeedbackMessage("Client added");
+    setTimeout(() => setFeedbackMessage(""), 2000);
   };
 
   // Edit Client
@@ -267,9 +266,8 @@ const Clients = () => {
     setClients(updatedClients);
     setShowEditModal(false);
     setSelectedClient(null);
-    setFeedbackMessage("Client updated successfully");
-
-    setTimeout(() => setFeedbackMessage(""), 3000);
+    setFeedbackMessage("Client updated");
+    setTimeout(() => setFeedbackMessage(""), 2000);
   };
 
   // Delete Client
@@ -285,9 +283,8 @@ const Clients = () => {
     setClients(filteredClients);
     setShowDeleteModal(false);
     setSelectedClient(null);
-    setFeedbackMessage("Client deleted successfully");
-
-    setTimeout(() => setFeedbackMessage(""), 3000);
+    setFeedbackMessage("Client deleted");
+    setTimeout(() => setFeedbackMessage(""), 2000);
   };
 
   // View Client
@@ -321,7 +318,6 @@ const Clients = () => {
     setTimeout(() => {
       setExportLoading(false);
       setShowExportModal(false);
-      setFeedbackMessage(`Client list exported as ${format}`);
 
       // Create CSV
       if (format === "CSV") {
@@ -346,7 +342,6 @@ const Clients = () => {
         a.click();
       }
 
-      setTimeout(() => setFeedbackMessage(""), 3000);
     }, 1500);
   };
 
@@ -370,17 +365,16 @@ const Clients = () => {
 
   return (
     <div className="clients-container">
-      {/* Feedback Toast */}
       {feedbackMessage && (
         <div className="feedback-toast">
           <span className="material-symbols-outlined">
-            {feedbackMessage.includes("deleted")
+            {feedbackMessage.toLowerCase().includes("deleted")
               ? "delete"
-              : feedbackMessage.includes("updated")
+              : feedbackMessage.toLowerCase().includes("updated")
                 ? "edit"
-                : feedbackMessage.includes("added")
-                  ? "add"
-                  : "check_circle"}
+                : feedbackMessage.toLowerCase().includes("added")
+                  ? "add_circle"
+                  : "info"}
           </span>
           <span>{feedbackMessage}</span>
         </div>
@@ -537,13 +531,6 @@ const Clients = () => {
                       <td>
                         <div className="action-buttons">
                           <button
-                            className="action-btn edit"
-                            onClick={() => handleEditClient(client)}
-                            title="Edit Client"
-                          >
-                            <span className="material-symbols-outlined">edit</span>
-                          </button>
-                          <button
                             className="action-btn delete"
                             onClick={() => handleDeleteClient(client)}
                             title="Delete Client"
@@ -594,9 +581,6 @@ const Clients = () => {
                     <span className="mobile-orders-label">Orders</span>
                   </div>
                   <div className="mobile-client-actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="mobile-client-edit" onClick={(e) => { e.stopPropagation(); handleEditClient(client); }}>
-                      <span className="material-symbols-outlined">edit</span>
-                    </button>
                     <button className="mobile-client-delete" onClick={(e) => { e.stopPropagation(); handleDeleteClient(client); }}>
                       <span className="material-symbols-outlined">delete</span>
                     </button>
@@ -703,12 +687,6 @@ const Clients = () => {
                       >
                         View
                       </button>
-                      <button
-                        className="card-edit-btn"
-                        onClick={() => handleEditClient(client)}
-                      >
-                        Edit
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -751,32 +729,17 @@ const Clients = () => {
                     required
                   />
                 </div>
-                <div className="modal-row">
-                  <div className="modal-form-group">
-                    <label>Contact Person *</label>
-                    <input
-                      type="text"
-                      name="contactPerson"
-                      value={formData.contactPerson}
-                      onChange={handleInputChange}
-                      placeholder="Enter contact person"
-                      className="modal-input"
-                      required
-                    />
-                  </div>
-                  <div className="modal-form-group">
-                    <label>Status</label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="modal-select"
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
-                  </div>
+                <div className="modal-form-group">
+                  <label>Contact Person *</label>
+                  <input
+                    type="text"
+                    name="contactPerson"
+                    value={formData.contactPerson}
+                    onChange={handleInputChange}
+                    placeholder="Enter contact person"
+                    className="modal-input"
+                    required
+                  />
                 </div>
                 <div className="modal-row">
                   <div className="modal-form-group">
@@ -963,11 +926,6 @@ const Clients = () => {
                 <div className="client-profile-info">
                   <h2>{selectedClient.companyName}</h2>
                   <p className="profile-contact">{selectedClient.contactPerson}</p>
-                  <span
-                    className={`status-badge ${selectedClient.status.toLowerCase()}`}
-                  >
-                    {selectedClient.status}
-                  </span>
                 </div>
               </div>
 

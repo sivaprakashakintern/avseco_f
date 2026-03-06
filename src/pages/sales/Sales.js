@@ -44,6 +44,7 @@ const Sales = () => {
     const [showBillModal, setShowBillModal] = useState(false);
     const [selectedBill, setSelectedBill] = useState(null);
     const [billItems, setBillItems] = useState([]);
+    const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
 
     // Search and Filter states for Recent History
     const [searchTerm, setSearchTerm] = useState("");
@@ -393,584 +394,602 @@ const Sales = () => {
             </div>
 
             {/* Quick Sales Entry Card */}
-            <div className="stock-table-container quick-entry-card">
-                <div className="table-header">
-                    <h3 className="section-title">Quick Sales Entry</h3>
-                </div>
-                <div className="quick-entry-grid">
-                    <div className="quick-entry-row">
-                        <div className="quick-entry-item">
-                            <span className="quick-entry-label">Company:</span>
-                            <div className="product-dropdown client-dropdown">
-                                <div className="dropdown-input-wrapper">
-                                    <button
-                                        onClick={() => setIsClientDropdownOpen(!isClientDropdownOpen)}
-                                        className="product-dropdown-toggle client-dropdown-toggle"
-                                    >
-                                        <span className="product-dropdown-text">{companyName || "Select Company"}</span>
-                                        <span className="material-symbols-outlined product-dropdown-arrow">
-                                            {isClientDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
-                                        </span>
-                                    </button>
-                                    {companyName && (
-                                        <button className="clear-selection-btn" onClick={(e) => { e.stopPropagation(); setCompanyName(""); setCustomerName(""); }}>
-                                            <span className="material-symbols-outlined">close</span>
+            <div className={`desktop-view-section ${viewMode !== 'entry' ? 'mobile-hidden' : ''}`}>
+                <div className="stock-table-container quick-entry-card">
+                    <div className="table-header">
+                        <h3 className="section-title">Quick Sales Entry</h3>
+                    </div>
+                    <div className="quick-entry-grid">
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Company:</span>
+                                <div className="product-dropdown client-dropdown">
+                                    <div className="dropdown-input-wrapper">
+                                        <button
+                                            onClick={() => setIsClientDropdownOpen(!isClientDropdownOpen)}
+                                            className="product-dropdown-toggle client-dropdown-toggle"
+                                        >
+                                            <span className="product-dropdown-text">{companyName || "Select Company"}</span>
+                                            <span className="material-symbols-outlined product-dropdown-arrow">
+                                                {isClientDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                            </span>
                                         </button>
-                                    )}
-                                </div>
-                                {isClientDropdownOpen && (
-                                    <div className="product-dropdown-menu">
-                                        <div className="dropdown-search-wrapper">
-                                            <input
-                                                type="text"
-                                                placeholder="Search companies..."
-                                                className="dropdown-search-input"
-                                                autoFocus
-                                                onChange={(e) => setCompanyName(e.target.value)}
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
-                                        </div>
-                                        {clients.filter(c =>
-                                            c.companyName.toLowerCase().includes(companyName.toLowerCase())
-                                        ).length > 0 ? (
-                                            <>
-                                                {clients
-                                                    .filter(c => c.companyName.toLowerCase().includes(companyName.toLowerCase()))
-                                                    .map((client) => (
-                                                        <button
-                                                            key={client.id}
-                                                            onClick={() => {
-                                                                setCompanyName(client.companyName);
-                                                                setCustomerName(client.contactPerson);
-                                                                setIsClientDropdownOpen(false);
-                                                            }}
-                                                            className={`product-dropdown-item ${companyName === client.companyName ? 'active' : ''}`}
-                                                        >
-                                                            <span className="product-name-text">{client.companyName}</span>
-                                                            <span className="product-sku-category">{client.contactPerson}</span>
-                                                        </button>
-                                                    ))}
-                                                <div className="dropdown-divider"></div>
-                                                <button
-                                                    className="add-new-client-dropdown-btn"
-                                                    onClick={() => {
-                                                        setNewClientData({ ...newClientData, companyName: companyName });
-                                                        setShowAddClientModal(true);
-                                                        setIsClientDropdownOpen(false);
-                                                    }}
-                                                >
-                                                    <span className="material-symbols-outlined">add_circle</span>
-                                                    Add New Client
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <div className="no-clients-found-container">
-                                                <div className="no-clients-found">No clients found for "{companyName}"</div>
-                                                <button
-                                                    className="create-client-btn-inline"
-                                                    onClick={() => {
-                                                        setNewClientData({ ...newClientData, companyName: companyName });
-                                                        setShowAddClientModal(true);
-                                                        setIsClientDropdownOpen(false);
-                                                    }}
-                                                >
-                                                    <span className="material-symbols-outlined">person_add</span>
-                                                    Create "{companyName}" as new client
-                                                </button>
-                                            </div>
+                                        {companyName && (
+                                            <button className="clear-selection-btn" onClick={(e) => { e.stopPropagation(); setCompanyName(""); setCustomerName(""); }}>
+                                                <span className="material-symbols-outlined">close</span>
+                                            </button>
                                         )}
                                     </div>
-                                )}
+                                    {isClientDropdownOpen && (
+                                        <div className="product-dropdown-menu">
+                                            <div className="dropdown-search-wrapper">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search companies..."
+                                                    className="dropdown-search-input"
+                                                    autoFocus
+                                                    onChange={(e) => setCompanyName(e.target.value)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            </div>
+                                            {clients.filter(c =>
+                                                c.companyName.toLowerCase().includes(companyName.toLowerCase())
+                                            ).length > 0 ? (
+                                                <>
+                                                    {clients
+                                                        .filter(c => c.companyName.toLowerCase().includes(companyName.toLowerCase()))
+                                                        .map((client) => (
+                                                            <button
+                                                                key={client.id}
+                                                                onClick={() => {
+                                                                    setCompanyName(client.companyName);
+                                                                    setCustomerName(client.contactPerson);
+                                                                    setIsClientDropdownOpen(false);
+                                                                }}
+                                                                className={`product-dropdown-item ${companyName === client.companyName ? 'active' : ''}`}
+                                                            >
+                                                                <span className="product-name-text">{client.companyName}</span>
+                                                                <span className="product-sku-category">{client.contactPerson}</span>
+                                                            </button>
+                                                        ))}
+                                                    <div className="dropdown-divider"></div>
+                                                    <button
+                                                        className="add-new-client-dropdown-btn"
+                                                        onClick={() => {
+                                                            setNewClientData({ ...newClientData, companyName: companyName });
+                                                            setShowAddClientModal(true);
+                                                            setIsClientDropdownOpen(false);
+                                                        }}
+                                                    >
+                                                        <span className="material-symbols-outlined">add_circle</span>
+                                                        Add New Client
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <div className="no-clients-found-container">
+                                                    <div className="no-clients-found">No clients found for "{companyName}"</div>
+                                                    <button
+                                                        className="create-client-btn-inline"
+                                                        onClick={() => {
+                                                            setNewClientData({ ...newClientData, companyName: companyName });
+                                                            setShowAddClientModal(true);
+                                                            setIsClientDropdownOpen(false);
+                                                        }}
+                                                    >
+                                                        <span className="material-symbols-outlined">person_add</span>
+                                                        Create "{companyName}" as new client
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="quick-entry-item">
-                            <span className="quick-entry-label">Customer Name:</span>
-                            <div style={{ width: '100%' }}>
-                                <input
-                                    type="text"
-                                    placeholder="Enter customer name"
-                                    className="quick-entry-input"
-                                    value={customerName}
-                                    onChange={(e) => setCustomerName(e.target.value)}
-                                />
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Customer Name:</span>
+                                <div style={{ width: '100%' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter customer name"
+                                        className="quick-entry-input"
+                                        value={customerName}
+                                        onChange={(e) => setCustomerName(e.target.value)}
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="quick-entry-item">
-                            <span className="quick-entry-label">Product Selection:</span>
-                            <div className="product-dropdown">
-                                <button
-                                    onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
-                                    className="product-dropdown-toggle"
-                                >
-                                    <span className="product-dropdown-text">{selectedProduct}</span>
-                                    <span className="material-symbols-outlined product-dropdown-arrow">
-                                        {isProductDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
-                                    </span>
-                                </button>
-                                {isProductDropdownOpen && (
-                                    <div className="product-dropdown-menu">
-                                        {products.map((product) => (
-                                            <button
-                                                key={product.id}
-                                                onClick={() => {
-                                                    setSelectedProduct(product.name);
-                                                    setIsProductDropdownOpen(false);
-                                                }}
-                                                className={`product-dropdown-item ${selectedProduct === product.name ? 'active' : ''}`}
-                                            >
-                                                <span className="product-name-text">{product.name}</span>
-                                                <span className="product-sku-category">{product.sku}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="quick-entry-row">
-                        <div className="quick-entry-item">
-                            <span className="quick-entry-label">Total Pieces:</span>
-                            <div style={{ width: '100%', display: 'flex', gap: '8px' }}>
-                                <input
-                                    type="number"
-                                    placeholder="0"
-                                    className="quick-entry-input flex-1"
-                                    style={{ flex: 1, minWidth: 0 }}
-                                    value={quantity}
-                                    onChange={(e) => setQuantity(e.target.value)}
-                                />
-                                <button
-                                    className="btn-outline quick-entry-btn add-btn-colored mobile-only-add-btn"
-                                    onClick={handleAddItem}
-                                    title="Add Item"
-                                >
-                                    <span className="material-symbols-outlined">add_circle</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="quick-entry-item">
-                            <span className="quick-entry-label">Rate Per Piece:</span>
-                            <div className="amount-input-wrapper">
-                                <span className="currency-prefix">₹</span>
-                                <input
-                                    type="number"
-                                    placeholder="0.00"
-                                    className="quick-entry-input amount-input"
-                                    value={unitPrice}
-                                    onChange={(e) => setUnitPrice(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="quick-entry-item">
-                            <span className="quick-entry-label">Total Bill Amount:</span>
-                            <div className="amount-input-wrapper">
-                                <span className="currency-prefix">₹</span>
-                                <input
-                                    type="number"
-                                    placeholder="0.00"
-                                    className="quick-entry-input amount-input"
-                                    value={totalAmount}
-                                    readOnly
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="quick-entry-row">
-                        <div className="quick-entry-item">
-                            <span className="quick-entry-label">Delivered By:</span>
-                            <div className="product-dropdown employee-dropdown">
-                                <div className="dropdown-input-wrapper">
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Product Selection:</span>
+                                <div className="product-dropdown">
                                     <button
-                                        onClick={() => setIsEmployeeDropdownOpen(!isEmployeeDropdownOpen)}
+                                        onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
                                         className="product-dropdown-toggle"
                                     >
-                                        <span className="product-dropdown-text">{deliveryEmployee || "Select Employee"}</span>
+                                        <span className="product-dropdown-text">{selectedProduct}</span>
                                         <span className="material-symbols-outlined product-dropdown-arrow">
-                                            {isEmployeeDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                            {isProductDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
                                         </span>
                                     </button>
-                                    {deliveryEmployee && (
-                                        <button className="clear-selection-btn" onClick={(e) => { e.stopPropagation(); setDeliveryEmployee(""); }}>
-                                            <span className="material-symbols-outlined">close</span>
-                                        </button>
+                                    {isProductDropdownOpen && (
+                                        <div className="product-dropdown-menu">
+                                            {products.map((product) => (
+                                                <button
+                                                    key={product.id}
+                                                    onClick={() => {
+                                                        setSelectedProduct(product.name);
+                                                        setIsProductDropdownOpen(false);
+                                                    }}
+                                                    className={`product-dropdown-item ${selectedProduct === product.name ? 'active' : ''}`}
+                                                >
+                                                    <span className="product-name-text">{product.name}</span>
+                                                    <span className="product-sku-category">{product.sku}</span>
+                                                </button>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
-                                {isEmployeeDropdownOpen && (
-                                    <div className="product-dropdown-menu">
-                                        <div className="dropdown-search-wrapper">
-                                            <input
-                                                type="text"
-                                                placeholder="Search employees..."
-                                                className="dropdown-search-input"
-                                                autoFocus
-                                                onClick={(e) => e.stopPropagation()}
-                                                onChange={(e) => setDeliveryEmployee(e.target.value)}
-                                            />
-                                        </div>
-                                        {employees.filter(emp =>
-                                            emp.name.toLowerCase().includes((deliveryEmployee || "").toLowerCase())
-                                        ).length > 0 ? (
-                                            employees
-                                                .filter(emp => emp.name.toLowerCase().includes((deliveryEmployee || "").toLowerCase()))
-                                                .map((emp) => (
-                                                    <button
-                                                        key={emp.id}
-                                                        onClick={() => {
-                                                            setDeliveryEmployee(emp.name);
-                                                            setIsEmployeeDropdownOpen(false);
-                                                        }}
-                                                        className={`product-dropdown-item ${deliveryEmployee === emp.name ? 'active' : ''}`}
-                                                    >
-                                                        <span className="product-name-text">{emp.name}</span>
-                                                        <span className="product-sku-category">{emp.department}</span>
-                                                    </button>
-                                                ))
-                                        ) : (
-                                            <div className="no-clients-found">No employees matching "{deliveryEmployee}"</div>
+                            </div>
+                        </div>
+
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Total Pieces:</span>
+                                <div style={{ width: '100%', display: 'flex', gap: '8px' }}>
+                                    <input
+                                        type="number"
+                                        placeholder="0"
+                                        className="quick-entry-input flex-1"
+                                        style={{ flex: 1, minWidth: 0 }}
+                                        value={quantity}
+                                        onChange={(e) => setQuantity(e.target.value)}
+                                    />
+                                    <button
+                                        className="btn-outline quick-entry-btn add-btn-colored mobile-only-add-btn"
+                                        onClick={handleAddItem}
+                                        title="Add Item"
+                                    >
+                                        <span className="material-symbols-outlined">add_circle</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Rate Per Piece:</span>
+                                <div className="amount-input-wrapper">
+                                    <span className="currency-prefix">₹</span>
+                                    <input
+                                        type="number"
+                                        placeholder="0.00"
+                                        className="quick-entry-input amount-input"
+                                        value={unitPrice}
+                                        onChange={(e) => setUnitPrice(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Total Bill Amount:</span>
+                                <div className="amount-input-wrapper">
+                                    <span className="currency-prefix">₹</span>
+                                    <input
+                                        type="number"
+                                        placeholder="0.00"
+                                        className="quick-entry-input amount-input"
+                                        value={totalAmount}
+                                        readOnly
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Delivered By:</span>
+                                <div className="product-dropdown employee-dropdown">
+                                    <div className="dropdown-input-wrapper">
+                                        <button
+                                            onClick={() => setIsEmployeeDropdownOpen(!isEmployeeDropdownOpen)}
+                                            className="product-dropdown-toggle"
+                                        >
+                                            <span className="product-dropdown-text">{deliveryEmployee || "Select Employee"}</span>
+                                            <span className="material-symbols-outlined product-dropdown-arrow">
+                                                {isEmployeeDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                            </span>
+                                        </button>
+                                        {deliveryEmployee && (
+                                            <button className="clear-selection-btn" onClick={(e) => { e.stopPropagation(); setDeliveryEmployee(""); }}>
+                                                <span className="material-symbols-outlined">close</span>
+                                            </button>
                                         )}
                                     </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="quick-entry-item">
-                            <span className="quick-entry-label">Payment Mode:</span>
-                            <div className="product-dropdown payment-dropdown">
-                                <button
-                                    onClick={() => setIsPaymentDropdownOpen(!isPaymentDropdownOpen)}
-                                    className="product-dropdown-toggle"
-                                >
-                                    <span className="product-dropdown-text">{paymentMode}</span>
-                                    <span className="material-symbols-outlined product-dropdown-arrow">
-                                        {isPaymentDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
-                                    </span>
-                                </button>
-                                {isPaymentDropdownOpen && (
-                                    <div className="product-dropdown-menu">
-                                        {['UPI', 'Cash', 'Card'].map(mode => (
-                                            <button
-                                                key={mode}
-                                                className={`product-dropdown-item ${paymentMode === mode ? 'active' : ''}`}
-                                                onClick={() => {
-                                                    setPaymentMode(mode);
-                                                    setIsPaymentDropdownOpen(false);
-                                                }}
-                                            >
-                                                <span className="product-name-text">{mode}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="quick-entry-item">
-                            <span className="quick-entry-label">Payment Status:</span>
-                            <div className="product-dropdown payment-dropdown">
-                                <button
-                                    onClick={() => setIsPaidStatusDropdownOpen(!isPaidStatusDropdownOpen)}
-                                    className="product-dropdown-toggle"
-                                >
-                                    <span className="product-dropdown-text">{paidStatus}</span>
-                                    <span className="material-symbols-outlined product-dropdown-arrow">
-                                        {isPaidStatusDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
-                                    </span>
-                                </button>
-                                {isPaidStatusDropdownOpen && (
-                                    <div className="product-dropdown-menu">
-                                        {['Paid', 'Unpaid'].map(status => (
-                                            <button
-                                                key={status}
-                                                className={`product-dropdown-item ${paidStatus === status ? 'active' : ''}`}
-                                                onClick={() => {
-                                                    setPaidStatus(status);
-                                                    setIsPaidStatusDropdownOpen(false);
-                                                }}
-                                            >
-                                                <span className="product-name-text">{status}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="quick-entry-footer">
-                        <div className="quick-entry-action-group">
-                            <button
-                                className="btn-outline quick-entry-btn add-btn-colored add-btn-pc"
-                                onClick={handleAddItem}
-                            >
-                                <span className="material-symbols-outlined">add_circle</span>
-                                ADD ITEM
-                            </button>
-
-                            <button
-                                className="btn-outline quick-entry-btn bill-btn-colored"
-                                onClick={handleGenerateBill}
-                            >
-                                <span className="material-symbols-outlined">receipt_long</span>
-                                GENERATE BILL
-                            </button>
-
-                            <button
-                                className="btn-primary quick-entry-btn log-btn-colored"
-                                onClick={handleLogTransaction}
-                                disabled={isLogging || (billItems.length === 0 && !quantity)}
-                            >
-                                <span className="material-symbols-outlined">
-                                    {isLogging ? "hourglass_empty" : "done_all"}
-                                </span>
-                                {isLogging ? "SAVING..." : "SAVE ENTRY"}
-                            </button>
-                        </div>
-                    </div>
-
-                    {billItems.length > 0 && (
-                        <div className="bill-preview-section">
-                            <div className="preview-header">
-                                <span>Items in Current Sale ({billItems.length})</span>
-                                <button className="clear-bill" onClick={() => setBillItems([])}>Clear All</button>
-                            </div>
-                            <div className="preview-list">
-                                {billItems.map(item => (
-                                    <div key={item.id} className="preview-item">
-                                        <span className="item-name">{item.product}</span>
-                                        <span className="item-qty">{item.qty} pcs</span>
-                                        <span className="item-amt">₹{item.amount}</span>
-                                        <button className="remove-item" onClick={() => setBillItems(billItems.filter(i => i.id !== item.id))}>
-                                            <span className="material-symbols-outlined">close</span>
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            <div className="history-filters-wrapper">
-                <div className="history-filters-header">
-                    <h3 className="section-title">Recent Sales History</h3>
-                </div>
-
-                <div className="history-filters">
-                    <div className="search-box">
-                        <span className="material-symbols-outlined search-icon">search</span>
-                        <input
-                            type="text"
-                            placeholder="Search by customer, company or product..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="search-input"
-                        />
-                        {searchTerm && (
-                            <button className="clear-search" onClick={() => setSearchTerm("")}>
-                                <span className="material-symbols-outlined">close</span>
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="filter-group">
-                        <div className="product-dropdown history-filter-dropdown">
-                            <button
-                                onClick={() => setIsHistoryFilterDropdownOpen(!isHistoryFilterDropdownOpen)}
-                                className="product-dropdown-toggle filter-dropdown-toggle"
-                            >
-                                <span className="product-dropdown-text">
-                                    {typeFilter === 'all' ? 'All Modes' : typeFilter.toUpperCase()}
-                                </span>
-                                <div className="filter-controls-inside">
-                                    {typeFilter !== 'all' && (
-                                        <span
-                                            className="material-symbols-outlined clear-filter-inside"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setTypeFilter('all');
-                                            }}
-                                        >
-                                            close
-                                        </span>
+                                    {isEmployeeDropdownOpen && (
+                                        <div className="product-dropdown-menu">
+                                            <div className="dropdown-search-wrapper">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search employees..."
+                                                    className="dropdown-search-input"
+                                                    autoFocus
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    onChange={(e) => setDeliveryEmployee(e.target.value)}
+                                                />
+                                            </div>
+                                            {employees.filter(emp =>
+                                                emp.name.toLowerCase().includes((deliveryEmployee || "").toLowerCase())
+                                            ).length > 0 ? (
+                                                employees
+                                                    .filter(emp => emp.name.toLowerCase().includes((deliveryEmployee || "").toLowerCase()))
+                                                    .map((emp) => (
+                                                        <button
+                                                            key={emp.id}
+                                                            onClick={() => {
+                                                                setDeliveryEmployee(emp.name);
+                                                                setIsEmployeeDropdownOpen(false);
+                                                            }}
+                                                            className={`product-dropdown-item ${deliveryEmployee === emp.name ? 'active' : ''}`}
+                                                        >
+                                                            <span className="product-name-text">{emp.name}</span>
+                                                            <span className="product-sku-category">{emp.department}</span>
+                                                        </button>
+                                                    ))
+                                            ) : (
+                                                <div className="no-clients-found">No employees matching "{deliveryEmployee}"</div>
+                                            )}
+                                        </div>
                                     )}
-                                    <span className="material-symbols-outlined product-dropdown-arrow">
-                                        {isHistoryFilterDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
-                                    </span>
                                 </div>
-                            </button>
-                            {isHistoryFilterDropdownOpen && (
-                                <div className="product-dropdown-menu">
-                                    {['all', 'upi', 'cash', 'card'].map((mode) => (
-                                        <button
-                                            key={mode}
-                                            onClick={() => {
-                                                setTypeFilter(mode);
-                                                setIsHistoryFilterDropdownOpen(false);
-                                            }}
-                                            className={`product-dropdown-item ${typeFilter === mode ? 'active' : ''}`}
-                                        >
-                                            <span className="product-name-text">
-                                                {mode === 'all' ? 'All Modes' : mode.toUpperCase()}
-                                            </span>
-                                        </button>
+                            </div>
+
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Payment Mode:</span>
+                                <div className="product-dropdown payment-dropdown">
+                                    <button
+                                        onClick={() => setIsPaymentDropdownOpen(!isPaymentDropdownOpen)}
+                                        className="product-dropdown-toggle"
+                                    >
+                                        <span className="product-dropdown-text">{paymentMode}</span>
+                                        <span className="material-symbols-outlined product-dropdown-arrow">
+                                            {isPaymentDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                        </span>
+                                    </button>
+                                    {isPaymentDropdownOpen && (
+                                        <div className="product-dropdown-menu">
+                                            {['UPI', 'Cash', 'Card'].map(mode => (
+                                                <button
+                                                    key={mode}
+                                                    className={`product-dropdown-item ${paymentMode === mode ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setPaymentMode(mode);
+                                                        setIsPaymentDropdownOpen(false);
+                                                    }}
+                                                >
+                                                    <span className="product-name-text">{mode}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Payment Status:</span>
+                                <div className="product-dropdown payment-dropdown">
+                                    <button
+                                        onClick={() => setIsPaidStatusDropdownOpen(!isPaidStatusDropdownOpen)}
+                                        className="product-dropdown-toggle"
+                                    >
+                                        <span className="product-dropdown-text">{paidStatus}</span>
+                                        <span className="material-symbols-outlined product-dropdown-arrow">
+                                            {isPaidStatusDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                        </span>
+                                    </button>
+                                    {isPaidStatusDropdownOpen && (
+                                        <div className="product-dropdown-menu">
+                                            {['Paid', 'Unpaid'].map(status => (
+                                                <button
+                                                    key={status}
+                                                    className={`product-dropdown-item ${paidStatus === status ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setPaidStatus(status);
+                                                        setIsPaidStatusDropdownOpen(false);
+                                                    }}
+                                                >
+                                                    <span className="product-name-text">{status}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="quick-entry-footer">
+                            <div className="quick-entry-action-group">
+                                <button
+                                    className="btn-outline quick-entry-btn add-btn-colored add-btn-pc"
+                                    onClick={handleAddItem}
+                                >
+                                    <span className="material-symbols-outlined">add_circle</span>
+                                    ADD ITEM
+                                </button>
+
+                                <button
+                                    className="btn-outline quick-entry-btn bill-btn-colored"
+                                    onClick={handleGenerateBill}
+                                >
+                                    <span className="material-symbols-outlined">receipt_long</span>
+                                    GENERATE BILL
+                                </button>
+
+                                <button
+                                    className="btn-primary quick-entry-btn log-btn-colored"
+                                    onClick={handleLogTransaction}
+                                    disabled={isLogging || (billItems.length === 0 && !quantity)}
+                                >
+                                    <span className="material-symbols-outlined">
+                                        {isLogging ? "hourglass_empty" : "done_all"}
+                                    </span>
+                                    {isLogging ? "SAVING..." : "SAVE ENTRY"}
+                                </button>
+                            </div>
+                            <div className="history-view-trigger">
+                                <button className="view-history-btn" onClick={() => setViewMode('history')}>
+                                    <span className="material-symbols-outlined">history</span>
+                                    View Recent Sales History
+                                </button>
+                            </div>
+                        </div>
+
+                        {billItems.length > 0 && (
+                            <div className="bill-preview-section">
+                                <div className="preview-header">
+                                    <span>Items in Current Sale ({billItems.length})</span>
+                                    <button className="clear-bill" onClick={() => setBillItems([])}>Clear All</button>
+                                </div>
+                                <div className="preview-list">
+                                    {billItems.map(item => (
+                                        <div key={item.id} className="preview-item">
+                                            <span className="item-name">{item.product}</span>
+                                            <span className="item-qty">{item.qty} pcs</span>
+                                            <span className="item-amt">₹{item.amount}</span>
+                                            <button className="remove-item" onClick={() => setBillItems(billItems.filter(i => i.id !== item.id))}>
+                                                <span className="material-symbols-outlined">close</span>
+                                            </button>
+                                        </div>
                                     ))}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            <div className="stock-table-container">
-                <div className="table-responsive desktop-only-table">
-                    <table className="stock-table">
-                        <thead>
-                            <tr>
-                                <th>DATE</th>
-                                <th>COMPANY</th>
-                                <th className="hide-mobile">CUSTOMER NAME</th>
-                                <th className="hide-mobile">PRODUCT</th>
-                                <th className="hide-mobile">PIECES</th>
-                                <th className="hide-mobile">AMOUNT</th>
-                                <th className="hide-mobile">PAYMENT</th>
-                                <th className="hide-mobile">DELIVERED BY</th>
+            <div className={`desktop-view-section ${viewMode !== 'history' ? 'mobile-hidden' : ''}`}>
+                <div className="history-section-wrapper">
+                    <div className="history-header-actions">
+                        <button className="back-to-entry-btn" onClick={() => setViewMode('entry')}>
+                            <span className="material-symbols-outlined">arrow_back</span>
+                            Back to Sales Entry
+                        </button>
+                    </div>
 
-                                <th className="text-center">DELETE</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredTransactions.length > 0 ? (
-                                filteredTransactions.map((transaction) => (
-                                    <tr key={transaction.id}>
-                                        <td>
-                                            {(() => {
-                                                const parts = transaction.date?.split(', ') || [transaction.date || ''];
-                                                const datePart = parts.slice(0, 2).join(', ');
-                                                const timePart = parts.slice(2).join(', ');
-                                                return (
-                                                    <>
-                                                        {datePart}
-                                                        {timePart && <span className="hide-mobile">, {timePart}</span>}
-                                                    </>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td onClick={() => handleViewBill(transaction)} style={{ cursor: 'pointer' }}>
-                                            <span className="company-text clickable-company">{transaction.company || '-'}</span>
-                                        </td>
-                                        <td className="hide-mobile">
-                                            <span className="customer-text">{transaction.customer || '-'}</span>
-                                        </td>
-                                        <td className="hide-mobile">
-                                            <div className="product-info">
-                                                <span className="product-name">{transaction.product}</span>
-                                            </div>
-                                        </td>
-                                        <td className="quantity-cell hide-mobile">
-                                            {Math.abs(transaction.quantity)}
-                                        </td>
-                                        <td className="amount-cell hide-mobile">
-                                            ₹{transaction.amount?.toLocaleString() || '0'}
-                                        </td>
-                                        <td className="hide-mobile">
-                                            <span className={`payment-badge ${transaction.paymentStatus?.toLowerCase()}`}>
-                                                {transaction.paymentStatus || 'Unpaid'}
+                    <div className="history-filters-wrapper">
+                        <div className="history-filters-header">
+                            <h3 className="section-title">Recent Sales History</h3>
+                        </div>
+
+                        <div className="history-filters">
+                            <div className="search-box">
+                                <span className="material-symbols-outlined search-icon">search</span>
+                                <input
+                                    type="text"
+                                    placeholder="Search by customer, company or product..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="search-input"
+                                />
+                                {searchTerm && (
+                                    <button className="clear-search" onClick={() => setSearchTerm("")}>
+                                        <span className="material-symbols-outlined">close</span>
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="filter-group">
+                                <div className="product-dropdown history-filter-dropdown">
+                                    <button
+                                        onClick={() => setIsHistoryFilterDropdownOpen(!isHistoryFilterDropdownOpen)}
+                                        className="product-dropdown-toggle filter-dropdown-toggle"
+                                    >
+                                        <span className="product-dropdown-text">
+                                            {typeFilter === 'all' ? 'All Modes' : typeFilter.toUpperCase()}
+                                        </span>
+                                        <div className="filter-controls-inside">
+                                            {typeFilter !== 'all' && (
+                                                <span
+                                                    className="material-symbols-outlined clear-filter-inside"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setTypeFilter('all');
+                                                    }}
+                                                >
+                                                    close
+                                                </span>
+                                            )}
+                                            <span className="material-symbols-outlined product-dropdown-arrow">
+                                                {isHistoryFilterDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
                                             </span>
-                                        </td>
-                                        <td className="hide-mobile">
-                                            <div className="delivery-info">
-                                                <span className="delivery-person">{transaction.deliveredBy || '-'}</span>
-                                            </div>
-                                        </td>
-
-                                        <td className="text-center">
-                                            <button
-                                                className="icon-action-btn delete"
-                                                onClick={() => handleDeleteTransaction(transaction.id)}
-                                                title="Delete Record"
-                                            >
-                                                <span className="material-symbols-outlined">delete</span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="10" className="no-data">
-                                        <div className="empty-state">
-                                            <span className="material-symbols-outlined empty-icon">search_off</span>
-                                            <h4>No sales records found</h4>
-                                            <p>Try adjusting your search or filters</p>
                                         </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Mobile History Cards */}
-                <div className="mobile-history-cards">
-                    {filteredTransactions.length > 0 ? (
-                        filteredTransactions.map((transaction) => (
-                            <div key={transaction.id} className="mobile-sale-card" onClick={() => handleViewBill(transaction)}>
-                                <div className="sale-card-header">
-                                    <div className="sale-date">
-                                        <span className="material-symbols-outlined">calendar_today</span>
-                                        {transaction.date?.split(', ')[0]}
-                                    </div>
-                                    <span className={`payment-badge ${transaction.paymentStatus?.toLowerCase()}`}>
-                                        {transaction.paymentStatus}
-                                    </span>
-                                </div>
-                                <div className="sale-card-body">
-                                    <div className="company-info">
-                                        <h4 className="sale-company">{transaction.company || 'Direct Sale'}</h4>
-                                        <p className="sale-customer">{transaction.customer || 'No Customer'}</p>
-                                    </div>
-                                    <div className="sale-details-grid">
-                                        <div className="detail-item">
-                                            <span className="detail-label">AMOUNT</span>
-                                            <span className="detail-value amount">₹{transaction.amount?.toLocaleString()}</span>
-                                        </div>
-                                        <div className="detail-item">
-                                            <span className="detail-label">QUANTITY</span>
-                                            <span className="detail-value">{Math.abs(transaction.quantity)} Pcs</span>
-                                        </div>
-                                    </div>
-                                    <div className="sale-product-line">
-                                        <span className="material-symbols-outlined">inventory_2</span>
-                                        {transaction.product}
-                                    </div>
-                                </div>
-                                <div className="sale-card-actions" onClick={(e) => e.stopPropagation()}>
-                                    <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id)}>
-                                        <span className="material-symbols-outlined">delete</span>
-                                        Delete
                                     </button>
-                                    <button className="sale-action-btn view" onClick={() => handleViewBill(transaction)}>
-                                        <span className="material-symbols-outlined">receipt_long</span>
-                                        Bill
-                                    </button>
+                                    {isHistoryFilterDropdownOpen && (
+                                        <div className="product-dropdown-menu">
+                                            {['all', 'upi', 'cash', 'card'].map((mode) => (
+                                                <button
+                                                    key={mode}
+                                                    onClick={() => {
+                                                        setTypeFilter(mode);
+                                                        setIsHistoryFilterDropdownOpen(false);
+                                                    }}
+                                                    className={`product-dropdown-item ${typeFilter === mode ? 'active' : ''}`}
+                                                >
+                                                    <span className="product-name-text">
+                                                        {mode === 'all' ? 'All Modes' : mode.toUpperCase()}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        ))
-                    ) : (
-                        <div className="no-data-mobile">
-                            <span className="material-symbols-outlined">search_off</span>
-                            <p>No sales records found</p>
                         </div>
-                    )}
-                </div>
-                <div className="table-footer">
-                    <div className="pagination-info">
-                        Showing {filteredTransactions.length} of {allTransactions.length} sales records
+                    </div>
+
+                    <div className="stock-table-container">
+                        <div className="table-responsive desktop-only-table">
+                            <table className="stock-table">
+                                <thead>
+                                    <tr>
+                                        <th>DATE</th>
+                                        <th>COMPANY</th>
+                                        <th className="hide-mobile">CUSTOMER NAME</th>
+                                        <th className="hide-mobile">PRODUCT</th>
+                                        <th className="hide-mobile">PIECES</th>
+                                        <th className="hide-mobile">AMOUNT</th>
+                                        <th className="hide-mobile">PAYMENT</th>
+                                        <th className="hide-mobile">DELIVERED BY</th>
+                                        <th className="text-center">DELETE</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredTransactions.length > 0 ? (
+                                        filteredTransactions.map((transaction) => (
+                                            <tr key={transaction.id}>
+                                                <td>
+                                                    {(() => {
+                                                        const parts = transaction.date?.split(', ') || [transaction.date || ''];
+                                                        const datePart = parts.slice(0, 2).join(', ');
+                                                        const timePart = parts.slice(2).join(', ');
+                                                        return (
+                                                            <>
+                                                                {datePart}
+                                                                {timePart && <span className="hide-mobile">, {timePart}</span>}
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </td>
+                                                <td onClick={() => handleViewBill(transaction)} style={{ cursor: 'pointer' }}>
+                                                    <span className="company-text clickable-company">{transaction.company || '-'}</span>
+                                                </td>
+                                                <td className="hide-mobile">
+                                                    <span className="customer-text">{transaction.customer || '-'}</span>
+                                                </td>
+                                                <td className="hide-mobile">
+                                                    <div className="product-info">
+                                                        <span className="product-name">{transaction.product}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="quantity-cell hide-mobile">
+                                                    {Math.abs(transaction.quantity)}
+                                                </td>
+                                                <td className="amount-cell hide-mobile">
+                                                    ₹{transaction.amount?.toLocaleString() || '0'}
+                                                </td>
+                                                <td className="hide-mobile">
+                                                    <span className={`payment-badge ${transaction.paymentStatus?.toLowerCase()}`}>
+                                                        {transaction.paymentStatus || 'Unpaid'}
+                                                    </span>
+                                                </td>
+                                                <td className="hide-mobile">
+                                                    <div className="delivery-info">
+                                                        <span className="delivery-person">{transaction.deliveredBy || '-'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="text-center">
+                                                    <button
+                                                        className="icon-action-btn delete"
+                                                        onClick={() => handleDeleteTransaction(transaction.id)}
+                                                        title="Delete Record"
+                                                    >
+                                                        <span className="material-symbols-outlined">delete</span>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="10" className="no-data">
+                                                <div className="empty-state">
+                                                    <span className="material-symbols-outlined empty-icon">search_off</span>
+                                                    <h4>No sales records found</h4>
+                                                    <p>Try adjusting your search or filters</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile History Cards */}
+                        <div className="mobile-history-cards">
+                            {filteredTransactions.length > 0 ? (
+                                filteredTransactions.map((transaction) => (
+                                    <div key={transaction.id} className="mobile-sale-card" onClick={() => handleViewBill(transaction)}>
+                                        <div className="sale-card-header">
+                                            <div className="sale-date">
+                                                <span className="material-symbols-outlined">calendar_today</span>
+                                                {transaction.date?.split(', ')[0]}
+                                            </div>
+                                            <span className={`payment-badge ${transaction.paymentStatus?.toLowerCase()}`}>
+                                                {transaction.paymentStatus}
+                                            </span>
+                                        </div>
+                                        <div className="sale-card-body">
+                                            <div className="company-info">
+                                                <h4 className="sale-company">{transaction.company || 'Direct Sale'}</h4>
+                                                <p className="sale-customer">{transaction.customer || 'No Customer'}</p>
+                                            </div>
+                                            <div className="sale-details-grid">
+                                                <div className="detail-item">
+                                                    <span className="detail-label">AMOUNT</span>
+                                                    <span className="detail-value amount">₹{transaction.amount?.toLocaleString()}</span>
+                                                </div>
+                                                <div className="detail-item">
+                                                    <span className="detail-label">QUANTITY</span>
+                                                    <span className="detail-value">{Math.abs(transaction.quantity)} Pcs</span>
+                                                </div>
+                                            </div>
+                                            <div className="sale-product-line">
+                                                <span className="material-symbols-outlined">inventory_2</span>
+                                                {transaction.product}
+                                            </div>
+                                        </div>
+                                        <div className="sale-card-actions" onClick={(e) => e.stopPropagation()}>
+                                            <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id)}>
+                                                <span className="material-symbols-outlined">delete</span>
+                                                Delete
+                                            </button>
+                                            <button className="sale-action-btn view" onClick={() => handleViewBill(transaction)}>
+                                                <span className="material-symbols-outlined">receipt_long</span>
+                                                Bill
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="no-data-mobile">
+                                    <span className="material-symbols-outlined">search_off</span>
+                                    <p>No sales records found</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="table-footer">
+                            <div className="pagination-info">
+                                Showing {filteredTransactions.length} of {allTransactions.length} sales records
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1037,8 +1056,6 @@ const Sales = () => {
                 </div>
             )}
 
-
-
             {showBillModal && selectedBill && (
                 <div className="bill-modal-overlay" onClick={() => setShowBillModal(false)}>
                     <div className="bill-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1095,7 +1112,7 @@ const Sales = () => {
                     </div>
                 </div>
             )}
-            {/* Add New Client Modal */}
+
             {showAddClientModal && (
                 <div className="modal-overlay">
                     <div className="modal-content quick-add-client-modal" style={{ maxWidth: '450px' }}>

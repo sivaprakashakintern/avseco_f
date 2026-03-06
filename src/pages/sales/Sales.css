@@ -2133,3 +2133,93 @@
     flex: 1;
   }
 }
+
+/* ===== SALES VIEW TOGGLE STYLES ===== */
+.history-view-trigger {
+  margin-top: 24px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  border: 1px dashed #cbd5e1;
+}
+
+.view-history-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 24px;
+  background: white;
+  border: 1.5px solid #006A4E;
+  color: #006A4E;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-history-btn:hover {
+  background: #006A4E;
+  color: white;
+}
+
+.history-header-actions {
+  margin-bottom: 24px;
+}
+
+.back-to-entry-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #e7f3ef;
+  border: none;
+  color: #006A4E;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-to-entry-btn:hover {
+  background: #d1e7df;
+  transform: translateX(-4px);
+}
+
+.history-section-wrapper {
+  animation: slideFadeInEffect 0.4s ease;
+}
+
+@keyframes slideFadeInEffect {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== RESPONSIVE DESKTOP VS MOBILE VIEWS ===== */
+@media (min-width: 993px) {
+  .mobile-hidden {
+    display: block !important;
+  }
+
+  .history-view-trigger {
+    display: none !important;
+  }
+
+  .history-header-actions {
+    display: none !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .desktop-view-section.mobile-hidden {
+    display: none !important;
+  }
+}

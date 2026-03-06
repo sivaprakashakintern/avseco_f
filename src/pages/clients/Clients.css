@@ -813,8 +813,10 @@
 /* ===== CLIENT PROFILE MODAL ===== */
 .client-profile-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 24px;
+  text-align: center;
+  gap: 16px;
   margin-bottom: 32px;
   padding-bottom: 24px;
   border-bottom: 1px solid #b0e6a0;
@@ -870,6 +872,8 @@
 .detail-item {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 4px;
 }
 
@@ -946,28 +950,56 @@
   color: #a1b8a9;
 }
 
-/* ===== FEEDBACK TOAST ===== */
+/* ===== FEEDBACK TOAST (CENTERED & SLIM) ===== */
 .feedback-toast {
   position: fixed;
-  top: 90px;
-  right: 28px;
-  z-index: 2100;
-  background: #006A4E;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2200;
+  background: #0a3b2e;
   color: white;
-  padding: 12px 20px;
-  border-radius: 40px;
+  height: 18px;
+  /* Extremely flat look */
+  padding: 0 10px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-weight: 600;
-  font-size: 14px;
-  box-shadow: 0 8px 20px rgba(0, 106, 78, 0.25);
-  animation: slideInRight 0.3s ease;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 9px;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: centerSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .feedback-toast .material-symbols-outlined {
-  font-size: 20px;
-  color: white;
+  font-size: 11px !important;
+  /* Smaller icon to fit 18px height */
+  opacity: 0.9;
+}
+
+@keyframes centerSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .feedback-toast {
+    bottom: 20px;
+    width: auto;
+    max-width: 90%;
+  }
 }
 
 /* ===== MODAL STYLES ===== */

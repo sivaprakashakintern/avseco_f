@@ -241,22 +241,15 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     }
   };
 
-  // ===== GET UNIQUE SIZES FOR FILTER =====
-  const getUniqueSizes = () => {
-    if (productionData.length === 0) return ['all'];
-    return ['all', ...new Set(productionData.map(item => item.productSize))];
-  };
 
-  const uniqueSizes = getUniqueSizes();
 
   // ===== FILTERED DATA =====
   const filteredData = productionData.filter(item => {
     const matchesSearch = item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.productSize.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSize = sizeFilter === 'all' || item.productSize === sizeFilter;
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    return matchesSearch && matchesSize && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
   // Calculate totals
@@ -483,7 +476,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
         {/* Target Entry Form */}
         <div className="target-entry-section">
           <h3>Set Production Target by Size</h3>
-          <div className="target-form" style={{ gridTemplateColumns: '1fr 1fr 1.5fr 1fr' }}>
+          <div className="target-form">
             <div className="form-group">
               <label>Select Product</label>
               <select
@@ -543,26 +536,12 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
         {/* Summary Cards */}
         <div className="production-stats">
-          <div className="prod-stat-card" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <p className="prod-stat-label">🎯 TOTAL TARGET</p>
-              <div className="prod-stat-value">
-                <h3 className="prod-stat-number">{totalTarget.toLocaleString()}</h3>
-                <span className="prod-stat-badge badge-target" style={{ marginLeft: '10px' }}>Units</span>
-              </div>
+          <div className="prod-stat-card">
+            <p className="prod-stat-label">🎯 TOTAL TARGET</p>
+            <div className="prod-stat-value">
+              <h3 className="prod-stat-number">{totalTarget.toLocaleString()}</h3>
+              <span className="prod-stat-badge badge-target">Units</span>
             </div>
-
-            {/* Size-wise Target Breakdown (Side) */}
-            {filteredData.length > 0 && (
-              <div className="prod-target-breakdown" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '3px', paddingLeft: '16px', borderLeft: '1px dashed rgba(0,0,0,0.15)', minWidth: '90px' }}>
-                {filteredData.map(item => (
-                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', fontSize: '10.5px', fontWeight: '700', color: '#5a7b6c' }}>
-                    <span>{item.productSize}</span>
-                    <span style={{ color: '#064e3b' }}>{item.targetQty.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
           <div className="prod-stat-card">
             <p className="prod-stat-label">⚡ PRODUCED</p>
@@ -593,20 +572,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             />
           </div>
 
-          <div className="filter-box">
-            <span className="material-symbols-outlined filter-icon">filter_list</span>
-            <select
-              value={sizeFilter}
-              onChange={(e) => setSizeFilter(e.target.value)}
-              className="filter-select"
-            >
-              {uniqueSizes.map(size => (
-                <option key={size} value={size}>
-                  {size === 'all' ? 'All Sizes' : size}
-                </option>
-              ))}
-            </select>
-          </div>
+
 
           <div className="filter-box">
             <span className="material-symbols-outlined filter-icon">info</span>
@@ -661,7 +627,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                   <th className="text-right">Balance</th>
                   <th className="hide-mobile">Progress</th>
                   <th className="hide-mobile">Status</th>
-                  <th>Actions</th>
+                  <th>Del</th>
                 </tr>
               </thead>
               <tbody>
@@ -769,102 +735,107 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           {/* ===== MOBILE CARD LAYOUT (shown on ≤1024px, hidden on desktop) ===== */}
           <div className="mobile-prod-card">
             {filteredData.length > 0 ? (
-              filteredData.map(item => {
-                const progress = ((item.producedQty / item.targetQty) * 100).toFixed(1);
-                return (
-                  <div className="mobile-card-row" key={`mob-${item.id}`}>
-                    {/* Card Header: icon + name + status badge */}
-                    <div className="mobile-card-header">
-                      <div className="mobile-card-title-group">
-                        <div className="mobile-card-icon">
-                          <span className="material-symbols-outlined">eco</span>
-                        </div>
-                        <div>
-                          <div className="mobile-card-name">{item.productName} — {item.productSize}</div>
-                          <div className="mobile-card-sku">{item.sku}</div>
-                        </div>
-                      </div>
-                      <span className={`mobile-card-status ${item.status}`}>
-                        <span className="mobile-card-status-dot"></span>
-                        {item.status === 'completed' ? 'Completed' :
-                          item.status === 'in-progress' ? 'In Progress' : 'Pending'}
-                      </span>
-                    </div>
-
-                    {/* Stats: Target / Produced / Balance */}
-                    <div className="mobile-card-stats">
-                      <div className="mobile-card-stat">
-                        <span className="mobile-card-stat-label">🎯 Target</span>
-                        <div className="mobile-card-stat-value">{item.targetQty.toLocaleString()}</div>
-                      </div>
-                      <div className="mobile-card-stat">
-                        <span className="mobile-card-stat-label">⚡ Produced</span>
-                        <div className="mobile-card-stat-value produced">{item.producedQty.toLocaleString()}</div>
-                      </div>
-                      <div className="mobile-card-stat">
-                        <span className="mobile-card-stat-label">⏳ Balance</span>
-                        <div className="mobile-card-stat-value balance">{item.remainingQty.toLocaleString()}</div>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="mobile-card-progress">
-                      <div className="mobile-card-progress-header">
-                        <span className="mobile-card-progress-label">Progress</span>
-                        <span className="mobile-card-progress-pct">{progress}%</span>
-                      </div>
-                      <div className="mobile-progress-bar">
-                        <div className="mobile-progress-fill" style={{ width: `${progress}%` }}></div>
-                      </div>
-                    </div>
-
-                    {/* Inline Edit Produced */}
-                    {editingProduced === item.id && (
-                      <div className="mobile-edit-produced">
-                        <label>Update Produced:</label>
-                        <input
-                          type="number"
-                          defaultValue={item.producedQty}
-                          onChange={(e) => setManualUpdateQty({ ...manualUpdateQty, [item.id]: e.target.value })}
-                          min="0"
-                          max={item.targetQty}
-                          autoFocus
-                        />
-                        <button
-                          className="mobile-edit-save-btn"
-                          onClick={() => handleProducedUpdate(item.id, manualUpdateQty[item.id])}
+              <div className="mobile-table-container">
+                <table className="mobile-quick-table">
+                  <thead>
+                    <tr>
+                      <th>Size</th>
+                      <th className="text-center">Target</th>
+                      <th className="text-center">Prod</th>
+                      <th className="text-center">Bal</th>
+                      <th className="text-center">Del</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredData.map(item => (
+                      <tr key={`mob-${item.id}`}>
+                        <td
+                          className="mobile-size-cell"
+                          onClick={() => {
+                            setEditingProduced(item.id);
+                            setManualUpdateQty({ ...manualUpdateQty, [item.id]: item.producedQty });
+                          }}
                         >
-                          Save
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="mobile-card-actions">
-                      <button
-                        className="mobile-card-action-btn edit"
-                        onClick={() => {
-                          setEditingProduced(item.id);
-                          setManualUpdateQty({ ...manualUpdateQty, [item.id]: item.producedQty });
-                        }}
-                      >
-                        <span className="material-symbols-outlined">edit_note</span>
-                        Update Qty
-                      </button>
-                      <button
-                        className="mobile-card-action-btn delete"
-                        onClick={() => handleDeleteTarget(item.id)}
-                      >
-                        <span className="material-symbols-outlined">delete</span>
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
+                          <strong>{item.productSize}</strong>
+                        </td>
+                        <td className="text-center">{item.targetQty.toLocaleString()}</td>
+                        <td className="text-center" style={{ color: '#2e8b66', fontWeight: '700' }}>
+                          {item.producedQty.toLocaleString()}
+                        </td>
+                        <td className="text-center" style={{ color: item.remainingQty > 0 ? '#b45b0b' : '#6b7a73' }}>
+                          {item.remainingQty.toLocaleString()}
+                        </td>
+                        <td className="text-center">
+                          <button
+                            className="mobile-row-delete-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTarget(item.id);
+                            }}
+                          >
+                            <span className="material-symbols-outlined">delete</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <div className="no-data" style={{ padding: '32px 16px', textAlign: 'center', color: '#8a9e94', fontSize: '13px', fontStyle: 'italic' }}>
                 No production targets set. Please add targets using the form above.
+              </div>
+            )}
+
+            {/* Mobile Inline Edit overlay/row if needed */}
+            {editingProduced && (
+              <div className="mobile-edit-overlay" onClick={() => setEditingProduced(null)}>
+                <div className="mobile-edit-box" onClick={(e) => e.stopPropagation()}>
+                  <div className="edit-box-header centered">
+                    <div className="header-text-mobile">
+                      <div className="prod-name-mobile">{filteredData.find(i => i.id === editingProduced)?.productName}</div>
+                      <div className="edit-box-subtitle centered">
+                        <span>{filteredData.find(i => i.id === editingProduced)?.productSize}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="edit-box-body">
+                    <div className="input-section-mobile">
+                      <div className="input-header">EDIT TARGET QUANTITY</div>
+                      <div className="mobile-qty-input-wrapper">
+                        <input
+                          type="number"
+                          defaultValue={filteredData.find(i => i.id === editingProduced)?.targetQty}
+                          onChange={(e) => setManualUpdateQty({ ...manualUpdateQty, [editingProduced]: e.target.value })}
+                          className="mobile-qty-input"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+
+                    <div className="edit-box-actions-custom">
+                      <button className="custom-modal-btn cancel" onClick={() => setEditingProduced(null)}>
+                        Cancel
+                      </button>
+                      <button className="custom-modal-btn save" onClick={() => {
+                        const newTarget = parseInt(manualUpdateQty[editingProduced]) || filteredData.find(i => i.id === editingProduced)?.targetQty;
+                        const updatedData = productionData.map(item => {
+                          if (item.id === editingProduced) {
+                            const remaining = Math.max(newTarget - item.producedQty, 0);
+                            const status = item.producedQty >= newTarget ? 'completed' :
+                              item.producedQty > 0 ? 'in-progress' : 'pending';
+                            return { ...item, targetQty: newTarget, remainingQty: remaining, status: status };
+                          }
+                          return item;
+                        });
+                        setProductionData(updatedData);
+                        setEditingProduced(null);
+                      }}>
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -955,7 +926,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 
