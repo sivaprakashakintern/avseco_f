@@ -14,7 +14,6 @@ const Sidebar = () => {
   const [popupTop, setPopupTop] = useState(0);
   const [popupLeft, setPopupLeft] = useState(0);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 1024);
@@ -25,11 +24,10 @@ const Sidebar = () => {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [setIsMobileMenuOpen]);
 
 
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isMobile && isMobileMenuOpen) {
@@ -49,7 +47,7 @@ const Sidebar = () => {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMobile, isMobileMenuOpen]);
+  }, [isMobile, isMobileMenuOpen, setIsMobileMenuOpen]);
 
   const handleNavigation = (path) => {
     navigate(path);

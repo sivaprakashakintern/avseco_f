@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../../context/AppContext.js';
 import "./Employees.css";
 import "../../dashboard/Dashboard.css"; // Reuse dashboard header styles
@@ -7,7 +6,6 @@ import "../../dashboard/Dashboard.css"; // Reuse dashboard header styles
 import { formatDate } from '../../utils/dateUtils.js';
 
 const Employees = () => {
-  const navigate = useNavigate();
 
   // ── Global shared state (synced with AttendanceLog, Dashboard, etc.) ────────
   const {

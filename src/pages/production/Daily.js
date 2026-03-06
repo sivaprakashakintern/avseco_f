@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -9,17 +8,27 @@ import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
 import './Daily.css';
 
+
+// Colour mapping for sizes
+const SIZE_COLOR = {
+  '6-inch': '#10b981',
+  '8-inch': '#3b82f6',
+  '10-inch': '#f59e0b',
+  '12-inch': '#8b5cf6',
+};
+
+// Available sizes
+const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
+
+// Product Options
+const products = [
+  { name: "Areca Leaf Plate", sizes: ['6-inch', '8-inch', '10-inch', '12-inch'] },
+];
+
+const operators = ['Rajesh', 'Priya', 'Suresh', 'Anitha', 'Kumar'];
+const grades = ['A', 'B', 'C'];
+
 const Production = () => {
-  const navigate = useNavigate();
-
-  // Colour mapping for sizes
-  const SIZE_COLOR = {
-    '6-inch': '#10b981',
-    '8-inch': '#3b82f6',
-    '10-inch': '#f59e0b',
-    '12-inch': '#8b5cf6',
-  };
-
   // Mobile card expand state
   const [expandedProdId, setExpandedProdId] = useState(null);
   const toggleProdCard = (id) => setExpandedProdId(prev => prev === id ? null : id);
@@ -35,7 +44,6 @@ const Production = () => {
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [exportYear, setExportYear] = useState(new Date().getFullYear().toString());
-  const [showYearPicker, setShowYearPicker] = useState(false);
 
   // Notification State
   const [showNotification, setShowNotification] = useState(false);
@@ -47,7 +55,6 @@ const Production = () => {
   const [historySizeFilter, setHistorySizeFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showHistoryOnly, setShowHistoryOnly] = useState(false);
 
   // Summary view state
   const [summaryView, setSummaryView] = useState('daily'); // 'daily', 'weekly', 'monthly'
@@ -81,8 +88,6 @@ const Production = () => {
     monthBySize: {}
   });
 
-  // Available sizes
-  const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
 
   // ========== HELPER FUNCTIONS ==========
   const formatDate = (date) => {
@@ -258,13 +263,6 @@ const Production = () => {
     };
   };
 
-  // ========== PRODUCT OPTIONS ==========
-  const products = [
-    { name: "Areca Leaf Plate", sizes: ['6-inch', '8-inch', '10-inch', '12-inch'] },
-  ];
-
-  const operators = ['Rajesh', 'Priya', 'Suresh', 'Anitha', 'Kumar'];
-  const grades = ['A', 'B', 'C'];
 
   // ========== NOTIFICATION FUNCTIONS ==========
   const showNotificationMessage = (message, type = 'success') => {
@@ -289,21 +287,11 @@ const Production = () => {
         item.operator.toLowerCase().includes(historySearch.toLowerCase());
 
       const matchesSize = historySizeFilter === 'all' || item.size === historySizeFilter;
-      const matchesDate = !selectedDate || item.date === formatDate(selectedDate);
 
-      return matchesSearch && matchesSize && matchesDate;
+      return matchesSearch && matchesSize;
     });
   };
 
-  const getUniqueHistorySizes = () => {
-    const sizes = productionHistory.map(item => item.size);
-    return ['all', ...new Set(sizes)];
-  };
-
-  const getUniqueDates = () => {
-    const dates = productionHistory.map(item => item.date);
-    return [...new Set(dates)].sort().reverse();
-  };
 
   // ========== EXPORT MODAL FUNCTIONS ==========
   const openExportModal = () => {
@@ -332,15 +320,7 @@ const Production = () => {
     }
   };
 
-  const handleYearSelect = (year) => {
-    setExportYear(year);
-    setShowYearPicker(false);
-  };
 
-  const handleDateSelect = (date) => {
-    setSelectedDate(date);
-    setShowDatePicker(false);
-  };
 
   const handleProductionDateSelect = (date) => {
     setProductionDate(date);
@@ -352,9 +332,7 @@ const Production = () => {
     setShowSummaryDatePicker(false);
   };
 
-  const clearDateFilter = () => {
-    setSelectedDate(null);
-  };
+
 
   const getFilteredDataForExport = () => {
     switch (exportPeriod) {
@@ -573,9 +551,7 @@ const Production = () => {
     }
   };
 
-  const handleNavigation = (path) => {
-    navigate(path);
-  };
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -639,12 +615,10 @@ const Production = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.date-picker-container')) {
-        setShowDatePicker(false);
         setShowProductionDatePicker(false);
         setShowSummaryDatePicker(false);
         setShowStartDatePicker(false);
         setShowEndDatePicker(false);
-        setShowYearPicker(false);
       }
     };
 
@@ -655,8 +629,6 @@ const Production = () => {
   }, []);
 
   const filteredHistory = getFilteredHistory();
-  const uniqueHistorySizes = getUniqueHistorySizes();
-  const uniqueDates = getUniqueDates();
   const summaryData = getSummaryData();
 
   const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
