@@ -179,7 +179,6 @@ const ProductList = () => {
       category: "Plates",
       costPrice: product.costPrice,
       sellPrice: product.sellPrice,
-      image: product.image,
     });
     setShowEditModal(true);
   };
@@ -190,13 +189,6 @@ const ProductList = () => {
     const cost = parseFloat(formData.costPrice);
     const sell = parseFloat(formData.sellPrice);
     const margin = ((sell - cost) / sell * 100).toFixed(1) + "%";
-
-    // Determine image based on size - ONLY 4 PLATES
-    let productImage = plate10Img;
-    if (formData.size === "6-inch") productImage = plate6Img;
-    else if (formData.size === "8-inch") productImage = plate8Img;
-    else if (formData.size === "10-inch") productImage = plate10Img;
-    else if (formData.size === "12-inch") productImage = plate12Img;
 
     const updatedProducts = products.map((p) =>
       p.id === selectedProduct.id
@@ -209,7 +201,6 @@ const ProductList = () => {
           costPrice: cost,
           sellPrice: sell,
           margin: margin,
-          image: productImage,
         }
         : p
     );
