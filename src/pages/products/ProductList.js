@@ -70,25 +70,6 @@ const ProductList = () => {
     sellPrice: "",
   });
 
-  // Get unique sizes for filter
-  const uniqueSizes = ["All Sizes", ...new Set(products.map(p => p.size))].sort();
-
-  // Filter products based on size, category, and search
-  const filteredProducts = products.filter((product) => {
-    // Size filter
-    const matchesSize = selectedSize === "All Sizes" || product.size === selectedSize;
-
-    // Category filter (always true since only Plates)
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-
-    // Search filter
-    const matchesSearch = searchTerm === "" ||
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchTerm.toLowerCase());
-
-    return matchesSize && matchesCategory && matchesSearch;
-  });
-
   const stats = {
     totalProducts: [...new Set(products.map(p => p.name))].length,
   };
@@ -213,11 +194,6 @@ const ProductList = () => {
     setTimeout(() => setFeedbackMessage(""), 3000);
   };
 
-  // Delete Product
-  const handleDeleteProduct = (product) => {
-    setSelectedProduct(product);
-    setShowDeleteModal(true);
-  };
 
   const confirmDeleteProduct = () => {
     if (!selectedProduct) return;
