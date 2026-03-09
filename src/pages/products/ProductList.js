@@ -7,7 +7,6 @@ import "./ProductList.css";
 const ProductList = () => {
   const [viewMode, setViewMode] = useState("grid");
   const [selectedSize, setSelectedSize] = useState("All Sizes");
-  const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -236,7 +235,6 @@ const ProductList = () => {
   // Clear filters
   const clearFilters = () => {
     setSelectedSize("All Sizes");
-    setSelectedCategory("all");
     setSearchTerm("");
   };
 
