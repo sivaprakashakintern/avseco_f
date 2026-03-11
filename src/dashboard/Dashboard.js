@@ -195,7 +195,7 @@ const Dashboard = () => {
         <div className="greetings-left">
           <div className="greetings-left-content">
             <div>
-              <h1>Good Evening, Arun Kumar! 👋</h1>
+              <h1>Good Morning, Jofra! 👋</h1>
               <p>Friday, 20 February 2026</p>
             </div>
           </div>
