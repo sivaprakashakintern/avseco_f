@@ -50,11 +50,8 @@ const Production = () => {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
 
-  // Search and Filter States for Production History
   const [historySearch, setHistorySearch] = useState('');
   const [historySizeFilter, setHistorySizeFilter] = useState('all');
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showHistoryOnly, setShowHistoryOnly] = useState(false);
 
   // Summary view state

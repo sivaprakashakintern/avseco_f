@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useAppContext } from "../../context/AppContext.js";
 import { formatDate } from "../../utils/dateUtils.js";
 import "./Clients.css";
 
 const Clients = () => {
+  const { clients, addClient, updateClient, deleteClient } = useAppContext();
   const [viewMode, setViewMode] = useState("list");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -24,114 +26,6 @@ const Clients = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Clients Data with State
-  const [clients, setClients] = useState([
-    {
-      id: 1,
-      companyName: "Eco Products Ltd",
-      contactPerson: "Rahul Sharma",
-      email: "rahul@ecoproducts.com",
-      phone: "+91 98765 43210",
-      status: "Active",
-      totalOrders: 45,
-      totalSpent: "₹12,45,000",
-      lastOrder: "2026-02-10",
-      address: "123 Green Street, Mumbai - 400001",
-      gst: "27ABCDE1234F1Z5",
-    },
-    {
-      id: 2,
-      companyName: "Green Earth Solutions",
-      contactPerson: "Priya Patel",
-      email: "priya@greenearth.com",
-      phone: "+91 87654 32109",
-      status: "Active",
-      totalOrders: 38,
-      totalSpent: "₹8,90,500",
-      lastOrder: "2026-02-08",
-      address: "456 Eco Park, Delhi - 110001",
-      gst: "07FGHIJ5678K2L6",
-    },
-    {
-      id: 3,
-      companyName: "Sustainable Living Store",
-      contactPerson: "Amit Kumar",
-      email: "amit@sustainable.com",
-      phone: "+91 76543 21098",
-      status: "Active",
-      totalOrders: 22,
-      totalSpent: "₹5,67,800",
-      lastOrder: "2026-02-05",
-      address: "789 Green Avenue, Bangalore - 560001",
-      gst: "29KLMNO9012P3M7",
-    },
-    {
-      id: 4,
-      companyName: "Nature's Basket",
-      contactPerson: "Sneha Reddy",
-      email: "sneha@naturesbasket.com",
-      phone: "+91 65432 10987",
-      status: "Pending",
-      totalOrders: 5,
-      totalSpent: "₹85,200",
-      lastOrder: "2026-01-28",
-      address: "321 Organic Road, Chennai - 600001",
-      gst: "33PQRST3456R4N8",
-    },
-    {
-      id: 5,
-      companyName: "Eco Friendly Mart",
-      contactPerson: "Vikram Singh",
-      email: "vikram@ecofriendly.com",
-      phone: "+91 54321 09876",
-      status: "Inactive",
-      totalOrders: 12,
-      totalSpent: "₹2,34,600",
-      lastOrder: "2026-01-15",
-      address: "654 Zero Waste, Pune - 411001",
-      gst: "27UVWXY6789S5P9",
-    },
-    {
-      id: 6,
-      companyName: "Green Hospitality",
-      contactPerson: "Anjali Mehta",
-      email: "anjali@greenhospitality.com",
-      phone: "+91 43210 98765",
-      status: "Active",
-      totalOrders: 28,
-      totalSpent: "₹7,89,300",
-      lastOrder: "2026-02-12",
-      address: "987 Sustainable St, Hyderabad - 500001",
-      gst: "36ZABCD1234T6Q1",
-    },
-    {
-      id: 7,
-      companyName: "Organic Retail Chain",
-      contactPerson: "Karthik Rajan",
-      email: "karthik@organicretail.com",
-      phone: "+91 32109 87654",
-      status: "Pending",
-      totalOrders: 3,
-      totalSpent: "₹45,000",
-      lastOrder: "2026-01-20",
-      address: "147 Natural Way, Ahmedabad - 380001",
-      gst: "24EFGHI5678U7R2",
-    },
-    {
-      id: 8,
-      companyName: "Eco Packaging Solutions",
-      contactPerson: "Lakshmi Nair",
-      email: "lakshmi@ecopackaging.com",
-      phone: "+91 21098 76543",
-      status: "Active",
-      totalOrders: 52,
-      totalSpent: "₹18,45,600",
-      lastOrder: "2026-02-11",
-      address: "258 Green Circle, Kochi - 682001",
-      gst: "32JKLMN9012V8S3",
-    },
-  ]);
-
   // Form state for add/edit
   const [formData, setFormData] = useState({
     companyName: "",
@@ -146,7 +40,7 @@ const Clients = () => {
   const stats = {
     totalClients: clients.length,
     totalRevenue: clients.reduce((sum, c) => {
-      const amount = parseFloat(c.totalSpent.replace(/[^0-9.-]+/g, ""));
+      const amount = parseFloat(c.totalSpent?.toString().replace(/[^0-9.-]+/g, "") || 0);
       return sum + amount;
     }, 0),
   };
@@ -203,14 +97,13 @@ const Clients = () => {
     e.preventDefault();
 
     // Validate form
-    if (!formData.companyName || !formData.contactPerson || !formData.email) {
+    if (!formData.companyName || !formData.contactPerson || !formData.email || !formData.gst) {
       setFeedbackMessage("Please fill all required fields");
       setTimeout(() => setFeedbackMessage(""), 2000);
       return;
     }
 
     const newClient = {
-      id: clients.length + 1,
       companyName: formData.companyName,
       contactPerson: formData.contactPerson,
       email: formData.email,
@@ -223,7 +116,7 @@ const Clients = () => {
       gst: formData.gst || "Not provided",
     };
 
-    setClients([...clients, newClient]);
+    addClient(newClient);
     setShowAddModal(false);
     setFeedbackMessage("Client added");
     setTimeout(() => setFeedbackMessage(""), 2000);
@@ -245,23 +138,21 @@ const Clients = () => {
 
   const confirmEditClient = (e) => {
     e.preventDefault();
-    if (!selectedClient) return;
+    if (!formData.companyName || !formData.contactPerson || !formData.email || !formData.gst) {
+      setFeedbackMessage("Please fill all required fields");
+      setTimeout(() => setFeedbackMessage(""), 2000);
+      return;
+    }
 
-    const updatedClients = clients.map((c) =>
-      c.id === selectedClient.id
-        ? {
-          ...c,
-          companyName: formData.companyName,
-          contactPerson: formData.contactPerson,
-          email: formData.email,
-          phone: formData.phone,
-          address: formData.address,
-          gst: formData.gst,
-        }
-        : c
-    );
+    updateClient(selectedClient.id, {
+      companyName: formData.companyName,
+      contactPerson: formData.contactPerson,
+      email: formData.email,
+      phone: formData.phone,
+      address: formData.address,
+      gst: formData.gst,
+    });
 
-    setClients(updatedClients);
     setShowEditModal(false);
     setSelectedClient(null);
     setFeedbackMessage("Client updated");
@@ -277,8 +168,7 @@ const Clients = () => {
   const confirmDeleteClient = () => {
     if (!selectedClient) return;
 
-    const filteredClients = clients.filter((c) => c.id !== selectedClient.id);
-    setClients(filteredClients);
+    deleteClient(selectedClient.id);
     setShowDeleteModal(false);
     setSelectedClient(null);
     setFeedbackMessage("Client deleted");
@@ -765,14 +655,15 @@ const Clients = () => {
                   </div>
                 </div>
                 <div className="modal-form-group">
-                  <label>GST Number</label>
+                  <label>GSTIN Number *</label>
                   <input
                     type="text"
                     name="gst"
                     value={formData.gst}
                     onChange={handleInputChange}
-                    placeholder="Enter GST number"
+                    placeholder="Enter GSTIN number"
                     className="modal-input"
+                    required
                   />
                 </div>
                 <div className="modal-form-group">
@@ -873,13 +764,14 @@ const Clients = () => {
                   </div>
                 </div>
                 <div className="modal-form-group">
-                  <label>GST Number</label>
+                  <label>GSTIN Number *</label>
                   <input
                     type="text"
                     name="gst"
                     value={formData.gst}
                     onChange={handleInputChange}
                     className="modal-input"
+                    required
                   />
                 </div>
                 <div className="modal-form-group">
@@ -937,7 +829,7 @@ const Clients = () => {
                   <span className="detail-value">{selectedClient.phone}</span>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">GST Number</span>
+                  <span className="detail-label">GSTIN Number</span>
                   <span className="detail-value">{selectedClient.gst}</span>
                 </div>
                 <div className="detail-item">

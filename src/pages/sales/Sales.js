@@ -3,10 +3,10 @@ import { useAppContext } from '../../context/AppContext.js';
 import './Sales.css';
 
 const PRODUCTS_LIST = [
-    { id: 1, name: "Areca Leaf Plate 6\" Round", sku: "FG-PL-006", category: "Finished Goods", unit: "pcs", currentStock: 6000, price: 2.50 },
-    { id: 2, name: "Areca Leaf Plate 8\" Round", sku: "FG-PL-008", category: "Finished Goods", unit: "pcs", currentStock: 5000, price: 4.50 },
-    { id: 3, name: "Areca Leaf Plate 10\" Round", sku: "FG-PL-010", category: "Finished Goods", unit: "pcs", currentStock: 3200, price: 6.50 },
-    { id: 4, name: "Areca Leaf Plate 12\" Round", sku: "FG-PL-012", category: "Finished Goods", unit: "pcs", currentStock: 2500, price: 8.50 },
+    { id: 1, baseName: "Areca Leaf Plate", size: "6\" Round", name: "Areca Leaf Plate 6\" Round", sku: "FG-PL-006", category: "Finished Goods", unit: "pcs", currentStock: 6000, price: 2.50 },
+    { id: 2, baseName: "Areca Leaf Plate", size: "8\" Round", name: "Areca Leaf Plate 8\" Round", sku: "FG-PL-008", category: "Finished Goods", unit: "pcs", currentStock: 5000, price: 4.50 },
+    { id: 3, baseName: "Areca Leaf Plate", size: "10\" Round", name: "Areca Leaf Plate 10\" Round", sku: "FG-PL-010", category: "Finished Goods", unit: "pcs", currentStock: 3200, price: 6.50 },
+    { id: 4, baseName: "Areca Leaf Plate", size: "12\" Round", name: "Areca Leaf Plate 12\" Round", sku: "FG-PL-012", category: "Finished Goods", unit: "pcs", currentStock: 2500, price: 8.50 },
 ];
 
 const Sales = () => {
@@ -17,7 +17,8 @@ const Sales = () => {
         contactPerson: "",
         email: "",
         phone: "",
-        address: ""
+        address: "",
+        gst: ""
     });
     const [exportLoading, setExportLoading] = useState(false);
     const [exportSuccess, setExportSuccess] = useState(false);
@@ -25,20 +26,32 @@ const Sales = () => {
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportFormat, setExportFormat] = useState('excel');
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
-    const [selectedProduct, setSelectedProduct] = useState("Areca Leaf Plate 10\" Round");
-    const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
+
+    // Product Selection State
+    const [selectedBaseProduct, setSelectedBaseProduct] = useState("Areca Leaf Plate");
+    const [isBaseProductDropdownOpen, setIsBaseProductDropdownOpen] = useState(false);
+    const [selectedSize, setSelectedSize] = useState("10\" Round");
+    const [isSizeDropdownOpen, setIsSizeDropdownOpen] = useState(false);
+
     const [quantity, setQuantity] = useState("");
     const [unitPrice, setUnitPrice] = useState("");
     const [totalAmount, setTotalAmount] = useState("");
     const [paymentMode, setPaymentMode] = useState("Cash");
     const [companyName, setCompanyName] = useState("");
     const [customerName, setCustomerName] = useState("");
+    const [customerEmail, setCustomerEmail] = useState("");
+    const [customerPhone, setCustomerPhone] = useState("");
+    const [customerGstin, setCustomerGstin] = useState("");
+    const [customerAddress, setCustomerAddress] = useState("");
     const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
     const [deliveryEmployee, setDeliveryEmployee] = useState("");
     const [isEmployeeDropdownOpen, setIsEmployeeDropdownOpen] = useState(false);
     const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
     const [paidStatus, setPaidStatus] = useState("Paid");
     const [isPaidStatusDropdownOpen, setIsPaidStatusDropdownOpen] = useState(false);
+    const [amountPaid, setAmountPaid] = useState("");
+    const [deliveryMode, setDeliveryMode] = useState("Door Delivery");
+    const [isDeliveryModeDropdownOpen, setIsDeliveryModeDropdownOpen] = useState(false);
     const [isHistoryFilterDropdownOpen, setIsHistoryFilterDropdownOpen] = useState(false);
     const isLogging = false;
     const [showBillModal, setShowBillModal] = useState(false);
@@ -51,6 +64,17 @@ const Sales = () => {
     const [typeFilter, setTypeFilter] = useState("all");
 
     const products = PRODUCTS_LIST;
+
+    // Derived selected product
+    const selectedProduct = products.find(p => p.baseName === selectedBaseProduct && p.size === selectedSize)?.name || "";
+
+    // Auto-select first available size when base product changes
+    useEffect(() => {
+        const availableSizes = products.filter(p => p.baseName === selectedBaseProduct).map(p => p.size);
+        if (!availableSizes.includes(selectedSize) && availableSizes.length > 0) {
+            setSelectedSize(availableSizes[0]);
+        }
+    }, [selectedBaseProduct, products, selectedSize]);
 
     // Initialize unit price when product is selected
     useEffect(() => {
@@ -139,6 +163,8 @@ const Sales = () => {
         const newItem = {
             id: Date.now(),
             product: selectedProduct,
+            baseName: selectedBaseProduct,
+            size: selectedSize,
             qty: qtyToAdd,
             amount: (parseFloat(unitPrice) * qtyToAdd) || 0,
             unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
@@ -188,7 +214,10 @@ const Sales = () => {
             paymentStatus: paymentMode,
             saleItems: itemsToLog.map(item => ({
                 productName: item.product,
-                qty: item.qty
+                baseName: item.baseName || item.product,
+                size: item.size || "-",
+                qty: item.qty,
+                amount: item.amount
             })),
             deliveredBy: deliveryEmployee
         };
@@ -199,9 +228,15 @@ const Sales = () => {
         setTotalAmount("");
         setCompanyName("");
         setCustomerName("");
+        setCustomerEmail("");
+        setCustomerPhone("");
+        setCustomerGstin("");
+        setCustomerAddress("");
         setDeliveryEmployee("");
+        setDeliveryMode("Door Delivery");
         setPaymentMode("Cash");
         setPaidStatus("Paid");
+        setAmountPaid("");
     };
 
     const handleGenerateBill = () => {
@@ -215,6 +250,8 @@ const Sales = () => {
         if (quantity && parseFloat(quantity) > 0) {
             itemsForBill.push({
                 product: selectedProduct,
+                baseName: selectedBaseProduct,
+                size: selectedSize,
                 qty: parseFloat(quantity),
                 amount: parseFloat(totalAmount) || 0
             });
@@ -232,6 +269,8 @@ const Sales = () => {
             date: formatDate(new Date()),
             items: itemsForBill.map(item => ({
                 product: item.product,
+                baseName: item.baseName || item.product,
+                size: item.size || "-",
                 qty: item.qty,
                 amount: item.amount
             })),
@@ -252,9 +291,11 @@ const Sales = () => {
             date: transaction.date,
             items: transaction.saleItems?.map(item => ({
                 product: item.productName,
+                baseName: item.baseName || item.productName,
+                size: item.size || "-",
                 qty: item.qty,
-                amount: transaction.amount
-            })) || [{ product: transaction.product, qty: Math.abs(transaction.quantity), amount: transaction.amount }],
+                amount: item.amount || transaction.amount
+            })) || [{ product: transaction.product, baseName: transaction.product, size: "-", qty: Math.abs(transaction.quantity), amount: transaction.amount }],
             totalAmount: transaction.amount,
             paymentMode: transaction.paymentStatus,
             deliveredBy: transaction.deliveredBy
@@ -334,8 +375,11 @@ const Sales = () => {
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (!event.target.closest('.product-dropdown')) {
-                setIsProductDropdownOpen(false);
+            if (!event.target.closest('.base-product-dropdown')) {
+                setIsBaseProductDropdownOpen(false);
+            }
+            if (!event.target.closest('.size-dropdown')) {
+                setIsSizeDropdownOpen(false);
             }
             if (!event.target.closest('.client-dropdown')) {
                 setIsClientDropdownOpen(false);
@@ -345,6 +389,9 @@ const Sales = () => {
             }
             if (!event.target.closest('.payment-dropdown')) {
                 setIsPaymentDropdownOpen(false);
+            }
+            if (!event.target.closest('.delivery-mode-dropdown')) {
+                setIsDeliveryModeDropdownOpen(false);
             }
             if (!event.target.closest('.history-filter-dropdown')) {
                 setIsHistoryFilterDropdownOpen(false);
@@ -397,7 +444,7 @@ const Sales = () => {
             <div className={`desktop-view-section ${viewMode !== 'entry' ? 'mobile-hidden' : ''}`}>
                 <div className="stock-table-container quick-entry-card">
                     <div className="table-header">
-                        <h3 className="section-title">Quick Sales Entry</h3>
+                        <h3 className="section-title">Customer Details</h3>
                     </div>
                     <div className="quick-entry-grid">
                         <div className="quick-entry-row">
@@ -415,7 +462,15 @@ const Sales = () => {
                                             </span>
                                         </button>
                                         {companyName && (
-                                            <button className="clear-selection-btn" onClick={(e) => { e.stopPropagation(); setCompanyName(""); setCustomerName(""); }}>
+                                            <button className="clear-selection-btn" onClick={(e) => {
+                                                e.stopPropagation();
+                                                setCompanyName("");
+                                                setCustomerName("");
+                                                setCustomerEmail("");
+                                                setCustomerPhone("");
+                                                setCustomerGstin("");
+                                                setCustomerAddress("");
+                                            }}>
                                                 <span className="material-symbols-outlined">close</span>
                                             </button>
                                         )}
@@ -443,7 +498,11 @@ const Sales = () => {
                                                                 key={client.id}
                                                                 onClick={() => {
                                                                     setCompanyName(client.companyName);
-                                                                    setCustomerName(client.contactPerson);
+                                                                    setCustomerName(client.contactPerson || "");
+                                                                    setCustomerEmail(client.email || "");
+                                                                    setCustomerPhone(client.phone || "");
+                                                                    setCustomerGstin(client.gst || "");
+                                                                    setCustomerAddress(client.address || "");
                                                                     setIsClientDropdownOpen(false);
                                                                 }}
                                                                 className={`product-dropdown-item ${companyName === client.companyName ? 'active' : ''}`}
@@ -500,29 +559,121 @@ const Sales = () => {
                             </div>
 
                             <div className="quick-entry-item">
-                                <span className="quick-entry-label">Product Selection:</span>
-                                <div className="product-dropdown">
+                                <span className="quick-entry-label">Email Address:</span>
+                                <div style={{ width: '100%' }}>
+                                    <input
+                                        type="email"
+                                        placeholder="Enter email address"
+                                        className="quick-entry-input"
+                                        value={customerEmail}
+                                        onChange={(e) => setCustomerEmail(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Phone Number:</span>
+                                <div style={{ width: '100%' }}>
+                                    <input
+                                        type="tel"
+                                        placeholder="Enter phone number"
+                                        className="quick-entry-input"
+                                        value={customerPhone}
+                                        onChange={(e) => setCustomerPhone(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">GSTIN:</span>
+                                <div style={{ width: '100%' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter GSTIN Number"
+                                        className="quick-entry-input"
+                                        value={customerGstin}
+                                        onChange={(e) => setCustomerGstin(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Address:</span>
+                                <div style={{ width: '100%' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter complete address"
+                                        className="quick-entry-input"
+                                        value={customerAddress}
+                                        onChange={(e) => setCustomerAddress(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="table-header" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e2e8f0' }}>
+                        <h3 className="section-title">Billing Details</h3>
+                    </div>
+                    <div className="quick-entry-grid">
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Product Name:</span>
+                                <div className="product-dropdown base-product-dropdown">
                                     <button
-                                        onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
+                                        onClick={() => setIsBaseProductDropdownOpen(!isBaseProductDropdownOpen)}
                                         className="product-dropdown-toggle"
                                     >
-                                        <span className="product-dropdown-text">{selectedProduct}</span>
+                                        <span className="product-dropdown-text">{selectedBaseProduct}</span>
                                         <span className="material-symbols-outlined product-dropdown-arrow">
-                                            {isProductDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                            {isBaseProductDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
                                         </span>
                                     </button>
-                                    {isProductDropdownOpen && (
+                                    {isBaseProductDropdownOpen && (
                                         <div className="product-dropdown-menu">
-                                            {products.map((product) => (
+                                            {[...new Set(products.map(p => p.baseName))].map((baseName) => (
                                                 <button
-                                                    key={product.id}
+                                                    key={baseName}
                                                     onClick={() => {
-                                                        setSelectedProduct(product.name);
-                                                        setIsProductDropdownOpen(false);
+                                                        setSelectedBaseProduct(baseName);
+                                                        setIsBaseProductDropdownOpen(false);
                                                     }}
-                                                    className={`product-dropdown-item ${selectedProduct === product.name ? 'active' : ''}`}
+                                                    className={`product-dropdown-item ${selectedBaseProduct === baseName ? 'active' : ''}`}
                                                 >
-                                                    <span className="product-name-text">{product.name}</span>
+                                                    <span className="product-name-text">{baseName}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Size/Variant:</span>
+                                <div className="product-dropdown size-dropdown">
+                                    <button
+                                        onClick={() => setIsSizeDropdownOpen(!isSizeDropdownOpen)}
+                                        className="product-dropdown-toggle"
+                                    >
+                                        <span className="product-dropdown-text">{selectedSize}</span>
+                                        <span className="material-symbols-outlined product-dropdown-arrow">
+                                            {isSizeDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                        </span>
+                                    </button>
+                                    {isSizeDropdownOpen && (
+                                        <div className="product-dropdown-menu">
+                                            {products.filter(p => p.baseName === selectedBaseProduct).map((product) => (
+                                                <button
+                                                    key={product.size}
+                                                    onClick={() => {
+                                                        setSelectedSize(product.size);
+                                                        setIsSizeDropdownOpen(false);
+                                                    }}
+                                                    className={`product-dropdown-item ${selectedSize === product.size ? 'active' : ''}`}
+                                                >
+                                                    <span className="product-name-text">{product.size}</span>
                                                     <span className="product-sku-category">{product.sku}</span>
                                                 </button>
                                             ))}
@@ -530,9 +681,7 @@ const Sales = () => {
                                     )}
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="quick-entry-row">
                             <div className="quick-entry-item">
                                 <span className="quick-entry-label">Total Pieces:</span>
                                 <div style={{ width: '100%', display: 'flex', gap: '8px' }}>
@@ -567,7 +716,9 @@ const Sales = () => {
                                     />
                                 </div>
                             </div>
+                        </div>
 
+                        <div className="quick-entry-row">
                             <div className="quick-entry-item">
                                 <span className="quick-entry-label">Total Bill Amount:</span>
                                 <div className="amount-input-wrapper">
@@ -581,29 +732,59 @@ const Sales = () => {
                                     />
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="quick-entry-row">
                             <div className="quick-entry-item">
-                                <span className="quick-entry-label">Delivered By:</span>
-                                <div className="product-dropdown employee-dropdown">
+                                <span className="quick-entry-label">Delivery Mode:</span>
+                                <div className="product-dropdown delivery-mode-dropdown">
+                                    <button
+                                        onClick={() => setIsDeliveryModeDropdownOpen(!isDeliveryModeDropdownOpen)}
+                                        className="product-dropdown-toggle"
+                                    >
+                                        <span className="product-dropdown-text">{deliveryMode}</span>
+                                        <span className="material-symbols-outlined product-dropdown-arrow">
+                                            {isDeliveryModeDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                        </span>
+                                    </button>
+                                    {isDeliveryModeDropdownOpen && (
+                                        <div className="product-dropdown-menu">
+                                            {['Door Delivery', 'Self Pickup'].map(mode => (
+                                                <button
+                                                    key={mode}
+                                                    className={`product-dropdown-item ${deliveryMode === mode ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setDeliveryMode(mode);
+                                                        setIsDeliveryModeDropdownOpen(false);
+                                                    }}
+                                                >
+                                                    <span className="product-name-text">{mode}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="quick-entry-item">
+                                <span className={`quick-entry-label ${deliveryMode !== 'Door Delivery' ? 'disabled-label' : ''}`} style={deliveryMode !== 'Door Delivery' ? { opacity: 0.5 } : {}}>Delivered By:</span>
+                                <div className={`product-dropdown employee-dropdown ${deliveryMode !== 'Door Delivery' ? 'disabled-dropdown' : ''}`} style={deliveryMode !== 'Door Delivery' ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
                                     <div className="dropdown-input-wrapper">
                                         <button
                                             onClick={() => setIsEmployeeDropdownOpen(!isEmployeeDropdownOpen)}
                                             className="product-dropdown-toggle"
+                                            disabled={deliveryMode !== 'Door Delivery'}
                                         >
                                             <span className="product-dropdown-text">{deliveryEmployee || "Select Employee"}</span>
                                             <span className="material-symbols-outlined product-dropdown-arrow">
                                                 {isEmployeeDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
                                             </span>
                                         </button>
-                                        {deliveryEmployee && (
+                                        {deliveryEmployee && deliveryMode === 'Door Delivery' && (
                                             <button className="clear-selection-btn" onClick={(e) => { e.stopPropagation(); setDeliveryEmployee(""); }}>
                                                 <span className="material-symbols-outlined">close</span>
                                             </button>
                                         )}
                                     </div>
-                                    {isEmployeeDropdownOpen && (
+                                    {isEmployeeDropdownOpen && deliveryMode === 'Door Delivery' && (
                                         <div className="product-dropdown-menu">
                                             <div className="dropdown-search-wrapper">
                                                 <input
@@ -640,20 +821,54 @@ const Sales = () => {
                                     )}
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Payment Status:</span>
+                                <div className="product-dropdown payment-dropdown">
+                                    <button
+                                        onClick={() => setIsPaidStatusDropdownOpen(!isPaidStatusDropdownOpen)}
+                                        className="product-dropdown-toggle"
+                                    >
+                                        <span className="product-dropdown-text">{paidStatus}</span>
+                                        <span className="material-symbols-outlined product-dropdown-arrow">
+                                            {isPaidStatusDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                        </span>
+                                    </button>
+                                    {isPaidStatusDropdownOpen && (
+                                        <div className="product-dropdown-menu">
+                                            {['Paid', 'Unpaid', 'Advance', 'Pending'].map(status => (
+                                                <button
+                                                    key={status}
+                                                    className={`product-dropdown-item ${paidStatus === status ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setPaidStatus(status);
+                                                        setIsPaidStatusDropdownOpen(false);
+                                                    }}
+                                                >
+                                                    <span className="product-name-text">{status}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
                             <div className="quick-entry-item">
-                                <span className="quick-entry-label">Payment Mode:</span>
-                                <div className="product-dropdown payment-dropdown">
+                                <span className={`quick-entry-label ${paidStatus === 'Unpaid' ? 'disabled-label' : ''}`} style={paidStatus === 'Unpaid' ? { opacity: 0.5 } : {}}>Payment Mode:</span>
+                                <div className={`product-dropdown payment-dropdown ${paidStatus === 'Unpaid' ? 'disabled-dropdown' : ''}`} style={paidStatus === 'Unpaid' ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
                                     <button
                                         onClick={() => setIsPaymentDropdownOpen(!isPaymentDropdownOpen)}
                                         className="product-dropdown-toggle"
+                                        disabled={paidStatus === 'Unpaid'}
                                     >
-                                        <span className="product-dropdown-text">{paymentMode}</span>
+                                        <span className="product-dropdown-text">{paidStatus === 'Unpaid' ? "N/A" : paymentMode}</span>
                                         <span className="material-symbols-outlined product-dropdown-arrow">
                                             {isPaymentDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
                                         </span>
                                     </button>
-                                    {isPaymentDropdownOpen && (
+                                    {isPaymentDropdownOpen && paidStatus !== 'Unpaid' && (
                                         <div className="product-dropdown-menu">
                                             {['UPI', 'Cash', 'Card'].map(mode => (
                                                 <button
@@ -672,96 +887,114 @@ const Sales = () => {
                                 </div>
                             </div>
 
-                            <div className="quick-entry-item">
-                                <span className="quick-entry-label">Payment Status:</span>
-                                <div className="product-dropdown payment-dropdown">
-                                    <button
-                                        onClick={() => setIsPaidStatusDropdownOpen(!isPaidStatusDropdownOpen)}
-                                        className="product-dropdown-toggle"
-                                    >
-                                        <span className="product-dropdown-text">{paidStatus}</span>
-                                        <span className="material-symbols-outlined product-dropdown-arrow">
-                                            {isPaidStatusDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
-                                        </span>
-                                    </button>
-                                    {isPaidStatusDropdownOpen && (
-                                        <div className="product-dropdown-menu">
-                                            {['Paid', 'Unpaid'].map(status => (
-                                                <button
-                                                    key={status}
-                                                    className={`product-dropdown-item ${paidStatus === status ? 'active' : ''}`}
-                                                    onClick={() => {
-                                                        setPaidStatus(status);
-                                                        setIsPaidStatusDropdownOpen(false);
-                                                    }}
-                                                >
-                                                    <span className="product-name-text">{status}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
+                            {(paidStatus === 'Pending' || paidStatus === 'Advance') ? (
+                                <div className="quick-entry-item">
+                                    <span className="quick-entry-label">Amount Paid:</span>
+                                    <div className="amount-input-wrapper">
+                                        <span className="currency-prefix">₹</span>
+                                        <input
+                                            type="number"
+                                            placeholder="0.00"
+                                            className="quick-entry-input amount-input"
+                                            value={amountPaid}
+                                            onChange={(e) => setAmountPaid(e.target.value)}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="quick-entry-item" style={{ visibility: 'hidden' }}></div>
+                            )}
                         </div>
-
-                        <div className="quick-entry-footer">
-                            <div className="quick-entry-action-group">
-                                <button
-                                    className="btn-outline quick-entry-btn add-btn-colored add-btn-pc"
-                                    onClick={handleAddItem}
-                                >
-                                    <span className="material-symbols-outlined">add_circle</span>
-                                    ADD ITEM
-                                </button>
-
-                                <button
-                                    className="btn-outline quick-entry-btn bill-btn-colored"
-                                    onClick={handleGenerateBill}
-                                >
-                                    <span className="material-symbols-outlined">receipt_long</span>
-                                    GENERATE BILL
-                                </button>
-
-                                <button
-                                    className="btn-primary quick-entry-btn log-btn-colored"
-                                    onClick={handleLogTransaction}
-                                    disabled={isLogging || (billItems.length === 0 && !quantity)}
-                                >
-                                    <span className="material-symbols-outlined">
-                                        {isLogging ? "hourglass_empty" : "done_all"}
-                                    </span>
-                                    {isLogging ? "SAVING..." : "SAVE ENTRY"}
-                                </button>
-                            </div>
-                            <div className="history-view-trigger">
-                                <button className="view-history-btn" onClick={() => setViewMode('history')}>
-                                    <span className="material-symbols-outlined">history</span>
-                                    View Recent Sales History
-                                </button>
-                            </div>
-                        </div>
-
-                        {billItems.length > 0 && (
-                            <div className="bill-preview-section">
-                                <div className="preview-header">
-                                    <span>Items in Current Sale ({billItems.length})</span>
-                                    <button className="clear-bill" onClick={() => setBillItems([])}>Clear All</button>
-                                </div>
-                                <div className="preview-list">
-                                    {billItems.map(item => (
-                                        <div key={item.id} className="preview-item">
-                                            <span className="item-name">{item.product}</span>
-                                            <span className="item-qty">{item.qty} pcs</span>
-                                            <span className="item-amt">₹{item.amount}</span>
-                                            <button className="remove-item" onClick={() => setBillItems(billItems.filter(i => i.id !== item.id))}>
-                                                <span className="material-symbols-outlined">close</span>
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
                     </div>
+
+                    <div className="quick-entry-footer">
+                        <div className="quick-entry-action-group">
+                            <button
+                                className="btn-outline quick-entry-btn add-btn-colored add-btn-pc"
+                                onClick={handleAddItem}
+                            >
+                                <span className="material-symbols-outlined">add_circle</span>
+                                ADD ITEM
+                            </button>
+
+                            <button
+                                className="btn-outline quick-entry-btn bill-btn-colored"
+                                onClick={handleGenerateBill}
+                            >
+                                <span className="material-symbols-outlined">receipt_long</span>
+                                GENERATE BILL
+                            </button>
+
+                            <button
+                                className="btn-primary quick-entry-btn log-btn-colored"
+                                onClick={handleLogTransaction}
+                                disabled={isLogging || (billItems.length === 0 && !quantity)}
+                            >
+                                <span className="material-symbols-outlined">
+                                    {isLogging ? "hourglass_empty" : "done_all"}
+                                </span>
+                                {isLogging ? "SAVING..." : "SAVE ENTRY"}
+                            </button>
+                        </div>
+                        <div className="history-view-trigger">
+                            <button className="view-history-btn" onClick={() => setViewMode('history')}>
+                                <span className="material-symbols-outlined">history</span>
+                                View Recent Sales History
+                            </button>
+                        </div>
+                    </div>
+
+                    {billItems.length > 0 && (
+                        <div className="bill-preview-section" style={{ marginTop: '24px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', padding: 0 }}>
+                            <div className="preview-header" style={{ padding: '16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
+                                <span style={{ fontWeight: 600, color: '#334155' }}>Items in Current Bill ({billItems.length})</span>
+                                <button className="clear-bill" onClick={() => setBillItems([])} style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Clear All</button>
+                            </div>
+                            <div className="preview-table-container" style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
+                                    <thead>
+                                        <tr style={{ background: '#fefefe', borderBottom: '1px solid #e2e8f0' }}>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '35%' }}>PRODUCT NAME</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '25%' }}>SIZE</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '15%' }}>QTY</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '15%' }}>TOTAL</th>
+                                            <th style={{ padding: '12px 16px', width: '10%', textAlign: 'center' }}>ACTION</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {billItems.map(item => (
+                                            <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                <td style={{ padding: '16px', color: '#1e293b', fontSize: '0.9rem', textAlign: 'left' }}>{item.baseName}</td>
+                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'left' }}>{item.size}</td>
+                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>{item.qty}</td>
+                                                <td style={{ padding: '16px', color: '#1e293b', fontWeight: 500, fontSize: '0.9rem', textAlign: 'right' }}>₹{item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', textAlign: 'center' }}>
+                                                    <button
+                                                        onClick={() => setBillItems(billItems.filter(i => i.id !== item.id))}
+                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '4px', margin: '0 auto' }}
+                                                        title="Remove Item"
+                                                        onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                                    >
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style={{ background: '#f8fafc' }}>
+                                            <td colSpan="3" style={{ padding: '16px', textAlign: 'right', fontWeight: 600, color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>SUBTOTAL</td>
+                                            <td style={{ padding: '16px', fontWeight: 700, color: '#10b981', fontSize: '1.1rem', textAlign: 'right' }}>
+                                                ₹{billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -850,14 +1083,14 @@ const Sales = () => {
                             <table className="stock-table">
                                 <thead>
                                     <tr>
-                                        <th>DATE</th>
-                                        <th>COMPANY</th>
-                                        <th className="hide-mobile">CUSTOMER NAME</th>
-                                        <th className="hide-mobile">PRODUCT</th>
-                                        <th className="hide-mobile">PIECES</th>
-                                        <th className="hide-mobile">AMOUNT</th>
-                                        <th className="hide-mobile">PAYMENT</th>
-                                        <th className="hide-mobile">DELIVERED BY</th>
+                                        <th style={{ textAlign: 'left' }}>DATE</th>
+                                        <th style={{ textAlign: 'left' }}>COMPANY</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'left' }}>CUSTOMER NAME</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'left' }}>PRODUCT</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'right' }}>PIECES</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'right' }}>AMOUNT</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'left' }}>PAYMENT</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'left' }}>DELIVERED BY</th>
                                         <th className="text-center">DELETE</th>
                                     </tr>
                                 </thead>
@@ -889,10 +1122,10 @@ const Sales = () => {
                                                         <span className="product-name">{transaction.product}</span>
                                                     </div>
                                                 </td>
-                                                <td className="quantity-cell hide-mobile">
+                                                <td className="quantity-cell hide-mobile" style={{ textAlign: 'right' }}>
                                                     {Math.abs(transaction.quantity)}
                                                 </td>
-                                                <td className="amount-cell hide-mobile">
+                                                <td className="amount-cell hide-mobile" style={{ textAlign: 'right' }}>
                                                     ₹{transaction.amount?.toLocaleString() || '0'}
                                                 </td>
                                                 <td className="hide-mobile">
@@ -994,221 +1227,241 @@ const Sales = () => {
                 </div>
             </div>
 
-            {showExportModal && (
-                <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3>Export Sales Report</h3>
-                            <button className="modal-close" onClick={() => setShowExportModal(false)}>
-                                <span className="material-symbols-outlined">close</span>
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <div className="export-section">
-                                <h4>Export Format</h4>
-                                <div className="export-format-options">
-                                    <label className={`format-option ${exportFormat === 'excel' ? 'active' : ''}`}>
-                                        <input type="radio" value="excel" checked={exportFormat === 'excel'} onChange={(e) => setExportFormat(e.target.value)} />
-                                        <span className="material-symbols-outlined">grid_on</span>
-                                        <span className="format-name">Excel</span>
-                                    </label>
-                                    <label className={`format-option ${exportFormat === 'csv' ? 'active' : ''}`}>
-                                        <input type="radio" value="csv" checked={exportFormat === 'csv'} onChange={(e) => setExportFormat(e.target.value)} />
-                                        <span className="material-symbols-outlined">description</span>
-                                        <span className="format-name">CSV</span>
-                                    </label>
-                                    <label className={`format-option ${exportFormat === 'pdf' ? 'active' : ''}`}>
-                                        <input type="radio" value="pdf" checked={exportFormat === 'pdf'} onChange={(e) => setExportFormat(e.target.value)} />
-                                        <span className="material-symbols-outlined">picture_as_pdf</span>
-                                        <span className="format-name">PDF</span>
-                                    </label>
+            {
+                showExportModal && (
+                    <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>Export Sales Report</h3>
+                                <button className="modal-close" onClick={() => setShowExportModal(false)}>
+                                    <span className="material-symbols-outlined">close</span>
+                                </button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="export-section">
+                                    <h4>Export Format</h4>
+                                    <div className="export-format-options">
+                                        <label className={`format-option ${exportFormat === 'excel' ? 'active' : ''}`}>
+                                            <input type="radio" value="excel" checked={exportFormat === 'excel'} onChange={(e) => setExportFormat(e.target.value)} />
+                                            <span className="material-symbols-outlined">grid_on</span>
+                                            <span className="format-name">Excel</span>
+                                        </label>
+                                        <label className={`format-option ${exportFormat === 'csv' ? 'active' : ''}`}>
+                                            <input type="radio" value="csv" checked={exportFormat === 'csv'} onChange={(e) => setExportFormat(e.target.value)} />
+                                            <span className="material-symbols-outlined">description</span>
+                                            <span className="format-name">CSV</span>
+                                        </label>
+                                        <label className={`format-option ${exportFormat === 'pdf' ? 'active' : ''}`}>
+                                            <input type="radio" value="pdf" checked={exportFormat === 'pdf'} onChange={(e) => setExportFormat(e.target.value)} />
+                                            <span className="material-symbols-outlined">picture_as_pdf</span>
+                                            <span className="format-name">PDF</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className="export-section">
+                                    <h4>Report Type</h4>
+                                    <div className="export-type-options">
+                                        <label className={`type-option ${exportType === 'all' ? 'active' : ''}`}>
+                                            <input type="radio" value="all" checked={exportType === 'all'} onChange={(e) => setExportType(e.target.value)} />
+                                            <span>All Sales</span>
+                                        </label>
+                                        <label className={`type-option ${exportType === 'upi' ? 'active' : ''}`}>
+                                            <input type="radio" value="upi" checked={exportType === 'upi'} onChange={(e) => setExportType(e.target.value)} />
+                                            <span>UPI Only</span>
+                                        </label>
+                                        <label className={`type-option ${exportType === 'cash' ? 'active' : ''}`}>
+                                            <input type="radio" value="cash" checked={exportType === 'cash'} onChange={(e) => setExportType(e.target.value)} />
+                                            <span>Cash Only</span>
+                                        </label>
+                                        <label className={`type-option ${exportType === 'card' ? 'active' : ''}`}>
+                                            <input type="radio" value="card" checked={exportType === 'card'} onChange={(e) => setExportType(e.target.value)} />
+                                            <span>Card Only</span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="export-section">
-                                <h4>Report Type</h4>
-                                <div className="export-type-options">
-                                    <label className={`type-option ${exportType === 'all' ? 'active' : ''}`}>
-                                        <input type="radio" value="all" checked={exportType === 'all'} onChange={(e) => setExportType(e.target.value)} />
-                                        <span>All Sales</span>
-                                    </label>
-                                    <label className={`type-option ${exportType === 'upi' ? 'active' : ''}`}>
-                                        <input type="radio" value="upi" checked={exportType === 'upi'} onChange={(e) => setExportType(e.target.value)} />
-                                        <span>UPI Only</span>
-                                    </label>
-                                    <label className={`type-option ${exportType === 'cash' ? 'active' : ''}`}>
-                                        <input type="radio" value="cash" checked={exportType === 'cash'} onChange={(e) => setExportType(e.target.value)} />
-                                        <span>Cash Only</span>
-                                    </label>
-                                    <label className={`type-option ${exportType === 'card' ? 'active' : ''}`}>
-                                        <input type="radio" value="card" checked={exportType === 'card'} onChange={(e) => setExportType(e.target.value)} />
-                                        <span>Card Only</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="modal-footer">
-                            <button className="modal-cancel" onClick={() => setShowExportModal(false)}>Cancel</button>
-                            <button className="modal-confirm" onClick={confirmExport} disabled={exportLoading}>
-                                {exportLoading ? 'Exporting...' : 'Export Now'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showBillModal && selectedBill && (
-                <div className="bill-modal-overlay" onClick={() => setShowBillModal(false)}>
-                    <div className="bill-modal-content" onClick={(e) => e.stopPropagation()}>
-                        <div className="bill-header">
-                            <div className="bill-brand">
-                                <h2>AVS ECO PRODUCTS</h2>
-                                <p>Areca Leaf Plate Manufacturer</p>
-                            </div>
-                            <div className="bill-meta">
-                                <p><strong>Date:</strong> {selectedBill.date}</p>
-                                <p><strong>Company:</strong> {selectedBill.company}</p>
-                                <p><strong>Customer:</strong> {selectedBill.customer}</p>
-                                <p><strong>Delivered By:</strong> {selectedBill.deliveredBy || '-'}</p>
-                            </div>
-                        </div>
-                        <div className="bill-table-container">
-                            <table className="bill-table">
-                                <thead>
-                                    <tr>
-                                        <th>Product Description</th>
-                                        <th>Qty (Pieces)</th>
-                                        <th>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {selectedBill.items.map((item, idx) => (
-                                        <tr key={idx}>
-                                            <td>{item.product}</td>
-                                            <td>{item.qty}</td>
-                                            <td>₹{item.amount.toLocaleString()}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colSpan="2" className="total-label">Grand Total</td>
-                                        <td className="total-value">
-                                            ₹{selectedBill.items.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                        <div className="bill-footer">
-                            <p>Thank you for your business!</p>
-                            <div className="bill-actions">
-                                <button className="btn-outline" onClick={() => setShowBillModal(false)}>Close</button>
-                                <button className="btn-primary" onClick={() => window.print()}>
-                                    <span className="material-symbols-outlined">print</span>
-                                    Print Bill
+                            <div className="modal-footer">
+                                <button className="modal-cancel" onClick={() => setShowExportModal(false)}>Cancel</button>
+                                <button className="modal-confirm" onClick={confirmExport} disabled={exportLoading}>
+                                    {exportLoading ? 'Exporting...' : 'Export Now'}
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            {showAddClientModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content quick-add-client-modal" style={{ maxWidth: '450px' }}>
-                        <div className="modal-header">
-                            <h3 className="section-title">Add New Client</h3>
-                            <button className="modal-close" onClick={() => setShowAddClientModal(false)}>
-                                <span className="material-symbols-outlined">close</span>
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <div className="modal-form-group">
-                                <label>COMPANY NAME *</label>
-                                <input
-                                    type="text"
-                                    className="modal-input"
-                                    placeholder="Enter company name"
-                                    value={newClientData.companyName}
-                                    onChange={(e) => setNewClientData({ ...newClientData, companyName: e.target.value })}
-                                />
-                            </div>
-                            <div className="modal-form-group">
-                                <label>CONTACT PERSON *</label>
-                                <input
-                                    type="text"
-                                    className="modal-input"
-                                    placeholder="Enter contact person"
-                                    value={newClientData.contactPerson}
-                                    onChange={(e) => setNewClientData({ ...newClientData, contactPerson: e.target.value })}
-                                />
-                            </div>
-                            <div className="modal-row">
-                                <div className="modal-form-group">
-                                    <label>EMAIL ADDRESS *</label>
-                                    <input
-                                        type="email"
-                                        className="modal-input"
-                                        placeholder="Enter email address"
-                                        value={newClientData.email}
-                                        onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })}
-                                    />
+            {
+                showBillModal && selectedBill && (
+                    <div className="bill-modal-overlay" onClick={() => setShowBillModal(false)}>
+                        <div className="bill-modal-content" onClick={(e) => e.stopPropagation()}>
+                            <div className="bill-header">
+                                <div className="bill-brand">
+                                    <h2>AVS ECO PRODUCTS</h2>
+                                    <p>Areca Leaf Plate Manufacturer</p>
                                 </div>
-                                <div className="modal-form-group">
-                                    <label>PHONE NUMBER</label>
-                                    <input
-                                        type="tel"
-                                        className="modal-input"
-                                        placeholder="Enter phone number"
-                                        value={newClientData.phone}
-                                        onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })}
-                                    />
+                                <div className="bill-meta">
+                                    <p><strong>Date:</strong> {selectedBill.date}</p>
+                                    <p><strong>Company:</strong> {selectedBill.company}</p>
+                                    <p><strong>Customer:</strong> {selectedBill.customer}</p>
+                                    <p><strong>Delivered By:</strong> {selectedBill.deliveredBy || '-'}</p>
                                 </div>
                             </div>
-                            <div className="modal-form-group">
-                                <label>ADDRESS</label>
-                                <textarea
-                                    className="modal-textarea"
-                                    placeholder="Enter complete address"
-                                    rows="3"
-                                    value={newClientData.address}
-                                    onChange={(e) => setNewClientData({ ...newClientData, address: e.target.value })}
-                                ></textarea>
+                            <div className="bill-table-container">
+                                <table className="bill-table">
+                                    <thead>
+                                        <tr>
+                                            <th style={{ textAlign: 'left', width: '40%' }}>Product Name</th>
+                                            <th style={{ textAlign: 'left', width: '30%' }}>Size</th>
+                                            <th style={{ textAlign: 'right', width: '15%' }}>Qty</th>
+                                            <th style={{ textAlign: 'right', width: '15%' }}>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {selectedBill.items.map((item, idx) => (
+                                            <tr key={idx}>
+                                                <td style={{ textAlign: 'left' }}>{item.baseName}</td>
+                                                <td style={{ textAlign: 'left' }}>{item.size}</td>
+                                                <td style={{ textAlign: 'right' }}>{item.qty}</td>
+                                                <td style={{ textAlign: 'right' }}>₹{item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style={{ background: '#f8fafc' }}>
+                                            <td colSpan="3" className="total-label" style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 600, color: '#64748b' }}>GRAND TOTAL</td>
+                                            <td className="total-value" style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 700, color: '#10b981', fontSize: '1.2rem' }}>
+                                                ₹{selectedBill.items.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
                             </div>
-                        </div>
-                        <div className="modal-footer">
-                            <button className="modal-cancel" onClick={() => setShowAddClientModal(false)}>Cancel</button>
-                            <button
-                                className="modal-confirm"
-                                disabled={!newClientData.companyName || !newClientData.contactPerson || !newClientData.email}
-                                onClick={() => {
-                                    const newClient = {
-                                        ...newClientData,
-                                        totalOrders: 0,
-                                        totalSpent: "₹0",
-                                        lastOrder: "Never",
-                                    };
-                                    addClient(newClient);
-                                    setCompanyName(newClientData.companyName);
-                                    setCustomerName(newClientData.contactPerson);
-                                    setShowAddClientModal(false);
-                                    // Reset form
-                                    setNewClientData({
-                                        companyName: "",
-                                        contactPerson: "",
-                                        email: "",
-                                        phone: "",
-                                        address: ""
-                                    });
-                                }}
-                            >
-                                Add Client
-                            </button>
+                            <div className="bill-footer">
+                                <p>Thank you for your business!</p>
+                                <div className="bill-actions">
+                                    <button className="btn-outline" onClick={() => setShowBillModal(false)}>Close</button>
+                                    <button className="btn-primary" onClick={() => window.print()}>
+                                        <span className="material-symbols-outlined">print</span>
+                                        Print Bill
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+
+            {
+                showAddClientModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-content quick-add-client-modal" style={{ maxWidth: '450px' }}>
+                            <div className="modal-header">
+                                <h3 className="section-title">Add New Client</h3>
+                                <button className="modal-close" onClick={() => setShowAddClientModal(false)}>
+                                    <span className="material-symbols-outlined">close</span>
+                                </button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="modal-form-group">
+                                    <label>COMPANY NAME *</label>
+                                    <input
+                                        type="text"
+                                        className="modal-input"
+                                        placeholder="Enter company name"
+                                        value={newClientData.companyName}
+                                        onChange={(e) => setNewClientData({ ...newClientData, companyName: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="modal-form-group">
+                                    <label>CONTACT PERSON *</label>
+                                    <input
+                                        type="text"
+                                        className="modal-input"
+                                        placeholder="Enter contact person"
+                                        value={newClientData.contactPerson}
+                                        onChange={(e) => setNewClientData({ ...newClientData, contactPerson: e.target.value })}
+                                    />
+                                </div>
+                                <div className="modal-row">
+                                    <div className="modal-form-group">
+                                        <label>EMAIL ADDRESS *</label>
+                                        <input
+                                            type="email"
+                                            className="modal-input"
+                                            placeholder="Enter email address"
+                                            value={newClientData.email}
+                                            onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="modal-form-group">
+                                        <label>PHONE NUMBER</label>
+                                        <input
+                                            type="tel"
+                                            className="modal-input"
+                                            placeholder="Enter phone number"
+                                            value={newClientData.phone}
+                                            onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="modal-form-group">
+                                    <label>GSTIN</label>
+                                    <input
+                                        type="text"
+                                        className="modal-input"
+                                        placeholder="Enter GSTIN Number (optional)"
+                                        value={newClientData.gst}
+                                        onChange={(e) => setNewClientData({ ...newClientData, gst: e.target.value })}
+                                    />
+                                </div>
+                                <div className="modal-form-group" style={{ marginBottom: 0 }}>
+                                    <label>ADDRESS</label>
+                                    <textarea
+                                        className="modal-textarea"
+                                        placeholder="Enter complete address"
+                                        rows="3"
+                                        value={newClientData.address}
+                                        onChange={(e) => setNewClientData({ ...newClientData, address: e.target.value })}
+                                    ></textarea>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button className="modal-cancel" onClick={() => setShowAddClientModal(false)}>Cancel</button>
+                                <button
+                                    className="modal-confirm"
+                                    disabled={!newClientData.companyName || !newClientData.contactPerson || !newClientData.email}
+                                    onClick={() => {
+                                        const newClient = {
+                                            ...newClientData,
+                                            totalOrders: 0,
+                                            totalSpent: "₹0",
+                                            lastOrder: "Never",
+                                        };
+                                        addClient(newClient);
+                                        setCompanyName(newClientData.companyName);
+                                        setCustomerName(newClientData.contactPerson);
+                                        setShowAddClientModal(false);
+                                        // Reset form
+                                        setNewClientData({
+                                            companyName: "",
+                                            contactPerson: "",
+                                            email: "",
+                                            phone: "",
+                                            address: "",
+                                            gst: ""
+                                        });
+                                    }}
+                                >
+                                    Add Client
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

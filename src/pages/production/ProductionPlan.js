@@ -77,7 +77,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   // ===== SEARCH & FILTER STATES =====
   const [searchTerm, setSearchTerm] = useState('');
-  const [sizeFilter, setSizeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [manualUpdateQty, setManualUpdateQty] = useState({});
