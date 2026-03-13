@@ -49,7 +49,8 @@ const Employees = () => {
     aadhar: "",
     pan: "",
     address: "",
-    avatar: null
+    avatar: null,
+    salary: ""
   });
 
   // Calculate stats - WITH Department Breakdown
@@ -127,10 +128,23 @@ const Employees = () => {
       aadhar: "",
       pan: "",
       address: "",
-      avatar: null
+      avatar: null,
+      salary: ""
     });
     setShowAddModal(true);
+    if (window.innerWidth <= 1024) {
+      document.body.classList.add("hide-topbar-mobile");
+    }
   };
+
+  useEffect(() => {
+    if (!showAddModal) {
+      document.body.classList.remove("hide-topbar-mobile");
+    }
+    return () => {
+      document.body.classList.remove("hide-topbar-mobile");
+    };
+  }, [showAddModal]);
 
   const confirmAddEmployee = (e) => {
     e.preventDefault();
@@ -144,7 +158,8 @@ const Employees = () => {
       !formData.dob ||
       !formData.aadhar ||
       !formData.pan ||
-      !formData.address
+      !formData.address ||
+      !formData.salary
     ) {
       setFeedbackMessage("Please fill all required fields");
       setTimeout(() => setFeedbackMessage(""), 3000);
@@ -161,7 +176,8 @@ const Employees = () => {
       dob: formData.dob,
       aadhar: formData.aadhar,
       pan: formData.pan,
-      address: formData.address
+      address: formData.address,
+      salary: Number(formData.salary) || 0
     };
 
     ctxAddEmployee(newEmployee);
@@ -183,7 +199,8 @@ const Employees = () => {
       dob: employee.dob || "",
       aadhar: employee.aadhar || "",
       pan: employee.pan || "",
-      address: employee.address || ""
+      address: employee.address || "",
+      salary: employee.salary || ""
     });
     setShowEditModal(true);
   };
@@ -201,7 +218,8 @@ const Employees = () => {
       !formData.dob ||
       !formData.aadhar ||
       !formData.pan ||
-      !formData.address
+      !formData.address ||
+      !formData.salary
     ) {
       setFeedbackMessage("Please fill all required fields");
       setTimeout(() => setFeedbackMessage(""), 3000);
@@ -217,7 +235,8 @@ const Employees = () => {
       dob: formData.dob,
       aadhar: formData.aadhar,
       pan: formData.pan,
-      address: formData.address
+      address: formData.address,
+      salary: Number(formData.salary) || 0
     });
 
     setShowEditModal(false);
@@ -273,7 +292,7 @@ const Employees = () => {
   };
 
   return (
-    <div className="employees-container">
+    <div className={`employees-container ${showAddModal || showEditModal || showDeleteModal || showViewModal ? 'modal-open' : ''}`}>
       {/* Feedback Toast */}
       {feedbackMessage && (
         <div className="feedback-toast">
@@ -294,7 +313,7 @@ const Employees = () => {
       <div className="page-header premium-header">
         <div className="header-content">
           <div className="header-text">
-            <h1 className="page-title">Employees Details</h1>
+            <h1 className="page-title">Employees</h1>
             <p className="page-subtitle">Add, edit or manage your team records and organizational structure</p>
           </div>
           <div className="header-actions">
@@ -798,6 +817,19 @@ const Employees = () => {
                       required
                     ></textarea>
                   </div>
+
+                  <div className="modal-form-group">
+                    <label>Default Salary (Monthly) *</label>
+                    <input
+                      type="number"
+                      name="salary"
+                      value={formData.salary}
+                      onChange={handleInputChange}
+                      placeholder="Enter monthly salary"
+                      className="modal-input"
+                      required
+                    />
+                  </div>
                 </div>
                 <div className="modal-footer">
                   <button type="button" className="modal-cancel" onClick={() => setShowAddModal(false)}>
@@ -904,6 +936,10 @@ const Employees = () => {
                     <label>Address *</label>
                     <textarea name="address" value={formData.address} onChange={handleInputChange} className="modal-input" rows="3" required></textarea>
                   </div>
+                  <div className="modal-form-group">
+                    <label>Default Salary (Monthly) *</label>
+                    <input type="number" name="salary" value={formData.salary} onChange={handleInputChange} className="modal-input" required />
+                  </div>
                 </div>
                 <div className="modal-footer">
                   <button type="button" className="modal-cancel" onClick={() => setShowEditModal(false)}>
@@ -948,44 +984,47 @@ const Employees = () => {
                   </div>
                 </div>
 
-                <div className="employee-details-grid">
-                  <div className="detail-item">
-                    <span className="detail-label">Department</span>
-                    <span className="detail-value">{selectedEmployee.department}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Email Address</span>
-                    <span className="detail-value">{selectedEmployee.email}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Phone Number</span>
-                    <span className="detail-value">{selectedEmployee.phone}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Join Date</span>
-                    <span className="detail-value">
-                      {formatDate(selectedEmployee.joinDate)}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Employee ID</span>
-                    <span className="detail-value">EMP-00{selectedEmployee.id}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Date of Birth</span>
-                    <span className="detail-value">{formatDate(selectedEmployee.dob)}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Aadhar Number</span>
-                    <span className="detail-value">{selectedEmployee.aadhar || "N/A"}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">PAN Number</span>
-                    <span className="detail-value">{selectedEmployee.pan || "N/A"}</span>
-                  </div>
-                  <div className="detail-item" style={{ gridColumn: "span 2" }}>
-                    <span className="detail-label">Address</span>
-                    <span className="detail-value">{selectedEmployee.address || "N/A"}</span>
+                <div className="profile-details-section">
+                  <div className="employee-details-grid">
+                    <div className="detail-item">
+                      <span className="detail-label">Department</span>
+                      <span className="detail-value">{selectedEmployee.department}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Email Address</span>
+                      <span className="detail-value">{selectedEmployee.email}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Phone Number</span>
+                      <span className="detail-value">{selectedEmployee.phone}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Join Date</span>
+                      <span className="detail-value">
+                        {formatDate(selectedEmployee.joinDate)}
+                      </span>
+                    </div>
+
+                    <div className="detail-item">
+                      <span className="detail-label">Date of Birth</span>
+                      <span className="detail-value">{formatDate(selectedEmployee.dob)}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Aadhar Number</span>
+                      <span className="detail-value">{selectedEmployee.aadhar || "N/A"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">PAN Number</span>
+                      <span className="detail-value">{selectedEmployee.pan || "N/A"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Default Salary</span>
+                      <span className="detail-value">₹{Number(selectedEmployee.salary || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="detail-item" style={{ gridColumn: "span 2" }}>
+                      <span className="detail-label">Address</span>
+                      <span className="detail-value">{selectedEmployee.address || "N/A"}</span>
+                    </div>
                   </div>
                 </div>
               </div>

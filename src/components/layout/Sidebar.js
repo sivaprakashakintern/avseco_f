@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import AppContext from "../../context/AppContext.js";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../../assets/avs.png";
-import avatar from "../../assets/avatar.png";
+
 import "./Sidebar.css";
 
 const Sidebar = () => {
@@ -67,18 +67,7 @@ const Sidebar = () => {
     return location.pathname === path;
   };
 
-  const user = {
-    name: "Arun Kumar",
-    role: "Plant Manager",
-    initials: "AK",
-    avatar: avatar,
-  };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("isLoggedIn");
-    console.log("Logging out...");
-    navigate("/login");
-  };
 
   // ===== NAVIGATION ITEMS WITH CORRECT PATHS =====
   const navItems = [
@@ -235,31 +224,7 @@ const Sidebar = () => {
             </React.Fragment>
           ))}
 
-          {/* Profile & Logout - Visible Only on Mobile Menu */}
-          {isMobile && (
-            <div className="sidebar-mobile-footer">
-              <div className="sidebar-nav-divider"></div>
 
-              <div className="mobile-profile-info" onClick={() => handleNavigation('/profile')} style={{ cursor: 'pointer' }}>
-                <div className="mobile-profile-avatar-container">
-                  {user.avatar ? (
-                    <img src={user.avatar} alt="Profile" className="mobile-profile-avatar" />
-                  ) : (
-                    <span className="mobile-avatar-initials">{user.initials}</span>
-                  )}
-                </div>
-                <div className="mobile-profile-details">
-                  <span className="mobile-profile-name">{user.name}</span>
-                  <span className="mobile-profile-role">{user.role}</span>
-                </div>
-              </div>
-
-              <div className="nav-item logout-item-mobile" onClick={handleLogout}>
-                <span className="material-symbols-outlined">logout</span>
-                <p className="nav-text">Logout</p>
-              </div>
-            </div>
-          )}
         </nav>
       </aside >
     </>

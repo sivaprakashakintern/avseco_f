@@ -429,29 +429,35 @@
 
 .matrix-table th.sticky-col-no,
 .matrix-table td.sticky-col-no {
-    position: sticky;
-    left: 0;
-    z-index: 11;
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 30;
     background: white;
     border-right: 1px solid #e2e8f0;
     width: 40px;
     min-width: 40px;
+    max-width: 40px;
     text-align: center;
 }
 
 .matrix-table th.sticky-col,
 .matrix-table td.sticky-col {
-    position: sticky;
-    left: 40px;
-    z-index: 11;
+    position: sticky !important;
+    left: 40px !important;
+    z-index: 30;
     background: white;
-    border-right: 2px solid #e2e8f0;
+    border-right: 2px solid #006A4E; /* Thicker primary color line */
+    text-align: left;
+    box-shadow: 4px 0 8px -4px rgba(0,0,0,0.1); /* Subtle shadow on scroll */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .matrix-table th.sticky-col-no,
 .matrix-table th.sticky-col {
-    z-index: 12;
-    background: #f8fafc;
+    z-index: 40;
+    background: #f1f5f9 !important;
 }
 
 .matrix-table td {
@@ -877,21 +883,31 @@
     .matrix-table td.sticky-col-no {
         min-width: 30px;
         width: 30px;
-        padding: 4px 2px;
         left: 0 !important;
+        z-index: 30;
+        background: white;
+        position: sticky !important;
     }
 
     .matrix-table th.sticky-col,
     .matrix-table td.sticky-col {
-        min-width: 135px;
-        /* Widened for full names */
-        max-width: 135px;
-        padding: 6px 12px;
-        text-align: left;
+        min-width: 180px; /* Increased further for full visibility of long names */
         left: 30px !important;
+        z-index: 30;
+        background: white;
+        padding: 6px 14px;
+        text-align: left;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        overflow: visible; /* Ensure nothing is hidden */
+        text-overflow: clip; /* Remove dots */
+        position: sticky !important;
+        border-right: 2px solid #006A4E;
+    }
+    
+    .matrix-table th.sticky-col-no,
+    .matrix-table th.sticky-col {
+        background: #f1f5f9 !important;
+        z-index: 40;
     }
 
     .emp-name {
@@ -1004,10 +1020,25 @@
         font-size: 9px;
     }
 
+    .matrix-table th.sticky-col-no,
+    .matrix-table td.sticky-col-no {
+        min-width: 25px;
+        width: 25px;
+        position: sticky !important;
+        left: 0 !important;
+        z-index: 30;
+    }
+
     .matrix-table th.sticky-col,
     .matrix-table td.sticky-col {
-        min-width: 70px;
-        padding: 5px 8px;
+        min-width: 150px; /* Increased to allow full names to be visible on Realme P3 and others */
+        left: 25px !important;
+        padding: 5px 10px;
+        position: sticky !important;
+        z-index: 30;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: clip;
     }
 
     .status-indicator {

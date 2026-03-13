@@ -247,10 +247,12 @@ const AttendanceLog = () => {
             <span className="material-symbols-outlined">warning</span>
             Work Stoppage
           </button>
-          <button className="att-btn att-btn-primary" onClick={handleSaveAttendance} disabled={saveLoading}>
-            <span className="material-symbols-outlined">{saveLoading ? "hourglass_top" : "save"}</span>
-            {saveLoading ? "Saving…" : "Save Attendance"}
-          </button>
+          {!isMobile && (
+            <button className="att-btn att-btn-primary" onClick={handleSaveAttendance} disabled={saveLoading}>
+              <span className="material-symbols-outlined">{saveLoading ? "hourglass_top" : "save"}</span>
+              {saveLoading ? "Saving…" : "Save Attendance"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -334,6 +336,20 @@ const AttendanceLog = () => {
           Mark All Present
         </button>
       </div>
+
+      {isMobile && (
+        <div style={{ padding: '0 14px', marginBottom: '20px' }}>
+          <button 
+            className="att-btn att-btn-primary" 
+            style={{ width: '100%', justifyContent: 'center', height: '50px', borderRadius: '14px' }}
+            onClick={handleSaveAttendance} 
+            disabled={saveLoading}
+          >
+            <span className="material-symbols-outlined">{saveLoading ? "hourglass_top" : "save"}</span>
+            {saveLoading ? "Saving…" : "Save Attendance"}
+          </button>
+        </div>
+      )}
 
       {/* ── TABLE ─────────────────────────────────────────────────────────────── */}
       <div className="att-table-card">

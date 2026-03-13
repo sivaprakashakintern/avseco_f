@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAppContext } from '../../context/AppContext.js';
-import { formatDate } from '../../utils/dateUtils.js';
+import { formatDate, isWithinLast2Days } from '../../utils/dateUtils.js';
 import "../stock/Stock.css";
 import "./ExpenseReport.css";
 
@@ -19,12 +19,21 @@ const Expenses = () => {
     const {
         expenses,
         addExpense: ctxAddExpense,
+        updateExpense: ctxUpdateExpense,
+        deleteExpense: ctxDeleteExpense,
+        employees,
         totalExpenseAmount,
         expenseByCategory,
     } = useAppContext();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [currentExpenseId, setCurrentExpenseId] = useState(null);
     const [expandedExpenseId, setExpandedExpenseId] = useState(null);
+    const [employeeSearch, setEmployeeSearch] = useState("");
+    const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [detailCategory, setDetailCategory] = useState("");
 
     // ── Toggle Expansion ──
     const toggleExpenseExpansion = (id) => {
@@ -32,11 +41,32 @@ const Expenses = () => {
     };
 
     const handleDeleteExpense = (id) => {
-        alert("Delete feature coming soon!");
+        if (window.confirm("Are you sure you want to delete this expense?")) {
+            ctxDeleteExpense(id);
+        }
     };
 
     const handleEditExpense = (id) => {
-        alert("Edit feature coming soon!");
+        const expenseToEdit = expenses.find(e => e.id === id);
+        if (expenseToEdit) {
+            setNewExpense({
+                category: expenseToEdit.category,
+                description: expenseToEdit.description,
+                amount: expenseToEdit.amount,
+                paymentMode: expenseToEdit.paymentMode,
+            });
+            
+            if (expenseToEdit.category === 'Salary') {
+                const nameMatch = expenseToEdit.description.match(/Salary for (.*)/);
+                if (nameMatch) {
+                    setEmployeeSearch(nameMatch[1]);
+                }
+            }
+
+            setIsEditMode(true);
+            setCurrentExpenseId(id);
+            setIsModalOpen(true);
+        }
     };
 
     // Add Expense Form State
@@ -63,20 +93,45 @@ const Expenses = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Use current date/time for new entry
-        const expenseToAdd = {
+        const expenseData = {
             ...newExpense,
-            date: formatDate(new Date()),
+            date: isEditMode ? expenses.find(e => e.id === currentExpenseId).date : formatDate(new Date()),
         };
 
-        ctxAddExpense(expenseToAdd);
-        setIsModalOpen(false);
-        setNewExpense({ category: "Machine Maintenance", description: "", amount: "", paymentMode: "Cash" });
+        if (isEditMode) {
+            ctxUpdateExpense(currentExpenseId, expenseData);
+        } else {
+            ctxAddExpense(expenseData);
+        }
+        
+        handleCloseModal();
     };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setIsEditMode(false);
+        setCurrentExpenseId(null);
+        setNewExpense({ category: "Machine Maintenance", description: "", amount: "", paymentMode: "Cash" });
+        setEmployeeSearch("");
+    };
+
+    const handleEmployeeSelect = (emp) => {
+        setNewExpense({
+            ...newExpense,
+            description: `Salary for ${emp.name}`,
+            amount: emp.salary || ""
+        });
+        setEmployeeSearch(emp.name);
+        setShowEmployeeDropdown(false);
+    };
+
+    const filteredEmployees = employees.filter(emp => 
+        emp.name.toLowerCase().includes(employeeSearch.toLowerCase()) ||
+        emp.empId.toLowerCase().includes(employeeSearch.toLowerCase())
+    );
 
     return (
         <div className="stock-page">
-            {/* ... (Header and Stats remain same) ... */}
             {/* ===== PREMIUM ANALYTICS HEADER ===== */}
             <div className="page-header premium-header">
                 <div>
@@ -84,7 +139,7 @@ const Expenses = () => {
                     <p className="page-subtitle">Track and manage company expenses with precision</p>
                 </div>
                 <div className="header-actions">
-                    <button className="btn-export-premium" onClick={() => setIsModalOpen(true)}>
+                    <button className="btn-export-premium" onClick={() => { setIsEditMode(false); setIsModalOpen(true); }}>
                         <span className="material-symbols-outlined">add</span>
                         Add Expense
                     </button>
@@ -93,7 +148,7 @@ const Expenses = () => {
 
             {/* Stats Cards - Overall */}
             <div className="stock-stats">
-                <div className="stat-card">
+                <div className="stat-card" onClick={() => { setDetailCategory("All Expenses"); setShowDetailModal(true); }}>
                     <div className="stat-icon purple">
                         <span className="material-symbols-outlined">payments</span>
                     </div>
@@ -102,7 +157,7 @@ const Expenses = () => {
                         <span className="stat-value">₹{totalExpense.toLocaleString()}</span>
                     </div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card" onClick={() => { setDetailCategory("Machine Maintenance"); setShowDetailModal(true); }}>
                     <div className="stat-icon blue">
                         <span className="material-symbols-outlined">build</span>
                     </div>
@@ -111,7 +166,7 @@ const Expenses = () => {
                         <span className="stat-value">₹{machineMaintTotal.toLocaleString()}</span>
                     </div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card" onClick={() => { setDetailCategory("Material"); setShowDetailModal(true); }}>
                     <div className="stat-icon green">
                         <span className="material-symbols-outlined">shopping_cart</span>
                     </div>
@@ -120,7 +175,7 @@ const Expenses = () => {
                         <span className="stat-value">₹{materialTotal.toLocaleString()}</span>
                     </div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card" onClick={() => { setDetailCategory("Salary & Others"); setShowDetailModal(true); }}>
                     <div className="stat-icon yellow">
                         <span className="material-symbols-outlined">group</span>
                     </div>
@@ -147,7 +202,6 @@ const Expenses = () => {
                                 <th>S.No</th>
                                 <th>Date & Time</th>
                                 <th>Category</th>
-                                <th>Description</th>
                                 <th>Payment Mode</th>
                                 <th>Amount (₹)</th>
                                 <th>Actions</th>
@@ -166,7 +220,6 @@ const Expenses = () => {
                                             {expense.category}
                                         </span>
                                     </td>
-                                    <td style={{ color: '#64748b' }}>{expense.description}</td>
                                     <td>
                                         <span className="payment-badge" style={{
                                             padding: '4px 8px',
@@ -182,12 +235,26 @@ const Expenses = () => {
                                     <td className="amount" style={{ fontWeight: '800', color: '#006A4E' }}>₹{Number(expense.amount).toLocaleString()}</td>
                                     <td>
                                         <div className="action-buttons">
-                                            <button className="action-btn edit" title="Edit">
-                                                <span className="material-symbols-outlined">edit</span>
-                                            </button>
-                                            <button className="action-btn delete" title="Delete">
-                                                <span className="material-symbols-outlined">delete</span>
-                                            </button>
+                                            {isWithinLast2Days(expense.date) ? (
+                                                <>
+                                                    <button 
+                                                        className="action-btn edit" 
+                                                        title="Edit"
+                                                        onClick={() => handleEditExpense(expense.id)}
+                                                    >
+                                                        <span className="material-symbols-outlined">edit</span>
+                                                    </button>
+                                                    <button 
+                                                        className="action-btn delete" 
+                                                        title="Delete"
+                                                        onClick={() => handleDeleteExpense(expense.id)}
+                                                    >
+                                                        <span className="material-symbols-outlined">delete</span>
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>Locked</span>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -225,10 +292,6 @@ const Expenses = () => {
                                         <div className="expense-card-details-expanded">
                                             <div className="expanded-info-grid">
                                                 <div className="info-row">
-                                                    <span className="info-label">Description</span>
-                                                    <span className="info-value">{ex.description}</span>
-                                                </div>
-                                                <div className="info-row">
                                                     <span className="info-label">Date</span>
                                                     <span className="info-value">{formatDate(ex.date)}</span>
                                                 </div>
@@ -237,22 +300,24 @@ const Expenses = () => {
                                                     <span className="info-value">{ex.paymentMode}</span>
                                                 </div>
                                             </div>
-                                            <div className="expense-action-buttons">
-                                                <button
-                                                    className="expense-mini-btn edit"
-                                                    onClick={(e) => { e.stopPropagation(); handleEditExpense(ex.id); }}
-                                                >
-                                                    <span className="material-symbols-outlined">edit</span>
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    className="expense-mini-btn delete"
-                                                    onClick={(e) => { e.stopPropagation(); handleDeleteExpense(ex.id); }}
-                                                >
-                                                    <span className="material-symbols-outlined">delete</span>
-                                                    Delete
-                                                </button>
-                                            </div>
+                                            {isWithinLast2Days(ex.date) && (
+                                                <div className="expense-action-buttons">
+                                                    <button
+                                                        className="expense-mini-btn edit"
+                                                        onClick={(e) => { e.stopPropagation(); handleEditExpense(ex.id); }}
+                                                    >
+                                                        <span className="material-symbols-outlined">edit</span>
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        className="expense-mini-btn delete"
+                                                        onClick={(e) => { e.stopPropagation(); handleDeleteExpense(ex.id); }}
+                                                    >
+                                                        <span className="material-symbols-outlined">delete</span>
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -272,10 +337,10 @@ const Expenses = () => {
                 <div className="modal-overlay">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h3>Add New Expense</h3>
+                            <h3>{isEditMode ? "Edit Expense" : "Add New Expense"}</h3>
                             <button
                                 className="modal-close"
-                                onClick={() => setIsModalOpen(false)}
+                                onClick={handleCloseModal}
                             >
                                 <span className="material-symbols-outlined">close</span>
                             </button>
@@ -289,7 +354,12 @@ const Expenses = () => {
                                         <select
                                             name="category"
                                             value={newExpense.category}
-                                            onChange={handleInputChange}
+                                            onChange={(e) => {
+                                                handleInputChange(e);
+                                                if (e.target.value === 'Salary') {
+                                                    setEmployeeSearch("");
+                                                }
+                                            }}
                                             style={{
                                                 width: '100%',
                                                 padding: '12px',
@@ -311,6 +381,67 @@ const Expenses = () => {
                                         </select>
                                     </div>
                                 </div>
+
+                                {newExpense.category === 'Salary' && (
+                                    <div style={{ marginBottom: '16px', position: 'relative' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>Select Employee</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Search by name"
+                                                value={employeeSearch}
+                                                onChange={(e) => {
+                                                    setEmployeeSearch(e.target.value);
+                                                    setShowEmployeeDropdown(true);
+                                                }}
+                                                onFocus={() => setShowEmployeeDropdown(true)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    borderRadius: '12px',
+                                                    border: '1px solid #e2e8f0',
+                                                    fontSize: '14px',
+                                                    outline: 'none',
+                                                    backgroundColor: '#f8fafc'
+                                                }}
+                                            />
+                                            {showEmployeeDropdown && filteredEmployees.length > 0 && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '100%',
+                                                    left: 0,
+                                                    right: 0,
+                                                    backgroundColor: 'white',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '8px',
+                                                    marginTop: '4px',
+                                                    maxHeight: '200px',
+                                                    overflowY: 'auto',
+                                                    zIndex: 1000,
+                                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                                                }}>
+                                                    {filteredEmployees.map(emp => (
+                                                        <div
+                                                            key={emp.id}
+                                                            onClick={() => handleEmployeeSelect(emp)}
+                                                            style={{
+                                                                padding: '10px 12px',
+                                                                cursor: 'pointer',
+                                                                borderBottom: '1px solid #f1f5f9',
+                                                                fontSize: '14px'
+                                                            }}
+                                                            onMouseOver={(e) => e.target.style.backgroundColor = '#f8fafc'}
+                                                            onMouseOut={(e) => e.target.style.backgroundColor = 'white'}
+                                                        >
+                                                            <strong>{emp.name}</strong>
+                                                            <div style={{ fontSize: '12px', color: '#64748b' }}>{emp.department}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div style={{ marginBottom: '16px' }}>
                                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>Payment Method</label>
@@ -339,28 +470,30 @@ const Expenses = () => {
                                     </div>
                                 </div>
 
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>
-                                        {newExpense.category === 'Others' ? 'Description (Required for Others) *' : 'Description'}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="description"
-                                        required
-                                        placeholder="Enter expense details"
-                                        value={newExpense.description}
-                                        onChange={handleInputChange}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px',
-                                            borderRadius: '12px',
-                                            border: '1px solid #e2e8f0',
-                                            fontSize: '14px',
-                                            outline: 'none',
-                                            backgroundColor: '#f8fafc'
-                                        }}
-                                    />
-                                </div>
+                                {newExpense.category === 'Others' && (
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>
+                                            Description *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="description"
+                                            required
+                                            placeholder="Enter expense details"
+                                            value={newExpense.description}
+                                            onChange={handleInputChange}
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                borderRadius: '12px',
+                                                border: '1px solid #e2e8f0',
+                                                fontSize: '14px',
+                                                outline: 'none',
+                                                backgroundColor: '#f8fafc'
+                                            }}
+                                        />
+                                    </div>
+                                )}
 
                                 <div style={{ marginBottom: '24px' }}>
                                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>Amount (₹)</label>
@@ -386,7 +519,7 @@ const Expenses = () => {
                                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
                                     <button
                                         type="button"
-                                        onClick={() => setIsModalOpen(false)}
+                                        onClick={handleCloseModal}
                                         className="btn-outline"
                                         style={{ justifyContent: 'center' }}
                                     >
@@ -397,10 +530,95 @@ const Expenses = () => {
                                         className="btn-primary"
                                         style={{ justifyContent: 'center' }}
                                     >
-                                        Save Expense
+                                        {isEditMode ? "Update Expense" : "Save Expense"}
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Detail Breakdown Modal */}
+            {showDetailModal && (
+                <div className="modal-overlay" onClick={() => setShowDetailModal(false)} style={{ zIndex: 1100 }}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%' }}>
+                        <div className="modal-header">
+                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span className="material-symbols-outlined" style={{ color: '#006A4E' }}>
+                                    {detailCategory === "Salary & Others" ? 'group' : 'analytics'}
+                                </span>
+                                {detailCategory} Breakdown
+                            </h3>
+                            <button className="modal-close" onClick={() => setShowDetailModal(false)}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto', padding: '0' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f8fafc', zIndex: 1 }}>
+                                    <tr>
+                                        <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>DETAILS</th>
+                                        <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>CATEGORY</th>
+                                        <th style={{ textAlign: 'right', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>AMOUNT (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {[...expenses]
+                                        .filter(e => {
+                                            if (detailCategory === "All Expenses") return true;
+                                            if (detailCategory === "Salary & Others") return e.category === "Salary" || e.category === "Others";
+                                            return e.category === detailCategory;
+                                        })
+                                        .sort((a, b) => b.amount - a.amount)
+                                        .map((exp, idx) => (
+                                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                <td style={{ padding: '14px 20px' }}>
+                                                    <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px' }}>
+                                                        {exp.category === "Salary" ? (exp.description.replace('Salary for ', '')) : exp.description}
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>{formatDate(exp.date)}</div>
+                                                </td>
+                                                <td style={{ padding: '14px 20px' }}>
+                                                    <span style={{ 
+                                                        padding: '4px 8px', 
+                                                        borderRadius: '4px', 
+                                                        fontSize: '11px', 
+                                                        fontWeight: '700',
+                                                        backgroundColor: exp.category === 'Salary' ? '#fff7ed' : '#f5f3ff',
+                                                        color: exp.category === 'Salary' ? '#9a3412' : '#5b21b6'
+                                                    }}>
+                                                        {exp.category}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '14px 20px', textAlign: 'right', fontWeight: '700', color: '#006A4E', fontSize: '14px' }}>
+                                                    ₹{Number(exp.amount).toLocaleString()}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                </tbody>
+                            </table>
+                            {expenses.filter(e => {
+                                if (detailCategory === "All Expenses") return true;
+                                if (detailCategory === "Salary & Others") return e.category === "Salary" || e.category === "Others";
+                                return e.category === detailCategory;
+                            }).length === 0 && (
+                                <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                                    No records found for this category.
+                                </div>
+                            )}
+                        </div>
+                        <div className="modal-footer" style={{ borderTop: '1px solid #f1f5f9', padding: '16px 20px' }}>
+                            <div style={{ marginRight: 'auto', fontWeight: '700', fontSize: '15px' }}>
+                                Total: ₹{expenses
+                                    .filter(e => {
+                                        if (detailCategory === "All Expenses") return true;
+                                        if (detailCategory === "Salary & Others") return e.category === "Salary" || e.category === "Others";
+                                        return e.category === detailCategory;
+                                    })
+                                    .reduce((acc, curr) => acc + Number(curr.amount), 0)
+                                    .toLocaleString()}
+                            </div>
+                            <button className="btn-primary" onClick={() => setShowDetailModal(false)}>Close</button>
                         </div>
                     </div>
                 </div>

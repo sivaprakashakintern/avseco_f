@@ -169,6 +169,7 @@
   border: 1px solid rgba(226, 232, 240, 0.8);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
 }
 
 .stat-card:hover {
@@ -226,7 +227,7 @@
 }
 
 .stat-value {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;

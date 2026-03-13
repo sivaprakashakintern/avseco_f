@@ -1088,15 +1088,43 @@ body {
     padding: 0.75rem 1rem;
   }
 
-  .mobile-logo-left {
+  .mobile-header-left {
     display: flex;
-    align-items: left;
-    cursor: pointer;
+    align-items: center;
+    gap: 12px;
     margin-right: auto;
   }
 
+  .mobile-hamburger-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .mobile-hamburger-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .mobile-hamburger-btn .material-symbols-outlined {
+    font-size: 26px;
+  }
+
+  .mobile-logo-left {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+
   .mobile-header-logo {
-    height: 32px;
+    height: 30px;
     width: auto;
     filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
   }
@@ -1167,7 +1195,7 @@ body {
   }
 
   .topbar-inner {
-    padding: 0 12px 0 66px;
+    padding: 0 12px;
   }
 }
 

@@ -1290,6 +1290,16 @@ body,
   gap: 16px;
 }
 
+@media (max-width: 600px) {
+  .modal-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .view-toggle {
+    display: none !important;
+  }
+}
+
 /* File Upload Styling */
 .file-upload-wrapper {
   position: relative;
@@ -1729,7 +1739,7 @@ body,
 }
 
 /* ===== MOBILE RESPONSIVE ===== */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
 
   /* ── Hide breadcrumb on mobile ── */
   .employees-subheader {
@@ -1743,10 +1753,14 @@ body,
 
   .premium-header {
     background: #006A4E;
-    padding: 16px !important;
+    padding: 12px 14px !important;
     border-radius: 16px;
     margin-bottom: 0px;
     box-shadow: 0 10px 30px rgba(0, 106, 78, 0.15);
+  }
+
+  .employees-container.modal-open .premium-header {
+    display: none !important;
   }
 
   .header-content {
@@ -1759,7 +1773,11 @@ body,
   .premium-header .page-title {
     color: white;
     margin: 0;
-    font-size: 18px !important;
+    font-size: 16px !important;
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
   }
 
   .premium-header .page-subtitle {
@@ -1773,17 +1791,21 @@ body,
 
   .add-employee-btn {
     width: auto !important;
-    height: 40px !important;
-    padding: 0 16px !important;
+    height: 38px !important;
+    padding: 0 12px !important;
     background: rgba(255, 255, 255, 0.15) !important;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: white !important;
     border-radius: 10px !important;
-    font-size: 12px !important;
+    font-size: 11px !important;
     font-weight: 800 !important;
     white-space: nowrap !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
   }
+
 
   /* ── Stats Cards: compact 2-col ── */
   .employee-stats {
@@ -1894,10 +1916,7 @@ body,
     font-size: 12px;
   }
 
-  /* Hide grid/list toggle on mobile */
-  .view-toggle {
-    display: none !important;
-  }
+
 
   /* filter badge */
   .filter-summary-bar {
@@ -2101,11 +2120,26 @@ body,
   }
 
   .modal-header h3 {
-    font-size: 18px !important;
+    font-size: 16px !important;
     font-weight: 800 !important;
     color: #0f172a !important;
     text-align: center;
   }
+
+  .modal-header .modal-close {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #f1f5f9;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
 
   .modal-body {
     padding: 24px 20px !important;
@@ -2160,11 +2194,13 @@ body,
   }
 
   .employee-profile-avatar {
-    width: 100px !important;
-    height: 100px !important;
-    margin: -50px auto 0 !important;
+    width: 90px !important;
+    height: 90px !important;
+    margin: -30px auto 0 !important;
     border: 4px solid white !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    position: relative;
+    z-index: 5;
   }
 
   .profile-details-section {
@@ -2172,20 +2208,55 @@ body,
   }
 
   .employee-details-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, 1fr) !important;
     gap: 12px !important;
+    padding-bottom: 20px;
   }
 
   .detail-item {
-    padding: 14px !important;
+    padding: 16px 14px !important;
     background: #f8fafc !important;
     border: 1px solid #f1f5f9 !important;
     border-radius: 12px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
   }
+
+  .detail-label {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #94a3b8 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 2px;
+  }
+
+  .detail-value {
+    font-size: 14px !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    text-align: center;
+    word-break: break-word;
+    width: 100%;
+  }
+
+
+
+
 
   /* ── Delete Modal ── */
   .modal-content.delete-modal {
     border-radius: 28px 28px 0 0 !important;
     padding: 24px 20px 40px !important;
+  }
+}
+/* Hide Topbar on Mobile when add modal is open */
+@media (max-width: 1024px) {
+  body.hide-topbar-mobile .topbar-fixed {
+    display: none !important;
   }
 }

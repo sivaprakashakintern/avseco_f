@@ -115,7 +115,6 @@ const AttendanceReport = () => {
             </tr>
             <tr>
                 <th style="background-color: #006A4E; color: white; border: 1px solid #000; font-weight: bold; width: 50px;">S.No</th>
-                <th style="background-color: #006A4E; color: white; border: 1px solid #000; font-weight: bold; width: 100px;">Employee ID</th>
                 <th style="background-color: #006A4E; color: white; border: 1px solid #000; font-weight: bold; width: 200px;">Employee Name</th>
                 ${Array.from({ length: totalColumns }).map((_, i) => {
             const day = days[i];
@@ -135,7 +134,6 @@ const AttendanceReport = () => {
             return `
                     <tr>
                         <td style="border: 1px solid #000; padding: 5px; text-align: center;">${index + 1}</td>
-                        <td style="border: 1px solid #000; padding: 5px;">${emp.empId || '-'}</td>
                         <td style="border: 1px solid #000; padding: 5px; font-weight: 600;">${emp.name}</td>
                         ${Array.from({ length: totalColumns }).map((_, i) => {
                 const status = empData.daily[i];
@@ -351,7 +349,7 @@ const AttendanceReport = () => {
                     <table className="matrix-table">
                         <thead>
                             <tr>
-                                <th className="sticky-col-no" style={{ left: 0 }}>#</th>
+                                <th className="sticky-col-no">#</th>
                                 <th className="sticky-col">Employee</th>
                                 {daysInCurrentView.map(day => (
                                     <th key={day.date} style={{ color: day.isSunday ? '#ef4444' : 'inherit' }}>
@@ -367,10 +365,10 @@ const AttendanceReport = () => {
                                 const data = currentMonthData[emp.id];
                                 return (
                                     <tr key={emp.id}>
-                                        <td className="sticky-col-no" style={{ left: 0 }}>
+                                        <td className="sticky-col-no">
                                             {index + 1}
                                         </td>
-                                        <td className="sticky-col" style={{ left: '40px' }}>
+                                        <td className="sticky-col">
                                             <div className="emp-cell-info">
                                                 <span className="emp-name">{emp.name}</span>
                                             </div>

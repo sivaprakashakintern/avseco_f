@@ -6,7 +6,7 @@ import AppContext from "../../context/AppContext.js";
 import "./Topbar.css";
 
 const Topbar = () => {
-  const { setIsMobileMenuOpen } = useContext(AppContext);
+  const { isMobileMenuOpen, setIsMobileMenuOpen } = useContext(AppContext);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
@@ -84,16 +84,24 @@ const Topbar = () => {
   return (
     <header className="topbar-fixed">
       <div className="topbar-inner">
-        {/* Mobile Logo on the Left */}
+        {/* Mobile Left Section: Hamburger & Logo */}
         {isMobile && (
-          <div className="mobile-logo-left" onClick={() => navigate("/stock")}>
-            <img src={logo} alt="AVSECO" className="mobile-header-logo" />
+          <div className="mobile-header-left">
+            <button 
+              className="mobile-hamburger-btn" 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "Close Menu" : "Open Menu"}
+            >
+              <span className="material-symbols-outlined">
+                {isMobileMenuOpen ? "close" : "menu"}
+              </span>
+            </button>
+            <div className="mobile-logo-left" onClick={() => navigate("/dashboard")}>
+              <img src={logo} alt="AVSECO" className="mobile-header-logo" />
+            </div>
           </div>
         )}
 
-
-
-        <div className="topbar-left-auto"></div>
 
         {/* Right Section: Notification & Profile */}
         <div className="topbar-right-modern">
@@ -110,7 +118,7 @@ const Topbar = () => {
           <div
             className="profile-container"
             ref={profileRef}
-            onClick={() => isMobile ? setIsMobileMenuOpen(true) : setOpen(!open)}
+            onClick={() => setOpen(!open)}
             onMouseEnter={() => !isMobile && setOpen(true)}
             onMouseLeave={() => {
               if (!isMobile) {
@@ -146,26 +154,11 @@ const Topbar = () => {
               >
                 {/* User Info Header in Dropdown on Mobile */}
                 {isMobile && (
-                  <div className="dropdown-user-header">
-                    <h4>{user.name}</h4>
-                    <p>{user.role}</p>
-                    <div className="dropdown-divider"></div>
+                  <div className="dropdown-user-header" style={{ padding: '12px 16px', borderBottom: '1px solid #eee' }}>
+                    <h4 style={{ margin: 0, fontSize: '14px' }}>{user.name}</h4>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>{user.role}</p>
                   </div>
                 )}
-
-                {/* Nav Items only on Mobile inside profile dropdown */}
-                {isMobile && navItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className="dropdown-item"
-                    onClick={() => handleNavigation(item.path)}
-                  >
-                    <span className="material-symbols-outlined">{item.icon}</span>
-                    <span>{item.label}</span>
-                  </div>
-                ))}
-
-                {isMobile && <div className="dropdown-divider"></div>}
 
                 <div className="dropdown-item" onClick={() => handleNavigation("/profile")}>
                   <span className="material-symbols-outlined">person</span>

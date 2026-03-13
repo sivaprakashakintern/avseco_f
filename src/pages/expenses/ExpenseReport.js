@@ -599,22 +599,6 @@ const ExpenseReport = () => {
                                                     <span className="info-value">{ex.paymentMode}</span>
                                                 </div>
                                             </div>
-                                            <div className="expense-action-buttons">
-                                                <button
-                                                    className="expense-mini-btn edit"
-                                                    onClick={(e) => { e.stopPropagation(); handleEditExpense(ex.id); }}
-                                                >
-                                                    <span className="material-symbols-outlined">edit</span>
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    className="expense-mini-btn delete"
-                                                    onClick={(e) => { e.stopPropagation(); handleDeleteExpense(ex.id); }}
-                                                >
-                                                    <span className="material-symbols-outlined">delete</span>
-                                                    Delete
-                                                </button>
-                                            </div>
                                         </div>
                                     )}
                                 </div>
