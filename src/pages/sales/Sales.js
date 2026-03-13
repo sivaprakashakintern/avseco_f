@@ -175,7 +175,7 @@ const Sales = () => {
                 updatedItems[existingItemIndex] = {
                     ...item,
                     qty: item.qty + qtyToAdd,
-                    amount: item.amount + (parseFloat(unitPrice) * qtyToAdd)
+                    amount: item.amount + (pricePerUnit * qtyToAdd)
                 };
                 return updatedItems;
             } else {
@@ -185,7 +185,7 @@ const Sales = () => {
                     baseName: selectedBaseProduct,
                     size: selectedSize,
                     qty: qtyToAdd,
-                    amount: (parseFloat(unitPrice) * qtyToAdd) || 0,
+                    amount: (pricePerUnit * qtyToAdd) || 0,
                     unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
                 };
                 return [...prevItems, newItem];
