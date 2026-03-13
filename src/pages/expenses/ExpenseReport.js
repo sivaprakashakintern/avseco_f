@@ -50,13 +50,7 @@ const ExpenseReport = () => {
         setExpandedExpenseId(expandedExpenseId === id ? null : id);
     };
 
-    const handleDeleteExpense = (id) => {
-        alert("Delete feature coming soon!");
-    };
 
-    const handleEditExpense = (id) => {
-        alert("Edit feature coming soon!");
-    };
 
     // ── Preset helpers ───────────────────────────────────────────────────────────
     const handlePreset = (preset) => {

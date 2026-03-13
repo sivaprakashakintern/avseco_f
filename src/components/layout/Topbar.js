@@ -27,17 +27,7 @@ const Topbar = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const navItems = [
 
-    { icon: "inventory_2", label: "Stock", path: "/stock" },
-    { icon: "format_list_bulleted", label: "Product List", path: "/products" },
-    { icon: "factory", label: "Production", path: "/production" },
-    { icon: "payments", label: "Expenses", path: "/expenses" },
-    { icon: "badge", label: "Employees", path: "/employees" },
-    { icon: "group", label: "Clients", path: "/clients" },
-    { icon: "event_available", label: "Attendance", path: "/attendance" },
-    { icon: "check_circle", label: "Check", path: "/check" },
-  ];
 
   const handleNavigation = (path) => {
     navigate(path);

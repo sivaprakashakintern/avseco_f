@@ -3,7 +3,6 @@ import { useAppContext } from '../../context/AppContext.js';
 import './Sales.css';
 import logo from '../../assets/logo.png';
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
 
 const PRODUCTS_LIST = [
@@ -166,7 +165,6 @@ const Sales = () => {
         
         const qtyToAdd = parseFloat(quantity);
         const pricePerUnit = parseFloat(unitPrice) || 0;
-        const amountToAdd = pricePerUnit * qtyToAdd;
 
         setBillItems(prevItems => {
             const existingItemIndex = prevItems.findIndex(item => item.product === selectedProduct);
