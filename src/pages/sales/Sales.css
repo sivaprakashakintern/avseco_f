@@ -373,6 +373,10 @@
   cursor: pointer;
 }
 
+.mobile-only-item {
+  display: none !important;
+}
+
 .mobile-history-cards {
   display: none;
 }
@@ -1692,6 +1696,12 @@
     display: none !important;
   }
 
+  .mobile-only-item {
+    display: block !important;
+    width: 100%;
+    margin-top: 8px;
+  }
+
   .show-mobile-only {
     display: table-cell !important;
   }
@@ -1999,30 +2009,22 @@
     border-radius: 10px;
   }
 
-  /* ---- Bill Modal: bottom sheet ---- */
+  /* ---- Bill Modal: centered view ---- */
   .bill-modal-overlay {
-    align-items: flex-end !important;
-    padding: 0 !important;
-    background: rgba(0, 20, 14, 0.8);
+    align-items: center !important;
+    padding: 20px !important;
+    background: rgba(0, 0, 0, 0.85);
   }
 
   .bill-modal-content {
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 24px 24px 0 0 !important;
-    padding: 16px 16px 24px !important;
-    margin: 0 !important;
+    border-radius: 4px !important;
+    margin: auto !important;
   }
 
   .bill-modal-content::before {
-    content: '';
-    display: block;
-    width: 40px;
-    height: 4px;
-    background: #d1e7d6;
-    border-radius: 4px;
-    margin: 0 auto 14px;
+    display: none !important;
   }
+
 
   .bill-header {
     flex-direction: row;

@@ -6,10 +6,10 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
 const PRODUCTS_LIST = [
-    { id: 1, baseName: "Areca Leaf Plate", size: "6\" Round", name: "Areca Leaf Plate 6\" Round", sku: "FG-PL-006", category: "Finished Goods", unit: "pcs", currentStock: 6000, price: 2.50 },
-    { id: 2, baseName: "Areca Leaf Plate", size: "8\" Round", name: "Areca Leaf Plate 8\" Round", sku: "FG-PL-008", category: "Finished Goods", unit: "pcs", currentStock: 5000, price: 4.50 },
-    { id: 3, baseName: "Areca Leaf Plate", size: "10\" Round", name: "Areca Leaf Plate 10\" Round", sku: "FG-PL-010", category: "Finished Goods", unit: "pcs", currentStock: 3200, price: 6.50 },
-    { id: 4, baseName: "Areca Leaf Plate", size: "12\" Round", name: "Areca Leaf Plate 12\" Round", sku: "FG-PL-012", category: "Finished Goods", unit: "pcs", currentStock: 2500, price: 8.50 },
+    { id: 1, baseName: "Areca Leaf Plate", size: "6\" Round", name: "Areca Leaf Plate 6\" Round", sku: "FG-PL-006", hsn: "46021919", category: "Finished Goods", unit: "pcs", currentStock: 6000, price: 2.50 },
+    { id: 2, baseName: "Areca Leaf Plate", size: "8\" Round", name: "Areca Leaf Plate 8\" Round", sku: "FG-PL-008", hsn: "46021919", category: "Finished Goods", unit: "pcs", currentStock: 5000, price: 4.50 },
+    { id: 3, baseName: "Areca Leaf Plate", size: "10\" Round", name: "Areca Leaf Plate 10\" Round", sku: "FG-PL-010", hsn: "46021919", category: "Finished Goods", unit: "pcs", currentStock: 3200, price: 6.50 },
+    { id: 4, baseName: "Areca Leaf Plate", size: "12\" Round", name: "Areca Leaf Plate 12\" Round", sku: "FG-PL-012", hsn: "46021919", category: "Finished Goods", unit: "pcs", currentStock: 2500, price: 8.50 },
 ];
 
 const Sales = () => {
@@ -61,6 +61,7 @@ const Sales = () => {
     const [selectedBill, setSelectedBill] = useState(null);
     const [billItems, setBillItems] = useState([]);
     const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
+    const [editingTransactionId, setEditingTransactionId] = useState(null);
 
     // Search and Filter states for Recent History
     const [searchTerm, setSearchTerm] = useState("");
@@ -186,7 +187,8 @@ const Sales = () => {
                     size: selectedSize,
                     qty: qtyToAdd,
                     amount: (pricePerUnit * qtyToAdd) || 0,
-                    unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
+                    unit: products.find(p => p.name === selectedProduct)?.unit || "pcs",
+                    hsn: products.find(p => p.name === selectedProduct)?.hsn || "-"
                 };
                 return [...prevItems, newItem];
             }
@@ -194,7 +196,6 @@ const Sales = () => {
 
         setQuantity("");
     };
-
     const handleLogTransaction = () => {
         if (billItems.length === 0 && (!quantity || parseFloat(quantity) <= 0)) {
             return;
@@ -219,30 +220,134 @@ const Sales = () => {
             `${item.qty}x${item.product.replace('Areca Leaf Plate ', '').replace(' Round', '')}`
         ).join(', ');
 
-        const newHistoryEntry = {
-            id: Date.now(),
-            date: formatDate(new Date()),
-            product: productSummary,
-            type: "SALE",
-            quantity: -totalPieces,
-            unit: "pcs",
-            balance: (allTransactions[0]?.balance || 10000) - totalPieces,
-            status: "success",
-            company: companyName,
-            customer: customerName,
-            amount: totalBillAmount,
-            paymentStatus: paymentMode,
-            saleItems: itemsToLog.map(item => ({
-                productName: item.product,
-                baseName: item.baseName || item.product,
+        if (editingTransactionId) {
+            // Update existing transaction
+            const updatedTransactions = allTransactions.map(t => {
+                if (t.id === editingTransactionId) {
+                    return {
+                        ...t,
+                        product: productSummary,
+                        quantity: -totalPieces,
+                        company: companyName,
+                        customer: customerName,
+                        amount: totalBillAmount,
+                        paymentStatus: paymentMode,
+                        paidStatus: paidStatus, // Explicitly tracking paid/unpaid status
+                        saleItems: itemsToLog.map(item => ({
+                            productName: item.product,
+                            baseName: item.baseName || item.product,
+                            size: item.size || "-",
+                            qty: item.qty,
+                            amount: item.amount
+                        })),
+                        deliveredBy: deliveryEmployee,
+                        deliveryMode: deliveryMode,
+                        customerEmail: customerEmail,
+                        customerPhone: customerPhone,
+                        customerGstin: customerGstin,
+                        customerAddress: customerAddress
+                    };
+                }
+                return t;
+            });
+            setAllTransactions(updatedTransactions);
+            setFeedbackMessage("✅ Sales record updated successfully");
+            setEditingTransactionId(null);
+        } else {
+            // Create new transaction
+            const newHistoryEntry = {
+                id: Date.now(),
+                date: formatDate(new Date()),
+                product: productSummary,
+                type: "SALE",
+                quantity: -totalPieces,
+                unit: "pcs",
+                balance: (allTransactions[0]?.balance || 10000) - totalPieces,
+                status: "success",
+                company: companyName,
+                customer: customerName,
+                amount: totalBillAmount,
+                paymentStatus: paymentMode,
+                paidStatus: paidStatus,
+                saleItems: itemsToLog.map(item => ({
+                    productName: item.product,
+                    baseName: item.baseName || item.product,
+                    size: item.size || "-",
+                    qty: item.qty,
+                    amount: item.amount
+                })),
+                deliveredBy: deliveryEmployee,
+                deliveryMode: deliveryMode,
+                customerEmail: customerEmail,
+                customerPhone: customerPhone,
+                customerGstin: customerGstin,
+                customerAddress: customerAddress
+            };
+            setAllTransactions([newHistoryEntry, ...allTransactions]);
+            setFeedbackMessage("✅ Sales record added successfully");
+        }
+
+        // Reset form
+        setBillItems([]);
+        setQuantity("");
+        setTotalAmount("");
+        setCompanyName("");
+        setCustomerName("");
+        setCustomerEmail("");
+        setCustomerPhone("");
+        setCustomerGstin("");
+        setCustomerAddress("");
+        setDeliveryEmployee("");
+        setDeliveryMode("Door Delivery");
+        setPaymentMode("Cash");
+        setPaidStatus("Paid");
+        setAmountPaid("");
+        setTimeout(() => setFeedbackMessage(""), 3000);
+    };
+
+    const handleEditTransaction = (transaction) => {
+        setEditingTransactionId(transaction.id);
+        setCompanyName(transaction.company || "");
+        setCustomerName(transaction.customer || "");
+        setCustomerEmail(transaction.customerEmail || "");
+        setCustomerPhone(transaction.customerPhone || "");
+        setCustomerGstin(transaction.customerGstin || "");
+        setCustomerAddress(transaction.customerAddress || "");
+        setDeliveryEmployee(transaction.deliveredBy || "");
+        setDeliveryMode(transaction.deliveryMode || "Door Delivery");
+        setPaymentMode(transaction.paymentStatus || "Cash");
+        setPaidStatus(transaction.paidStatus || (transaction.paymentStatus === 'Unpaid' ? 'Unpaid' : 'Paid'));
+        
+        // Populate bill items from saleItems
+        if (transaction.saleItems) {
+            setBillItems(transaction.saleItems.map((item, idx) => ({
+                id: idx,
+                product: item.productName || item.product,
+                baseName: item.baseName || item.productName || item.product,
                 size: item.size || "-",
                 qty: item.qty,
-                amount: item.amount
-            })),
-            deliveredBy: deliveryEmployee
-        };
+                amount: item.amount,
+                unit: "pcs"
+            })));
+        } else {
+            // Fallback for old records
+            setBillItems([{
+                id: Date.now(),
+                product: transaction.product,
+                baseName: transaction.product,
+                size: "-",
+                qty: Math.abs(transaction.quantity),
+                amount: transaction.amount,
+                unit: "pcs"
+            }]);
+        }
+        
+        setViewMode('entry');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
-        setAllTransactions([newHistoryEntry, ...allTransactions]);
+    const handleCancelEdit = () => {
+        setEditingTransactionId(null);
         setBillItems([]);
         setQuantity("");
         setTotalAmount("");
@@ -289,10 +394,10 @@ const Sales = () => {
             invoiceNo: `INV-${Date.now().toString().slice(-6)}`,
             company: companyName,
             customer: customerName || clientInfo?.contactPerson || 'N/A',
-            email: clientInfo?.email || 'N/A',
-            phone: clientInfo?.phone || 'N/A',
-            address: clientInfo?.address || 'N/A',
-            gstin: clientInfo?.gst || 'N/A',
+            email: customerEmail || clientInfo?.email || 'N/A',
+            phone: customerPhone || clientInfo?.phone || 'N/A',
+            address: customerAddress || clientInfo?.address || 'N/A',
+            gstin: customerGstin || clientInfo?.gst || 'N/A',
             date: formatDate(new Date()),
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             items: itemsForBill.map(item => ({
@@ -301,10 +406,12 @@ const Sales = () => {
                 size: item.size || "-",
                 qty: item.qty,
                 amount: item.amount,
+                hsn: item.hsn || products.find(p => p.name === item.product)?.hsn || "-",
                 rate: item.rate || (item.qty ? (item.amount / item.qty).toFixed(2) : 0)
             })),
             deliveredBy: deliveryEmployee,
             paymentMode: paymentMode,
+            paidStatus: paidStatus,
             deliveryMode: deliveryMode
         };
 
@@ -315,17 +422,17 @@ const Sales = () => {
 
 
     // View a transaction's bill details
-    const handleViewBill = (transaction) => {
+    const handleViewBill = (transaction, returnOnly = false) => {
         const clientInfo = clients.find(c => c.companyName === transaction.company);
 
         const billData = {
-            invoiceNo: `INV-${transaction.id.toString().slice(-6)}`,
+            invoiceNo: transaction.invoiceNo || `INV-${transaction.id.toString().slice(-6)}`,
             company: transaction.company,
             customer: transaction.customer || clientInfo?.contactPerson || 'N/A',
-            email: clientInfo?.email || 'N/A',
-            phone: clientInfo?.phone || 'N/A',
-            address: clientInfo?.address || 'N/A',
-            gstin: clientInfo?.gst || 'N/A',
+            email: transaction.customerEmail || clientInfo?.email || 'N/A',
+            phone: transaction.customerPhone || transaction.phone || clientInfo?.phone || 'N/A',
+            address: transaction.customerAddress || clientInfo?.address || 'N/A',
+            gstin: transaction.customerGstin || clientInfo?.gst || 'N/A',
             date: transaction.date.includes(',') ? transaction.date.split(',')[0] : transaction.date,
             time: transaction.date.includes(',') ? transaction.date.split(',').slice(1).join(',') : "",
             items: transaction.saleItems?.map(item => ({
@@ -341,13 +448,16 @@ const Sales = () => {
                 size: transaction.product.includes('"') ? (transaction.product.match(/\d+".*/) || ["—"])[0] : "—", 
                 qty: Math.abs(transaction.quantity), 
                 amount: transaction.amount,
+                hsn: products.find(p => p.name === transaction.product)?.hsn || "-",
                 rate: transaction.quantity ? (transaction.amount / Math.abs(transaction.quantity)).toFixed(2) : 0
             }],
             totalAmount: transaction.amount,
             paymentMode: transaction.paymentStatus,
-            deliveredBy: transaction.deliveredBy || '-'
+            paidStatus: transaction.paidStatus || (transaction.paymentStatus === 'Unpaid' ? 'Unpaid' : 'Paid'),
+            deliveredBy: transaction.deliveredBy
         };
 
+        if (returnOnly) return billData;
         setSelectedBill(billData);
         setShowBillModal(true);
     };
@@ -360,68 +470,118 @@ const Sales = () => {
 
     // ─── Shared: Capture HTML preview & Send to WhatsApp ──────────────────
     const sendInvoiceToWhatsApp = async (bill) => {
-        // 1. Find the invoice HTML element
         const invoiceElement = document.getElementById('printable-bill');
         if (!invoiceElement) {
-            alert('Invoice preview not found. Please try again.');
+            alert('Invoice preview not found.');
             return;
         }
 
+        // 1. Ultra-Smart Phone Normalization (Ensures it goes straight to the contact)
+        let phoneNum = (bill.phone && bill.phone !== 'N/A' && bill.phone.trim() !== "") ? bill.phone : "";
+        
+        if (!phoneNum || phoneNum === "") {
+            const savedClient = clients.find(c => 
+                (bill.company && bill.company !== 'N/A' && c.companyName === bill.company) || 
+                (bill.customer && bill.customer !== 'N/A' && c.contactPerson === bill.customer)
+            );
+            phoneNum = savedClient?.phone || customerPhone || "";
+        }
+
+        // Clean & Normalize for India (+91)
+        let cleaned = phoneNum.replace(/\D/g, ''); 
+        if (cleaned.startsWith('910')) {
+            cleaned = '91' + cleaned.substring(3); 
+        } else if (cleaned.startsWith('0')) {
+            cleaned = cleaned.substring(1); 
+        }
+        
+        if (cleaned.length === 10) {
+            cleaned = '91' + cleaned; 
+        }
+
+        const phone = cleaned;
+        if (!phone || phone.length < 10) {
+            alert('Please enter a valid WhatsApp number in Customer Details.');
+            return;
+        }
+
+        // Visual Feedback for "Straight" transition
+        setFeedbackMessage(`🚀 Generating High-Res Bill & Connecting to WhatsApp...`);
+        
         try {
-            // 2. Screenshot the exact HTML using html2canvas
+            // 2. Capture the invoice with optimized high-res settings (2.5x is faster than 3x)
+            const fullHeight = invoiceElement.scrollHeight;
             const canvas = await html2canvas(invoiceElement, {
-                scale: 2,          // 2x for high resolution
+                scale: 2.5,           // Slightly reduced for speed, still look great
                 useCORS: true,
                 backgroundColor: '#ffffff',
-                logging: false,
-                removeContainer: true
+                width: 850,
+                windowWidth: 850,
+                height: fullHeight,
+                scrollY: -window.scrollY,
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.getElementById('printable-bill');
+                    if (el) {
+                        el.style.zoom = '1';
+                        el.style.transform = 'none';
+                        el.style.margin = '0 auto';  // Center horizontally in the capture
+                        el.style.boxShadow = 'none';
+                        el.style.position = 'relative';
+                        el.style.top = '0';
+                        el.style.left = '0';
+                        el.style.width = '850px';
+                        el.style.height = `${fullHeight}px`;
+                        el.style.overflow = 'visible';
+                    }
+                    // Hide action buttons (Close, Send, Print) from the capture
+                    const actionButtons = clonedDoc.querySelector('.no-print');
+                    if (actionButtons) {
+                        actionButtons.style.display = 'none';
+                    }
+                }
             });
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.85);
+            const imgData = canvas.toDataURL('image/jpeg', 1.0); // Maximum quality
             const imgWidth = canvas.width;
             const imgHeight = canvas.height;
 
-            // 3. Create a PDF exactly the same size as the captured content
-            // Convert px to mm (96 dpi -> mm: px / 96 * 25.4)
-            const pdfWidth  = (imgWidth  / (2 * 96)) * 25.4;
-            const pdfHeight = (imgHeight / (2 * 96)) * 25.4;
-
+            // 3. Generate PDF matching the exact aspect ratio of the bill
+            const pdfWidth = (imgWidth / (3 * 96)) * 25.4;
+            const pdfHeight = (imgHeight / (3 * 96)) * 25.4;
+            
             const doc = new jsPDF({
                 orientation: pdfWidth > pdfHeight ? 'l' : 'p',
                 unit: 'mm',
                 format: [pdfWidth, pdfHeight],
-                compress: true
+                compress: false // Disable compression for best quality
             });
 
-            doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-
+            doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'SLOW');
             const pdfBlob = doc.output('blob');
             const pdfFile = new File([pdfBlob], `Invoice_${bill.invoiceNo}.pdf`, { type: 'application/pdf' });
 
             // 4. WhatsApp message
-            const welcomeMsg = `Welcome *${bill.customer}*,%0A%0AThank you for your business with *AVSECO INDUSTRIES*! 🌿%0A%0APlease find your invoice attached below.`;
-            const phone = (bill.phone || "").replace(/\D/g, '');
-            const waUrl = `https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${welcomeMsg}`;
+            const message = `*INVOICE: ${bill.invoiceNo}*%0A%0ADear *${bill.customer}*,%0A%0AThank you for your business with *AVSECO INDUSTRIES*! 🌿%0A%0APlease find your invoice attached below.`;
+            const finalPhone = phone.startsWith('91') ? phone : '91' + phone;
+            const waUrl = `https://wa.me/${finalPhone}?text=${message}`;
 
-            // 5. Share on mobile or download + open WhatsApp on desktop
+            // 5. Share logic
             if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                try {
-                    await navigator.share({
-                        files: [pdfFile],
-                        title: `Invoice AVS-${bill.invoiceNo}`,
-                        text: `Welcome ${bill.customer}, Thank you for your business with AVSECO INDUSTRIES!`
-                    });
-                } catch (err) {
+                await navigator.share({
+                    files: [pdfFile],
+                    title: `Invoice ${bill.invoiceNo}`,
+                    text: `Dear ${bill.customer}, Please find your invoice from AVSECO INDUSTRIES.`
+                }).catch(() => {
                     doc.save(`Invoice_${bill.invoiceNo}.pdf`);
                     window.open(waUrl, '_blank');
-                }
+                });
             } else {
                 doc.save(`Invoice_${bill.invoiceNo}.pdf`);
                 window.open(waUrl, '_blank');
             }
         } catch (err) {
-            console.error('Invoice PDF generation failed:', err);
-            alert('Could not generate PDF. Please try again.');
+            console.error('WhatsApp capture failed:', err);
+            alert('Could not generate full invoice. Please try again.');
         }
     };
 
@@ -558,8 +718,13 @@ const Sales = () => {
             {/* Quick Sales Entry Card */}
             <div className={`desktop-view-section ${viewMode !== 'entry' ? 'mobile-hidden' : ''}`}>
                 <div className="stock-table-container quick-entry-card">
-                    <div className="table-header">
-                        <h3 className="section-title">Customer Details</h3>
+                    <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3 className="section-title">{editingTransactionId ? "Edit Sales Record" : "Customer Details"}</h3>
+                        {editingTransactionId && (
+                            <button className="btn-outline" onClick={handleCancelEdit} style={{ padding: '6px 12px', fontSize: '12px', borderColor: '#ef4444', color: '#ef4444' }}>
+                                Cancel Edit
+                            </button>
+                        )}
                     </div>
                     <div className="quick-entry-grid">
                         <div className="quick-entry-row">
@@ -733,7 +898,7 @@ const Sales = () => {
                         <h3 className="section-title">Billing Details</h3>
                     </div>
                     <div className="quick-entry-grid">
-                        <div className="quick-entry-row">
+                        <div className="quick-entry-row" style={{ marginBottom: '8px' }}>
                             <div className="quick-entry-item">
                                 <span className="quick-entry-label">Product Name:</span>
                                 <div className="product-dropdown base-product-dropdown">
@@ -799,27 +964,21 @@ const Sales = () => {
 
                             <div className="quick-entry-item">
                                 <span className="quick-entry-label">Total Pieces:</span>
-                                <div style={{ width: '100%', display: 'flex', gap: '8px' }}>
+                                <div style={{ width: '100%' }}>
                                     <input
                                         type="number"
-                                        placeholder="0"
-                                        className="quick-entry-input flex-1"
-                                        style={{ flex: 1, minWidth: 0 }}
+                                        placeholder="Enter total pieces"
+                                        className="quick-entry-input"
                                         value={quantity}
                                         onChange={(e) => setQuantity(e.target.value)}
                                     />
-                                    <button
-                                        className="btn-outline quick-entry-btn add-btn-colored mobile-only-add-btn"
-                                        onClick={handleAddItem}
-                                        title="Add Item"
-                                    >
-                                        <span className="material-symbols-outlined">add_circle</span>
-                                    </button>
                                 </div>
                             </div>
+                        </div>
 
+                        <div className="quick-entry-row" style={{ marginBottom: '16px' }}>
                             <div className="quick-entry-item">
-                                <span className="quick-entry-label">Rate Per Piece:</span>
+                                <span className="quick-entry-label">Per Plate Price:</span>
                                 <div className="amount-input-wrapper">
                                     <span className="currency-prefix">₹</span>
                                     <input
@@ -831,23 +990,49 @@ const Sales = () => {
                                     />
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="quick-entry-row">
                             <div className="quick-entry-item">
-                                <span className="quick-entry-label">Total Bill Amount:</span>
-                                <div className="amount-input-wrapper">
+                                <span className="quick-entry-label">Total Plate Amount:</span>
+                                <div className="amount-input-wrapper" style={{ background: '#f8fafc' }}>
                                     <span className="currency-prefix">₹</span>
                                     <input
-                                        type="number"
-                                        placeholder="0.00"
+                                        type="text"
                                         className="quick-entry-input amount-input"
-                                        value={totalAmount}
+                                        style={{ fontWeight: 600, color: '#1a6b3c' }}
+                                        value={((parseFloat(quantity) || 0) * (parseFloat(unitPrice) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         readOnly
                                     />
                                 </div>
                             </div>
 
+                            <div className="quick-entry-item">
+                                <span className="quick-entry-label">Overall Bill Amount:</span>
+                                <div className="amount-input-wrapper" style={{ background: '#f8fafc' }}>
+                                    <span className="currency-prefix">₹</span>
+                                    <input
+                                        type="text"
+                                        className="quick-entry-input amount-input"
+                                        style={{ fontWeight: 600, color: '#1a6b3c' }}
+                                        value={billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        readOnly
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Mobile Only Add Item Button after Overall Bill Amount */}
+                            <div className="quick-entry-item mobile-only-item">
+                                <button
+                                    className="btn-primary"
+                                    onClick={handleAddItem}
+                                    style={{ width: '100%', height: '48px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add_circle</span>
+                                    ADD ITEM
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="quick-entry-row" style={{ marginBottom: '16px' }}>
                             <div className="quick-entry-item">
                                 <span className="quick-entry-label">Delivery Mode:</span>
                                 <div className="product-dropdown delivery-mode-dropdown">
@@ -936,9 +1121,7 @@ const Sales = () => {
                                     )}
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="quick-entry-row">
                             <div className="quick-entry-item">
                                 <span className="quick-entry-label">Payment Status:</span>
                                 <div className="product-dropdown payment-dropdown">
@@ -969,7 +1152,9 @@ const Sales = () => {
                                     )}
                                 </div>
                             </div>
+                        </div>
 
+                        <div className="quick-entry-row">
                             <div className="quick-entry-item">
                                 <span className={`quick-entry-label ${paidStatus === 'Unpaid' ? 'disabled-label' : ''}`} style={paidStatus === 'Unpaid' ? { opacity: 0.5 } : {}}>Payment Mode:</span>
                                 <div className={`product-dropdown payment-dropdown ${paidStatus === 'Unpaid' ? 'disabled-dropdown' : ''}`} style={paidStatus === 'Unpaid' ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
@@ -1002,60 +1187,36 @@ const Sales = () => {
                                 </div>
                             </div>
 
-                            {(paidStatus === 'Pending' || paidStatus === 'Advance') ? (
-                                <div className="quick-entry-item">
-                                    <span className="quick-entry-label">Amount Paid:</span>
-                                    <div className="amount-input-wrapper">
-                                        <span className="currency-prefix">₹</span>
-                                        <input
-                                            type="number"
-                                            placeholder="0.00"
-                                            className="quick-entry-input amount-input"
-                                            value={amountPaid}
-                                            onChange={(e) => setAmountPaid(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="quick-entry-item" style={{ visibility: 'hidden' }}></div>
-                            )}
-                        </div>
-                    </div>
+                            <div className="quick-entry-item">
+                                {(paidStatus === 'Pending' || paidStatus === 'Advance') ? (
+                                    <>
+                                        <span className="quick-entry-label">Amount Paid:</span>
+                                        <div className="amount-input-wrapper">
+                                            <span className="currency-prefix">₹</span>
+                                            <input
+                                                type="number"
+                                                placeholder="0.00"
+                                                className="quick-entry-input amount-input"
+                                                value={amountPaid}
+                                                onChange={(e) => setAmountPaid(e.target.value)}
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div style={{ visibility: 'hidden' }}></div>
+                                )}
+                            </div>
 
-                    <div className="quick-entry-footer">
-                        <div className="quick-entry-action-group">
-                            <button
-                                className="btn-outline quick-entry-btn add-btn-colored add-btn-pc"
-                                onClick={handleAddItem}
-                            >
-                                <span className="material-symbols-outlined">add_circle</span>
-                                ADD ITEM
-                            </button>
-
-                            <button
-                                className="btn-outline quick-entry-btn bill-btn-colored"
-                                onClick={handleGenerateBill}
-                            >
-                                <span className="material-symbols-outlined">receipt_long</span>
-                                GENERATE BILL
-                            </button>
-
-                            <button
-                                className="btn-primary quick-entry-btn log-btn-colored"
-                                onClick={handleLogTransaction}
-                                disabled={isLogging || (billItems.length === 0 && !quantity)}
-                            >
-                                <span className="material-symbols-outlined">
-                                    {isLogging ? "hourglass_empty" : "done_all"}
-                                </span>
-                                {isLogging ? "SAVING..." : "SAVE ENTRY"}
-                            </button>
-                        </div>
-                        <div className="history-view-trigger">
-                            <button className="view-history-btn" onClick={() => setViewMode('history')}>
-                                <span className="material-symbols-outlined">history</span>
-                                View Recent Sales History
-                            </button>
+                            <div className="quick-entry-item hide-mobile">
+                                <button
+                                    className="btn-primary"
+                                    onClick={handleAddItem}
+                                    style={{ width: '100%', height: '48px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 129, 12, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add_circle</span>
+                                    ADD ITEM
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -1069,8 +1230,9 @@ const Sales = () => {
                                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
                                     <thead>
                                         <tr style={{ background: '#fefefe', borderBottom: '1px solid #e2e8f0' }}>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '35%' }}>PRODUCT NAME</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '25%' }}>SIZE</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '25%' }}>PRODUCT NAME</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '15%' }}>SIZE</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '15%' }}>HSN</th>
                                             <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '15%' }}>QTY</th>
                                             <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '15%' }}>TOTAL</th>
                                             <th style={{ padding: '12px 16px', width: '10%', textAlign: 'center' }}>ACTION</th>
@@ -1081,6 +1243,7 @@ const Sales = () => {
                                             <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                                 <td style={{ padding: '16px', color: '#1e293b', fontSize: '0.9rem', textAlign: 'left' }}>{item.baseName}</td>
                                                 <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'left' }}>{item.size}</td>
+                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'left' }}>{item.hsn || "-"}</td>
                                                 <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>{item.qty}</td>
                                                 <td style={{ padding: '16px', color: '#1e293b', fontWeight: 500, fontSize: '0.9rem', textAlign: 'right' }}>₹{item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                                 <td style={{ padding: '16px', textAlign: 'center' }}>
@@ -1099,7 +1262,7 @@ const Sales = () => {
                                     </tbody>
                                     <tfoot>
                                         <tr style={{ background: '#f8fafc' }}>
-                                            <td colSpan="3" style={{ padding: '16px', textAlign: 'right', fontWeight: 600, color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>SUBTOTAL</td>
+                                            <td colSpan="4" style={{ padding: '16px', textAlign: 'right', fontWeight: 600, color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>SUBTOTAL</td>
                                             <td style={{ padding: '16px', fontWeight: 700, color: '#10b981', fontSize: '1.1rem', textAlign: 'right' }}>
                                                 ₹{billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
@@ -1110,6 +1273,35 @@ const Sales = () => {
                             </div>
                         </div>
                     )}
+
+                    <div className="quick-entry-footer">
+                        <div className="quick-entry-action-group">
+                            <button
+                                className="btn-outline quick-entry-btn bill-btn-colored"
+                                onClick={handleGenerateBill}
+                            >
+                                <span className="material-symbols-outlined">receipt_long</span>
+                                GENERATE BILL
+                            </button>
+
+                            <button
+                                className="btn-primary quick-entry-btn log-btn-colored"
+                                onClick={handleLogTransaction}
+                                disabled={isLogging || (billItems.length === 0 && !quantity)}
+                            >
+                                <span className="material-symbols-outlined">
+                                    {isLogging ? "hourglass_empty" : "done_all"}
+                                </span>
+                                {editingTransactionId ? (isLogging ? "UPDATING..." : "UPDATE ENTRY") : (isLogging ? "SAVING..." : "SAVE ENTRY")}
+                            </button>
+                        </div>
+                        <div className="history-view-trigger">
+                            <button className="view-history-btn" onClick={() => setViewMode('history')}>
+                                <span className="material-symbols-outlined">history</span>
+                                View Recent Sales History
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1206,7 +1398,7 @@ const Sales = () => {
                                         <th className="hide-mobile" style={{ textAlign: 'right' }}>AMOUNT</th>
                                         <th className="hide-mobile" style={{ textAlign: 'left' }}>PAYMENT</th>
                                         <th className="hide-mobile" style={{ textAlign: 'left' }}>DELIVERED BY</th>
-                                        <th className="text-center">DELETE</th>
+                                        <th className="text-center">ACTIONS</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1254,13 +1446,31 @@ const Sales = () => {
                                                     </div>
                                                 </td>
                                                 <td className="text-center">
-                                                    <button
-                                                        className="icon-action-btn delete"
-                                                        onClick={() => handleDeleteTransaction(transaction.id)}
-                                                        title="Delete Record"
-                                                    >
-                                                        <span className="material-symbols-outlined">delete</span>
-                                                    </button>
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                                        <button 
+                                                            className="icon-action-btn" 
+                                                            onClick={() => sendInvoiceToWhatsApp(handleViewBill(transaction, true))} 
+                                                            title="Send to WhatsApp"
+                                                            style={{ color: '#25D366', background: 'rgba(37, 211, 102, 0.1)' }}
+                                                        >
+                                                            <span className="material-symbols-outlined">share</span>
+                                                        </button>
+                                                        <button
+                                                            className="icon-action-btn edit"
+                                                            onClick={() => handleEditTransaction(transaction)}
+                                                            title="Edit Record"
+                                                            style={{ color: '#0ea5e9' }}
+                                                        >
+                                                            <span className="material-symbols-outlined">edit</span>
+                                                        </button>
+                                                        <button
+                                                            className="icon-action-btn delete"
+                                                            onClick={() => handleDeleteTransaction(transaction.id)}
+                                                            title="Delete Record"
+                                                        >
+                                                            <span className="material-symbols-outlined">delete</span>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -1314,6 +1524,18 @@ const Sales = () => {
                                             </div>
                                         </div>
                                         <div className="sale-card-actions" onClick={(e) => e.stopPropagation()}>
+                                            <button 
+                                                className="sale-action-btn" 
+                                                onClick={() => sendInvoiceToWhatsApp(handleViewBill(transaction, true))}
+                                                style={{ color: '#25D366', background: 'rgba(37, 211, 102, 0.1)' }}
+                                            >
+                                                <span className="material-symbols-outlined">share</span>
+                                                WhatsApp
+                                            </button>
+                                            <button className="sale-action-btn edit" onClick={() => handleEditTransaction(transaction)} style={{ color: '#0ea5e9' }}>
+                                                <span className="material-symbols-outlined">edit</span>
+                                                Edit
+                                            </button>
                                             <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id)}>
                                                 <span className="material-symbols-outlined">delete</span>
                                                 Delete
@@ -1418,10 +1640,10 @@ const Sales = () => {
                         backgroundColor: 'rgba(0, 0, 0, 0.85)',
                         display: 'flex',
                         justifyContent: 'center',
-                        alignItems: 'flex-start',
-                        padding: '40px 20px',
+                        alignItems: 'center',
+                        padding: '20px',
                         zIndex: 3000,
-                        overflowY: 'auto',
+                        overflow: 'auto',
                         backdropFilter: 'blur(6px)',
                         cursor: 'pointer'
                     }}
@@ -1433,46 +1655,64 @@ const Sales = () => {
                         style={{ 
                             padding: '0', 
                             background: '#ffffff', 
-                            maxWidth: '860px', 
-                            width: '100%',
+                            maxWidth: '850px', 
+                            width: '850px',
+                            zoom: window.innerWidth < 850 ? (window.innerWidth - 40) / 850 : 1,
+                            margin: 'auto',
                             boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
                             border: 'none',
                             borderRadius: '4px',
                             position: 'relative',
-                            cursor: 'default',
-                            marginBottom: '40px'
+                            cursor: 'default'
                         }}
                     >
                         {/* Google Fonts */}
                         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
                         <style>{`
                             @media print {
+                                @page { size: portrait; margin: 0; }
                                 .no-print, .sidebar, .topbar, .navbar, .top-nav, .bill-modal-overlay > *:not(#printable-bill) { display: none !important; }
-                                body, html { margin: 0; padding: 0; background: #fff; height: auto; }
+                                body, html { 
+                                    margin: 0 !important; 
+                                    padding: 0 !important; 
+                                    background: #fff !important; 
+                                    width: 850px !important; /* Force exact preview width */
+                                    height: auto !important; 
+                                    -webkit-print-color-adjust: exact !important; 
+                                    print-color-adjust: exact !important; 
+                                }
                                 .bill-modal-overlay {
-                                    position: relative !important;
-                                    background: none !important;
+                                    position: absolute !important;
+                                    top: 0 !important;
+                                    left: 0 !important;
+                                    background: #fff !important;
                                     padding: 0 !important;
                                     display: block !important;
+                                    backdrop-filter: none !important;
+                                    width: 850px !important;
                                 }
                                 #printable-bill { 
-                                    position: absolute; 
-                                    left: 0; 
-                                    top: 0; 
-                                    width: 100%; 
-                                    max-width: 100% !important;
+                                    position: relative !important;
+                                    width: 850px !important; 
+                                    min-width: 850px !important;
+                                    max-width: 850px !important;
                                     margin: 0 !important; 
                                     padding: 0 !important;
                                     box-shadow: none !important;
                                     visibility: visible !important;
+                                    border: none !important;
+                                    zoom: 1 !important;
+                                    transform: none !important;
                                 }
                                 body * { visibility: hidden; }
                                 #printable-bill, #printable-bill * { visibility: visible; }
-                                .ci-tbl-head tr, .ci-total-row { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                                .ci-tbl-head tr { background-color: #1a6b3c !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                                .ci-tbl-head th { color: #ffffff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                                .ci-total-row { background-color: #1a6b3c !important; color: #ffffff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                                 .ci-footer { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                                @page { margin: 0; }
+                                .ci-company-name, .ci-invoice-title, .ci-billto-title, .ci-section-title { color: #1a6b3c !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                             }
-                            #printable-bill { font-family: 'Inter', sans-serif; background: #fff; color: #1a1a1a; margin-bottom: 20px; }
+                            #printable-bill { font-family: 'Inter', sans-serif; background: #fff; color: #1a1a1a; margin-bottom: 20px; min-width: 850px; }
                             #printable-bill * { box-sizing: border-box; }
 
                             /* ── Header ── */
@@ -1576,11 +1816,12 @@ const Sales = () => {
                                 <thead className="ci-tbl-head">
                                     <tr>
                                         <th style={{ width: '6%' }}>Item</th>
-                                        <th style={{ width: '36%' }}>Product Name</th>
+                                        <th style={{ width: '30%' }}>Product Name</th>
                                         <th style={{ width: '12%' }}>Size</th>
-                                        <th style={{ width: '13%' }}>Pieces</th>
-                                        <th style={{ width: '15%' }}>Rate</th>
-                                        <th style={{ width: '18%' }}>Amount</th>
+                                        <th style={{ width: '14%' }}>HSN Code</th>
+                                        <th style={{ width: '10%' }}>Pieces</th>
+                                        <th style={{ width: '13%' }}>Rate</th>
+                                        <th style={{ width: '15%' }}>Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody className="ci-tbody">
@@ -1593,6 +1834,7 @@ const Sales = () => {
                                                 <td style={{ fontWeight: '600', color: '#555' }}>{idx + 1}.</td>
                                                 <td style={{ fontWeight: '600' }}>{item.baseName || item.product}</td>
                                                 <td>{item.size || '—'}</td>
+                                                <td style={{ fontWeight: '500' }}>{item.hsn || '-'}</td>
                                                 <td>{item.qty}</td>
                                                 <td>₹{rate.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
                                                 <td style={{ fontWeight: '700' }}>₹{amt.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
@@ -1632,7 +1874,7 @@ const Sales = () => {
                         <div className="ci-payment">
                             <div>
                                 <div className="ci-pay-title">PAYMENT INFORMATION:</div>
-                                <div className="ci-pay-row">Payment Status: <span style={{ color: paidStatus === 'Paid' ? '#15803d' : '#dc2626', fontWeight: '800' }}>{paidStatus}</span></div>
+                                <div className="ci-pay-row">Payment Status: <span style={{ color: selectedBill.paidStatus === 'Paid' ? '#15803d' : '#dc2626', fontWeight: '800' }}>{selectedBill.paidStatus}</span></div>
                                 <div className="ci-pay-row">Payment Mode: <span>{selectedBill.paymentMode || 'N/A'}</span></div>
                             </div>
                             <div>
@@ -1660,7 +1902,7 @@ const Sales = () => {
                             }}>Close</button>
                             
                             <button 
-                                onClick={() => sendInvoiceToWhatsApp(selectedBill, paidStatus)}
+                                onClick={() => sendInvoiceToWhatsApp(selectedBill)}
                                 style={{
                                     padding: '9px 24px', border: 'none', background: '#25D366',
                                     color: 'white', fontWeight: '700', fontSize: '13px', cursor: 'pointer',
@@ -1794,7 +2036,7 @@ const Sales = () => {
                     </div>
                 )
             }
-        </div >
+        </div>
     );
 };
 
