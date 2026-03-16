@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./ProductList.css";
+import { productsApi } from "../../utils/api.js";
 
 // Removed image imports as per user request
 
@@ -14,49 +15,27 @@ const ProductList = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  // Product Data with ONLY 4 PLATE images
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "Areca Round Plate",
-      sku: "ARP-6RND-03",
-      size: "6-inch",
-      category: "Plates",
-      costPrice: 2.80,
-      sellPrice: 5.00,
-      margin: "44.0%",
-    },
-    {
-      id: 2,
-      name: "Areca Round Plate",
-      sku: "ARP-8RND-04",
-      size: "8-inch",
-      category: "Plates",
-      costPrice: 3.50,
-      sellPrice: 6.50,
-      margin: "46.2%",
-    },
-    {
-      id: 3,
-      name: "Areca Round Plate",
-      sku: "ARP-10RND-01",
-      size: "10-inch",
-      category: "Plates",
-      costPrice: 4.50,
-      sellPrice: 8.00,
-      margin: "43.7%",
-    },
-    {
-      id: 4,
-      name: "Areca Round Plate",
-      sku: "ARP-12RND-07",
-      size: "12-inch",
-      category: "Plates",
-      costPrice: 5.80,
-      sellPrice: 10.50,
-      margin: "44.8%",
-    },
-  ]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await productsApi.getAll();
+      // Map MongoDB _id to id for compatibility with existing UI logic
+      const mappedData = data.map(p => ({ ...p, id: p._id }));
+      setProducts(mappedData);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setFeedbackMessage("Error loading products");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Form state for add/edit
   const [formData, setFormData] = useState({
@@ -112,7 +91,7 @@ const ProductList = () => {
     setShowAddModal(true);
   };
 
-  const confirmAddProduct = () => {
+  const confirmAddProduct = async () => {
     // Validate form
     if (!formData.name || formData.selectedSizes.length === 0) {
       setFeedbackMessage("Please enter name and select at least one size");
@@ -121,30 +100,29 @@ const ProductList = () => {
     }
 
     const newEntries = formData.selectedSizes.map((size, index) => {
-
-
-      const cost = 0;
-      const sell = 0;
-      const margin = "0.0%";
-
       // Auto-generate SKU
       const autoSku = `ARP-${size.replace("-inch", "")}RND-${Math.floor(Math.random() * 90 + 10)}`;
 
       return {
-        id: products.length + index + 1,
         name: formData.name,
         sku: autoSku,
         size: size,
         category: "Plates",
-        costPrice: cost,
-        sellPrice: sell,
-        margin: margin,
+        costPrice: 0,
+        sellPrice: 0,
+        margin: "0.0%",
       };
     });
 
-    setProducts([...products, ...newEntries]);
-    setShowAddModal(false);
-    setFeedbackMessage(`${newEntries.length} product(s) added successfully`);
+    try {
+      await productsApi.add(newEntries);
+      await fetchProducts();
+      setShowAddModal(false);
+      setFeedbackMessage(`${newEntries.length} product(s) added successfully`);
+    } catch (err) {
+      console.error("Error adding products:", err);
+      setFeedbackMessage("Error adding products");
+    }
 
     setTimeout(() => setFeedbackMessage(""), 3000);
   };
@@ -163,45 +141,51 @@ const ProductList = () => {
     setShowEditModal(true);
   };
 
-  const confirmEditProduct = () => {
+  const confirmEditProduct = async () => {
     if (!selectedProduct) return;
 
     const cost = parseFloat(formData.costPrice);
     const sell = parseFloat(formData.sellPrice);
     const margin = ((sell - cost) / sell * 100).toFixed(1) + "%";
 
-    const updatedProducts = products.map((p) =>
-      p.id === selectedProduct.id
-        ? {
-          ...p,
-          name: formData.name,
-          sku: formData.sku,
-          size: formData.size,
-          category: "Plates",
-          costPrice: cost,
-          sellPrice: sell,
-          margin: margin,
-        }
-        : p
-    );
+    const updateData = {
+      name: formData.name,
+      sku: formData.sku,
+      size: formData.size,
+      category: "Plates",
+      costPrice: cost,
+      sellPrice: sell,
+      margin: margin,
+    };
 
-    setProducts(updatedProducts);
-    setShowEditModal(false);
-    setSelectedProduct(null);
-    setFeedbackMessage("Product updated successfully");
+    try {
+      await productsApi.update(selectedProduct._id, updateData);
+      await fetchProducts();
+      setShowEditModal(false);
+      setSelectedProduct(null);
+      setFeedbackMessage("Product updated successfully");
+    } catch (err) {
+      console.error("Error updating product:", err);
+      setFeedbackMessage("Error updating product");
+    }
 
     setTimeout(() => setFeedbackMessage(""), 3000);
   };
 
 
-  const confirmDeleteProduct = () => {
+  const confirmDeleteProduct = async () => {
     if (!selectedProduct) return;
 
-    const filteredProducts = products.filter((p) => p.id !== selectedProduct.id);
-    setProducts(filteredProducts);
-    setShowDeleteModal(false);
-    setSelectedProduct(null);
-    setFeedbackMessage("Product deleted successfully");
+    try {
+      await productsApi.delete(selectedProduct._id);
+      await fetchProducts();
+      setShowDeleteModal(false);
+      setSelectedProduct(null);
+      setFeedbackMessage("Product deleted successfully");
+    } catch (err) {
+      console.error("Error deleting product:", err);
+      setFeedbackMessage("Error deleting product");
+    }
 
     setTimeout(() => setFeedbackMessage(""), 3000);
   };
