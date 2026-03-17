@@ -21,8 +21,8 @@ const SIZE_COLOR = {
 // Available sizes
 const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
 
-// Product Options
-const products = [
+// Product Options (Fallbacks)
+const DEFAULT_PRODUCTS = [
   { name: "Areca Leaf Plate", sizes: ['6-inch', '8-inch', '10-inch', '12-inch'] },
 ];
 
@@ -74,7 +74,35 @@ const Production = () => {
   });
 
   // Production history from context
-  const { productionHistory, addProduction, deleteProduction } = useAppContext();
+  const { productionHistory, addProduction, deleteProduction, products: dbProducts } = useAppContext();
+
+  // DERIVE DYNAMIC PRODUCTS FROM DATABASE
+  const productOptions = React.useMemo(() => {
+    if (!dbProducts || dbProducts.length === 0) return DEFAULT_PRODUCTS;
+    
+    const uniqueProducts = dbProducts.reduce((acc, p) => {
+      if (!acc[p.name]) {
+        acc[p.name] = { name: p.name, sizes: [] };
+      }
+      if (!acc[p.name].sizes.includes(p.size)) {
+        acc[p.name].sizes.push(p.size);
+      }
+      return acc;
+    }, {});
+    
+    return Object.values(uniqueProducts);
+  }, [dbProducts]);
+
+  // Update default product if database has products
+  useEffect(() => {
+    if (productOptions.length > 0 && !productOptions.find(p => p.name === formData.product)) {
+      setFormData(prev => ({
+        ...prev,
+        product: productOptions[0].name,
+        size: productOptions[0].sizes[0] || '6-inch'
+      }));
+    }
+  }, [productOptions]);
 
   // Stats state - Initialize with zeros
   const [stats, setStats] = useState({
@@ -588,7 +616,7 @@ const Production = () => {
   };
 
   const getSizesForProduct = () => {
-    const product = products.find(p => p.name === formData.product);
+    const product = productOptions.find(p => p.name === formData.product);
     return product ? product.sizes : [];
   };
 
@@ -860,7 +888,7 @@ const Production = () => {
                     <div className="form-group">
                       <label>Product</label>
                       <select name="product" value={formData.product} onChange={handleInputChange}>
-                        {products.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                        {productOptions.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                       </select>
                     </div>
                     <div className="form-group">

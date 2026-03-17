@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi } from "../utils/api.js";
+import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi, productsApi } from "../utils/api.js";
 import { useAuth } from "./AuthContext.js";
 
 const DEPARTMENTS = ["All Departments", "Ceo", "Hr", "It admin", "Operator", "Maitanice", "Machine operator", "Cleaning", "Driver", "Others"];
@@ -11,6 +11,7 @@ export const AppProvider = ({ children }) => {
     const [expenses, setExpenses] = useState([]);
     const [clients, setClients] = useState([]);
     const [productionHistory, setProductionHistory] = useState([]);
+    const [products, setProducts] = useState([]);
     const [attendanceRecords, setAttendanceRecords] = useState({});
     const [loading, setLoading] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -20,17 +21,19 @@ export const AppProvider = ({ children }) => {
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const [empData, expData, clientData, prodData] = await Promise.all([
+            const [empData, expData, clientData, prodData, productData] = await Promise.all([
                 employeeApi.getAll(),
                 expenseApi.getAll(),
                 clientApi.getAll(),
-                productionApi.getAll()
+                productionApi.getAll(),
+                productsApi.getAll()
             ]);
             
             setEmployees(empData.map(e => ({ ...e, id: e._id })));
             setExpenses(expData.map(e => ({ ...e, id: e._id })));
             setClients(clientData.map(c => ({ ...c, id: c._id })));
             setProductionHistory(prodData.map(p => ({ ...p, id: p._id })));
+            setProducts(productData.map(p => ({ ...p, id: p._id })));
         } catch (error) {
             console.error("Error fetching app data:", error);
         } finally {
@@ -206,6 +209,7 @@ export const AppProvider = ({ children }) => {
             expenses,
             clients,
             productionHistory,
+            products,
             attendanceRecords,
             departments: DEPARTMENTS,
             loading,
