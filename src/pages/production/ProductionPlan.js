@@ -55,6 +55,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   // ===== PRODUCTION DATA STATE =====
   const [productionData, setProductionData] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const showToast = (message, type = 'success') => {
@@ -65,10 +66,14 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   // ===== FETCH FROM DB =====
   const fetchTargets = async () => {
     try {
+      setLoading(true);
       const data = await productionTargetApi.getAll();
       setProductionData(data.map(t => ({ ...t, id: t._id })));
     } catch (err) {
       console.error("Error fetching targets:", err);
+      showToast("Error connecting to server", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,19 +120,19 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   // ===== HANDLE ADD TARGET =====
   const handleAddTarget = async () => {
     if (!selectedProduct) {
-      alert('Please select a product');
+      showToast('Please select a product', 'error');
       return;
     }
 
     if (!selectedSize || !targetQty || parseInt(targetQty) <= 0) {
-      alert('Please select size and enter valid target quantity');
+      showToast('Please select size and enter valid target quantity', 'error');
       return;
     }
 
     const product = getProductDetailsForSize(selectedSize);
 
     if (!product) {
-      alert('Product details not found');
+      showToast('Product details not found', 'error');
       return;
     }
 
@@ -408,6 +413,14 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   return (
     <div className="production-page-wrapper">
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="glass-loading-overlay">
+          <div className="premium-spinner"></div>
+          <span>Syncing with database...</span>
+        </div>
+      )}
+
       {/* Toast Notification Overlay */}
       {toast.show && (
         <div className={`toast-notification ${toast.type}`}>
@@ -664,9 +677,15 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                             <button
                               className="icon-btn-small edit-btn"
                               onClick={() => {
-                                setSelectedProduct('1');
-                                setSelectedSize(item.productSize);
-                                setTargetQty(item.targetQty);
+                                // Find the product ID that matches this item's name
+                                const productObj = uniqueProducts.find(p => p.name === item.productName);
+                                if (productObj) {
+                                  setSelectedProduct(productObj.id);
+                                  setSelectedSize(item.productSize);
+                                  setTargetQty(item.targetQty);
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  showToast("Target loaded into form", "success");
+                                }
                               }}
                               title="Edit Target"
                             >
@@ -729,15 +748,33 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                           {item.remainingQty.toLocaleString()}
                         </td>
                         <td className="text-center">
-                          <button
-                            className="mobile-row-delete-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteTarget(item.id);
-                            }}
-                          >
-                            <span className="material-symbols-outlined">delete</span>
-                          </button>
+                          <div className="mobile-actions">
+                            <button
+                              className="mobile-row-edit-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const productObj = uniqueProducts.find(p => p.name === item.productName);
+                                if (productObj) {
+                                  setSelectedProduct(productObj.id);
+                                  setSelectedSize(item.productSize);
+                                  setTargetQty(item.targetQty);
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  showToast("Target loaded into form", "success");
+                                }
+                              }}
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#2e8b66' }}>edit</span>
+                            </button>
+                            <button
+                              className="mobile-row-delete-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTarget(item.id);
+                              }}
+                            >
+                              <span className="material-symbols-outlined">delete</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

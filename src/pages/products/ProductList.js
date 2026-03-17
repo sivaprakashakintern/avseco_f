@@ -16,6 +16,7 @@ const ProductList = () => {
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -23,13 +24,16 @@ const ProductList = () => {
 
   const fetchProducts = async () => {
     try {
+      setLoading(true);
       const data = await productsApi.getAll();
       // Map MongoDB _id to id for compatibility with existing UI logic
       const mappedData = data.map(p => ({ ...p, id: p._id }));
       setProducts(mappedData);
     } catch (err) {
       console.error("Error fetching products:", err);
-      setFeedbackMessage("Error loading products");
+      setFeedbackMessage("Error connecting to server");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -230,6 +234,14 @@ const ProductList = () => {
 
   return (
     <div className="product-list-container">
+
+      {/* Glass Loading Overlay */}
+      {loading && (
+        <div className="glass-loading-overlay">
+          <div className="premium-spinner"></div>
+          <span>Loading products...</span>
+        </div>
+      )}
 
       {/* Feedback Toast */}
       {feedbackMessage && (
