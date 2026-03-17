@@ -102,7 +102,7 @@ const Production = () => {
         size: productOptions[0].sizes[0] || '6-inch'
       }));
     }
-  }, [productOptions]);
+  }, [productOptions, formData.product]);
 
   // Stats state - Initialize with zeros
   const [stats, setStats] = useState({
