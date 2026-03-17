@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi } from "../utils/api.js";
+import { useAuth } from "./AuthContext.js";
 
 const DEPARTMENTS = ["All Departments", "Ceo", "Hr", "It admin", "Operator", "Maitanice", "Machine operator", "Cleaning", "Driver", "Others"];
 
@@ -13,6 +14,7 @@ export const AppProvider = ({ children }) => {
     const [attendanceRecords, setAttendanceRecords] = useState({});
     const [loading, setLoading] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { user } = useAuth();
 
     // ── Fetch Initial Data ──────────────────────────────────────────────────────
     const fetchData = useCallback(async () => {
@@ -37,8 +39,10 @@ export const AppProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if (user) {
+            fetchData();
+        }
+    }, [fetchData, user]);
 
     // EMPLOYEES
     const addEmployee = useCallback(async (emp) => {
