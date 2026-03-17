@@ -447,12 +447,23 @@ const ProductList = () => {
                         <td>{formatCurrency(variant.costPrice)}</td>
                         <td>{formatCurrency(variant.sellPrice)}</td>
                         <td>
-                          <button
-                            className="action-btn edit"
-                            onClick={() => handleEditProduct(variant)}
-                          >
-                            <span className="material-symbols-outlined">edit</span>
-                          </button>
+                          <div className="action-buttons">
+                            <button
+                              className="action-btn edit"
+                              onClick={() => handleEditProduct(variant)}
+                            >
+                              <span className="material-symbols-outlined">edit</span>
+                            </button>
+                            <button
+                              className="action-btn delete"
+                              onClick={() => {
+                                setSelectedProduct(variant);
+                                setShowDeleteModal(true);
+                              }}
+                            >
+                              <span className="material-symbols-outlined">delete</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

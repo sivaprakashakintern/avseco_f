@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate } from '../../utils/dateUtils.js';
 import { useAppContext } from '../../context/AppContext.js';
+import { productionTargetApi } from '../../utils/api.js';
 import './ProductionPlan.css';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -52,11 +53,26 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       .map(p => p.size);
   }, [selectedProduct, uniqueProducts, dbProducts]);
 
-  // ===== PRODUCTION DATA STATE WITH LOCAL STORAGE =====
-  const [productionData, setProductionData] = useState(() => {
-    const savedData = localStorage.getItem('productionData');
-    return savedData ? JSON.parse(savedData) : [];
-  });
+  // ===== PRODUCTION DATA STATE =====
+  const [productionData, setProductionData] = useState([]);
+  const [loadingEntries, setLoadingEntries] = useState(false);
+
+  // ===== FETCH FROM DB =====
+  const fetchTargets = async () => {
+    try {
+      setLoadingEntries(true);
+      const data = await productionTargetApi.getAll();
+      setProductionData(data.map(t => ({ ...t, id: t._id })));
+    } catch (err) {
+      console.error("Error fetching targets:", err);
+    } finally {
+      setLoadingEntries(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTargets();
+  }, []);
 
   // ===== SEARCH & FILTER STATES =====
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,47 +85,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const [selectedReportType, setSelectedReportType] = useState('size-wise');
   const [selectedFormat, setSelectedFormat] = useState('excel');
 
-  // ===== SAVE TO LOCALSTORAGE =====
-  useEffect(() => {
-    localStorage.setItem('productionData', JSON.stringify(productionData));
-  }, [productionData]);
+  // Clear individual item loading state
 
-  // ===== SYNC WITH DAILY PRODUCTION LOGS =====
-  useEffect(() => {
-    const logData = localStorage.getItem('productionHistory');
-    if (logData && productionData.length > 0) {
-      const history = JSON.parse(logData);
-
-      const updatedData = productionData.map(target => {
-        // Calculate total produced for this target's size from history
-        const loggedQty = history
-          .filter(item => item.size === target.productSize)
-          .reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
-
-        // If logged quantity is more than what's currently in target, update it
-        // Or better: log quantity SHOULD be the source of truth for "Produced"
-        if (loggedQty !== target.producedQty) {
-          const remaining = Math.max(target.targetQty - loggedQty, 0);
-          const status = loggedQty >= target.targetQty ? 'completed' :
-            loggedQty > 0 ? 'in-progress' : 'pending';
-
-          return {
-            ...target,
-            producedQty: loggedQty,
-            remainingQty: remaining,
-            status: status
-          };
-        }
-        return target;
-      });
-
-      // Only update state if something actually changed to avoid infinite loops
-      const hasChanged = JSON.stringify(updatedData) !== JSON.stringify(productionData);
-      if (hasChanged) {
-        setProductionData(updatedData);
-      }
-    }
-  }, [productionData]); // Keep productionData in dependency to react to target changes
+  // Removed local sync as DB is now source of truth
 
   // ===== HANDLE PRODUCT SELECTION =====
   const handleProductChange = (e) => {
@@ -133,7 +111,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   };
 
   // ===== HANDLE ADD TARGET =====
-  const handleAddTarget = () => {
+  const handleAddTarget = async () => {
     if (!selectedProduct) {
       alert('Please select a product');
       return;
@@ -153,75 +131,54 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
     const targetQuantity = parseInt(targetQty);
 
-    const existingIndex = productionData.findIndex(item =>
-      item.productSize === selectedSize
-    );
+    const targetPayload = {
+      productName: product.name,
+      sku: product.sku,
+      productSize: product.size,
+      targetQty: targetQuantity,
+      remainingQty: targetQuantity, // Initially same as target
+      status: 'pending',
+      unit: 'Pieces',
+      size: product.size,
+      date: new Date().toISOString().split('T')[0]
+    };
 
-    if (existingIndex >= 0) {
-      // Update existing target
-      const updatedData = [...productionData];
-      updatedData[existingIndex] = {
-        ...updatedData[existingIndex],
-        targetQty: targetQuantity,
-        remainingQty: targetQuantity - updatedData[existingIndex].producedQty,
-        status: updatedData[existingIndex].producedQty >= targetQuantity ? 'completed' :
-          updatedData[existingIndex].producedQty > 0 ? 'in-progress' : 'pending'
-      };
-      setProductionData(updatedData);
-      alert(`Target updated for ${selectedSize} Areca Leaf Plate`);
-    } else {
-      // Add new production target
-      const newProductionItem = {
-        id: Date.now(),
-        productName: product.name,
-        sku: product.sku,
-        productSize: product.size,
-        targetQty: targetQuantity,
-        producedQty: 0,
-        remainingQty: targetQuantity,
-        status: 'pending',
-        unit: 'Pieces',
-        cost: product.cost,
-        sell: product.sell,
-        margin: product.margin,
-        size: product.size
-      };
-      setProductionData([...productionData, newProductionItem]);
-      alert(`Target added for ${selectedSize} Areca Leaf Plate`);
+    try {
+      await productionTargetApi.save(targetPayload);
+      await fetchTargets();
+      alert(`Target saved successfully to database!`);
+      setTargetQty('');
+    } catch (err) {
+      console.error("Error saving target:", err);
+      alert("Failed to save target to database");
     }
-
-    setTargetQty('');
   };
 
   // ===== HANDLE MANUAL PRODUCTION UPDATE =====
-  const handleProducedUpdate = (itemId, newProducedQty) => {
-    const updatedData = productionData.map(item => {
-      if (item.id === itemId) {
-        const produced = parseInt(newProducedQty) || 0;
-        const remaining = Math.max(item.targetQty - produced, 0);
-        const status = produced >= item.targetQty ? 'completed' :
-          produced > 0 ? 'in-progress' : 'pending';
-
-        return {
-          ...item,
-          producedQty: produced,
-          remainingQty: remaining,
-          status: status
-        };
-      }
-      return item;
-    });
-    setProductionData(updatedData);
-    setEditingProduced(null);
-    setManualUpdateQty({});
+  const handleProducedUpdate = async (itemId, newProducedQty) => {
+    try {
+      const produced = parseInt(newProducedQty) || 0;
+      await productionTargetApi.updateProduced(itemId, produced);
+      await fetchTargets();
+      setEditingProduced(null);
+      setManualUpdateQty({});
+    } catch (err) {
+      console.error("Error updating production:", err);
+      alert("Failed to update production in database");
+    }
   };
 
   // ===== HANDLE DELETE TARGET =====
-  const handleDeleteTarget = (itemId) => {
+  const handleDeleteTarget = async (itemId) => {
     if (window.confirm('Are you sure you want to delete this target?')) {
-      const updatedData = productionData.filter(item => item.id !== itemId);
-      setProductionData(updatedData);
-      alert('Target deleted successfully');
+      try {
+        await productionTargetApi.delete(itemId);
+        await fetchTargets();
+        alert('Target deleted from database');
+      } catch (err) {
+        console.error("Error deleting target:", err);
+        alert("Failed to delete target");
+      }
     }
   };
 
@@ -429,11 +386,16 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   };
 
   // ===== CLEAR ALL DATA =====
-  const handleClearAllData = () => {
+  const handleClearAllData = async () => {
     if (window.confirm('Are you sure you want to clear all production data?')) {
-      setProductionData([]);
-      localStorage.removeItem('productionData');
-      alert('All data cleared successfully');
+      try {
+        await productionTargetApi.clearAll();
+        await fetchTargets();
+        alert('All targets cleared from database');
+      } catch (err) {
+        console.error("Error clearing targets:", err);
+        alert("Failed to clear targets");
+      }
     }
   };
 

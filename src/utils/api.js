@@ -109,3 +109,26 @@ export const attendanceApi = {
   }
 };
 
+export const productionTargetApi = {
+  getAll: async () => {
+    const { data } = await axios.get('/production-targets');
+    return data;
+  },
+  save: async (targetData) => {
+    const { data } = await axios.post('/production-targets', targetData);
+    return data;
+  },
+  updateProduced: async (id, producedQty) => {
+    const { data } = await axios.put(`/production-targets/${id}`, { producedQty });
+    return data;
+  },
+  delete: async (id) => {
+    const { data } = await axios.delete(`/production-targets/${id}`);
+    return data;
+  },
+  clearAll: async () => {
+    const { data } = await axios.delete('/production-targets');
+    return data;
+  }
+};
+
