@@ -3022,14 +3022,13 @@ body,
 }
 
 
- . o p e r a t o r - b a d g e   { 
-     b a c k g r o u n d :   # f 1 f 5 f 9 ; 
-     c o l o r :   # 4 7 5 5 6 9 ; 
-     p a d d i n g :   4 p x   8 p x ; 
-     b o r d e r - r a d i u s :   6 p x ; 
-     f o n t - s i z e :   1 1 p x ; 
-     f o n t - w e i g h t :   7 0 0 ; 
-     t e x t - t r a n s f o r m :   u p p e r c a s e ; 
- } 
-  
- 
+.operator-badge {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
