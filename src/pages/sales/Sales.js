@@ -163,13 +163,13 @@ const Sales = () => {
     // Add item to current bill session - Merges duplicates if the same product is added
     const handleAddItem = () => {
         if (!quantity || parseFloat(quantity) <= 0) return;
-        
+
         const qtyToAdd = parseFloat(quantity);
         const pricePerUnit = parseFloat(unitPrice) || 0;
 
         setBillItems(prevItems => {
             const existingItemIndex = prevItems.findIndex(item => item.product === selectedProduct);
-            
+
             if (existingItemIndex !== -1) {
                 const updatedItems = [...prevItems];
                 const item = updatedItems[existingItemIndex];
@@ -317,7 +317,7 @@ const Sales = () => {
         setDeliveryMode(transaction.deliveryMode || "Door Delivery");
         setPaymentMode(transaction.paymentStatus || "Cash");
         setPaidStatus(transaction.paidStatus || (transaction.paymentStatus === 'Unpaid' ? 'Unpaid' : 'Paid'));
-        
+
         // Populate bill items from saleItems
         if (transaction.saleItems) {
             setBillItems(transaction.saleItems.map((item, idx) => ({
@@ -341,7 +341,7 @@ const Sales = () => {
                 unit: "pcs"
             }]);
         }
-        
+
         setViewMode('entry');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -442,11 +442,11 @@ const Sales = () => {
                 qty: item.qty,
                 amount: item.amount || transaction.amount,
                 rate: item.qty ? ((item.amount || transaction.amount) / item.qty).toFixed(2) : 0
-            })) || [{ 
-                product: transaction.product, 
-                baseName: transaction.product, 
-                size: transaction.product.includes('"') ? (transaction.product.match(/\d+".*/) || ["—"])[0] : "—", 
-                qty: Math.abs(transaction.quantity), 
+            })) || [{
+                product: transaction.product,
+                baseName: transaction.product,
+                size: transaction.product.includes('"') ? (transaction.product.match(/\d+".*/) || ["—"])[0] : "—",
+                qty: Math.abs(transaction.quantity),
                 amount: transaction.amount,
                 hsn: products.find(p => p.name === transaction.product)?.hsn || "-",
                 rate: transaction.quantity ? (transaction.amount / Math.abs(transaction.quantity)).toFixed(2) : 0
@@ -478,25 +478,25 @@ const Sales = () => {
 
         // 1. Ultra-Smart Phone Normalization (Ensures it goes straight to the contact)
         let phoneNum = (bill.phone && bill.phone !== 'N/A' && bill.phone.trim() !== "") ? bill.phone : "";
-        
+
         if (!phoneNum || phoneNum === "") {
-            const savedClient = clients.find(c => 
-                (bill.company && bill.company !== 'N/A' && c.companyName === bill.company) || 
+            const savedClient = clients.find(c =>
+                (bill.company && bill.company !== 'N/A' && c.companyName === bill.company) ||
                 (bill.customer && bill.customer !== 'N/A' && c.contactPerson === bill.customer)
             );
             phoneNum = savedClient?.phone || customerPhone || "";
         }
 
         // Clean & Normalize for India (+91)
-        let cleaned = phoneNum.replace(/\D/g, ''); 
+        let cleaned = phoneNum.replace(/\D/g, '');
         if (cleaned.startsWith('910')) {
-            cleaned = '91' + cleaned.substring(3); 
+            cleaned = '91' + cleaned.substring(3);
         } else if (cleaned.startsWith('0')) {
-            cleaned = cleaned.substring(1); 
+            cleaned = cleaned.substring(1);
         }
-        
+
         if (cleaned.length === 10) {
-            cleaned = '91' + cleaned; 
+            cleaned = '91' + cleaned;
         }
 
         const phone = cleaned;
@@ -507,7 +507,7 @@ const Sales = () => {
 
         // Visual Feedback for "Straight" transition
         setFeedbackMessage(`🚀 Generating High-Res Bill & Connecting to WhatsApp...`);
-        
+
         try {
             // 2. Capture the invoice with optimized high-res settings (2.5x is faster than 3x)
             const fullHeight = invoiceElement.scrollHeight;
@@ -548,7 +548,7 @@ const Sales = () => {
             // 3. Generate PDF matching the exact aspect ratio of the bill
             const pdfWidth = (imgWidth / (3 * 96)) * 25.4;
             const pdfHeight = (imgHeight / (3 * 96)) * 25.4;
-            
+
             const doc = new jsPDF({
                 orientation: pdfWidth > pdfHeight ? 'l' : 'p',
                 unit: 'mm',
@@ -1447,9 +1447,9 @@ const Sales = () => {
                                                 </td>
                                                 <td className="text-center">
                                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                                        <button 
-                                                            className="icon-action-btn" 
-                                                            onClick={() => sendInvoiceToWhatsApp(handleViewBill(transaction, true))} 
+                                                        <button
+                                                            className="icon-action-btn"
+                                                            onClick={() => sendInvoiceToWhatsApp(handleViewBill(transaction, true))}
                                                             title="Send to WhatsApp"
                                                             style={{ color: '#25D366', background: 'rgba(37, 211, 102, 0.1)' }}
                                                         >
@@ -1524,8 +1524,8 @@ const Sales = () => {
                                             </div>
                                         </div>
                                         <div className="sale-card-actions" onClick={(e) => e.stopPropagation()}>
-                                            <button 
-                                                className="sale-action-btn" 
+                                            <button
+                                                className="sale-action-btn"
                                                 onClick={() => sendInvoiceToWhatsApp(handleViewBill(transaction, true))}
                                                 style={{ color: '#25D366', background: 'rgba(37, 211, 102, 0.1)' }}
                                             >
@@ -1617,19 +1617,19 @@ const Sales = () => {
                                     </div>
                                 </div>
                             </div>
-                        <div className="modal-footer">
-                            <button className="modal-cancel" onClick={() => setShowExportModal(false)}>Cancel</button>
-                            <button className="modal-confirm" onClick={confirmExport} disabled={exportLoading}>
-                                {exportLoading ? 'Exporting...' : 'Export Now'}
-                            </button>
+                            <div className="modal-footer">
+                                <button className="modal-cancel" onClick={() => setShowExportModal(false)}>Cancel</button>
+                                <button className="modal-confirm" onClick={confirmExport} disabled={exportLoading}>
+                                    {exportLoading ? 'Exporting...' : 'Export Now'}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
             {showBillModal && selectedBill && (
-                <div 
-                    className="bill-modal-overlay" 
+                <div
+                    className="bill-modal-overlay"
                     onClick={() => setShowBillModal(false)}
                     style={{
                         position: 'fixed',
@@ -1648,14 +1648,14 @@ const Sales = () => {
                         cursor: 'pointer'
                     }}
                 >
-                    <div 
-                        className="bill-modal-content" 
-                        id="printable-bill" 
+                    <div
+                        className="bill-modal-content"
+                        id="printable-bill"
                         onClick={(e) => e.stopPropagation()}
-                        style={{ 
-                            padding: '0', 
-                            background: '#ffffff', 
-                            maxWidth: '850px', 
+                        style={{
+                            padding: '0',
+                            background: '#ffffff',
+                            maxWidth: '850px',
                             width: '850px',
                             zoom: window.innerWidth < 850 ? (window.innerWidth - 40) / 850 : 1,
                             margin: 'auto',
@@ -1900,8 +1900,8 @@ const Sales = () => {
                                 color: '#475569', fontWeight: '600', fontSize: '13px', cursor: 'pointer',
                                 borderRadius: '6px', fontFamily: 'Inter, sans-serif'
                             }}>Close</button>
-                            
-                            <button 
+
+                            <button
                                 onClick={() => sendInvoiceToWhatsApp(selectedBill)}
                                 style={{
                                     padding: '9px 24px', border: 'none', background: '#25D366',
