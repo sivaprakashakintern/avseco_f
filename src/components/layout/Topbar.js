@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import logo from "../../assets/avs.png";
 import avatar from "../../assets/avatar.png";
 import AppContext from "../../context/AppContext.js";
+import { useAuth } from "../../context/AuthContext.js";
 import "./Topbar.css";
 
 const Topbar = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useContext(AppContext);
+  const { logout } = useAuth();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
@@ -35,7 +37,7 @@ const Topbar = () => {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem("isLoggedIn"); // Clear login status
+    logout();
     console.log("Logging out...");
     navigate("/login");
   };
