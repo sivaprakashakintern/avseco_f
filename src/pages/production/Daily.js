@@ -1129,6 +1129,7 @@ const Production = () => {
                 </div>
               )}
             </div>
+          </div>
         </div>
       </div>
 
