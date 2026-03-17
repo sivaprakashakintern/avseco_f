@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext.js";
 import logo from "../../assets/avs.png";
 import bgImage from "../../assets/bg1.png";
 import "./Login.css";
@@ -25,7 +25,8 @@ const Login = () => {
             navigate("/dashboard");
         } catch (err) {
             setIsLoading(false);
-            setError(err || "Invalid Credentials");
+            const errorMessage = err.response?.data?.message || err.message || "Invalid Credentials";
+            setError(errorMessage);
         }
     };
 
