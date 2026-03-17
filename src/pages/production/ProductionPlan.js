@@ -55,6 +55,12 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   // ===== PRODUCTION DATA STATE =====
   const [productionData, setProductionData] = useState([]);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
 
   // ===== FETCH FROM DB =====
   const fetchTargets = async () => {
@@ -142,11 +148,11 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     try {
       await productionTargetApi.save(targetPayload);
       await fetchTargets();
-      alert(`Target saved successfully to database!`);
+      showToast(`Target saved for ${selectedSize} Areca Plate`, 'success');
       setTargetQty('');
     } catch (err) {
       console.error("Error saving target:", err);
-      alert("Failed to save target to database");
+      showToast("Failed to save target to database", 'error');
     }
   };
 
@@ -158,9 +164,10 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       await fetchTargets();
       setEditingProduced(null);
       setManualUpdateQty({});
+      showToast("Production updated successfully", 'success');
     } catch (err) {
       console.error("Error updating production:", err);
-      alert("Failed to update production in database");
+      showToast("Failed to update production", 'error');
     }
   };
 
@@ -170,10 +177,10 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       try {
         await productionTargetApi.delete(itemId);
         await fetchTargets();
-        alert('Target deleted from database');
+        showToast('Target deleted successfully', 'success');
       } catch (err) {
         console.error("Error deleting target:", err);
-        alert("Failed to delete target");
+        showToast("Failed to delete target", 'error');
       }
     }
   };
@@ -194,6 +201,10 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const totalProduced = filteredData.reduce((sum, item) => sum + (item.producedQty || 0), 0);
   const totalRemaining = filteredData.reduce((sum, item) => sum + (item.remainingQty || 0), 0);
   const overallProgress = totalTarget > 0 ? ((totalProduced / totalTarget) * 100).toFixed(1) : "0";
+
+  if (toast.show) {
+    // Return Toast UI inside the render
+  }
 
   const today = formatDate(new Date());
 
@@ -387,16 +398,26 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       try {
         await productionTargetApi.clearAll();
         await fetchTargets();
-        alert('All targets cleared from database');
+        showToast('All targets cleared successfully', 'success');
       } catch (err) {
         console.error("Error clearing targets:", err);
-        alert("Failed to clear targets");
+        showToast("Failed to clear targets", 'error');
       }
     }
   };
 
   return (
     <div className="production-page-wrapper">
+      {/* Toast Notification Overlay */}
+      {toast.show && (
+        <div className={`toast-notification ${toast.type}`}>
+          <span className="material-symbols-outlined">
+            {toast.type === 'success' ? 'check_circle' : 'error'}
+          </span>
+          <span className="toast-message">{toast.message}</span>
+        </div>
+      )}
+
       <div className="production-container">
         {/* ===== PREMIUM ANALYTICS HEADER ===== */}
         <div className="page-header premium-header">
