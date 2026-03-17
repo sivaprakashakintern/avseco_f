@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate } from '../../utils/dateUtils.js';
+import { useAppContext } from '../../context/AppContext.js';
 import './ProductionPlan.css';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -8,61 +9,43 @@ import 'jspdf-autotable';
 
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
-  // ===== PRODUCT MASTER DATA =====
-  const [productMaster] = useState([
-    {
-      id: 1,
-      productName: 'Areca Leaf Plate',
-      sku: 'ARP-6RND-03',
-      size: '6-inch',
-      cost: 2.80,
-      sell: 5.00,
-      margin: 44.0,
-      stock: 2100,
-      status: 'ACTIVE'
-    },
-    {
-      id: 2,
-      productName: 'Areca Leaf Plate',
-      sku: 'ARP-8RND-04',
-      size: '8-inch',
-      cost: 3.50,
-      sell: 6.50,
-      margin: 46.2,
-      stock: 1850,
-      status: 'ACTIVE'
-    },
-    {
-      id: 3,
-      productName: 'Areca Leaf Plate',
-      sku: 'ARP-10RND-01',
-      size: '10-inch',
-      cost: 4.50,
-      sell: 8.00,
-      margin: 43.7,
-      stock: 1250,
-      status: 'ACTIVE'
-    },
-    {
-      id: 4,
-      productName: 'Areca Leaf Plate',
-      sku: 'ARP-12RND-07',
-      size: '12-inch',
-      cost: 5.80,
-      sell: 10.50,
-      margin: 44.8,
-      stock: 950,
-      status: 'ACTIVE'
+  const { products: dbProducts } = useAppContext();
+
+  // ===== DYNAMIC PRODUCT DATA FROM DATABASE =====
+  const uniqueProducts = React.useMemo(() => {
+    const products = dbProducts || [];
+    const unique = [];
+    const names = new Set();
+    
+    products.forEach(p => {
+      if (!names.has(p.name)) {
+        names.add(p.name);
+        unique.push({ id: p.id || p._id, name: p.name });
+      }
+    });
+
+    // Fallback if empty
+    if (unique.length === 0) {
+      return [{ id: 'default', name: 'Areca Leaf Plate' }];
     }
-  ]);
+    
+    return unique;
+  }, [dbProducts]);
 
-  // ===== UNIQUE PRODUCTS FOR DROPDOWN (ONLY ONE PRODUCT) =====
-  const uniqueProducts = [
-    { id: 1, name: 'Areca Leaf Plate' }
-  ];
+  // ===== DYNAMIC SIZES FOR SELECTED PRODUCT =====
+  const availableSizes = React.useMemo(() => {
+    if (!selectedProduct) return [];
+    
+    // Find the product name for the selected ID
+    const productObj = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
+    const productName = productObj ? productObj.name : '';
+    
+    if (!productName) return [];
 
-  // ===== ALL AVAILABLE SIZES =====
-  const allSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
+    return (dbProducts || [])
+      .filter(p => p.name === productName)
+      .map(p => p.size);
+  }, [selectedProduct, uniqueProducts, dbProducts]);
 
   // ===== PRODUCTION DATA STATE WITH LOCAL STORAGE =====
   const [productionData, setProductionData] = useState(() => {
@@ -144,7 +127,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   // ===== GET PRODUCT DETAILS FOR SELECTED SIZE =====
   const getProductDetailsForSize = (size) => {
-    return productMaster.find(p => p.size === size);
+    const productObj = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
+    const productName = productObj ? productObj.name : '';
+    return dbProducts.find(p => p.name === productName && p.size === size);
   };
 
   // ===== HANDLE ADD TARGET =====
@@ -188,7 +173,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       // Add new production target
       const newProductionItem = {
         id: Date.now(),
-        productName: 'Areca Leaf Plate',
+        productName: product.name,
         sku: product.sku,
         productSize: product.size,
         targetQty: targetQuantity,
@@ -500,7 +485,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                 className="form-select"
               >
                 <option value="">-- Select Size --</option>
-                {allSizes.map((size, index) => (
+                {availableSizes.map((size, index) => (
                   <option key={index} value={size}>
                     {size}
                   </option>
