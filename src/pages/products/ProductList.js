@@ -263,6 +263,20 @@ const ProductList = () => {
         </div>
 
         <div className="header-actions">
+          <button
+            className="refresh-db-btn"
+            onClick={async () => {
+              await fetchProducts();
+              setFeedbackMessage("Product list refreshed");
+            }}
+            title="Refresh Data"
+            disabled={loading}
+            style={{ marginRight: '12px' }}
+          >
+            <span className={`material-symbols-outlined ${loading ? 'spin' : ''}`}>refresh</span>
+            Refresh
+          </button>
+
           <button className="btn-transfer-premium" onClick={handleAddProduct}>
             <span className="material-symbols-outlined">add</span>
             <span className="btn-text">Add Product</span>
