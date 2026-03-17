@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '../../utils/dateUtils.js';
 import { useAppContext } from '../../context/AppContext.js';
 import { productionTargetApi } from '../../utils/api.js';
@@ -64,7 +64,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   };
 
   // ===== FETCH FROM DB =====
-  const fetchTargets = async () => {
+  const fetchTargets = useCallback(async () => {
     try {
       setLoading(true);
       const data = await productionTargetApi.getAll();
@@ -75,11 +75,11 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTargets();
-  }, []);
+  }, [fetchTargets]);
 
   // ===== SEARCH & FILTER STATES =====
   const [searchTerm, setSearchTerm] = useState('');
