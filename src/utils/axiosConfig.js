@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const axiosInstance = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5555/api',
+  timeout: 15000, // 15 seconds
   headers: {
     'Content-Type': 'application/json',
   },
@@ -25,8 +26,14 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Handle unauthorized error (e.g., redirect to login or clear local storage)
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timed out');
+      error.message = 'The server took too long to respond. Please try again.';
+    } else if (!error.response) {
+      console.error('Network Error:', error);
+      error.message = 'Network error. Please check your internet connection or backend status.';
+    } else if (error.response.status === 401) {
+      // Handle unauthorized error
       localStorage.removeItem('userInfo');
       // window.location.href = '/login';
     }
