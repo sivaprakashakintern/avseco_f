@@ -26,7 +26,13 @@ const Toast = ({ message, type, onClose }) => (
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const AttendanceLog = () => {
-  const { employees: globalEmployees } = useAppContext();
+  const { 
+    employees: globalEmployees, 
+    attendanceRecords, 
+    saveAttendanceForDate,
+    initAttendanceForDate,
+    updateAttendanceRecord
+  } = useAppContext();
 
   // ── Date State ──────────────────────────────────────────────────────────────
   const [currentDate, setCurrentDate] = useState(today());
@@ -36,20 +42,13 @@ const AttendanceLog = () => {
   const goToPreviousDay = () => setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() - 1); return nd; });
   const goToNextDay = () => { if (!isToday) setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() + 1); return nd; }); };
 
-  // ── Attendance State (keyed per date) ────────────────────────────────────────
-  const [attendanceByDate, setAttendanceByDate] = useState({});
-
-  // Get or create map for the current date
-
+  // ── Fetch Attendance for Current Date ────────────────────────────────────────
+  useEffect(() => {
+    initAttendanceForDate(dateKey);
+  }, [dateKey, initAttendanceForDate]);
 
   const patchAttendance = (empId, patch) => {
-    setAttendanceByDate(prev => ({
-      ...prev,
-      [dateKey]: {
-        ...prev[dateKey],
-        [empId]: { ...(prev[dateKey]?.[empId] || {}), ...patch },
-      },
-    }));
+    updateAttendanceRecord(dateKey, empId, patch);
   };
 
   // ── Search / Filter State ────────────────────────────────────────────────────
@@ -86,15 +85,18 @@ const AttendanceLog = () => {
 
   // ── Derived Employees List ────────────────────────────────────────────────────
   const employees = useMemo(() => {
-    const attendanceMap = attendanceByDate[dateKey] || {};
-    return globalEmployees.map(emp => ({
-      ...emp,
-      empId: emp.empId || `EMP-${String(emp.id).padStart(4, "0")}`,
-      status: attendanceMap[emp.id]?.status || "present",
-      note: attendanceMap[emp.id]?.note || "",
-      halfDayTime: attendanceMap[emp.id]?.halfDayTime || null,
-    }));
-  }, [globalEmployees, attendanceByDate, dateKey]);
+    const dayRecords = attendanceRecords[dateKey] || [];
+    return globalEmployees.map(emp => {
+      const record = dayRecords.find(r => r.empId === emp.id);
+      return {
+        ...emp,
+        empId: emp.empId || `EMP-${String(emp.id).padStart(4, "0")}`,
+        status: record?.status || "present",
+        note: record?.note || "",
+        halfDayTime: record?.halfDayTime || null,
+      };
+    });
+  }, [globalEmployees, attendanceRecords, dateKey]);
 
   // ── Quick Stats ───────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -188,12 +190,17 @@ const AttendanceLog = () => {
   };
 
   const [saveLoading, setSaveLoading] = useState(false);
-  const handleSaveAttendance = () => {
+  const handleSaveAttendance = async () => {
     setSaveLoading(true);
-    setTimeout(() => {
-      setSaveLoading(false);
+    try {
+      const dayRecords = attendanceRecords[dateKey] || [];
+      await saveAttendanceForDate(dateKey, dayRecords);
       showToast("Attendance saved successfully!", "success");
-    }, 1000);
+    } catch (error) {
+      showToast("Failed to save attendance", "error");
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   // ── Pagination pages ──────────────────────────────────────────────────────────

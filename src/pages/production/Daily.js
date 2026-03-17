@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAppContext } from '../../context/AppContext.js';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -72,8 +73,8 @@ const Production = () => {
     operator: "Rajesh"
   });
 
-  // Production history - Start with empty array
-  const [productionHistory, setProductionHistory] = useState([]);
+  // Production history from context
+  const { productionHistory, addProduction, deleteProduction } = useAppContext();
 
   // Stats state - Initialize with zeros
   const [stats, setStats] = useState({
@@ -163,26 +164,12 @@ const Production = () => {
     });
   }, []);
 
-  // ========== LOAD DATA FROM LOCALSTORAGE ON INITIAL RENDER ==========
+  // ========== INITIAL STATS CALCULATION ==========
   useEffect(() => {
-    const savedData = localStorage.getItem('productionHistory');
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      setProductionHistory(parsedData);
-
-      // Calculate stats from loaded data
-      calculateStats(parsedData);
+    if (productionHistory && productionHistory.length > 0) {
+      calculateStats(productionHistory);
     }
-  }, [calculateStats]);
-
-  // ========== SAVE TO LOCALSTORAGE WHENEVER PRODUCTION HISTORY CHANGES ==========
-  useEffect(() => {
-    if (productionHistory.length > 0) {
-      localStorage.setItem('productionHistory', JSON.stringify(productionHistory));
-    } else {
-      localStorage.removeItem('productionHistory');
-    }
-  }, [productionHistory]);
+  }, [productionHistory, calculateStats]);
 
   // ========== GET SUMMARY DATA BY SIZE FOR SELECTED VIEW ==========
   const getSummaryData = () => {
@@ -570,7 +557,6 @@ const Production = () => {
     const timeString = now.format('hh:mm A');
 
     const newProduction = {
-      id: productionHistory.length > 0 ? Math.max(...productionHistory.map(item => item.id)) + 1 : 1,
       date: formatDate(productionDate),
       product: formData.product,
       size: formData.size,
@@ -581,9 +567,7 @@ const Production = () => {
       status: "completed"
     };
 
-    const updatedHistory = [newProduction, ...productionHistory];
-    setProductionHistory(updatedHistory);
-    calculateStats(updatedHistory);
+    addProduction(newProduction);
 
     setFormData({
       ...formData,
@@ -598,9 +582,7 @@ const Production = () => {
 
   const handleDeleteProduction = (id) => {
     if (window.confirm("Are you sure you want to delete this production record?")) {
-      const updatedHistory = productionHistory.filter(item => item.id !== id);
-      setProductionHistory(updatedHistory);
-      calculateStats(updatedHistory);
+      deleteProduction(id);
       showNotificationMessage(`🗑️ Production record deleted successfully`, 'warning');
     }
   };

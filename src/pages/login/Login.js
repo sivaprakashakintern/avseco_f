@@ -1,36 +1,33 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.js";
 import logo from "../../assets/avs.png";
 import bgImage from "../../assets/bg1.png";
 import "./Login.css";
 
 const Login = () => {
     const navigate = useNavigate();
-    const [username, setUsername] = useState("");
+    const { login } = useAuth();
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError("");
 
-        const envUsername = process.env.REACT_APP_ADMIN_USERNAME || "AVSECO";
-        const envPassword = process.env.REACT_APP_ADMIN_PASSWORD || "12345678";
-
-        // Simulate login delay
-        setTimeout(() => {
-            if (username === envUsername && password === envPassword) {
-                sessionStorage.setItem("isLoggedIn", "true"); // Save login status
-                setIsLoading(false);
-                navigate("/dashboard"); // Go to dashboard after login
-            } else {
-                setIsLoading(false);
-                setError("Invalid Admin Credentials");
-            }
-        }, 1200);
+        try {
+            await login(email, password);
+            setIsLoading(false);
+            navigate("/dashboard");
+        } catch (err) {
+            setIsLoading(false);
+            const errorMessage = err.response?.data?.message || err.message || "Invalid Credentials";
+            setError(errorMessage);
+        }
     };
 
     return (
@@ -52,15 +49,15 @@ const Login = () => {
                         {error && <div className="login-error">{error}</div>}
 
                         <div className="form-group">
-                            <label htmlFor="username">Username</label>
+                            <label htmlFor="email">Email Address</label>
                             <div className="input-wrapper">
-                                <span className="material-symbols-outlined input-icon">person</span>
+                                <span className="material-symbols-outlined input-icon">mail</span>
                                 <input
-                                    type="text"
-                                    id="username"
-                                    placeholder="Enter username"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
+                                    type="email"
+                                    id="email"
+                                    placeholder="Enter your email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     required
                                 />
                             </div>
