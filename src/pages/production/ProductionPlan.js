@@ -58,6 +58,13 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  // Custom Modals State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [itemToUpdate, setItemToUpdate] = useState(null);
+  const [updateVal, setUpdateVal] = useState('');
+
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
@@ -177,16 +184,25 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   };
 
   // ===== HANDLE DELETE TARGET =====
-  const handleDeleteTarget = async (itemId) => {
-    if (window.confirm('Are you sure you want to delete this target?')) {
-      try {
-        await productionTargetApi.delete(itemId);
-        await fetchTargets();
-        showToast('Target deleted successfully', 'success');
-      } catch (err) {
-        console.error("Error deleting target:", err);
-        showToast("Failed to delete target", 'error');
-      }
+  const handleDeleteTarget = (itemId) => {
+    setItemToDelete(itemId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      setLoading(true);
+      await productionTargetApi.delete(itemToDelete);
+      await fetchTargets();
+      showToast('Target deleted successfully', 'success');
+    } catch (err) {
+      console.error("Error deleting target:", err);
+      showToast("Failed to delete target", 'error');
+    } finally {
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+      setLoading(false);
     }
   };
 
@@ -624,35 +640,12 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                         <td className="hide-mobile"><span className="prod-sku">{item.sku}</span></td>
                         <td className="text-right">{item.targetQty.toLocaleString()}</td>
                         <td className="text-right">
-                          {editingProduced === item.id ? (
-                            <input
-                              type="number"
-                              className="edit-produced-input"
-                              defaultValue={item.producedQty}
-                              onChange={(e) => setManualUpdateQty({ ...manualUpdateQty, [item.id]: e.target.value })}
-                              onBlur={() => handleProducedUpdate(item.id, manualUpdateQty[item.id])}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleProducedUpdate(item.id, manualUpdateQty[item.id]);
-                                }
-                              }}
-                              autoFocus
-                              min="0"
-                              max={item.targetQty}
-                            />
-                          ) : (
-                            <span
-                              className="editable-value"
-                              onClick={() => {
-                                setEditingProduced(item.id);
-                                setManualUpdateQty({ ...manualUpdateQty, [item.id]: item.producedQty });
-                              }}
-                              style={{ color: '#155724', fontWeight: '600', cursor: 'pointer' }}
-                            >
-                              {item.producedQty.toLocaleString()}
-                              <span className="edit-icon">✎</span>
-                            </span>
-                          )}
+                          <span
+                            className="produced-value-cell"
+                            style={{ color: '#155724', fontWeight: '600' }}
+                          >
+                            {item.producedQty.toLocaleString()}
+                          </span>
                         </td>
                         <td className="text-right" style={{ color: item.remainingQty > 0 ? '#856404' : '#7f8c8d' }}>
                           {item.remainingQty.toLocaleString()}
@@ -677,19 +670,13 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                             <button
                               className="icon-btn-small edit-btn"
                               onClick={() => {
-                                // Find the product ID that matches this item's name
-                                const productObj = uniqueProducts.find(p => p.name === item.productName);
-                                if (productObj) {
-                                  setSelectedProduct(productObj.id);
-                                  setSelectedSize(item.productSize);
-                                  setTargetQty(item.targetQty);
-                                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                                  showToast("Target loaded into form", "success");
-                                }
+                                setItemToUpdate(item);
+                                setUpdateVal(item.producedQty);
+                                setShowUpdateModal(true);
                               }}
-                              title="Edit Target"
+                              title="Update Production"
                             >
-                              <span className="material-symbols-outlined">edit</span>
+                              <span className="material-symbols-outlined">edit_square</span>
                             </button>
                             <button
                               className="icon-btn-small delete-btn"
@@ -753,17 +740,12 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                               className="mobile-row-edit-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const productObj = uniqueProducts.find(p => p.name === item.productName);
-                                if (productObj) {
-                                  setSelectedProduct(productObj.id);
-                                  setSelectedSize(item.productSize);
-                                  setTargetQty(item.targetQty);
-                                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                                  showToast("Target loaded into form", "success");
-                                }
+                                setItemToUpdate(item);
+                                setUpdateVal(item.producedQty);
+                                setShowUpdateModal(true);
                               }}
                             >
-                              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#2e8b66' }}>edit</span>
+                              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#2e8b66' }}>edit_square</span>
                             </button>
                             <button
                               className="mobile-row-delete-btn"
@@ -925,8 +907,72 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             </div>
           </div>
         )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="report-modal-overlay">
+            <div className="report-modal delete-confirm-modal">
+              <div className="modal-icon error">
+                <span className="material-symbols-outlined">warning</span>
+              </div>
+              <h3 className="report-modal-title">Confirm Deletion</h3>
+              <p className="modal-description">Are you sure you want to delete this production target? This action cannot be undone.</p>
+              <div className="report-modal-actions">
+                <button className="modal-btn cancel-btn" onClick={() => setShowDeleteModal(false)}>
+                  Cancel
+                </button>
+                <button className="modal-btn delete-btn-premium" onClick={confirmDelete}>
+                  Yes, Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Update Production Modal */}
+        {showUpdateModal && itemToUpdate && (
+          <div className="report-modal-overlay">
+            <div className="report-modal update-prod-modal">
+              <div className="modal-icon info">
+                <span className="material-symbols-outlined">inventory_2</span>
+              </div>
+              <h3 className="report-modal-title">Update Produced Quantity</h3>
+              <div className="item-info">
+                <strong>{itemToUpdate.productName}</strong> - <span>{itemToUpdate.productSize}</span>
+              </div>
+              
+              <div className="update-input-section">
+                <label>Produced Qty (Total)</label>
+                <div className="premium-input-wrapper">
+                  <input 
+                    type="number" 
+                    value={updateVal} 
+                    onChange={(e) => setUpdateVal(e.target.value)}
+                    className="premium-modal-input"
+                    autoFocus
+                  />
+                  <span className="input-unit">Units</span>
+                </div>
+                <p className="target-hint">Target: {itemToUpdate.targetQty} units</p>
+              </div>
+
+              <div className="report-modal-actions">
+                <button className="modal-btn cancel-btn" onClick={() => setShowUpdateModal(false)}>
+                  Cancel
+                </button>
+                <button className="modal-btn save-btn-premium" onClick={async () => {
+                  await handleProducedUpdate(itemToUpdate.id, updateVal);
+                  setShowUpdateModal(false);
+                  setItemToUpdate(null);
+                }}>
+                  Update Production
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div >
+    </div>
   );
 };
 
