@@ -78,7 +78,7 @@ const Production = () => {
   });
 
   // Production history from context
-  const { productionHistory, addProduction, deleteProduction, products: dbProducts } = useAppContext();
+  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts } = useAppContext();
 
   // DERIVE DYNAMIC PRODUCTS FROM DATABASE
   const productOptions = React.useMemo(() => {
@@ -132,18 +132,26 @@ const Production = () => {
   };
 
   // ========== CALCULATE STATS FUNCTION (DEFINED BEFORE USE) ==========
-  const calculateStats = useCallback((data) => {
+  const calculateStats = useCallback((history, targets) => {
     const today = formatDate(dayjs());
+    const data = history || [];
+    const targetList = targets || [];
 
     // Today's totals by size
-    const todayData = data.filter(item => item.date === today);
-    const todayTotal = todayData.reduce((sum, item) => sum + item.quantity, 0);
+    const todayHistory = data.filter(item => item.date === today);
+    const todayTargets = targetList.filter(item => {
+      const targetDate = formatDate(dayjs(item.createdAt || item.date));
+      return targetDate === today;
+    });
+
+    const todayTotal = todayHistory.reduce((sum, item) => sum + item.quantity, 0) +
+                       todayTargets.reduce((sum, item) => sum + (item.producedQty || 0), 0);
 
     const todayBySize = {};
     availableSizes.forEach(size => {
-      todayBySize[size] = todayData
-        .filter(item => item.size === size)
-        .reduce((sum, item) => sum + item.quantity, 0);
+      const hSum = todayHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
+      const tSum = todayTargets.filter(item => item.productSize === size).reduce((sum, item) => sum + (item.producedQty || 0), 0);
+      todayBySize[size] = hSum + tSum;
     });
 
     // Calculate current week (last 7 days)
@@ -153,37 +161,51 @@ const Production = () => {
       last7Days.push(formatDate(date));
     }
 
-    const weekData = data.filter(item => last7Days.includes(item.date));
-    const weekTotal = weekData.reduce((sum, item) => sum + item.quantity, 0);
+    const weekHistory = data.filter(item => last7Days.includes(item.date));
+    const weekTargets = targetList.filter(item => {
+      const targetDate = formatDate(dayjs(item.createdAt || item.date));
+      return last7Days.includes(targetDate);
+    });
+
+    const weekTotal = weekHistory.reduce((sum, item) => sum + item.quantity, 0) +
+                      weekTargets.reduce((sum, item) => sum + (item.producedQty || 0), 0);
 
     const weekBySize = {};
     availableSizes.forEach(size => {
-      weekBySize[size] = weekData
-        .filter(item => item.size === size)
-        .reduce((sum, item) => sum + item.quantity, 0);
+      const hSum = weekHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
+      const tSum = weekTargets.filter(item => item.productSize === size).reduce((sum, item) => sum + (item.producedQty || 0), 0);
+      weekBySize[size] = hSum + tSum;
     });
 
     // Calculate current month
     const currentMonth = dayjs().month() + 1;
     const currentYear = dayjs().year();
-    const monthData = data.filter(item => {
+
+    const monthHistory = data.filter(item => {
       const parts = item.date.split('-');
       const month = parseInt(parts[1]);
       const year = parseInt(parts[2]);
       return month === currentMonth && year === currentYear;
     });
 
-    const monthTotal = monthData.reduce((sum, item) => sum + item.quantity, 0);
+    const monthTargets = targetList.filter(item => {
+      const d = dayjs(item.createdAt || item.date);
+      return (d.month() + 1) === currentMonth && d.year() === currentYear;
+    });
+
+    const monthTotal = monthHistory.reduce((sum, item) => sum + item.quantity, 0) +
+                       monthTargets.reduce((sum, item) => sum + (item.producedQty || 0), 0);
 
     const monthBySize = {};
     availableSizes.forEach(size => {
-      monthBySize[size] = monthData
-        .filter(item => item.size === size)
-        .reduce((sum, item) => sum + item.quantity, 0);
+      const hSum = monthHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
+      const tSum = monthTargets.filter(item => item.productSize === size).reduce((sum, item) => sum + (item.producedQty || 0), 0);
+      monthBySize[size] = hSum + tSum;
     });
 
-    // Calculate total stock (all time production)
-    const stockTotal = data.reduce((sum, item) => sum + item.quantity, 0);
+    // Calculate total stock (all time production + targets)
+    const stockTotal = data.reduce((sum, item) => sum + item.quantity, 0) + 
+                       targetList.reduce((sum, item) => sum + (item.producedQty || 0), 0);
 
     setStats({
       today: todayTotal,
@@ -198,10 +220,8 @@ const Production = () => {
 
   // ========== INITIAL STATS CALCULATION ==========
   useEffect(() => {
-    if (productionHistory && productionHistory.length > 0) {
-      calculateStats(productionHistory);
-    }
-  }, [productionHistory, calculateStats]);
+    calculateStats(productionHistory, productionTargets);
+  }, [productionHistory, productionTargets, calculateStats]);
 
   // ========== GET SUMMARY DATA BY SIZE FOR SELECTED VIEW ==========
   const getSummaryData = () => {
@@ -298,14 +318,38 @@ const Production = () => {
 
   // ========== FILTER FUNCTIONS FOR PRODUCTION HISTORY ==========
   const getFilteredHistory = () => {
-    return productionHistory.filter(item => {
+    // Current Records
+    const hist = productionHistory.map(item => ({ ...item, type: 'record' }));
+
+    // Targets with actual production as "Virtual Records"
+    const targetVirtuals = (productionTargets || [])
+      .filter(t => (t.producedQty || 0) > 0)
+      .map(t => ({
+        id: `target-${t._id || t.id}`,
+        date: formatDate(dayjs(t.createdAt || t.date)),
+        time: 'TARGET',
+        size: t.productSize,
+        quantity: t.producedQty,
+        grade: 'A',
+        operator: t.operator || 'N/A',
+        product: t.productName,
+        type: 'target'
+      }));
+
+    const combined = [...hist, ...targetVirtuals];
+
+    return combined.filter(item => {
       const matchesSearch = !historySearch.trim() ||
-        item.product.toLowerCase().includes(historySearch.toLowerCase()) ||
-        item.operator.toLowerCase().includes(historySearch.toLowerCase());
+        (item.product && item.product.toLowerCase().includes(historySearch.toLowerCase())) ||
+        (item.operator && item.operator.toLowerCase().includes(historySearch.toLowerCase()));
 
       const matchesSize = historySizeFilter === 'all' || item.size === historySizeFilter;
 
       return matchesSearch && matchesSize;
+    }).sort((a, b) => {
+      const dateA = dayjs(a.date, 'DD-MM-YYYY');
+      const dateB = dayjs(b.date, 'DD-MM-YYYY');
+      return dateB.isBefore(dateA) ? -1 : 1;
     });
   };
 
@@ -1045,17 +1089,28 @@ const Production = () => {
                 <tbody>
                   {filteredHistory.length > 0 ? (
                     filteredHistory.map((item) => (
-                      <tr key={item.id}>
+                      <tr key={item.id} className={item.type === 'target' ? 'row-target-sync' : ''}>
                         <td className="bold">{item.date}</td>
-                        <td>{item.time}</td>
+                        <td>
+                          <span className={`time-badge ${item.type}`}>
+                            {item.time}
+                          </span>
+                        </td>
                         <td><span className="size-badge">{item.size}</span></td>
-                        <td className="bold highlight">{item.quantity.toLocaleString()}</td>
+                        <td className="bold highlight">
+                          {item.quantity.toLocaleString()}
+                          {item.type === 'target' && <span className="target-indicator"> (Plan)</span>}
+                        </td>
                         <td><span className={`grade-badge ${item.grade.toLowerCase()}`}>{item.grade}</span></td>
                         <td>{item.operator}</td>
                         <td>
-                          <button className="btn-delete" onClick={() => handleDeleteProduction(item.id)}>
-                            <span className="material-symbols-outlined">delete</span>
-                          </button>
+                          {item.type === 'record' ? (
+                            <button className="btn-delete" onClick={() => handleDeleteProduction(item.id)}>
+                              <span className="material-symbols-outlined">delete</span>
+                            </button>
+                          ) : (
+                            <span className="sync-badge">Auto Sync</span>
+                          )}
                         </td>
                       </tr>
                     ))

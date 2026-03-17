@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi, productsApi } from "../utils/api.js";
+import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi, productsApi, productionTargetApi } from "../utils/api.js";
 import { useAuth } from "./AuthContext.js";
 
 const DEPARTMENTS = ["All Departments", "Ceo", "Hr", "It admin", "Operator", "Maitanice", "Machine operator", "Cleaning", "Driver", "Others"];
@@ -11,6 +11,7 @@ export const AppProvider = ({ children }) => {
     const [expenses, setExpenses] = useState([]);
     const [clients, setClients] = useState([]);
     const [productionHistory, setProductionHistory] = useState([]);
+    const [productionTargets, setProductionTargets] = useState([]);
     const [products, setProducts] = useState([]);
     const [attendanceRecords, setAttendanceRecords] = useState({});
     const [loading, setLoading] = useState(true);
@@ -21,12 +22,13 @@ export const AppProvider = ({ children }) => {
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const [empData, expData, clientData, prodData, productData] = await Promise.all([
+            const [empData, expData, clientData, prodData, productData, targetData] = await Promise.all([
                 employeeApi.getAll(),
                 expenseApi.getAll(),
                 clientApi.getAll(),
                 productionApi.getAll(),
-                productsApi.getAll()
+                productsApi.getAll(),
+                productionTargetApi.getAll()
             ]);
             
             setEmployees(empData.map(e => ({ ...e, id: e._id })));
@@ -34,6 +36,7 @@ export const AppProvider = ({ children }) => {
             setClients(clientData.map(c => ({ ...c, id: c._id })));
             setProductionHistory(prodData.map(p => ({ ...p, id: p._id })));
             setProducts(productData.map(p => ({ ...p, id: p._id })));
+            setProductionTargets(targetData.map(t => ({ ...t, id: t._id })));
         } catch (error) {
             console.error("Error fetching app data:", error);
         } finally {
@@ -102,16 +105,68 @@ export const AppProvider = ({ children }) => {
     }, []);
 
     // PRODUCTION
-    const addProduction = useCallback(async (prod) => {
-        const data = await productionApi.add(prod);
-        setProductionHistory(prev => [{ ...data, id: data._id }, ...prev]);
-        return data;
+    const fetchTargets = useCallback(async () => {
+        try {
+            const targetData = await productionTargetApi.getAll();
+            setProductionTargets(targetData.map(t => ({ ...t, id: t._id })));
+        } catch (error) {
+            console.error("Error fetching targets:", error);
+        }
     }, []);
 
+    // PRODUCTION - Enhanced with Sync
+    const addProduction = useCallback(async (prod) => {
+        // 1. Save the production record
+        const data = await productionApi.add(prod);
+        setProductionHistory(prev => [{ ...data, id: data._id }, ...prev]);
+
+        // 2. Sync with Production Plan (Targets)
+        // Find a matching target by Operator and Size
+        try {
+            const allTargets = await productionTargetApi.getAll();
+            const matchingTarget = allTargets.find(t => 
+                t.operator === prod.operator && 
+                t.productSize === prod.size
+            );
+
+            if (matchingTarget) {
+                const newProduced = (matchingTarget.producedQty || 0) + Number(prod.quantity);
+                await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
+                await fetchTargets(); // Refresh secondary list
+            }
+        } catch (err) {
+            console.warn("Sync with target failed:", err);
+        }
+
+        return data;
+    }, [fetchTargets]);
+
     const deleteProduction = useCallback(async (id) => {
+        // Find the record before delete to sync back
+        const record = productionHistory.find(p => p.id === id);
+        
         await productionApi.delete(id);
         setProductionHistory(prev => prev.filter(p => p.id !== id));
-    }, []);
+
+        // Sync Back: Decrement target if found
+        if (record) {
+            try {
+                const allTargets = await productionTargetApi.getAll();
+                const matchingTarget = allTargets.find(t => 
+                    t.operator === record.operator && 
+                    t.productSize === record.size
+                );
+
+                if (matchingTarget) {
+                    const newProduced = Math.max(0, (matchingTarget.producedQty || 0) - Number(record.quantity));
+                    await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
+                    await fetchTargets();
+                }
+            } catch (err) {
+                console.warn("Sync delete with target failed:", err);
+            }
+        }
+    }, [productionHistory, fetchTargets]);
 
     // ATTENDANCE
     const fetchAttendanceForDate = useCallback(async (dateStr) => {
@@ -209,6 +264,7 @@ export const AppProvider = ({ children }) => {
             expenses,
             clients,
             productionHistory,
+            productionTargets,
             products,
             attendanceRecords,
             departments: DEPARTMENTS,
@@ -224,6 +280,7 @@ export const AppProvider = ({ children }) => {
             deleteClient,
             addProduction,
             deleteProduction,
+            fetchTargets,
             fetchAttendanceForDate,
             initAttendanceForDate,
             updateAttendanceRecord,

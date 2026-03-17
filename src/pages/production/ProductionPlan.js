@@ -10,11 +10,12 @@ import 'jspdf-autotable';
 
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
-  const { products: dbProducts } = useAppContext();
+  const { products: dbProducts, productionTargets, fetchTargets } = useAppContext();
   
   // ===== TARGET ENTRY FORM STATE =====
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedOperator, setSelectedOperator] = useState('Rajesh');
   const [targetQty, setTargetQty] = useState('');
 
   // ===== DYNAMIC PRODUCT DATA FROM DATABASE =====
@@ -54,7 +55,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   }, [selectedProduct, uniqueProducts, dbProducts]);
 
   // ===== PRODUCTION DATA STATE =====
-  const [productionData, setProductionData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
@@ -69,20 +69,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
-
-  // ===== FETCH FROM DB =====
-  const fetchTargets = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await productionTargetApi.getAll();
-      setProductionData(data.map(t => ({ ...t, id: t._id })));
-    } catch (err) {
-      console.error("Error fetching targets:", err);
-      showToast("Error connecting to server", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     fetchTargets();
@@ -154,6 +140,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       status: 'pending',
       unit: 'Pieces',
       size: product.size,
+      operator: selectedOperator,
       date: new Date().toISOString().split('T')[0]
     };
 
@@ -209,10 +196,14 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
 
   // ===== FILTERED DATA =====
-  const filteredData = productionData.filter(item => {
-    const matchesSearch = item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.productSize.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.sku.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredData = (productionTargets || []).filter(item => {
+    const productName = item.productName || '';
+    const productSize = item.productSize || '';
+    const sku = item.sku || '';
+
+    const matchesSearch = productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      productSize.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sku.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -513,6 +504,19 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             </div>
 
             <div className="form-group">
+              <label>Assign Operator</label>
+              <select
+                value={selectedOperator}
+                onChange={(e) => setSelectedOperator(e.target.value)}
+                className="form-select"
+              >
+                {['Rajesh', 'Priya', 'Suresh', 'Anitha', 'Kumar'].map(op => (
+                  <option key={op} value={op}>{op}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
               <label>Target Quantity (Pieces)</label>
               <input
                 type="number"
@@ -624,6 +628,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                 <tr>
                   <th className="hide-mobile">Product</th>
                   <th>Size</th>
+                  <th className="hide-mobile">Operator</th>
                   <th className="hide-mobile">SKU</th>
                   <th className="text-right">Target</th>
                   <th className="text-right">Produced</th>
@@ -648,6 +653,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                           </div>
                         </td>
                         <td><strong>{item.productSize}</strong></td>
+                        <td className="hide-mobile">
+                          <span className="operator-badge">{item.operator || 'N/A'}</span>
+                        </td>
                         <td className="hide-mobile"><span className="prod-sku">{item.sku}</span></td>
                         <td className="text-right">{item.targetQty.toLocaleString()}</td>
                         <td className="text-right">
