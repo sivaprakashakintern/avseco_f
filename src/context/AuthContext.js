@@ -16,10 +16,24 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const loginHelper = async (email, password) => {
-    const { data } = await axios.post('/auth/login', { email, password });
-    localStorage.setItem('userInfo', JSON.stringify(data));
-    setUser(data);
-    return data;
+    if (!email || !password) {
+      throw new Error('Please enter both email and password');
+    }
+    
+    try {
+      const { data } = await axios.post('/auth/login', { email, password });
+      
+      if (data && data.token) {
+        localStorage.setItem('userInfo', JSON.stringify(data));
+        setUser(data);
+        return data;
+      } else {
+        throw new Error('Login response missing authentication token');
+      }
+    } catch (error) {
+      // Re-throw to be caught by the component
+      throw error;
+    }
   };
 
   const registerHelper = async (name, email, password) => {
