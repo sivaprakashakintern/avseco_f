@@ -455,7 +455,18 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             <p className="page-subtitle">Set targets and track daily production progress by size</p>
           </div>
           <div className="header-actions">
-
+            <button
+              className="refresh-db-btn"
+              onClick={async () => {
+                await fetchTargets();
+                showToast("Data refreshed from database", "success");
+              }}
+              title="Refresh Data"
+              disabled={loading}
+            >
+              <span className={`material-symbols-outlined ${loading ? 'spin' : ''}`}>refresh</span>
+              Refresh
+            </button>
 
             {/* Date Badge */}
             <div className="btn-export-premium" style={{ cursor: 'default', background: 'rgba(255, 255, 255, 0.1)' }}>
