@@ -10,6 +10,11 @@ import 'jspdf-autotable';
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   const { products: dbProducts } = useAppContext();
+  
+  // ===== TARGET ENTRY FORM STATE =====
+  const [selectedProduct, setSelectedProduct] = useState('');
+  const [selectedSize, setSelectedSize] = useState('');
+  const [targetQty, setTargetQty] = useState('');
 
   // ===== DYNAMIC PRODUCT DATA FROM DATABASE =====
   const uniqueProducts = React.useMemo(() => {
@@ -52,11 +57,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     const savedData = localStorage.getItem('productionData');
     return savedData ? JSON.parse(savedData) : [];
   });
-
-  // ===== TARGET ENTRY FORM STATE =====
-  const [selectedProduct, setSelectedProduct] = useState('');
-  const [selectedSize, setSelectedSize] = useState('');
-  const [targetQty, setTargetQty] = useState('');
 
   // ===== SEARCH & FILTER STATES =====
   const [searchTerm, setSearchTerm] = useState('');
