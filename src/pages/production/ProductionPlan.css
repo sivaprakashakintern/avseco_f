@@ -2764,47 +2764,46 @@ body,
     font-size: 15px;
   }
 }
- / *   = = = = =   T O A S T   N O T I F I C A T I O N   = = = = =   * / 
- . t o a s t - n o t i f i c a t i o n   { 
-     p o s i t i o n :   f i x e d ; 
-     t o p :   2 4 p x ; 
-     r i g h t :   2 4 p x ; 
-     d i s p l a y :   f l e x ; 
-     a l i g n - i t e m s :   c e n t e r ; 
-     g a p :   1 2 p x ; 
-     p a d d i n g :   1 6 p x   2 4 p x ; 
-     b o r d e r - r a d i u s :   1 2 p x ; 
-     b a c k g r o u n d :   w h i t e ; 
-     b o x - s h a d o w :   0   1 0 p x   2 5 p x   r g b a ( 0 ,   0 ,   0 ,   0 . 1 ) ; 
-     z - i n d e x :   1 0 0 0 0 ; 
-     a n i m a t i o n :   s l i d e I n R i g h t   0 . 3 s   e a s e ; 
-     m i n - w i d t h :   3 0 0 p x ; 
- } 
- 
- . t o a s t - n o t i f i c a t i o n . s u c c e s s   { 
-     b o r d e r - l e f t :   5 p x   s o l i d   # 2 e 8 b 6 6 ; 
- } 
- 
- . t o a s t - n o t i f i c a t i o n . e r r o r   { 
-     b o r d e r - l e f t :   5 p x   s o l i d   # f 4 4 3 3 6 ; 
- } 
- 
- . t o a s t - n o t i f i c a t i o n . s u c c e s s   . m a t e r i a l - s y m b o l s - o u t l i n e d   { 
-     c o l o r :   # 2 e 8 b 6 6 ; 
- } 
- 
- . t o a s t - n o t i f i c a t i o n . e r r o r   . m a t e r i a l - s y m b o l s - o u t l i n e d   { 
-     c o l o r :   # f 4 4 3 3 6 ; 
- } 
- 
- . t o a s t - m e s s a g e   { 
-     f o n t - w e i g h t :   6 0 0 ; 
-     c o l o r :   # 1 e 3 a 2 f ; 
-     f o n t - s i z e :   1 4 p x ; 
- } 
- 
- @ k e y f r a m e s   s l i d e I n R i g h t   { 
-     f r o m   {   t r a n s f o r m :   t r a n s l a t e X ( 1 0 0 % ) ;   o p a c i t y :   0 ;   } 
-     t o   {   t r a n s f o r m :   t r a n s l a t e X ( 0 ) ;   o p a c i t y :   1 ;   } 
- }  
- 
+/* ===== TOAST NOTIFICATION ===== */
+.toast-notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 10000;
+  animation: slideInRight 0.3s ease;
+  min-width: 300px;
+}
+
+.toast-notification.success {
+  border-left: 5px solid #2e8b66;
+}
+
+.toast-notification.error {
+  border-left: 5px solid #f44336;
+}
+
+.toast-notification.success .material-symbols-outlined {
+  color: #2e8b66;
+}
+
+.toast-notification.error .material-symbols-outlined {
+  color: #f44336;
+}
+
+.toast-message {
+  font-weight: 600;
+  color: #1e3a2f;
+  font-size: 14px;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
