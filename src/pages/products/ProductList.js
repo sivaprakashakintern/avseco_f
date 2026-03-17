@@ -16,7 +16,6 @@ const ProductList = () => {
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProducts();
@@ -24,7 +23,6 @@ const ProductList = () => {
 
   const fetchProducts = async () => {
     try {
-      setLoading(true);
       const data = await productsApi.getAll();
       // Map MongoDB _id to id for compatibility with existing UI logic
       const mappedData = data.map(p => ({ ...p, id: p._id }));
@@ -32,8 +30,6 @@ const ProductList = () => {
     } catch (err) {
       console.error("Error fetching products:", err);
       setFeedbackMessage("Error loading products");
-    } finally {
-      setLoading(false);
     }
   };
 

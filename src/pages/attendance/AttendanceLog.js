@@ -29,7 +29,6 @@ const AttendanceLog = () => {
   const { 
     employees: globalEmployees, 
     attendanceRecords, 
-    fetchAttendanceForDate, 
     saveAttendanceForDate,
     initAttendanceForDate,
     updateAttendanceRecord
