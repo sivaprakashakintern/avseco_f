@@ -55,18 +55,14 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   // ===== PRODUCTION DATA STATE =====
   const [productionData, setProductionData] = useState([]);
-  const [loadingEntries, setLoadingEntries] = useState(false);
 
   // ===== FETCH FROM DB =====
   const fetchTargets = async () => {
     try {
-      setLoadingEntries(true);
       const data = await productionTargetApi.getAll();
       setProductionData(data.map(t => ({ ...t, id: t._id })));
     } catch (err) {
       console.error("Error fetching targets:", err);
-    } finally {
-      setLoadingEntries(false);
     }
   };
 
