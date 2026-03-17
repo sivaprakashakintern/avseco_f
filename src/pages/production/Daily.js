@@ -58,6 +58,10 @@ const Production = () => {
   // Summary view state
   const [summaryView, setSummaryView] = useState('daily'); // 'daily', 'weekly', 'monthly'
   const [summaryDate, setSummaryDate] = useState(dayjs());
+
+  // Delete Modal State
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [productionToDelete, setProductionToDelete] = useState(null);
   const [showSummaryDatePicker, setShowSummaryDatePicker] = useState(false);
 
   // Date selection for adding production
@@ -609,9 +613,16 @@ const Production = () => {
   };
 
   const handleDeleteProduction = (id) => {
-    if (window.confirm("Are you sure you want to delete this production record?")) {
-      deleteProduction(id);
+    setProductionToDelete(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteProduction = () => {
+    if (productionToDelete) {
+      deleteProduction(productionToDelete);
       showNotificationMessage(`🗑️ Production record deleted successfully`, 'warning');
+      setShowDeleteConfirm(false);
+      setProductionToDelete(null);
     }
   };
 
@@ -1118,9 +1129,24 @@ const Production = () => {
                 </div>
               )}
             </div>
-          </div>
         </div>
       </div>
+
+      {showDeleteConfirm && (
+        <div className="modal-overlay">
+          <div className="export-modal" style={{ maxWidth: '400px', textAlign: 'center', padding: '32px' }}>
+            <div className="modal-icon warning" style={{ background: '#fff9e6', color: '#f59e0b', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '36px' }}>warning</span>
+            </div>
+            <h2 style={{ marginBottom: '16px', color: '#1e293b' }}>Confirm Deletion</h2>
+            <p style={{ color: '#64748b', marginBottom: '32px' }}>Are you sure you want to delete this production record? This will also update your stock levels.</p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button className="btn-outline" style={{ flex: 1 }} onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
+              <button className="btn-primary" style={{ flex: 1, backgroundColor: '#f44336' }} onClick={confirmDeleteProduction}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
