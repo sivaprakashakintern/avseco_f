@@ -78,8 +78,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showExportOptions, setShowExportOptions] = useState(false);
-  const [manualUpdateQty, setManualUpdateQty] = useState({});
-  const [editingProduced, setEditingProduced] = useState(null);
 
   // ===== EXPORT STATES =====
   const [selectedReportType, setSelectedReportType] = useState('size-wise');
@@ -167,6 +165,23 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     } catch (err) {
       console.error("Error updating production:", err);
       showToast("Failed to update production", 'error');
+    }
+  };
+
+  // ===== HANDLE CLEAR ALL DATA =====
+  const handleClearAllData = async () => {
+    if (window.confirm('Are you sure you want to clear all production targets? This cannot be undone.')) {
+      try {
+        setLoading(true);
+        await productionTargetApi.clearAll();
+        await fetchTargets();
+        showToast('All production targets cleared successfully', 'success');
+      } catch (err) {
+        console.error("Error clearing data:", err);
+        showToast("Failed to clear data from server", 'error');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -404,19 +419,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     setShowExportOptions(false);
   };
 
-  // ===== CLEAR ALL DATA =====
-  const handleClearAllData = async () => {
-    if (window.confirm('Are you sure you want to clear all production data?')) {
-      try {
-        await productionTargetApi.clearAll();
-        await fetchTargets();
-        showToast('All targets cleared successfully', 'success');
-      } catch (err) {
-        console.error("Error clearing targets:", err);
-        showToast("Failed to clear targets", 'error');
-      }
-    }
-  };
 
   return (
     <div className="production-page-wrapper">
@@ -595,7 +597,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             </select>
           </div>
 
-          {productionData.length > 0 && (
+          {productionTargets.length > 0 && (
             <button
               className="clear-all-btn"
               onClick={handleClearAllData}
@@ -740,8 +742,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                         <td
                           className="mobile-size-cell"
                           onClick={() => {
-                            setEditingProduced(item.id);
-                            setManualUpdateQty({ ...manualUpdateQty, [item.id]: item.producedQty });
+                            setItemToUpdate(item);
+                            setUpdateVal(item.producedQty);
+                            setShowUpdateModal(true);
                           }}
                         >
                           <strong>{item.productSize}</strong>
@@ -788,57 +791,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
               </div>
             )}
 
-            {/* Mobile Inline Edit overlay/row if needed */}
-            {editingProduced && (
-              <div className="mobile-edit-overlay" onClick={() => setEditingProduced(null)}>
-                <div className="mobile-edit-box" onClick={(e) => e.stopPropagation()}>
-                  <div className="edit-box-header centered">
-                    <div className="header-text-mobile">
-                      <div className="prod-name-mobile">{filteredData.find(i => i.id === editingProduced)?.productName}</div>
-                      <div className="edit-box-subtitle centered">
-                        <span>{filteredData.find(i => i.id === editingProduced)?.productSize}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="edit-box-body">
-                    <div className="input-section-mobile">
-                      <div className="input-header">EDIT TARGET QUANTITY</div>
-                      <div className="mobile-qty-input-wrapper">
-                        <input
-                          type="number"
-                          defaultValue={filteredData.find(i => i.id === editingProduced)?.targetQty}
-                          onChange={(e) => setManualUpdateQty({ ...manualUpdateQty, [editingProduced]: e.target.value })}
-                          className="mobile-qty-input"
-                          autoFocus
-                        />
-                      </div>
-                    </div>
-
-                    <div className="edit-box-actions-custom">
-                      <button className="custom-modal-btn cancel" onClick={() => setEditingProduced(null)}>
-                        Cancel
-                      </button>
-                      <button className="custom-modal-btn save" onClick={() => {
-                        const newTarget = parseInt(manualUpdateQty[editingProduced]) || filteredData.find(i => i.id === editingProduced)?.targetQty;
-                        const updatedData = productionData.map(item => {
-                          if (item.id === editingProduced) {
-                            const remaining = Math.max(newTarget - item.producedQty, 0);
-                            const status = item.producedQty >= newTarget ? 'completed' :
-                              item.producedQty > 0 ? 'in-progress' : 'pending';
-                            return { ...item, targetQty: newTarget, remainingQty: remaining, status: status };
-                          }
-                          return item;
-                        });
-                        setProductionData(updatedData);
-                        setEditingProduced(null);
-                      }}>
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="prod-table-footer">
