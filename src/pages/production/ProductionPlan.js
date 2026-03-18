@@ -185,8 +185,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       }
 
       await fetchTargets();
-      setEditingProduced(null);
-      setManualUpdateQty({});
+      setShowUpdateModal(false);
+      setItemToUpdate(null);
+      setUpdateVal('');
       showToast("Production updated and synced to dashboard", 'success');
     } catch (err) {
       console.error("Error updating production:", err);

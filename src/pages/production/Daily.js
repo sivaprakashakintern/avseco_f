@@ -11,6 +11,13 @@ import './Daily.css';
 
 
 // Colour mapping for sizes
+const SIZE_COLOR = {
+  '6-inch': '#10b981',
+  '8-inch': '#3b82f6',
+  '10-inch': '#f59e0b',
+  '12-inch': '#8b5cf6',
+};
+
 // Available sizes
 const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
 
