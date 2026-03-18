@@ -78,7 +78,7 @@ const Production = () => {
   });
 
   // Production history from context
-  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts, fetchTargets, fetchData, loading } = useAppContext();
+  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts, fetchData, loading } = useAppContext();
 
   // DERIVE DYNAMIC PRODUCTS FROM DATABASE
   const productOptions = React.useMemo(() => {
