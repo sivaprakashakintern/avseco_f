@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import "./ProductList.css";
 import { productsApi } from "../../utils/api.js";
+import { useAppContext } from "../../context/AppContext.js";
 
 // Removed image imports as per user request
 
 
 const ProductList = () => {
+  const { products, fetchData, loading } = useAppContext();
   const [viewMode, setViewMode] = useState("grid");
   const [selectedSize, setSelectedSize] = useState("All Sizes");
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,25 +17,12 @@ const ProductList = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   const fetchProducts = async () => {
     try {
-      setLoading(true);
-      const data = await productsApi.getAll();
-      // Map MongoDB _id to id for compatibility with existing UI logic
-      const mappedData = data.map(p => ({ ...p, id: p._id }));
-      setProducts(mappedData);
+      await fetchData();
     } catch (err) {
       console.error("Error fetching products:", err);
       setFeedbackMessage("Error connecting to server");
-    } finally {
-      setLoading(false);
     }
   };
 

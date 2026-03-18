@@ -297,6 +297,7 @@ export const AppProvider = ({ children }) => {
             last7DaysTrend,
             isMobileMenuOpen,
             setIsMobileMenuOpen,
+            fetchData,
         }}>
             {children}
         </AppContext.Provider>

@@ -2,14 +2,16 @@ import React, { useState, useRef, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/avs.png";
 import avatar from "../../assets/avatar.png";
-import AppContext from "../../context/AppContext.js";
+import AppContext, { useAppContext } from "../../context/AppContext.js";
 import { useAuth } from "../../context/AuthContext.js";
 import "./Topbar.css";
 
 const Topbar = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useContext(AppContext);
   const { logout } = useAuth();
+  const { fetchData } = useAppContext();
   const [open, setOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const profileRef = useRef(null);
@@ -40,6 +42,20 @@ const Topbar = () => {
     logout();
     console.log("Logging out...");
     navigate("/login");
+  };
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await fetchData();
+      // Optional: Add a small delay for visual feedback
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error("Refresh failed:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleClickOutside = (event) => {
@@ -97,6 +113,19 @@ const Topbar = () => {
 
         {/* Right Section: Notification & Profile */}
         <div className="topbar-right-modern">
+
+          {/* Refresh Button */}
+          <button 
+            className="icon-circle" 
+            onClick={handleRefresh} 
+            disabled={isRefreshing}
+            aria-label="Refresh Data"
+            title="Refresh Data"
+          >
+            <span className={`material-symbols-outlined ${isRefreshing ? 'spinning' : ''}`}>
+              refresh
+            </span>
+          </button>
 
           {/* Notification Button */}
           <button className="icon-circle" aria-label="Notifications">

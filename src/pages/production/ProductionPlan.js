@@ -139,7 +139,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       unit: 'Pieces',
       size: product.size,
       operator: selectedOperator,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toLocaleDateString('en-IN').replace(/\//g, '-') // DD-MM-YYYY
     };
 
     try {

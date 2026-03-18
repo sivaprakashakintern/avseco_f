@@ -1232,3 +1232,17 @@ body {
   line-height: 1;
   vertical-align: middle;
 }
+
+/* ===== REFRESH SPINNING ANIMATION ===== */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
