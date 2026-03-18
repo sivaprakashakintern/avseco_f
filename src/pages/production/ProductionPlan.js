@@ -10,7 +10,7 @@ import 'jspdf-autotable';
 
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
-  const { products: dbProducts, productionTargets, fetchTargets } = useAppContext();
+  const { products: dbProducts, productionTargets, fetchTargets, addProduction } = useAppContext();
   
   // ===== TARGET ENTRY FORM STATE =====
   const [selectedProduct, setSelectedProduct] = useState('');
@@ -157,11 +157,37 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const handleProducedUpdate = async (itemId, newProducedQty) => {
     try {
       const produced = parseInt(newProducedQty) || 0;
+      
+      // Calculate sync diff BEFORE update
+      const target = productionTargets.find(t => t.id === itemId);
+      const prevProduced = target ? (target.producedQty || 0) : 0;
+      const diff = produced - prevProduced;
+
+      // Update Target DB
       await productionTargetApi.updateProduced(itemId, produced);
+      
+      // Add History Log IF there is a positive change for better Audit/Dashboard sync
+      if (diff > 0 && target) {
+        try {
+          // We use a internal-only flag or just standard addProduction
+          // This will sync back but that's okay as it's the SAME number
+          await addProduction({
+            product: target.productName,
+            size: target.productSize,
+            quantity: diff,
+            operator: target.operator || 'Manual Update',
+            grade: 'A',
+            date: new Date().toLocaleDateString('en-IN').replace(/\//g, '-') // DD-MM-YYYY
+          }, true); // SKIP sync as we just did it manually above
+        } catch (syncErr) {
+          console.warn("Log sync failed from Plan:", syncErr);
+        }
+      }
+
       await fetchTargets();
       setEditingProduced(null);
       setManualUpdateQty({});
-      showToast("Production updated successfully", 'success');
+      showToast("Production updated and synced to dashboard", 'success');
     } catch (err) {
       console.error("Error updating production:", err);
       showToast("Failed to update production", 'error');

@@ -115,27 +115,31 @@ export const AppProvider = ({ children }) => {
     }, []);
 
     // PRODUCTION - Enhanced with Sync
-    const addProduction = useCallback(async (prod) => {
+    const addProduction = useCallback(async (prod, skipTargetSync = false) => {
         // 1. Save the production record
         const data = await productionApi.add(prod);
         setProductionHistory(prev => [{ ...data, id: data._id }, ...prev]);
 
         // 2. Sync with Production Plan (Targets)
-        // Find a matching target by Operator and Size
-        try {
-            const allTargets = await productionTargetApi.getAll();
-            const matchingTarget = allTargets.find(t => 
-                t.operator === prod.operator && 
-                t.productSize === prod.size
-            );
+        if (!skipTargetSync) {
+            try {
+                const allTargets = await productionTargetApi.getAll();
+                const matchingTarget = allTargets.find(t => 
+                    t.operator === prod.operator && 
+                    t.productSize === prod.size
+                );
 
-            if (matchingTarget) {
-                const newProduced = (matchingTarget.producedQty || 0) + Number(prod.quantity);
-                await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
-                await fetchTargets(); // Refresh secondary list
+                if (matchingTarget) {
+                    const newProduced = (matchingTarget.producedQty || 0) + Number(prod.quantity);
+                    await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
+                    await fetchTargets();
+                }
+            } catch (err) {
+                console.warn("Sync with target failed:", err);
             }
-        } catch (err) {
-            console.warn("Sync with target failed:", err);
+        } else {
+            // Even if skipping sync, we should refresh the targets to show the new state
+            await fetchTargets();
         }
 
         return data;

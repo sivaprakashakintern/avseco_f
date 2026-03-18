@@ -3187,3 +3187,40 @@
   font-weight: 600;
 }
 
+/* Refresh Button Styles */
+.refresh-db-btn-premium {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #d1e7d6;
+  color: #2e8b66;
+  border-radius: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: 10px;
+}
+
+.refresh-db-btn-premium:hover {
+  background: #e8f5ee;
+  border-color: #2e8b66;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(46, 139, 102, 0.1);
+}
+
+.refresh-db-btn-premium:active {
+  transform: translateY(0);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+

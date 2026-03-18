@@ -11,13 +11,6 @@ import './Daily.css';
 
 
 // Colour mapping for sizes
-const SIZE_COLOR = {
-  '6-inch': '#10b981',
-  '8-inch': '#3b82f6',
-  '10-inch': '#f59e0b',
-  '12-inch': '#8b5cf6',
-};
-
 // Available sizes
 const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
 
@@ -78,7 +71,7 @@ const Production = () => {
   });
 
   // Production history from context
-  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts } = useAppContext();
+  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts, fetchTargets, fetchData, loading } = useAppContext();
 
   // DERIVE DYNAMIC PRODUCTS FROM DATABASE
   const productOptions = React.useMemo(() => {
@@ -137,49 +130,33 @@ const Production = () => {
     const data = history || [];
     const targetList = targets || [];
 
-    // Today's totals by size
-    const todayHistory = data.filter(item => item.date === today);
-    const todayTargets = targetList.filter(item => {
-      const targetDate = formatDate(dayjs(item.createdAt || item.date));
-      return targetDate === today;
-    });
-
-    const todayTotal = todayHistory.reduce((sum, item) => sum + item.quantity, 0) +
-                       todayTargets.reduce((sum, item) => sum + (item.producedQty || 0), 0);
-
-    const todayBySize = {};
-    availableSizes.forEach(size => {
-      const hSum = todayHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
-      const tSum = todayTargets.filter(item => item.productSize === size).reduce((sum, item) => sum + (item.producedQty || 0), 0);
-      todayBySize[size] = hSum + tSum;
-    });
-
-    // Calculate current week (last 7 days)
+    // Helpers for dates
+    const currentMonth = dayjs().month() + 1;
+    const currentYear = dayjs().year();
     const last7Days = [];
     for (let i = 0; i < 7; i++) {
       const date = dayjs().subtract(i, 'day');
       last7Days.push(formatDate(date));
     }
 
-    const weekHistory = data.filter(item => last7Days.includes(item.date));
-    const weekTargets = targetList.filter(item => {
-      const targetDate = formatDate(dayjs(item.createdAt || item.date));
-      return last7Days.includes(targetDate);
+    // Today's totals by size
+    const todayHistory = data.filter(item => item.date === today);
+
+    // 1. Temporal Stats from History Logs ONLY (prevents double counting)
+    const todayTotal = todayHistory.reduce((sum, item) => sum + item.quantity, 0);
+    
+    const todayBySize = {};
+    availableSizes.forEach(size => {
+      todayBySize[size] = todayHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
     });
 
-    const weekTotal = weekHistory.reduce((sum, item) => sum + item.quantity, 0) +
-                      weekTargets.reduce((sum, item) => sum + (item.producedQty || 0), 0);
+    const weekHistory = data.filter(item => last7Days.includes(item.date));
+    const weekTotal = weekHistory.reduce((sum, item) => sum + item.quantity, 0);
 
     const weekBySize = {};
     availableSizes.forEach(size => {
-      const hSum = weekHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
-      const tSum = weekTargets.filter(item => item.productSize === size).reduce((sum, item) => sum + (item.producedQty || 0), 0);
-      weekBySize[size] = hSum + tSum;
+      weekBySize[size] = weekHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
     });
-
-    // Calculate current month
-    const currentMonth = dayjs().month() + 1;
-    const currentYear = dayjs().year();
 
     const monthHistory = data.filter(item => {
       const parts = item.date.split('-');
@@ -187,25 +164,15 @@ const Production = () => {
       const year = parseInt(parts[2]);
       return month === currentMonth && year === currentYear;
     });
-
-    const monthTargets = targetList.filter(item => {
-      const d = dayjs(item.createdAt || item.date);
-      return (d.month() + 1) === currentMonth && d.year() === currentYear;
-    });
-
-    const monthTotal = monthHistory.reduce((sum, item) => sum + item.quantity, 0) +
-                       monthTargets.reduce((sum, item) => sum + (item.producedQty || 0), 0);
+    const monthTotal = monthHistory.reduce((sum, item) => sum + item.quantity, 0);
 
     const monthBySize = {};
     availableSizes.forEach(size => {
-      const hSum = monthHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
-      const tSum = monthTargets.filter(item => item.productSize === size).reduce((sum, item) => sum + (item.producedQty || 0), 0);
-      monthBySize[size] = hSum + tSum;
+      monthBySize[size] = monthHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
     });
 
-    // Calculate total stock (all time production + targets)
-    const stockTotal = data.reduce((sum, item) => sum + item.quantity, 0) + 
-                       targetList.reduce((sum, item) => sum + (item.producedQty || 0), 0);
+    // 2. STOCK: Sum of all matches in targets + any records that didn't match a target
+    const stockTotal = targetList.reduce((sum, item) => sum + (item.producedQty || 0), 0);
 
     setStats({
       today: todayTotal,
@@ -734,6 +701,17 @@ const Production = () => {
           <p className="page-subtitle">Track daily production and update stock automatically</p>
         </div>
         <div className="header-actions">
+          <button 
+            className="refresh-db-btn-premium" 
+            onClick={async () => {
+              await fetchData();
+              showNotificationMessage("Production data refreshed successfully", "success");
+            }}
+            disabled={loading}
+          >
+            <span className={`material-symbols-outlined ${loading ? 'spin' : ''}`}>sync</span>
+            Refresh
+          </button>
           <button className="btn-export-premium" onClick={openExportModal}>
             <span className="material-symbols-outlined">description</span>
             Export
