@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import "./ExpenseReport.css";
 import { formatDate } from '../../utils/dateUtils.js';
+import { useAppContext } from '../../context/AppContext.js';
 
 // ── Category config: colour palette for all 7 categories ──────────────────────
 const CATEGORY_CONFIG = {
@@ -14,21 +15,7 @@ const CATEGORY_CONFIG = {
 };
 
 const ExpenseReport = () => {
-    // ── Sample data aligned with the new 7-category system ─────────────────────
-    const [expenses] = useState([
-        { id: 1, category: "Machine Maintenance", description: "Repair of CNC Machine – Spindle replacement", amount: "15000", date: "2026-02-18", paymentMode: "Bank Transfer" },
-        { id: 2, category: "Material", description: "Raw Material – Steel Sheets (Grade A)", amount: "45000", date: "2026-02-19", paymentMode: "Cheque" },
-        { id: 3, category: "Salary", description: "Advance Salary for Rahul (February)", amount: "5000", date: "2026-02-10", paymentMode: "Cash" },
-        { id: 4, category: "Others", description: "Office Stationery – Papers, pens, folders", amount: "1200", date: "2026-01-15", paymentMode: "UPI" },
-        { id: 5, category: "Electricity", description: "February electricity bill – Factory unit", amount: "9800", date: "2026-02-05", paymentMode: "Bank Transfer" },
-        { id: 6, category: "Machine Maintenance", description: "Monthly preventive maintenance – All machines", amount: "8500", date: "2026-02-12", paymentMode: "Bank Transfer" },
-        { id: 7, category: "Material", description: "Packaging materials – Boxes, tape, wrap", amount: "12500", date: "2026-02-08", paymentMode: "UPI" },
-        { id: 8, category: "Salary", description: "February salary – Full production staff", amount: "125000", date: "2026-02-01", paymentMode: "Bank Transfer" },
-        { id: 9, category: "Transport", description: "Raw material inbound freight charges", amount: "5600", date: "2026-02-14", paymentMode: "Cash" },
-        { id: 10, category: "Rent", description: "Factory building monthly rent", amount: "35000", date: "2026-02-01", paymentMode: "Cheque" },
-        { id: 11, category: "Transport", description: "Product delivery to clients – South region", amount: "4300", date: "2026-02-21", paymentMode: "UPI" },
-        { id: 12, category: "Others", description: "Brochures and catalog printing", amount: "8500", date: "2026-01-25", paymentMode: "Cheque" },
-    ]);
+    const { expenses } = useAppContext();
 
     // ── Date range state ─────────────────────────────────────────────────────────
     const [dateRange, setDateRange] = useState(() => {
@@ -98,13 +85,27 @@ const ExpenseReport = () => {
         });
     };
 
+    // ── Date parsing helper ──────────────────────────────────────────────────────
+    const parseDateHelper = (dateStr) => {
+        if (!dateStr) return new Date(0);
+        if (dateStr instanceof Date) return dateStr;
+        if (typeof dateStr === 'string' && dateStr.includes('-')) {
+            const parts = dateStr.split('-');
+            if (parts[0].length === 2) return new Date(parts[2], parts[1] - 1, parts[0]);
+        }
+        return new Date(dateStr);
+    };
+
     // ── Filtered data ────────────────────────────────────────────────────────────
     const filteredExpenses = useMemo(() => {
         const s = new Date(dateRange.startDate); s.setHours(0, 0, 0, 0);
         const e = new Date(dateRange.endDate); e.setHours(23, 59, 59, 999);
-        return expenses
-            .filter((ex) => { const d = new Date(ex.date); return d >= s && d <= e; })
-            .sort((a, b) => new Date(b.date) - new Date(a.date));
+        return (expenses || [])
+            .filter((ex) => { 
+                const d = parseDateHelper(ex.date); 
+                return d >= s && d <= e; 
+            })
+            .sort((a, b) => parseDateHelper(b.date) - parseDateHelper(a.date));
     }, [expenses, dateRange]);
 
     // ── Stats ────────────────────────────────────────────────────────────────────
@@ -125,7 +126,7 @@ const ExpenseReport = () => {
     const monthlyTrend = useMemo(() => {
         const months = {};
         filteredExpenses.forEach((e) => {
-            const d = new Date(e.date);
+            const d = parseDateHelper(e.date);
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
             if (!months[key]) months[key] = { month: d.toLocaleString("default", { month: "short" }), year: d.getFullYear(), total: 0 };
             months[key].total += Number(e.amount);
