@@ -91,7 +91,6 @@ const StockOverview = () => {
       <div className="page-header premium-header">
         <div>
           <h1 className="page-title">Stock Overview</h1>
-          <p className="page-subtitle">Real-time inventory management and tracking</p>
         </div>
         <div className="header-actions">
           <button className="btn-export-premium" onClick={handleExport}>

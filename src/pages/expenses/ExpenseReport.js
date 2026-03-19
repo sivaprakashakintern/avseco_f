@@ -222,7 +222,6 @@ const ExpenseReport = () => {
             <div className="page-header premium-header">
                 <div>
                     <h1 className="page-title">Expense Report</h1>
-                    <p className="page-subtitle">Understand spending patterns and financial trends with precision</p>
                 </div>
                 <div className="header-actions">
                     <button className="btn-export-premium" onClick={exportToExcel}>

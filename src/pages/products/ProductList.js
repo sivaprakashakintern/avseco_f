@@ -241,7 +241,6 @@ const ProductList = () => {
       <div className="page-header premium-header">
         <div>
           <h1 className="page-title">Products List</h1>
-          <p className="page-subtitle">Manage and track your areca leaf product catalogue with precision</p>
         </div>
 
         <div className="header-actions">

@@ -272,7 +272,6 @@ const Clients = () => {
       <div className="page-header premium-header">
         <div>
           <h1 className="page-title">Client Portfolio</h1>
-          <p className="page-subtitle">Manage and track your client relationships with precision</p>
         </div>
         <div className="header-actions">
           <button className="btn-transfer-premium" onClick={handleAddClient}>

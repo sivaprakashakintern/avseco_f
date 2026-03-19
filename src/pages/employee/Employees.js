@@ -314,7 +314,6 @@ const Employees = () => {
         <div className="header-content">
           <div className="header-text">
             <h1 className="page-title">Employees</h1>
-            <p className="page-subtitle">Add, edit or manage your team records and organizational structure</p>
           </div>
           <div className="header-actions">
             <button className="add-employee-btn" onClick={handleAddEmployee}>

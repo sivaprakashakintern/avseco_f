@@ -3,7 +3,21 @@ import { useAppContext } from '../../context/AppContext.js';
 import "./AttendanceReport.css";
 
 const AttendanceReport = () => {
-    const { employees } = useAppContext();
+    const { employees, attendanceRecords, fetchAttendanceForDate } = useAppContext();
+
+    // Effect to fetch any missing attendance data for the month
+    React.useEffect(() => {
+        const fetchMonthData = async () => {
+            const days = getDaysInMonth(selectedYear, selectedMonth);
+            for (const day of days) {
+                const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`;
+                if (!attendanceRecords[dateKey]) {
+                    await fetchAttendanceForDate(dateKey);
+                }
+            }
+        };
+        fetchMonthData();
+    }, [selectedYear, selectedMonth, fetchAttendanceForDate, attendanceRecords]);
 
     // State for dates
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -49,18 +63,23 @@ const AttendanceReport = () => {
                 if (day.isSunday) {
                     empData.push("Sunday");
                 } else {
-                    const rand = Math.random();
-                    let status = "P";
+                    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`;
+                    const records = attendanceRecords[dateKey] || [];
+                    const record = records.find(r => r.empId === emp.id);
+                    
+                    let status = record ? record.status : "-";
+                    // Map status to abbreviations used in report
+                    let abbr = "-";
+                    if (status === "present") abbr = "P";
+                    else if (status === "absent") abbr = "A";
+                    else if (status === "half") abbr = "HD";
+                    else if (status === "stoppage") abbr = "WS";
 
-                    if (rand > 0.96) status = "WS";
-                    else if (rand > 0.9) status = "A";
-                    else if (rand > 0.85) status = "HD";
+                    if (abbr === "P") totalPresent += 1;
+                    if (abbr === "HD") totalHalf += 1;
+                    if (abbr === "A" || abbr === "WS") totalAbsent += 1;
 
-                    if (status === "P") totalPresent += 1;
-                    if (status === "HD") totalHalf += 1;
-                    if (status === "A" || status === "WS") totalAbsent += 1;
-
-                    empData.push(status);
+                    empData.push(abbr);
                 }
             });
 
@@ -233,7 +252,6 @@ const AttendanceReport = () => {
             <div className="ar-banner-header">
                 <div className="ar-banner-left">
                     <h1 className="ar-banner-title">Attendance Reports</h1>
-                    <p className="ar-banner-subtitle">Analyze and export comprehensive workforce logs</p>
                 </div>
                 {!isMobile && (
                     <div className="ar-banner-actions">

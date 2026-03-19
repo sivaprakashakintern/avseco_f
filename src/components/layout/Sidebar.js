@@ -81,7 +81,7 @@ const Sidebar = () => {
   const navItems = [
     { icon: "dashboard", label: "Dashboard", path: "/dashboard" },
     { icon: "inventory_2", label: "Stock", path: "/stock" },
-    { icon: "format_list_bulleted", label: "Product List", path: "/products" },
+    { icon: "format_list_bulleted", label: "Products", path: "/products" },
 
     // ✅ PRODUCTION - SUB-MENU
     {

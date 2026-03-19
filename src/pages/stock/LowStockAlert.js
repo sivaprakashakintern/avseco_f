@@ -6,7 +6,6 @@ const LowStockAlert = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Low Stock Alerts</h1>
-          <p className="page-subtitle">Items that need reordering</p>
         </div>
         <div className="header-actions">
           <button className="btn-primary">

@@ -485,7 +485,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
         <div className="page-header premium-header">
           <div>
             <h1 className="page-title">Production Plan</h1>
-            <p className="page-subtitle">Set targets and track daily production progress by size</p>
           </div>
           <div className="header-actions">
             {/* Date Badge */}
@@ -575,21 +574,21 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           <div className="prod-stat-card">
             <p className="prod-stat-label">🎯 TOTAL TARGET</p>
             <div className="prod-stat-value">
-              <h3 className="prod-stat-number">{totalTarget.toLocaleString()}</h3>
+              <h3 className="prod-stat-number">{(totalTarget || 0).toLocaleString()}</h3>
               <span className="prod-stat-badge badge-target">Units</span>
             </div>
           </div>
           <div className="prod-stat-card">
             <p className="prod-stat-label">⚡ PRODUCED</p>
             <div className="prod-stat-value">
-              <h3 className="prod-stat-number" style={{ color: '#155724' }}>{totalProduced.toLocaleString()}</h3>
+              <h3 className="prod-stat-number" style={{ color: '#155724' }}>{(totalProduced || 0).toLocaleString()}</h3>
               <span className="prod-stat-badge badge-progress">{overallProgress}%</span>
             </div>
           </div>
           <div className="prod-stat-card">
             <p className="prod-stat-label">⏳ BALANCE</p>
             <div className="prod-stat-value">
-              <h3 className="prod-stat-number" style={{ color: '#856404' }}>{totalRemaining.toLocaleString()}</h3>
+              <h3 className="prod-stat-number" style={{ color: '#856404' }}>{(totalRemaining || 0).toLocaleString()}</h3>
               <span className="prod-stat-badge badge-remaining">To do</span>
             </div>
           </div>

@@ -6,7 +6,6 @@ const SalesReport = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Sales Report</h1>
-          <p className="page-subtitle">Sales performance and trends</p>
         </div>
         <div className="header-actions">
           <button className="btn-primary">

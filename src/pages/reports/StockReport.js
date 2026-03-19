@@ -6,7 +6,6 @@ const StockReport = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Stock Report</h1>
-          <p className="page-subtitle">Inventory movement and valuation</p>
         </div>
         <div className="header-actions">
           <button className="btn-primary">

@@ -364,7 +364,6 @@ const StockTransactions = () => {
       <div className="page-header premium-header">
         <div>
           <h1 className="page-title">Stock Transactions</h1>
-          <p className="page-subtitle">Log and monitor your areca leaf product movements in real-time</p>
         </div>
         <div className="header-actions">
           <button className="btn-transfer-premium" onClick={() => navigate('/stock')}>

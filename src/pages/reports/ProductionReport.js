@@ -6,7 +6,6 @@ const ProductionReport = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Production Report</h1>
-          <p className="page-subtitle">Production output and efficiency</p>
         </div>
         <div className="header-actions">
           <button className="btn-primary">

@@ -6,7 +6,6 @@ const EmployeeReport = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Employee Report</h1>
-          <p className="page-subtitle">Workforce analytics and attendance</p>
         </div>
         <div className="header-actions">
           <button className="btn-primary">

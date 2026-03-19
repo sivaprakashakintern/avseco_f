@@ -142,7 +142,6 @@ const Expenses = () => {
             <div className="page-header premium-header">
                 <div>
                     <h1 className="page-title">Expense Details</h1>
-                    <p className="page-subtitle">Track and manage company expenses with precision</p>
                 </div>
                 <div className="header-actions">
                     <button className="btn-export-premium" onClick={() => { setIsEditMode(false); setIsModalOpen(true); }}>

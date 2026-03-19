@@ -6,7 +6,6 @@ const Help = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Help & Support</h1>
-          <p className="page-subtitle">How can we help you today?</p>
         </div>
       </div>
 

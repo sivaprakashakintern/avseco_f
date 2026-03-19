@@ -703,7 +703,6 @@ const Sales = () => {
             <div className="page-header premium-header">
                 <div>
                     <h1 className="page-title">Sales Management</h1>
-                    <p className="page-subtitle">Log and monitor your product sales and customer orders in real-time</p>
                 </div>
                 <div className="header-actions">
                     <button className="btn-export-premium" onClick={handleExport} disabled={exportLoading}>

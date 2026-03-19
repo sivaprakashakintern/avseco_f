@@ -6,7 +6,6 @@ const FinancialReport = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Financial Report</h1>
-          <p className="page-subtitle">Revenue, expenses and profit</p>
         </div>
         <div className="header-actions">
           <button className="btn-primary">

@@ -719,7 +719,6 @@ const Production = () => {
       <div className="page-header premium-header">
         <div className="header-left">
           <h1 className="page-title">Daily Production</h1>
-          <p className="page-subtitle">Track daily production and update stock automatically</p>
         </div>
         <div className="header-actions">
           <button className="btn-export-premium" onClick={openExportModal}>
@@ -850,7 +849,7 @@ const Production = () => {
             </div>
             <div className="stat-info">
               <span className="stat-label">Today's Production</span>
-              <span className="stat-value">{stats.today.toLocaleString()}</span>
+              <span className="stat-value">{(stats.today || 0).toLocaleString()}</span>
               <div className="stat-breakdown">
                 {availableSizes.map(size => (
                   <span key={size}>{size.split('-')[0]}: {stats.todayBySize[size] || 0}</span>
@@ -865,7 +864,7 @@ const Production = () => {
             </div>
             <div className="stat-info">
               <span className="stat-label">Last 7 Days</span>
-              <span className="stat-value">{stats.week.toLocaleString()}</span>
+              <span className="stat-value">{(stats.week || 0).toLocaleString()}</span>
               <div className="stat-breakdown">
                 {availableSizes.map(size => (
                   <span key={size}>{size.split('-')[0]}: {stats.weekBySize[size] || 0}</span>
@@ -880,7 +879,7 @@ const Production = () => {
             </div>
             <div className="stat-info">
               <span className="stat-label">This Month</span>
-              <span className="stat-value">{stats.month.toLocaleString()}</span>
+              <span className="stat-value">{(stats.month || 0).toLocaleString()}</span>
               <div className="stat-breakdown">
                 {availableSizes.map(size => (
                   <span key={size}>{size.split('-')[0]}: {stats.monthBySize[size] || 0}</span>
@@ -895,7 +894,7 @@ const Production = () => {
             </div>
             <div className="stat-info">
               <span className="stat-label">Total Produced</span>
-              <span className="stat-value">{stats.stock.toLocaleString()}</span>
+              <span className="stat-value">{(stats.stock || 0).toLocaleString()}</span>
               <span className="stat-tag">All time</span>
             </div>
           </div>
@@ -1003,7 +1002,7 @@ const Production = () => {
               <div className="card-body">
                 <div className="summary-total-banner">
                   <span className="label">PERIOD TOTAL</span>
-                  <span className="value">{summaryData.total.toLocaleString()} pcs</span>
+                  <span className="value">{(summaryData.total || 0).toLocaleString()} pcs</span>
                 </div>
 
                 <div className="summary-grid">
@@ -1086,7 +1085,7 @@ const Production = () => {
                         </td>
                         <td><span className="size-badge">{item.size}</span></td>
                         <td className="bold highlight">
-                          {item.quantity.toLocaleString()}
+                          {(item.quantity || 0).toLocaleString()}
                           {item.type === 'target' && <span className="target-indicator"> (Plan)</span>}
                         </td>
                         <td><span className={`grade-badge ${item.grade.toLowerCase()}`}>{item.grade}</span></td>
@@ -1130,7 +1129,7 @@ const Production = () => {
                         />
                         <span className="prod-card-size-label">{item.size}</span>
                       </div>
-                      <span className="prod-card-qty">{item.quantity.toLocaleString()} pcs</span>
+                      <span className="prod-card-qty">{(item.quantity || 0).toLocaleString()} pcs</span>
                       <span className="material-symbols-outlined prod-card-expand-icon">
                         {expandedProdId === item.id ? 'expand_less' : 'expand_more'}
                       </span>
