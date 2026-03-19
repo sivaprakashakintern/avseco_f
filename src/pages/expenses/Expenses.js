@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAppContext } from '../../context/AppContext.js';
-import { formatDate } from '../../utils/dateUtils.js';
+import { formatDate, isWithinLast2Days } from '../../utils/dateUtils.js';
 import "../stock/Stock.css";
 import "./ExpenseReport.css";
 
@@ -34,6 +34,7 @@ const Expenses = () => {
     const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [detailCategory, setDetailCategory] = useState("");
+    const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
 
     // ── Toggle Expansion ──
     const toggleExpenseExpansion = (id) => {
@@ -41,8 +42,13 @@ const Expenses = () => {
     };
 
     const handleDeleteExpense = (id) => {
-        if (window.confirm("Are you sure you want to delete this expense?")) {
-            ctxDeleteExpense(id);
+        setDeleteConfirm({ isOpen: true, id });
+    };
+
+    const confirmDelete = () => {
+        if (deleteConfirm.id) {
+            ctxDeleteExpense(deleteConfirm.id);
+            setDeleteConfirm({ isOpen: false, id: null });
         }
     };
 
@@ -235,20 +241,26 @@ const Expenses = () => {
                                     <td className="amount" style={{ fontWeight: '800', color: '#006A4E' }}>₹{Number(expense.amount).toLocaleString()}</td>
                                     <td>
                                         <div className="action-buttons">
-                                            <button 
-                                                className="action-btn edit" 
-                                                title="Edit"
-                                                onClick={() => handleEditExpense(expense.id)}
-                                            >
-                                                <span className="material-symbols-outlined">edit</span>
-                                            </button>
-                                            <button 
-                                                className="action-btn delete" 
-                                                title="Delete"
-                                                onClick={() => handleDeleteExpense(expense.id)}
-                                            >
-                                                <span className="material-symbols-outlined">delete</span>
-                                            </button>
+                                            {isWithinLast2Days(expense.date) ? (
+                                                <>
+                                                    <button 
+                                                        className="action-btn edit" 
+                                                        title="Edit"
+                                                        onClick={() => handleEditExpense(expense.id)}
+                                                    >
+                                                        <span className="material-symbols-outlined">edit</span>
+                                                    </button>
+                                                    <button 
+                                                        className="action-btn delete" 
+                                                        title="Delete"
+                                                        onClick={() => handleDeleteExpense(expense.id)}
+                                                    >
+                                                        <span className="material-symbols-outlined">delete</span>
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>Locked</span>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -294,6 +306,7 @@ const Expenses = () => {
                                                     <span className="info-value">{ex.paymentMode}</span>
                                                 </div>
                                             </div>
+                                            {isWithinLast2Days(ex.date) && (
                                                 <div className="expense-action-buttons">
                                                     <button
                                                         className="expense-mini-btn edit"
@@ -310,6 +323,7 @@ const Expenses = () => {
                                                         Delete
                                                     </button>
                                                 </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -611,6 +625,37 @@ const Expenses = () => {
                                     .toLocaleString()}
                             </div>
                             <button className="btn-primary" onClick={() => setShowDetailModal(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirm.isOpen && (
+                <div className="modal-overlay" style={{ zIndex: 2000 }}>
+                    <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center', padding: '30px' }}>
+                        <div style={{ color: '#ef4444', marginBottom: '20px' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '64px' }}>warning</span>
+                        </div>
+                        <h3 style={{ fontSize: '20px', marginBottom: '10px', color: '#1e293b' }}>Confirm Deletion</h3>
+                        <p style={{ color: '#64748b', marginBottom: '30px', fontSize: '14px' }}>
+                            Are you sure you want to delete this expense record? This action cannot be undone.
+                        </p>
+                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                            <button 
+                                className="btn-outline" 
+                                onClick={() => setDeleteConfirm({ isOpen: false, id: null })}
+                                style={{ flex: 1, justifyContent: 'center' }}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                className="btn-primary" 
+                                onClick={confirmDelete}
+                                style={{ flex: 1, backgroundColor: '#ef4444', borderColor: '#ef4444', justifyContent: 'center' }}
+                            >
+                                Delete
+                            </button>
                         </div>
                     </div>
                 </div>

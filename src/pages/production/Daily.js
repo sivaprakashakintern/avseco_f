@@ -136,6 +136,15 @@ const Production = () => {
     return dayjs(dateStr, 'DD-MM-YYYY');
   };
 
+  const isWithinLast2Days = (dateStr) => {
+    if (!dateStr) return false;
+    const date = parseDate(dateStr);
+    if (!date || !date.isValid()) return false;
+    const today = dayjs().startOf('day');
+    const diffDays = today.diff(date.startOf('day'), 'day');
+    return diffDays <= 2;
+  };
+
   // ========== CALCULATE STATS FUNCTION (DEFINED BEFORE USE) ==========
   const calculateStats = useCallback((history, targets) => {
     const today = formatDate(dayjs());
@@ -1084,9 +1093,13 @@ const Production = () => {
                         <td>{item.operator}</td>
                         <td>
                           {item.type === 'record' ? (
-                            <button className="btn-delete" onClick={() => handleDeleteProduction(item.id)}>
-                              <span className="material-symbols-outlined">delete</span>
-                            </button>
+                            isWithinLast2Days(item.date) ? (
+                              <button className="btn-delete" onClick={() => handleDeleteProduction(item.id)}>
+                                <span className="material-symbols-outlined">delete</span>
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>Locked</span>
+                            )
                           ) : (
                             <span className="sync-badge">Auto Sync</span>
                           )}
@@ -1145,13 +1158,15 @@ const Production = () => {
                             <span className="prod-info-value">{item.operator}</span>
                           </div>
                         </div>
-                        <button
-                          className="prod-card-delete-btn"
-                          onClick={() => handleDeleteProduction(item.id)}
-                        >
-                          <span className="material-symbols-outlined">delete</span>
-                          Delete Record
-                        </button>
+                        {isWithinLast2Days(item.date) && (
+                          <button
+                            className="prod-card-delete-btn"
+                            onClick={() => handleDeleteProduction(item.id)}
+                          >
+                            <span className="material-symbols-outlined">delete</span>
+                            Delete Record
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
