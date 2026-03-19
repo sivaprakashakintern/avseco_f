@@ -18,6 +18,40 @@ const SIZE_COLOR = {
 const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
 
 const Production = () => {
+  // ========== HELPER FUNCTIONS ==========
+  const formatDate = (date) => {
+    if (!date) return '';
+    return date.format('DD-MM-YYYY');
+  };
+
+  const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+    return dayjs(dateStr, 'DD-MM-YYYY');
+  };
+
+  const isWithinLast2Days = (dateStr) => {
+    if (!dateStr) return false;
+    const date = parseDate(dateStr);
+    if (!date || !date.isValid()) return false;
+    const today = dayjs().startOf('day');
+    const diffDays = today.diff(date.startOf('day'), 'day');
+    return diffDays <= 2;
+  };
+
+  const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
+    <div className="calendar-wrapper">
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <DateCalendar
+          value={selectedDate}
+          onChange={(newDate) => {
+            onDateChange(newDate);
+            onClose();
+          }}
+        />
+      </LocalizationProvider>
+    </div>
+  );
+
   // Mobile card expand state
   const [expandedProdId, setExpandedProdId] = useState(null);
   const toggleProdCard = (id) => setExpandedProdId(prev => prev === id ? null : id);
@@ -216,38 +250,6 @@ const Production = () => {
 
   const summaryData = getSummaryData();
 
-  const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
-    <div className="calendar-wrapper">
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <DateCalendar
-          value={selectedDate}
-          onChange={(newDate) => {
-            onDateChange(newDate);
-            onClose();
-          }}
-        />
-      </LocalizationProvider>
-    </div>
-  );
-  // ========== HELPER FUNCTIONS ==========
-  const formatDate = (date) => {
-    if (!date) return '';
-    return date.format('DD-MM-YYYY');
-  };
-
-  const parseDate = (dateStr) => {
-    if (!dateStr) return null;
-    return dayjs(dateStr, 'DD-MM-YYYY');
-  };
-
-  const isWithinLast2Days = (dateStr) => {
-    if (!dateStr) return false;
-    const date = parseDate(dateStr);
-    if (!date || !date.isValid()) return false;
-    const today = dayjs().startOf('day');
-    const diffDays = today.diff(date.startOf('day'), 'day');
-    return diffDays <= 2;
-  };
 
 
 
