@@ -60,9 +60,16 @@ export const AppProvider = ({ children }) => {
 
     // EMPLOYEES
     const addEmployee = useCallback(async (emp) => {
-        const data = await employeeApi.add(emp);
-        setEmployees(prev => [...prev, { ...data, id: data._id }].sort((a, b) => a.name.localeCompare(b.name)));
-        return data;
+        try {
+            const data = await employeeApi.add(emp);
+            setEmployees(prev => [...prev, { ...data, id: data._id }].sort((a, b) => a.name.localeCompare(b.name)));
+            return data;
+        } catch (error) {
+            if (error.response) {
+                console.error("Employee Creation Backend Error:", error.response.data);
+            }
+            throw error;
+        }
     }, []);
 
     const updateEmployee = useCallback(async (id, updates) => {
@@ -273,6 +280,7 @@ export const AppProvider = ({ children }) => {
         return {
             ...product,
             quantity,
+            perPlateRate: Number(product.sellPrice || 0),
             totalValue
         };
     });

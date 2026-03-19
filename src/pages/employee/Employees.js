@@ -178,6 +178,9 @@ const Employees = () => {
       setTimeout(() => setFeedbackMessage(""), 3000);
     } catch (error) {
       console.error("Add employee error:", error);
+      if (error.response) {
+        console.dir(error.response.data);
+      }
       setFeedbackMessage("❌ Failed to add employee: " + (error.response?.data?.message || error.message));
       setTimeout(() => setFeedbackMessage(""), 5000);
     }
