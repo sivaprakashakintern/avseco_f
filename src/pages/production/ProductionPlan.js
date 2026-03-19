@@ -6,17 +6,83 @@ import './ProductionPlan.css';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import dayjs from 'dayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 
+
+const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <div className="mui-calendar-popover">
+      <DateCalendar
+        value={selectedDate}
+        onChange={onDateChange}
+        sx={{
+          backgroundColor: '#fff',
+          borderRadius: '12px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+          border: '1px solid #e2e8f0',
+          '& .MuiPickersDay-today': {
+            border: '1px solid #006A4E !important',
+          },
+          '& .Mui-selected': {
+            backgroundColor: '#006A4E !important',
+          }
+        }}
+      />
+      <div className="calendar-popover-footer">
+        <button className="btn-calendar-close" onClick={onClose}>Close</button>
+      </div>
+    </div>
+  </LocalizationProvider>
+);
 
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
-  const { products: dbProducts, productionTargets, fetchTargets, addProduction, employees } = useAppContext();
+  const { 
+    products: dbProducts, 
+    productionTargets, 
+    fetchTargets, 
+    addProduction, 
+    employees,
+    productionHistory,
+    productionStats
+  } = useAppContext();
+
+  // DASHBOARD COUNTERS (from Context)
+  const { 
+    today: todayCount, 
+    week, 
+    month, 
+    stock, 
+    todayBySize, 
+    weekBySize, 
+    monthBySize, 
+    availableSizes: sizesList 
+  } = productionStats || {};
   
   // ===== TARGET ENTRY FORM STATE =====
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedOperator, setSelectedOperator] = useState('');
   const [targetQty, setTargetQty] = useState('');
+
+  // ===== PRODUCTION ENTRY STATE (Migrated) =====
+  const [productionDate, setProductionDate] = useState(dayjs());
+  const [showProductionDatePicker, setShowProductionDatePicker] = useState(false);
+  const [formData, setFormData] = useState({
+    product: "",
+    size: "",
+    quantity: "",
+    grade: "B",
+    operator: ""
+  });
+
+  const [summaryView, setSummaryView] = useState('daily');
+  const [summaryDate, setSummaryDate] = useState(dayjs());
+  const [showSummaryDatePicker, setShowSummaryDatePicker] = useState(false);
+  const [showHistoryOnly, setShowHistoryOnly] = useState(false); // For mobile view if needed
   
   // DYNAMIC OPERATORS FROM EMPLOYEES
   const operators = React.useMemo(() => {
@@ -116,7 +182,128 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
 
 
-  // ===== GET PRODUCT DETAILS FOR SELECTED SIZE =====
+  // ===== PRODUCT OPTIONS FOR ENTRY FORM =====
+  const productOptions = React.useMemo(() => {
+    if (!dbProducts || dbProducts.length === 0) return [];
+    const unique = {};
+    dbProducts.forEach(p => {
+      if (!unique[p.name]) unique[p.name] = { name: p.name, sizes: [] };
+      if (!unique[p.name].sizes.includes(p.size)) unique[p.name].sizes.push(p.size);
+    });
+    return Object.values(unique);
+  }, [dbProducts]);
+
+  // Set defaults for form
+  useEffect(() => {
+    if (operators.length > 0 && !formData.operator) {
+      setFormData(prev => ({ ...prev, operator: operators[0] }));
+    }
+  }, [operators, formData.operator]);
+
+  useEffect(() => {
+    if (productOptions.length > 0 && !formData.product) {
+      const firstProd = productOptions[0];
+      setFormData(prev => ({ 
+        ...prev, 
+        product: firstProd.name,
+        size: firstProd.sizes[0] || ""
+      }));
+    }
+  }, [productOptions, formData.product]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const getSizesForProduct = () => {
+    const product = productOptions.find(p => p.name === formData.product);
+    return product ? product.sizes : [];
+  };
+
+  const handleSummaryDateSelect = (date) => {
+    setSummaryDate(date);
+    setShowSummaryDatePicker(false);
+  };
+
+  const handleAddProduction = async () => {
+    if (!formData.quantity || parseInt(formData.quantity) <= 0) {
+      showToast("Please enter valid quantity", 'error');
+      return;
+    }
+
+    const quantity = parseInt(formData.quantity);
+    const timeString = dayjs().format('hh:mm A');
+    const formattedDate = formatDate(productionDate);
+
+    const newProduction = {
+      date: formattedDate,
+      product: formData.product,
+      size: formData.size,
+      quantity: quantity,
+      grade: formData.grade,
+      operator: formData.operator,
+      time: timeString,
+      status: "completed"
+    };
+
+    try {
+      await addProduction(newProduction);
+      setFormData(prev => ({ ...prev, quantity: "" }));
+      showToast(`✅ Production added! 📦 +${quantity} plates`, 'success');
+    } catch (err) {
+      showToast("Failed to add production", "error");
+    }
+  };
+
+  const availableSizesForSummary = ['6-inch', '8-inch', '10-inch', '12-inch'];
+
+  const getSummaryData = () => {
+    let filteredData = [];
+    const todayFormatted = formatDate(summaryDate);
+
+    switch (summaryView) {
+      case 'daily':
+        filteredData = (productionHistory || []).filter(item => item.date === todayFormatted);
+        break;
+
+      case 'weekly':
+        const weekStart = summaryDate.startOf('week');
+        const weekEnd = summaryDate.endOf('week');
+        filteredData = (productionHistory || []).filter(item => {
+          const itemDate = dayjs(item.date, 'DD-MM-YYYY');
+          return itemDate && itemDate >= weekStart && itemDate <= weekEnd;
+        });
+        break;
+
+      case 'monthly':
+        const month = summaryDate.month() + 1;
+        const year = summaryDate.year();
+        filteredData = (productionHistory || []).filter(item => {
+          const parts = item.date.split('-');
+          return parseInt(parts[1]) === month && parseInt(parts[2]) === year;
+        });
+        break;
+      default:
+        break;
+    }
+
+    const bySize = {};
+    let total = 0;
+    availableSizesForSummary.forEach(size => {
+      const sizeTotal = filteredData
+        .filter(item => item.size === size)
+        .reduce((sum, item) => sum + item.quantity, 0);
+      bySize[size] = sizeTotal;
+      total += sizeTotal;
+    });
+
+    return { total, bySize };
+  };
+
+  const summaryData = getSummaryData();
+
+  // Existing helpers...
   const getProductDetailsForSize = (size) => {
     const productObj = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
     const productName = productObj ? productObj.name : '';
