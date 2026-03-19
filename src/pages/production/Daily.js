@@ -56,7 +56,55 @@ const Production = () => {
   const [showSummaryDatePicker, setShowSummaryDatePicker] = useState(false);
 
   // Production history from context
-  const { productionHistory, productionTargets, deleteProduction } = useAppContext();
+  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts, employees, productionStats } = useAppContext();
+  const { today: todayCount, week, month, stock, todayBySize, weekBySize, monthBySize, availableSizes: sizesList } = productionStats || {};
+
+  // Production Entry Form State
+  const [productionDate, setProductionDate] = useState(dayjs());
+  const [showProductionDatePicker, setShowProductionDatePicker] = useState(false);
+  const [formData, setFormData] = useState({
+    product: "",
+    size: "",
+    quantity: "",
+    grade: "A",
+    operator: ""
+  });
+
+  // DYNAMIC OPERATORS FROM EMPLOYEES
+  const operators = React.useMemo(() => {
+    return (employees || [])
+      .filter(e => e.department === "Operator" || e.department === "Machine operator" || e.department === "Others")
+      .map(e => e.name);
+  }, [employees]);
+
+  // DERIVE DYNAMIC PRODUCTS FROM DATABASE
+  const productOptions = React.useMemo(() => {
+    if (!dbProducts || dbProducts.length === 0) return [];
+    const unique = {};
+    dbProducts.forEach(p => {
+      if (!unique[p.name]) unique[p.name] = { name: p.name, sizes: [] };
+      if (!unique[p.name].sizes.includes(p.size)) unique[p.name].sizes.push(p.size);
+    });
+    return Object.values(unique);
+  }, [dbProducts]);
+
+  // Initial form defaults
+  useEffect(() => {
+    if (operators.length > 0 && !formData.operator) {
+      setFormData(prev => ({ ...prev, operator: operators[0] }));
+    }
+  }, [operators, formData.operator]);
+
+  useEffect(() => {
+    if (productOptions.length > 0 && !formData.product) {
+      const firstProd = productOptions[0];
+      setFormData(prev => ({ 
+        ...prev, 
+        product: firstProd.name,
+        size: firstProd.sizes[0] || ""
+      }));
+    }
+  }, [productOptions, formData.product]);
 
 
 
@@ -471,6 +519,55 @@ const Production = () => {
 
 
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+  };
+
+  const handleAddProduction = async () => {
+    if (!formData.quantity || parseInt(formData.quantity) <= 0) {
+      showNotificationMessage("Please enter valid quantity", 'error');
+      return;
+    }
+
+    const quantity = parseInt(formData.quantity);
+    const now = dayjs();
+    const timeString = now.format('hh:mm A');
+
+    const newProduction = {
+      date: formatDate(productionDate),
+      product: formData.product,
+      size: formData.size,
+      quantity: quantity,
+      grade: formData.grade,
+      operator: formData.operator,
+      time: timeString,
+      status: "completed"
+    };
+
+    try {
+      await addProduction(newProduction);
+      setFormData({
+        ...formData,
+        quantity: ""
+      });
+      showNotificationMessage(
+        `✅ Production added! 📦 +${quantity} plates (${formData.size})`,
+        'success'
+      );
+    } catch (err) {
+      showNotificationMessage("Failed to add production", "error");
+    }
+  };
+
+  const getSizesForProduct = () => {
+    const product = productOptions.find(p => p.name === formData.product);
+    return product ? product.sizes : [];
+  };
+
   const handleDeleteProduction = (id) => {
     setProductionToDelete(id);
     setShowDeleteConfirm(true);
@@ -490,6 +587,7 @@ const Production = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.date-picker-container')) {
+        setShowProductionDatePicker(false);
         setShowSummaryDatePicker(false);
         setShowStartDatePicker(false);
         setShowEndDatePicker(false);
@@ -664,14 +762,129 @@ const Production = () => {
       )}
 
       {/* --- DASHBOARD SECTION --- */}
-      {/* --- DASHBOARD SECTION - MOVED TO PRODUCTION PLAN --- */}
+      {/* --- PREMIUM DASHBOARD SECTION --- */}
       <div className="dashboard-content-main">
-        {/* Removed stats grid and entry form as per user request */}
+        
+        {/* Stats Grid - Premium Version */}
+        <div className="premium-stats-grid">
+          <div className="premium-stat-card today">
+            <div className="p-stat-info">
+              <span className="p-stat-label">Today's Production</span>
+              <div className="p-stat-value">{(todayCount || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {(sizesList || []).map(size => (
+                  <span key={size} className="breakdown-tag">{size.split('-')[0]}: {todayBySize?.[size] || 0}</span>
+                ))}
+              </div>
+            </div>
+          </div>
 
+          <div className="premium-stat-card week">
+            <div className="p-stat-info">
+              <span className="p-stat-label">Last 7 Days</span>
+              <div className="p-stat-value">{(week || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {(sizesList || []).map(size => (
+                  <span key={size} className="breakdown-tag">{size.split('-')[0]}: {weekBySize?.[size] || 0}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="premium-stat-card month">
+            <div className="p-stat-info">
+              <span className="p-stat-label">This Month</span>
+              <div className="p-stat-value">{(month || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {(sizesList || []).map(size => (
+                  <span key={size} className="breakdown-tag">{size.split('-')[0]}: {monthBySize?.[size] || 0}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="premium-stat-card stock">
+            <div className="p-stat-info">
+              <span className="p-stat-label">Total Produced</span>
+              <div className="p-stat-value">{(stock || 0).toLocaleString()}</div>
+              <span className="p-stat-tag">All time</span>
+            </div>
+          </div>
+        </div>
 
         <div className="production-main-grid">
-          {/* Removed entry form as per user request */}
+          
+          {/* New Production Entry Form - Premium Version */}
+          <div className="production-form-section">
+            <div className="premium-entry-card">
+              <div className="card-header entry-header">
+                <h3>
+                  <span className="material-symbols-outlined">add_circle</span>
+                  New Production Entry
+                </h3>
+              </div>
+              <div className="card-body">
+                <div className="entry-form-premium">
+                  <div className="form-group-premium">
+                    <label>Production Date</label>
+                    <div className="date-picker-container">
+                      <button className="premium-input-btn" onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}>
+                        <span className="material-symbols-outlined">event</span>
+                        {formatDate(productionDate)}
+                      </button>
+                      {showProductionDatePicker && (
+                        <div className="date-dropdown mui-calendar-dropdown">
+                          <CalendarPicker selectedDate={productionDate} onDateChange={(date) => { setProductionDate(date); setShowProductionDatePicker(false); }} onClose={() => setShowProductionDatePicker(false)} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
+                  <div className="form-row-premium">
+                    <div className="form-group-premium">
+                      <label>Product</label>
+                      <select name="product" value={formData.product} onChange={handleInputChange} className="premium-select">
+                        {productOptions.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group-premium">
+                      <label>Size</label>
+                      <select name="size" value={formData.size} onChange={handleInputChange} className="premium-select">
+                        {getSizesForProduct().map(size => <option key={size} value={size}>{size}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-group-premium">
+                    <label>Quantity (pcs)</label>
+                    <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} placeholder="Enter quantity..." className="premium-input" />
+                  </div>
+
+                  <div className="form-row-premium">
+                    <div className="form-group-premium">
+                      <label>Grade</label>
+                      <select name="grade" value={formData.grade} onChange={handleInputChange} className="premium-select">
+                        <option value="A">Grade A</option>
+                        <option value="B">Grade B</option>
+                        <option value="C">Grade C</option>
+                      </select>
+                    </div>
+                    <div className="form-group-premium">
+                      <label>Operator</label>
+                      <select name="operator" value={formData.operator} onChange={handleInputChange} className="premium-select">
+                        {operators.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <button className="btn-premium-submit" onClick={handleAddProduction}>
+                    <span className="material-symbols-outlined">rocket_launch</span>
+                    SUBMIT PRODUCTION
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="production-summary-section">
             <div className="premium-card">

@@ -14,19 +14,8 @@ import 'jspdf-autotable';
 
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
-  const { products: dbProducts, productionTargets, fetchTargets, addProduction, employees, productionStats } = useAppContext();
+  const { products: dbProducts, productionTargets, fetchTargets, deleteProduction, employees, productionStats } = useAppContext();
   const { today: todayCount, week, month, stock, todayBySize, weekBySize, monthBySize, availableSizes: sizesList } = productionStats || {};
-  
-  // ===== PRODUCTION ENTRY FORM STATE =====
-  const [productionDate, setProductionDate] = useState(dayjs());
-  const [showProductionDatePicker, setShowProductionDatePicker] = useState(false);
-  const [entryFormData, setEntryFormData] = useState({
-    product: "",
-    size: "",
-    quantity: "",
-    grade: "A",
-    operator: ""
-  });
   
   // ===== TARGET ENTRY FORM STATE =====
   const [selectedProduct, setSelectedProduct] = useState('');
@@ -83,24 +72,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       .map(p => p.size);
   }, [selectedProduct, uniqueProducts, dbProducts]);
 
-  // Initial form defaults
-  useEffect(() => {
-    if (operators.length > 0 && !entryFormData.operator) {
-      setEntryFormData(prev => ({ ...prev, operator: operators[0] }));
-    }
-  }, [operators, entryFormData.operator]);
 
-  useEffect(() => {
-    if (uniqueProducts.length > 0 && !entryFormData.product) {
-      const firstProd = uniqueProducts[0];
-      const productObj = dbProducts.find(p => p.name === firstProd.name);
-      setEntryFormData(prev => ({ 
-        ...prev, 
-        product: firstProd.name,
-        size: productObj ? productObj.size : ""
-      }));
-    }
-  }, [uniqueProducts, dbProducts, entryFormData.product]);
 
   // ===== PRODUCTION DATA STATE =====
   const [loading, setLoading] = useState(false);
@@ -285,80 +257,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
 
 
-  // ===== NEW PRODUCTION ENTRY HANDLERS =====
-  const handleEntryInputChange = (e) => {
-    const { name, value } = e.target;
-    setEntryFormData({
-      ...entryFormData,
-      [name]: value
-    });
-  };
 
-  const handleAddProductionEntry = async () => {
-    if (!entryFormData.quantity || parseInt(entryFormData.quantity) <= 0) {
-      showToast("Please enter valid quantity", 'error');
-      return;
-    }
-
-    const quantity = parseInt(entryFormData.quantity);
-    const now = dayjs();
-    const timeString = now.format('hh:mm A');
-
-    const d = productionDate.toDate();
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    const formattedDate = `${day}-${month}-${year}`;
-
-    const newProduction = {
-      date: formattedDate,
-      product: entryFormData.product,
-      size: entryFormData.size,
-      quantity: quantity,
-      grade: entryFormData.grade,
-      operator: entryFormData.operator,
-      time: timeString,
-      status: "completed"
-    };
-
-    try {
-      setLoading(true);
-      await addProduction(newProduction);
-      setEntryFormData({
-        ...entryFormData,
-        quantity: ""
-      });
-      showToast(`✅ Production added! 📦 +${quantity} plates`, 'success');
-    } catch (err) {
-      console.error("Error adding production:", err);
-      showToast("Failed to add production", 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getEntrySizesForProduct = () => {
-    const product = dbProducts?.reduce((acc, p) => {
-      if (!acc[p.name]) acc[p.name] = [];
-      if (!acc[p.name].includes(p.size)) acc[p.name].push(p.size);
-      return acc;
-    }, {})[entryFormData.product];
-    return product || [];
-  };
-
-  const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
-    <div className="calendar-wrapper">
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <DateCalendar
-          value={selectedDate}
-          onChange={(newDate) => {
-            onDateChange(newDate);
-            onClose();
-          }}
-        />
-      </LocalizationProvider>
-    </div>
-  );
 
   // ===== FILTERED DATA =====
   const filteredData = (productionTargets || []).filter(item => {
@@ -745,74 +644,29 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           </div>
         </div>
 
-        {/* ===== STATS DASHBOARD (Moved from Daily) ===== */}
-        <div className="production-stats-grid" style={{ marginBottom: '30px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
-          <div className="pp-stat-card today" style={{ background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderLeft: '5px solid #10b981' }}>
-            <div className="pp-stat-info">
-              <span className="pp-stat-label" style={{ color: '#64748b', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>Today's Production</span>
-              <div className="pp-stat-value" style={{ fontSize: '24px', fontWeight: '800', margin: '8px 0' }}>{(todayCount || 0).toLocaleString()}</div>
-              <div className="pp-stat-breakdown" style={{ display: 'flex', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
-                {(sizesList || []).map(size => (
-                  <span key={size} style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px' }}>{size.split('-')[0]}: {todayBySize?.[size] || 0}</span>
-                ))}
-              </div>
+        {/* Plan Summary Section - Premium Version */}
+        <div className="premium-stats-grid plan-summary">
+          <div className="premium-stat-card today"> {/* Using 'today' class for color consistency or 'target' if added to CSS */}
+            <div className="p-stat-info">
+              <span className="p-stat-label">Total Target</span>
+              <div className="p-stat-value">{(totalTarget || 0).toLocaleString()}</div>
+              <span className="p-stat-tag">Units</span>
             </div>
           </div>
 
-          <div className="pp-stat-card week" style={{ background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderLeft: '5px solid #3b82f6' }}>
-            <div className="pp-stat-info">
-              <span className="pp-stat-label" style={{ color: '#64748b', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>Last 7 Days</span>
-              <div className="pp-stat-value" style={{ fontSize: '24px', fontWeight: '800', margin: '8px 0' }}>{(week || 0).toLocaleString()}</div>
-              <div className="pp-stat-breakdown" style={{ display: 'flex', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
-                {(sizesList || []).map(size => (
-                  <span key={size} style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px' }}>{size.split('-')[0]}: {weekBySize?.[size] || 0}</span>
-                ))}
-              </div>
+          <div className="premium-stat-card week">
+            <div className="p-stat-info">
+              <span className="p-stat-label">Produced</span>
+              <div className="p-stat-value">{(totalProduced || 0).toLocaleString()}</div>
+              <span className="p-stat-tag">{overallProgress}%</span>
             </div>
           </div>
 
-          <div className="pp-stat-card month" style={{ background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderLeft: '5px solid #f59e0b' }}>
-            <div className="pp-stat-info">
-              <span className="pp-stat-label" style={{ color: '#64748b', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>This Month</span>
-              <div className="pp-stat-value" style={{ fontSize: '24px', fontWeight: '800', margin: '8px 0' }}>{(month || 0).toLocaleString()}</div>
-              <div className="pp-stat-breakdown" style={{ display: 'flex', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
-                {(sizesList || []).map(size => (
-                  <span key={size} style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px' }}>{size.split('-')[0]}: {monthBySize?.[size] || 0}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="pp-stat-card stock" style={{ background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderLeft: '5px solid #8b5cf6' }}>
-            <div className="pp-stat-info">
-              <span className="pp-stat-label" style={{ color: '#64748b', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>Total Produced</span>
-              <div className="pp-stat-value" style={{ fontSize: '24px', fontWeight: '800', margin: '8px 0' }}>{(stock || 0).toLocaleString()}</div>
-              <span className="pp-stat-tag" style={{ fontSize: '11px', color: '#94a3b8' }}>All time</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Existing Summary Cards for Plan */}
-        <div className="production-stats">
-          <div className="prod-stat-card">
-            <p className="prod-stat-label">🎯 TOTAL TARGET</p>
-            <div className="prod-stat-value">
-              <h3 className="prod-stat-number">{(totalTarget || 0).toLocaleString()}</h3>
-              <span className="prod-stat-badge badge-target">Units</span>
-            </div>
-          </div>
-          <div className="prod-stat-card">
-            <p className="prod-stat-label">⚡ PRODUCED</p>
-            <div className="prod-stat-value">
-              <h3 className="prod-stat-number" style={{ color: '#155724' }}>{(totalProduced || 0).toLocaleString()}</h3>
-              <span className="prod-stat-badge badge-progress">{overallProgress}%</span>
-            </div>
-          </div>
-          <div className="prod-stat-card">
-            <p className="prod-stat-label">⏳ BALANCE</p>
-            <div className="prod-stat-value">
-              <h3 className="prod-stat-number" style={{ color: '#856404' }}>{(totalRemaining || 0).toLocaleString()}</h3>
-              <span className="prod-stat-badge badge-remaining">To do</span>
+          <div className="premium-stat-card month">
+            <div className="p-stat-info">
+              <span className="p-stat-label">Balance</span>
+              <div className="p-stat-value">{(totalRemaining || 0).toLocaleString()}</div>
+              <span className="p-stat-tag">To do</span>
             </div>
           </div>
         </div>
