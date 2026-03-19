@@ -521,17 +521,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             View Today Production
           </button>
         </div>
-Daily.js:125 Uncaught ReferenceError: Cannot access '$' before initialization
-    at Daily.js:125:71
-    at Array.filter (<anonymous>)
-    at Daily.js:125:42
-    at vT (Daily.js:217:23)
-    at ei (react-dom-client.production.js:4351:21)
-    at Ko (react-dom-client.production.js:6497:15)
-    at iA (react-dom-client.production.js:7473:14)
-    at cc (react-dom-client.production.js:11305:14)
-    at Ac (react-dom-client.production.js:11182:37)
-    at oc (react-dom-client.production.js:11163:7)
+
         {/* Central Entry Form (Target Setting Only) */}
         <div className="target-entry-section" style={{ maxWidth: '600px', margin: '0 auto 30px' }}>
           <h3 style={{ borderBottom: '2px solid #2e8b66' }}>Set Production Target by Size</h3>
