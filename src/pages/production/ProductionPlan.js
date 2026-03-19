@@ -16,7 +16,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     products: dbProducts, 
     productionTargets, 
     fetchTargets, 
-    addProduction, 
     employees
   } = useAppContext();
 
@@ -87,9 +86,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   // Custom Modals State
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [itemToUpdate, setItemToUpdate] = useState(null);
-  const [updateVal, setUpdateVal] = useState('');
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -183,47 +179,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     }
   };
 
-  // ===== HANDLE MANUAL PRODUCTION UPDATE =====
-  const handleProducedUpdate = async (itemId, newProducedQty) => {
-    try {
-      const produced = parseInt(newProducedQty) || 0;
-      
-      // Calculate sync diff BEFORE update
-      const target = productionTargets.find(t => t.id === itemId);
-      const prevProduced = target ? (target.producedQty || 0) : 0;
-      const diff = produced - prevProduced;
 
-      // Update Target DB
-      await productionTargetApi.updateProduced(itemId, produced);
-      
-      // Add History Log IF there is a positive change for better Audit/Dashboard sync
-      if (diff > 0 && target) {
-        try {
-          // We use a internal-only flag or just standard addProduction
-          // This will sync back but that's okay as it's the SAME number
-          await addProduction({
-            product: target.productName,
-            size: target.productSize,
-            quantity: diff,
-            operator: target.operator || 'Manual Update',
-            grade: 'A',
-            date: new Date().toLocaleDateString('en-IN').replace(/\//g, '-') // DD-MM-YYYY
-          }, true); // SKIP sync as we just did it manually above
-        } catch (syncErr) {
-          console.warn("Log sync failed from Plan:", syncErr);
-        }
-      }
-
-      await fetchTargets();
-      setShowUpdateModal(false);
-      setItemToUpdate(null);
-      setUpdateVal('');
-      showToast("Production updated and synced to dashboard", 'success');
-    } catch (err) {
-      console.error("Error updating production:", err);
-      showToast("Failed to update production", 'error');
-    }
-  };
 
   // ===== HANDLE CLEAR ALL DATA =====
   const handleClearAllData = async () => {
@@ -741,17 +697,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                         <td>
                           <div className="action-buttons">
                             <button
-                              className="icon-btn-small edit-btn"
-                              onClick={() => {
-                                setItemToUpdate(item);
-                                setUpdateVal(item.producedQty);
-                                setShowUpdateModal(true);
-                              }}
-                              title="Update Production"
-                            >
-                              <span className="material-symbols-outlined">edit_square</span>
-                            </button>
-                            <button
                               className="icon-btn-small delete-btn"
                               onClick={() => handleDeleteTarget(item.id)}
                               title="Delete Target"
@@ -791,14 +736,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                   <tbody>
                     {filteredData.map(item => (
                       <tr key={`mob-${item.id}`}>
-                        <td
-                          className="mobile-size-cell"
-                          onClick={() => {
-                            setItemToUpdate(item);
-                            setUpdateVal(item.producedQty);
-                            setShowUpdateModal(true);
-                          }}
-                        >
+                        <td className="mobile-size-cell">
                           <strong>{item.productSize}</strong>
                         </td>
                         <td className="text-center">{item.targetQty.toLocaleString()}</td>
@@ -810,17 +748,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                         </td>
                         <td className="text-center">
                           <div className="mobile-actions">
-                            <button
-                              className="mobile-row-edit-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setItemToUpdate(item);
-                                setUpdateVal(item.producedQty);
-                                setShowUpdateModal(true);
-                              }}
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#2e8b66' }}>edit_square</span>
-                            </button>
                             <button
                               className="mobile-row-delete-btn"
                               onClick={(e) => {
@@ -952,48 +879,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           </div>
         )}
 
-        {/* Update Production Modal */}
-        {showUpdateModal && itemToUpdate && (
-          <div className="report-modal-overlay">
-            <div className="report-modal update-prod-modal">
-              <div className="modal-icon info">
-                <span className="material-symbols-outlined">inventory_2</span>
-              </div>
-              <h3 className="report-modal-title">Update Produced Quantity</h3>
-              <div className="item-info">
-                <strong>{itemToUpdate.productName}</strong> - <span>{itemToUpdate.productSize}</span>
-              </div>
-              
-              <div className="update-input-section">
-                <label>Produced Qty (Total)</label>
-                <div className="premium-input-wrapper">
-                  <input 
-                    type="number" 
-                    value={updateVal} 
-                    onChange={(e) => setUpdateVal(e.target.value)}
-                    className="premium-modal-input"
-                    autoFocus
-                  />
-                  <span className="input-unit">Units</span>
-                </div>
-                <p className="target-hint">Target: {itemToUpdate.targetQty} units</p>
-              </div>
 
-              <div className="report-modal-actions">
-                <button className="modal-btn cancel-btn" onClick={() => setShowUpdateModal(false)}>
-                  Cancel
-                </button>
-                <button className="modal-btn save-btn-premium" onClick={async () => {
-                  await handleProducedUpdate(itemToUpdate.id, updateVal);
-                  setShowUpdateModal(false);
-                  setItemToUpdate(null);
-                }}>
-                  Update Production
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -82,11 +82,10 @@ const Production = () => {
   };
 
 
-  const { 
-    productionHistory, 
-    productionTargets, 
+  const {
+    productionHistory,
     addProduction,
-    deleteProduction, 
+    deleteProduction,
     products: dbProducts, 
     employees, 
     productionStats 
@@ -260,24 +259,7 @@ const Production = () => {
     // Current Records
     const hist = productionHistory.map(item => ({ ...item, type: 'record' }));
 
-    // Targets with actual production as "Virtual Records"
-    const targetVirtuals = (productionTargets || [])
-      .filter(t => (t.producedQty || 0) > 0)
-      .map(t => ({
-        id: `target-${t._id || t.id}`,
-        date: formatDate(dayjs(t.createdAt || t.date)),
-        time: 'TARGET',
-        size: t.productSize,
-        quantity: t.producedQty,
-        grade: 'A',
-        operator: t.operator || 'N/A',
-        product: t.productName,
-        type: 'target'
-      }));
-
-    const combined = [...hist, ...targetVirtuals];
-
-    return combined.filter(item => {
+    return hist.filter(item => {
       const matchesSearch = !historySearch.trim() ||
         (item.product && item.product.toLowerCase().includes(historySearch.toLowerCase())) ||
         (item.operator && item.operator.toLowerCase().includes(historySearch.toLowerCase()));
@@ -286,8 +268,8 @@ const Production = () => {
 
       return matchesSearch && matchesSize;
     }).sort((a, b) => {
-      const dateTimeA = dayjs(`${a.date} ${a.time === 'TARGET' ? '00:01 AM' : a.time}`, 'DD-MM-YYYY hh:mm A');
-      const dateTimeB = dayjs(`${b.date} ${b.time === 'TARGET' ? '00:01 AM' : b.time}`, 'DD-MM-YYYY hh:mm A');
+      const dateTimeA = dayjs(`${a.date} ${a.time}`, 'DD-MM-YYYY hh:mm A');
+      const dateTimeB = dayjs(`${b.date} ${b.time}`, 'DD-MM-YYYY hh:mm A');
       return dateTimeB.unix() - dateTimeA.unix();
     });
   };
@@ -575,7 +557,7 @@ const Production = () => {
                 <tbody>
                   {filteredHistory.length > 0 ? (
                     filteredHistory.map((item) => (
-                      <tr key={item.id} className={item.type === 'target' ? 'row-target-sync' : ''}>
+                      <tr key={item.id}>
                         <td className="bold">{item.date}</td>
                         <td>
                           <span className={`time-badge ${item.type}`}>
@@ -585,21 +567,16 @@ const Production = () => {
                         <td><span className="size-badge">{item.size}</span></td>
                         <td className="bold highlight">
                           {(item.quantity || 0).toLocaleString()}
-                          {item.type === 'target' && <span className="target-indicator"> (Plan)</span>}
                         </td>
                         <td><span className={`grade-badge ${item.grade.toLowerCase()}`}>{item.grade}</span></td>
                         <td>{item.operator}</td>
                         <td>
-                          {item.type === 'record' ? (
-                            isWithinLast2Days(item.date) ? (
-                              <button className="btn-delete" onClick={() => handleDeleteProduction(item.id)}>
-                                <span className="material-symbols-outlined">delete</span>
-                              </button>
-                            ) : (
-                              <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>Locked</span>
-                            )
+                          {isWithinLast2Days(item.date) ? (
+                            <button className="btn-delete" onClick={() => handleDeleteProduction(item.id)}>
+                              <span className="material-symbols-outlined">delete</span>
+                            </button>
                           ) : (
-                            <span className="sync-badge">Auto Sync</span>
+                            <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>Locked</span>
                           )}
                         </td>
                       </tr>
