@@ -301,6 +301,14 @@ const Employees = () => {
 
   return (
     <div className={`employees-container ${showAddModal || showEditModal || showDeleteModal || showViewModal ? 'modal-open' : ''}`}>
+      {/* Glass Loading Overlay */}
+      {loading && (
+        <div className="glass-loading-overlay">
+          <div className="premium-spinner"></div>
+          <span>Syncing employee records...</span>
+        </div>
+      )}
+
       {/* Feedback Toast */}
       {feedbackMessage && (
         <div className="feedback-toast">

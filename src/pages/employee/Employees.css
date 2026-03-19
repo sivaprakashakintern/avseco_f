@@ -2295,3 +2295,31 @@ to { transform: rotate(360deg); }
 animation: spin 1s linear infinite;
 display: inline-block;
 }
+
+/* ===== GLASS LOADING OVERLAY ===== */
+.glass-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  gap: 16px;
+  color: #006A4E;
+  font-weight: 700;
+}
+
+.premium-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e0f0e5;
+  border-top-color: #006A4E;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
