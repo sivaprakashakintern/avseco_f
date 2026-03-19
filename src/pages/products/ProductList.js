@@ -8,9 +8,8 @@ import { useAppContext } from "../../context/AppContext.js";
 
 const ProductList = () => {
   const { products, fetchData } = useAppContext();
-  const [viewMode, setViewMode] = useState("grid");
+  // Simplified states - removed search and view toggle
   const [selectedSize, setSelectedSize] = useState("All Sizes");
-  const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -58,10 +57,7 @@ const ProductList = () => {
     const group = productGroups[name];
     return group.some(p => {
       const matchesSize = selectedSize === "All Sizes" || p.size === selectedSize;
-      const matchesSearch = searchTerm === "" ||
-        (p.name && p.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (p.sku && p.sku.toLowerCase().includes(searchTerm.toLowerCase()));
-      return matchesSize && matchesSearch;
+      return matchesSize;
     });
   });
 
@@ -208,7 +204,6 @@ const ProductList = () => {
   // Clear filters
   const clearFilters = () => {
     setSelectedSize("All Sizes");
-    setSearchTerm("");
   };
 
   // Format currency
@@ -275,113 +270,10 @@ const ProductList = () => {
         </div>
       </div>
 
-      {/* ===== SEARCH AND FILTERS ===== */}
-      <div className="filters-section">
-        <div className="search-box">
-          <span className="material-symbols-outlined search-icon">search</span>
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-          {searchTerm && (
-            <button className="clear-search" onClick={() => setSearchTerm("")}>
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          )}
-        </div>
+      {/* Removed Search, View Toggles and Filter Badges as per user request */}
 
-        <div className="view-toggle">
-          <button
-            className={`view-btn ${viewMode === "list" ? "active" : ""}`}
-            onClick={() => setViewMode("list")}
-            title="List View"
-          >
-            <span className="material-symbols-outlined">view_list</span>
-          </button>
-
-          <button
-            className={`view-btn ${viewMode === "grid" ? "active" : ""}`}
-            onClick={() => setViewMode("grid")}
-            title="Grid View"
-          >
-            <span className="material-symbols-outlined">grid_view</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Badge */}
-      {(searchTerm) && (
-        <div className="filter-badge-container">
-          <span className="filter-badge">
-            Filtered: {uniqueProductNames.length} products
-            <button className="clear-filters-btn" onClick={clearFilters}>
-              Clear All
-            </button>
-          </span>
-        </div>
-      )}
-
-      {/* ===== LIST VIEW ===== */}
-      {viewMode === "list" && (
-        <div className="table-wrapper">
-          <table className="product-table">
-            <thead>
-              <tr>
-                <th>Product Name</th>
-                <th>Variations</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {uniqueProductNames.length > 0 ? (
-                uniqueProductNames.map((name) => (
-                  <tr key={name}>
-                    <td>
-                      <div className="product-info">
-                        <div className="product-text-avatar">
-                          {getAbbr(name)}
-                        </div>
-                        <p className="product-name">{name}</p>
-                      </div>
-                    </td>
-                    <td>{productGroups[name].length} Sizes Available</td>
-                    <td>
-                      <button
-                        className="primary-btn"
-                        onClick={() => setViewingProductName(name)}
-                      >
-                        View Details
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="3" className="no-data">
-                    <div className="empty-state">
-                      <span className="material-symbols-outlined empty-icon">
-                        category
-                      </span>
-                      <h4>No products found</h4>
-                      <button className="primary-btn" onClick={handleAddProduct}>
-                        Add Product
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ===== GRID VIEW ===== */}
-      {viewMode === "grid" && (
-        <div className="product-grid">
+      {/* ===== GRID VIEW (Default) ===== */}
+      <div className="product-grid">
           {uniqueProductNames.length > 0 ? (
             uniqueProductNames.map((name) => (
               <div key={name} className="product-card" onClick={() => setViewingProductName(name)} style={{ cursor: "pointer" }}>
@@ -390,9 +282,33 @@ const ProductList = () => {
                 </div>
 
                 <div className="product-card-content">
-                  <h3 className="product-card-title">{name}</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <h3 className="product-card-title">{name}</h3>
+                    <button 
+                      className="action-btn delete" 
+                      style={{ padding: '4px', height: '32px', width: '32px' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Delete all variations of ${name}?`)) {
+                          const variants = productGroups[name] || [];
+                          Promise.all(variants.map(v => productsApi.delete(v._id)))
+                            .then(() => {
+                              fetchProducts();
+                              setFeedbackMessage(`Product group deleted`);
+                              setTimeout(() => setFeedbackMessage(""), 3000);
+                            })
+                            .catch(err => {
+                              console.error("Error deleting group:", err);
+                              setFeedbackMessage("Error deleting product group");
+                            });
+                        }
+                      }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
+                    </button>
+                  </div>
                   <div className="product-card-details">
-                    <span className="product-card-size">{productGroups[name].length} Sizes</span>
+                    <span className="product-card-size">{productGroups[name]?.length || 0} Sizes</span>
                   </div>
                 </div>
               </div>
@@ -407,7 +323,6 @@ const ProductList = () => {
             </div>
           )}
         </div>
-      )}
 
       {/* ===== PRODUCT DETAILS MODAL (Inner View) ===== */}
       {viewingProductName && (
@@ -416,7 +331,31 @@ const ProductList = () => {
             <div className="modal-header">
               <div className="header-info">
                 <h3>{viewingProductName}</h3>
-                <p>Manage sizes and pricing for this product</p>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <p style={{ margin: 0 }}>Manage sizes and pricing</p>
+                  <button 
+                    className="action-btn delete" 
+                    title="Delete All Sizes"
+                    onClick={() => {
+                      if (window.confirm(`Are you sure you want to delete all variations of ${viewingProductName}?`)) {
+                        const variants = productGroups[viewingProductName] || [];
+                        Promise.all(variants.map(v => productsApi.delete(v._id)))
+                          .then(() => {
+                            fetchProducts();
+                            setViewingProductName(null);
+                            setFeedbackMessage(`Product group deleted`);
+                            setTimeout(() => setFeedbackMessage(""), 3000);
+                          })
+                          .catch(err => {
+                            console.error("Error deleting group:", err);
+                            setFeedbackMessage("Error deleting product group");
+                          });
+                      }
+                    }}
+                  >
+                    <span className="material-symbols-outlined">delete_sweep</span>
+                  </button>
+                </div>
               </div>
               <button className="modal-close" onClick={() => setViewingProductName(null)}>
                 <span className="material-symbols-outlined">close</span>
@@ -429,13 +368,13 @@ const ProductList = () => {
                     <tr>
                       <th>Size</th>
                       <th>SKU</th>
-                      <th>Cost Price (₹)</th>
-                      <th>Selling Price (₹)</th>
+                      <th>Cost (₹)</th>
+                      <th>Price (₹)</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {productGroups[viewingProductName].map(variant => (
+                    {(productGroups[viewingProductName] || []).map(variant => (
                       <tr key={variant.id}>
                         <td><strong>{variant.size}</strong></td>
                         <td>{variant.sku}</td>
