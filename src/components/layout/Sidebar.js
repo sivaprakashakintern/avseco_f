@@ -89,8 +89,8 @@ const Sidebar = () => {
       label: "Production",
       path: "/production",
       children: [
-        { label: "Production Plan", path: "/production/plan" },
-        { label: "Daily Production", path: "/production/daily" }
+        { label: "Daily Production", path: "/production/daily" },
+        { label: "Production Plan", path: "/production/plan" }
       ]
     },
 

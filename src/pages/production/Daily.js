@@ -56,19 +56,6 @@ const Production = () => {
   const [productionToDelete, setProductionToDelete] = useState(null);
   const [showSummaryDatePicker, setShowSummaryDatePicker] = useState(false);
 
-  // Date selection for adding production
-  const [productionDate, setProductionDate] = useState(dayjs());
-  const [showProductionDatePicker, setShowProductionDatePicker] = useState(false);
-
-  // Form state for production entry
-  const [formData, setFormData] = useState({
-    product: "Areca Leaf Plate",
-    size: "6-inch",
-    quantity: "",
-    grade: "A",
-    operator: "Rajesh"
-  });
-
   // Production history from context
   const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts, employees } = useAppContext();
 
@@ -101,19 +88,7 @@ const Production = () => {
     return Object.values(uniqueProducts);
   }, [dbProducts]);
 
-  // Update default product if database has products
-  useEffect(() => {
-    if (productOptions.length > 0) {
-      setFormData(prev => ({
-        ...prev,
-        product: productOptions[0].name,
-        size: productOptions[0].sizes[0] || "",
-        operator: operatorList[0]
-      }));
-    }
-  }, [productOptions, operatorList]);
-
-  // Stats state - Initialize with zeros
+  // ANALYTICS STATS calculation from history only
   const [stats, setStats] = useState({
     today: 0,
     week: 0,
@@ -602,48 +577,6 @@ const Production = () => {
 
 
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
-  const handleAddProduction = () => {
-    if (!formData.quantity || parseInt(formData.quantity) <= 0) {
-      showNotificationMessage("Please enter valid quantity", 'error');
-      return;
-    }
-
-    const quantity = parseInt(formData.quantity);
-    const now = dayjs();
-    const timeString = now.format('hh:mm A');
-
-    const newProduction = {
-      date: formatDate(productionDate),
-      product: formData.product,
-      size: formData.size,
-      quantity: quantity,
-      grade: formData.grade,
-      operator: formData.operator,
-      time: timeString,
-      status: "completed"
-    };
-
-    addProduction(newProduction);
-
-    setFormData({
-      ...formData,
-      quantity: ""
-    });
-
-    showNotificationMessage(
-      `✅ Production added for ${formatDate(productionDate)}! 📦 +${quantity} plates (${formData.size})`,
-      'success'
-    );
-  };
-
   const handleDeleteProduction = (id) => {
     setProductionToDelete(id);
     setShowDeleteConfirm(true);
@@ -841,134 +774,14 @@ const Production = () => {
       )}
 
       {/* --- DASHBOARD SECTION --- */}
+      {/* --- DASHBOARD SECTION - MOVED TO PRODUCTION PLAN --- */}
       <div className="dashboard-content-main">
-        <div className="production-stats-grid">
-          <div className="stat-card today">
-            <div className="stat-icon">
-              <span className="material-symbols-outlined">today</span>
-            </div>
-            <div className="stat-info">
-              <span className="stat-label">Today's Production</span>
-              <span className="stat-value">{(stats.today || 0).toLocaleString()}</span>
-              <div className="stat-breakdown">
-                {availableSizes.map(size => (
-                  <span key={size}>{size.split('-')[0]}: {stats.todayBySize[size] || 0}</span>
-                ))}
-              </div>
-            </div>
-          </div>
+        {/* Removed stats grid and entry form as per user request */}
 
-          <div className="stat-card week">
-            <div className="stat-icon">
-              <span className="material-symbols-outlined">date_range</span>
-            </div>
-            <div className="stat-info">
-              <span className="stat-label">Last 7 Days</span>
-              <span className="stat-value">{(stats.week || 0).toLocaleString()}</span>
-              <div className="stat-breakdown">
-                {availableSizes.map(size => (
-                  <span key={size}>{size.split('-')[0]}: {stats.weekBySize[size] || 0}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card month">
-            <div className="stat-icon">
-              <span className="material-symbols-outlined">calendar_month</span>
-            </div>
-            <div className="stat-info">
-              <span className="stat-label">This Month</span>
-              <span className="stat-value">{(stats.month || 0).toLocaleString()}</span>
-              <div className="stat-breakdown">
-                {availableSizes.map(size => (
-                  <span key={size}>{size.split('-')[0]}: {stats.monthBySize[size] || 0}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card stock">
-            <div className="stat-icon">
-              <span className="material-symbols-outlined">inventory_2</span>
-            </div>
-            <div className="stat-info">
-              <span className="stat-label">Total Produced</span>
-              <span className="stat-value">{(stats.stock || 0).toLocaleString()}</span>
-              <span className="stat-tag">All time</span>
-            </div>
-          </div>
-        </div>
 
         <div className="production-main-grid">
-          <div className="production-form-section">
-            <div className="premium-card">
-              <div className="card-header">
-                <h3>
-                  <span className="material-symbols-outlined">add_circle</span>
-                  New Production Entry
-                </h3>
-              </div>
-              <div className="card-body">
-                <div className="entry-form">
-                  <div className="form-group">
-                    <label>Production Date</label>
-                    <div className="date-picker-container">
-                      <button className="date-btn-large" onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}>
-                        <span className="material-symbols-outlined">event</span>
-                        {formatDate(productionDate)}
-                      </button>
-                      {showProductionDatePicker && (
-                        <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker selectedDate={productionDate} onDateChange={(date) => handleProductionDateSelect(date)} onClose={() => setShowProductionDatePicker(false)} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
+          {/* Removed entry form as per user request */}
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Product</label>
-                      <select name="product" value={formData.product} onChange={handleInputChange}>
-                        {productOptions.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Size</label>
-                      <select name="size" value={formData.size} onChange={handleInputChange}>
-                        {getSizesForProduct().map(size => <option key={size} value={size}>{size}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Quantity (pcs)</label>
-                    <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} placeholder="Enter quantity..." />
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Grade</label>
-                      <select name="grade" value={formData.grade} onChange={handleInputChange}>
-                        {grades.map(g => <option key={g} value={g}>Grade {g}</option>)}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Operator</label>
-                      <select name="operator" value={formData.operator} onChange={handleInputChange}>
-                        {operatorList.map(o => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  <button className="btn-add-production" onClick={handleAddProduction}>
-                    <span className="material-symbols-outlined">rocket_launch</span>
-                    SUBMIT PRODUCTION
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div className="production-summary-section">
             <div className="premium-card">

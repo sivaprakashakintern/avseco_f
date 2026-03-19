@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { formatDate } from '../../utils/dateUtils.js';
 import { useAppContext } from '../../context/AppContext.js';
 import { productionTargetApi } from '../../utils/api.js';
+import dayjs from 'dayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import './ProductionPlan.css';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -10,7 +14,19 @@ import 'jspdf-autotable';
 
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
-  const { products: dbProducts, productionTargets, fetchTargets, addProduction, employees } = useAppContext();
+  const { products: dbProducts, productionTargets, fetchTargets, addProduction, employees, productionStats, productionHistory } = useAppContext();
+  const { today: todayCount, week, month, stock, todayBySize, weekBySize, monthBySize, availableSizes: sizesList } = productionStats || {};
+  
+  // ===== PRODUCTION ENTRY FORM STATE =====
+  const [productionDate, setProductionDate] = useState(dayjs());
+  const [showProductionDatePicker, setShowProductionDatePicker] = useState(false);
+  const [entryFormData, setEntryFormData] = useState({
+    product: "",
+    size: "",
+    quantity: "",
+    grade: "A",
+    operator: ""
+  });
   
   // ===== TARGET ENTRY FORM STATE =====
   const [selectedProduct, setSelectedProduct] = useState('');
@@ -66,6 +82,25 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       .filter(p => p.name === productName)
       .map(p => p.size);
   }, [selectedProduct, uniqueProducts, dbProducts]);
+
+  // Initial form defaults
+  useEffect(() => {
+    if (operators.length > 0 && !entryFormData.operator) {
+      setEntryFormData(prev => ({ ...prev, operator: operators[0] }));
+    }
+  }, [operators, entryFormData.operator]);
+
+  useEffect(() => {
+    if (uniqueProducts.length > 0 && !entryFormData.product) {
+      const firstProd = uniqueProducts[0];
+      const productObj = dbProducts.find(p => p.name === firstProd.name);
+      setEntryFormData(prev => ({ 
+        ...prev, 
+        product: firstProd.name,
+        size: productObj ? productObj.size : ""
+      }));
+    }
+  }, [uniqueProducts, dbProducts, entryFormData.product]);
 
   // ===== PRODUCTION DATA STATE =====
   const [loading, setLoading] = useState(false);
@@ -249,6 +284,81 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   };
 
 
+
+  // ===== NEW PRODUCTION ENTRY HANDLERS =====
+  const handleEntryInputChange = (e) => {
+    const { name, value } = e.target;
+    setEntryFormData({
+      ...entryFormData,
+      [name]: value
+    });
+  };
+
+  const handleAddProductionEntry = async () => {
+    if (!entryFormData.quantity || parseInt(entryFormData.quantity) <= 0) {
+      showToast("Please enter valid quantity", 'error');
+      return;
+    }
+
+    const quantity = parseInt(entryFormData.quantity);
+    const now = dayjs();
+    const timeString = now.format('hh:mm A');
+
+    const d = productionDate.toDate();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const formattedDate = `${day}-${month}-${year}`;
+
+    const newProduction = {
+      date: formattedDate,
+      product: entryFormData.product,
+      size: entryFormData.size,
+      quantity: quantity,
+      grade: entryFormData.grade,
+      operator: entryFormData.operator,
+      time: timeString,
+      status: "completed"
+    };
+
+    try {
+      setLoading(true);
+      await addProduction(newProduction);
+      setEntryFormData({
+        ...entryFormData,
+        quantity: ""
+      });
+      showToast(`✅ Production added! 📦 +${quantity} plates`, 'success');
+    } catch (err) {
+      console.error("Error adding production:", err);
+      showToast("Failed to add production", 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getEntrySizesForProduct = () => {
+    const product = dbProducts?.reduce((acc, p) => {
+      if (!acc[p.name]) acc[p.name] = [];
+      if (!acc[p.name].includes(p.size)) acc[p.name].push(p.size);
+      return acc;
+    }, {})[entryFormData.product];
+    return product || [];
+  };
+
+  const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
+    <div className="calendar-wrapper">
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <DateCalendar
+          value={selectedDate}
+          onChange={(newDate) => {
+            onDateChange(newDate);
+            onClose();
+          }}
+        />
+      </LocalizationProvider>
+    </div>
+  );
 
   // ===== FILTERED DATA =====
   const filteredData = (productionTargets || []).filter(item => {
@@ -495,69 +605,135 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           </div>
         </div>
 
-        {/* Target Entry Form */}
-        <div className="target-entry-section">
-          <h3>Set Production Target by Size</h3>
-          <div className="target-form">
-            <div className="form-group">
-              <label>Select Product</label>
-              <select
-                value={selectedProduct}
-                onChange={handleProductChange}
-                className="form-select"
-              >
-                <option value="">-- Select Product --</option>
-                {uniqueProducts.map(product => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Target Entry Form & Production Entry Form Row */}
+        <div className="forms-grid-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+          {/* New Production Entry Form (Moved from Daily) */}
+          <div className="target-entry-section" style={{ margin: 0 }}>
+            <h3 style={{ borderBottom: '2px solid #3b82f6', color: '#1d4ed8' }}>
+              <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '8px' }}>add_circle</span>
+              New Production Entry
+            </h3>
+            <div className="target-form" style={{ gridTemplateColumns: '1fr' }}>
+              <div className="form-group">
+                <label>Production Date</label>
+                <div className="date-picker-container" style={{ position: 'relative' }}>
+                  <button className="form-input" style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}>
+                    <span className="material-symbols-outlined">event</span>
+                    {productionDate.format('DD-MM-YYYY')}
+                  </button>
+                  {showProductionDatePicker && (
+                    <div className="date-dropdown mui-calendar-dropdown" style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1000, background: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '8px' }}>
+                      <CalendarPicker selectedDate={productionDate} onDateChange={(date) => { setProductionDate(date); setShowProductionDatePicker(false); }} onClose={() => setShowProductionDatePicker(false)} />
+                    </div>
+                  )}
+                </div>
+              </div>
 
-            <div className="form-group">
-              <label>Select Size</label>
-              <select
-                value={selectedSize}
-                onChange={handleSizeChange}
-                className="form-select"
-              >
-                <option value="">-- Select Size --</option>
-                {availableSizes.map((size, index) => (
-                  <option key={index} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div className="form-group">
+                  <label>Product</label>
+                  <select name="product" value={entryFormData.product} onChange={handleEntryInputChange} className="form-select">
+                    {uniqueProducts.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Size</label>
+                  <select name="size" value={entryFormData.size} onChange={handleEntryInputChange} className="form-select">
+                    {getEntrySizesForProduct().map(size => <option key={size} value={size}>{size}</option>)}
+                  </select>
+                </div>
+              </div>
 
-            <div className="form-group">
-              <label>Assign Operator</label>
-              <select
-                value={selectedOperator}
-                onChange={(e) => setSelectedOperator(e.target.value)}
-                className="form-select"
-              >
-                {operators.map(op => (
-                  <option key={op} value={op}>{op}</option>
-                ))}
-              </select>
-            </div>
+              <div className="form-group">
+                <label>Quantity (pcs)</label>
+                <input type="number" name="quantity" value={entryFormData.quantity} onChange={handleEntryInputChange} placeholder="Enter quantity..." className="form-input" />
+              </div>
 
-            <div className="form-group">
-              <label>Target Quantity (Pieces)</label>
-              <input
-                type="number"
-                value={targetQty}
-                onChange={(e) => setTargetQty(e.target.value)}
-                placeholder="Enter target quantity"
-                className="form-input"
-                min="1"
-              />
-            </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div className="form-group">
+                  <label>Grade</label>
+                  <select name="grade" value={entryFormData.grade} onChange={handleEntryInputChange} className="form-select">
+                    <option value="A">Grade A</option>
+                    <option value="B">Grade B</option>
+                    <option value="C">Grade C</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Operator</label>
+                  <select name="operator" value={entryFormData.operator} onChange={handleEntryInputChange} className="form-select">
+                    {operators.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+              </div>
 
-            <div className="form-group">
-              <label>&nbsp;</label>
+              <button className="btn-add-target" style={{ backgroundColor: '#10b981' }} onClick={handleAddProductionEntry}>
+                <span className="material-symbols-outlined">rocket_launch</span>
+                SUBMIT PRODUCTION
+              </button>
+            </div>
+          </div>
+
+          {/* Original Target Entry Form */}
+          <div className="target-entry-section" style={{ margin: 0 }}>
+            <h3 style={{ borderBottom: '2px solid #2e8b66' }}>Set Production Target by Size</h3>
+            <div className="target-form" style={{ gridTemplateColumns: '1fr' }}>
+              <div className="form-group">
+                <label>Select Product</label>
+                <select
+                  value={selectedProduct}
+                  onChange={handleProductChange}
+                  className="form-select"
+                >
+                  <option value="">-- Select Product --</option>
+                  {uniqueProducts.map(product => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Select Size</label>
+                <select
+                  value={selectedSize}
+                  onChange={handleSizeChange}
+                  className="form-select"
+                >
+                  <option value="">-- Select Size --</option>
+                  {availableSizes.map((size, index) => (
+                    <option key={index} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Assign Operator</label>
+                <select
+                  value={selectedOperator}
+                  onChange={(e) => setSelectedOperator(e.target.value)}
+                  className="form-select"
+                >
+                  {operators.map(op => (
+                    <option key={op} value={op}>{op}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Target Quantity (Pieces)</label>
+                <input
+                  type="number"
+                  value={targetQty}
+                  onChange={(e) => setTargetQty(e.target.value)}
+                  placeholder="Enter target quantity"
+                  className="form-input"
+                  min="1"
+                />
+              </div>
+
               <button
                 onClick={handleAddTarget}
                 className="btn-add-target"
@@ -569,7 +745,54 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           </div>
         </div>
 
-        {/* Summary Cards */}
+        {/* ===== STATS DASHBOARD (Moved from Daily) ===== */}
+        <div className="production-stats-grid" style={{ marginBottom: '30px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+          <div className="pp-stat-card today" style={{ background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderLeft: '5px solid #10b981' }}>
+            <div className="pp-stat-info">
+              <span className="pp-stat-label" style={{ color: '#64748b', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>Today's Production</span>
+              <div className="pp-stat-value" style={{ fontSize: '24px', fontWeight: '800', margin: '8px 0' }}>{(todayCount || 0).toLocaleString()}</div>
+              <div className="pp-stat-breakdown" style={{ display: 'flex', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
+                {(sizesList || []).map(size => (
+                  <span key={size} style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px' }}>{size.split('-')[0]}: {todayBySize?.[size] || 0}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="pp-stat-card week" style={{ background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderLeft: '5px solid #3b82f6' }}>
+            <div className="pp-stat-info">
+              <span className="pp-stat-label" style={{ color: '#64748b', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>Last 7 Days</span>
+              <div className="pp-stat-value" style={{ fontSize: '24px', fontWeight: '800', margin: '8px 0' }}>{(week || 0).toLocaleString()}</div>
+              <div className="pp-stat-breakdown" style={{ display: 'flex', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
+                {(sizesList || []).map(size => (
+                  <span key={size} style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px' }}>{size.split('-')[0]}: {weekBySize?.[size] || 0}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="pp-stat-card month" style={{ background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderLeft: '5px solid #f59e0b' }}>
+            <div className="pp-stat-info">
+              <span className="pp-stat-label" style={{ color: '#64748b', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>This Month</span>
+              <div className="pp-stat-value" style={{ fontSize: '24px', fontWeight: '800', margin: '8px 0' }}>{(month || 0).toLocaleString()}</div>
+              <div className="pp-stat-breakdown" style={{ display: 'flex', gap: '8px', fontSize: '11px', flexWrap: 'wrap' }}>
+                {(sizesList || []).map(size => (
+                  <span key={size} style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px' }}>{size.split('-')[0]}: {monthBySize?.[size] || 0}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="pp-stat-card stock" style={{ background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderLeft: '5px solid #8b5cf6' }}>
+            <div className="pp-stat-info">
+              <span className="pp-stat-label" style={{ color: '#64748b', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>Total Produced</span>
+              <div className="pp-stat-value" style={{ fontSize: '24px', fontWeight: '800', margin: '8px 0' }}>{(stock || 0).toLocaleString()}</div>
+              <span className="pp-stat-tag" style={{ fontSize: '11px', color: '#94a3b8' }}>All time</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Existing Summary Cards for Plan */}
         <div className="production-stats">
           <div className="prod-stat-card">
             <p className="prod-stat-label">🎯 TOTAL TARGET</p>

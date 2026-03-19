@@ -280,18 +280,70 @@ export const AppProvider = ({ children }) => {
     const totalStockUnits = stockData.reduce((sum, s) => sum + s.quantity, 0);
     const totalStockValue = stockData.reduce((sum, s) => sum + s.totalValue, 0);
 
-    // Production metrics by period (Weekly, Monthly, Yearly)
-    const filterByDate = (history, days) => {
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - days);
-        return history.filter(p => new Date(p.date || p.createdAt) >= cutoff);
+    const toFormattedDate = (date) => {
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
     };
 
-    const productionStats = {
-        weekly: filterByDate(productionHistory, 7).reduce((sum, p) => sum + Number(p.quantity || 0), 0),
-        monthly: filterByDate(productionHistory, 30).reduce((sum, p) => sum + Number(p.quantity || 0), 0),
-        yearly: filterByDate(productionHistory, 365).reduce((sum, p) => sum + Number(p.quantity || 0), 0),
-    };
+    const productionStats = (() => {
+        const history = productionHistory || [];
+        const targets = productionTargets || [];
+        const today = toFormattedDate(new Date());
+        
+        const currentMonthIdx = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+        const last7Days = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            last7Days.push(toFormattedDate(d));
+        }
+
+        const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
+        
+        const todayHistory = history.filter(item => item.date === today);
+        const todayTotal = todayHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const todayBySize = {};
+        availableSizes.forEach(size => {
+            todayBySize[size] = todayHistory.filter(item => item.size === size).reduce((sum, item) => sum + (item.quantity || 0), 0);
+        });
+
+        const weekHistory = history.filter(item => last7Days.includes(item.date));
+        const weekTotal = weekHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const weekBySize = {};
+        availableSizes.forEach(size => {
+            weekBySize[size] = weekHistory.filter(item => item.size === size).reduce((sum, item) => sum + (item.quantity || 0), 0);
+        });
+
+        const monthHistory = history.filter(item => {
+            if (!item.date) return false;
+            const parts = item.date.split('-');
+            const month = parseInt(parts[1]);
+            const year = parseInt(parts[2]);
+            return month === currentMonthIdx && year === currentYear;
+        });
+        const monthTotal = monthHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const monthBySize = {};
+        availableSizes.forEach(size => {
+            monthBySize[size] = monthHistory.filter(item => item.size === size).reduce((sum, item) => sum + (item.quantity || 0), 0);
+        });
+
+        const stockTotal = targets.reduce((sum, item) => sum + (item.producedQty || 0), 0);
+
+        return {
+            today: todayTotal,
+            week: weekTotal,
+            month: monthTotal,
+            stock: stockTotal,
+            todayBySize,
+            weekBySize,
+            monthBySize,
+            availableSizes
+        };
+    })();
 
   // ✅ Local date key helper - avoids UTC timezone shift (IST+5:30 bug)
   const toLocalDateKey = (date) => {
