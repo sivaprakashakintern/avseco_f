@@ -3,8 +3,19 @@ import { useAppContext } from '../../context/AppContext.js';
 import { formatDate } from '../../utils/dateUtils.js';
 import './AttendanceLog.css';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const toDateKey = (date) => date.toISOString().split("T")[0];
-const today = () => new Date(new Date().toDateString());
+// ✅ Use local date (not UTC) to avoid IST → UTC date shift bug
+// e.g. March 19 00:00 IST = March 18 18:30 UTC → toISOString() gives wrong date!
+const toDateKey = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+const today = () => {
+  const now = new Date();
+  // Create date with local midnight to avoid timezone issues
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+};
 
 const getInitials = (name = "") =>
   name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();

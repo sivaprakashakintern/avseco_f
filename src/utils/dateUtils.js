@@ -1,12 +1,23 @@
-export const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
+export const formatDate = (dateInput) => {
+    if (!dateInput) return "N/A";
+    let date;
+    // If it's a Date object, use directly
+    if (dateInput instanceof Date) {
+        date = dateInput;
+    } else if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+        // YYYY-MM-DD: parse as LOCAL date (avoid UTC midnight shift)
+        const [y, m, d] = dateInput.split('-').map(Number);
+        date = new Date(y, m - 1, d);
+    } else {
+        date = new Date(dateInput);
+    }
+    if (isNaN(date.getTime())) return String(dateInput);
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
 };
+
 
 export const formatFullDate = (date) => {
     if (!date) return "N/A";

@@ -184,7 +184,11 @@ export const AppProvider = ({ children }) => {
     const fetchAttendanceForDate = useCallback(async (dateStr) => {
         try {
             const data = await attendanceApi.getByDate(dateStr);
-            const mapped = data.map(r => ({ ...r, empId: r.employee, id: r._id }));
+            const mapped = data.map(r => {
+                // r.employee may be a populated object OR a plain ObjectId string
+                const empId = r.employee?._id ? String(r.employee._id) : String(r.employee);
+                return { ...r, empId, id: r._id };
+            });
             setAttendanceRecords(prev => ({ ...prev, [dateStr]: mapped }));
             return mapped;
         } catch (error) {
@@ -192,6 +196,7 @@ export const AppProvider = ({ children }) => {
             return [];
         }
     }, []);
+
 
     const buildDefaultAttendance = useCallback((dateStr) => {
         return employees.map(emp => ({
@@ -221,12 +226,15 @@ export const AppProvider = ({ children }) => {
         try {
             const formattedRecords = records.map(r => ({
                 employee: r.empId,
-                status: r.status,
-                note: r.note,
-                halfDayTime: r.halfDayTime
+                status: r.status || 'present',
+                note: r.note || '',
+                halfDayTime: r.halfDayTime || null
             }));
             const data = await attendanceApi.saveBulk(dateStr, formattedRecords);
-            const mapped = data.map(r => ({ ...r, empId: r.employee, id: r._id }));
+            const mapped = data.map(r => {
+                const empId = r.employee?._id ? String(r.employee._id) : String(r.employee);
+                return { ...r, empId, id: r._id };
+            });
             setAttendanceRecords(prev => ({ ...prev, [dateStr]: mapped }));
             return mapped;
         } catch (error) {
@@ -234,6 +242,7 @@ export const AppProvider = ({ children }) => {
             throw error;
         }
     }, []);
+
 
     // ANALYTICS / DERIVED
     const totalExpenseAmount = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
@@ -284,7 +293,15 @@ export const AppProvider = ({ children }) => {
         yearly: filterByDate(productionHistory, 365).reduce((sum, p) => sum + Number(p.quantity || 0), 0),
     };
 
-    const todayStr = new Date().toISOString().split("T")[0];
+  // ✅ Local date key helper - avoids UTC timezone shift (IST+5:30 bug)
+  const toLocalDateKey = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+  const todayStr = toLocalDateKey(new Date());
+
     const todayAttendance = attendanceRecords[todayStr] ?? [];
     const todayStats = {
         present: todayAttendance.filter(r => r.status === "present").length,
@@ -296,7 +313,7 @@ export const AppProvider = ({ children }) => {
     const last7DaysTrend = Array.from({ length: 7 }, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() - (6 - i));
-        const ds = d.toISOString().split("T")[0];
+        const ds = toLocalDateKey(d);
         const recs = attendanceRecords[ds] ?? [];
         return {
             date: ds,
@@ -307,6 +324,7 @@ export const AppProvider = ({ children }) => {
             total: employees.length || 0,
         };
     });
+
 
     return (
         <AppContext.Provider value={{
