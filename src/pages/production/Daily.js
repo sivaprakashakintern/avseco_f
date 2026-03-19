@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
@@ -26,17 +23,6 @@ const Production = () => {
   const toggleProdCard = (id) => setExpandedProdId(prev => prev === id ? null : id);
 
   // ========== STATE MANAGEMENT ==========
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [exportFormat, setExportFormat] = useState('excel');
-  const [exportPeriod, setExportPeriod] = useState('daily');
-
-  // Date range states for export
-  const [exportStartDate, setExportStartDate] = useState(null);
-  const [exportEndDate, setExportEndDate] = useState(null);
-  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-  const [exportYear, setExportYear] = useState(new Date().getFullYear().toString());
-
   // Notification State
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
@@ -66,7 +52,7 @@ const Production = () => {
     product: "",
     size: "",
     quantity: "",
-    grade: "A",
+    grade: "B",
     operator: ""
   });
 
@@ -255,276 +241,17 @@ const Production = () => {
 
       return matchesSearch && matchesSize;
     }).sort((a, b) => {
-      const dateA = dayjs(a.date, 'DD-MM-YYYY');
-      const dateB = dayjs(b.date, 'DD-MM-YYYY');
-      return dateB.isBefore(dateA) ? -1 : 1;
+      const dateTimeA = dayjs(`${a.date} ${a.time === 'TARGET' ? '00:01 AM' : a.time}`, 'DD-MM-YYYY hh:mm A');
+      const dateTimeB = dayjs(`${b.date} ${b.time === 'TARGET' ? '00:01 AM' : b.time}`, 'DD-MM-YYYY hh:mm A');
+      return dateTimeB.unix() - dateTimeA.unix();
     });
   };
 
 
   // ========== EXPORT MODAL FUNCTIONS ==========
-  const openExportModal = () => {
-    const today = dayjs();
-    setExportStartDate(today);
-    setExportEndDate(today);
-    setShowExportModal(true);
-  };
-
-  const closeExportModal = () => {
-    setShowExportModal(false);
-    setExportFormat('excel');
-    setExportPeriod('daily');
-    setExportStartDate(null);
-    setExportEndDate(null);
-    setExportYear(new Date().getFullYear().toString());
-  };
-
-  const handleExportDateSelect = (type, date) => {
-    if (type === 'start') {
-      setExportStartDate(date);
-      setShowStartDatePicker(false);
-    } else if (type === 'end') {
-      setExportEndDate(date);
-      setShowEndDatePicker(false);
-    }
-  };
-
-
-
-
-
-  const handleSummaryDateSelect = (date) => {
-    setSummaryDate(date);
-    setShowSummaryDatePicker(false);
-  };
-
-
-
-  const getFilteredDataForExport = () => {
-    switch (exportPeriod) {
-      case 'daily':
-        return productionHistory.filter(item => item.date === formatDate(exportStartDate));
-
-      case 'weekly':
-        if (!exportStartDate || !exportEndDate) return [];
-
-        return productionHistory.filter(item => {
-          const itemDate = parseDate(item.date);
-          return itemDate >= exportStartDate && itemDate <= exportEndDate;
-        });
-
-      case 'monthly':
-        if (!exportStartDate || !exportEndDate) return [];
-
-        return productionHistory.filter(item => {
-          const parts = item.date.split('-');
-          const month = parseInt(parts[1]);
-          const year = parseInt(parts[2]);
-          const itemYearMonth = year * 100 + month;
-          const startYearMonth = exportStartDate.year() * 100 + (exportStartDate.month() + 1);
-          const endYearMonth = exportEndDate.year() * 100 + (exportEndDate.month() + 1);
-          return itemYearMonth >= startYearMonth && itemYearMonth <= endYearMonth;
-        });
-
-      case 'yearly':
-        return productionHistory.filter(item => {
-          const parts = item.date.split('-');
-          const year = parts[2];
-          return year === exportYear;
-        });
-
-      case 'overall':
-      default:
-        return productionHistory;
-    }
-  };
-
-  const getReportTitle = () => {
-    const todayStr = formatDate(dayjs());
-
-    switch (exportPeriod) {
-      case 'daily':
-        return `Daily_Production_Report_${formatDate(exportStartDate)}`;
-      case 'weekly':
-        return `Weekly_Production_Report_${formatDate(exportStartDate)}_to_${formatDate(exportEndDate)}`;
-      case 'monthly':
-        return `Monthly_Production_Report_${formatDate(exportStartDate)}_to_${formatDate(exportEndDate)}`;
-      case 'yearly':
-        return `Yearly_Production_Report_${exportYear}`;
-      case 'overall':
-        return `Complete_Production_History_${todayStr}`;
-      default:
-        return `Production_Report_${todayStr}`;
-    }
-  };
-
-  const handleExport = () => {
-    const filteredData = getFilteredDataForExport();
-    const title = getReportTitle();
-
-    if (filteredData.length === 0) {
-      showNotificationMessage('No data found for selected period!', 'error');
-      return;
-    }
-
-    switch (exportFormat) {
-      case 'excel':
-        exportToExcel(filteredData, title);
-        break;
-      case 'csv':
-        exportToCSV(filteredData, title);
-        break;
-      case 'pdf':
-        exportToPDF(filteredData, title);
-        break;
-      default:
-        exportToExcel(filteredData, title);
-    }
-
-    closeExportModal();
-  };
-
-  const exportToExcel = (data, title) => {
-    try {
-      const wb = XLSX.utils.book_new();
-      const exportData = data.map(item => ({
-        'Date': item.date,
-        'Time': item.time,
-        'Product': item.product,
-        'Size': item.size,
-        'Quantity': item.quantity,
-        'Grade': item.grade,
-        'Operator': item.operator,
-        'Status': item.status
-      }));
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      XLSX.utils.book_append_sheet(wb, ws, 'Production Data');
-
-      const totalQuantity = data.reduce((sum, item) => sum + item.quantity, 0);
-      const summaryData = [
-        { 'Metric': 'Total Records', 'Value': data.length },
-        { 'Metric': 'Total Quantity', 'Value': totalQuantity + ' plates' },
-        { 'Metric': 'Report Type', 'Value': title.replace(/_/g, ' ') },
-        { 'Metric': 'Generated On', 'Value': new Date().toLocaleString() }
-      ];
-      const summaryWs = XLSX.utils.json_to_sheet(summaryData);
-      XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
-
-      const filename = `${title}.xlsx`;
-      XLSX.writeFile(wb, filename);
-      showNotificationMessage(`✅ Excel file downloaded: ${filename}`, 'success');
-    } catch (error) {
-      console.error('Export error:', error);
-      showNotificationMessage('❌ Error generating Excel file', 'error');
-    }
-  };
-
-  const exportToCSV = (data, title) => {
-    try {
-      const headers = ['Date', 'Time', 'Product', 'Size', 'Quantity', 'Grade', 'Operator', 'Status'];
-      const csvRows = [];
-      csvRows.push(headers.join(','));
-
-      for (const item of data) {
-        const values = [
-          item.date,
-          item.time,
-          `"${item.product}"`,
-          `"${item.size}"`,
-          item.quantity,
-          item.grade,
-          item.operator,
-          item.status
-        ];
-        csvRows.push(values.join(','));
-      }
-
-      const totalQuantity = data.reduce((sum, item) => sum + item.quantity, 0);
-      csvRows.push('');
-      csvRows.push('SUMMARY,,,,,,,');
-      csvRows.push(`Total Records,${data.length},,,,,,`);
-      csvRows.push(`Total Quantity,${totalQuantity} plates,,,,,,`);
-      csvRows.push(`Generated On,${new Date().toLocaleString()},,,,,,`);
-
-      const csvString = csvRows.join('\n');
-      const blob = new Blob([csvString], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${title}.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-
-      showNotificationMessage(`✅ CSV file downloaded: ${title}.csv`, 'success');
-    } catch (error) {
-      console.error('CSV export error:', error);
-      showNotificationMessage('❌ Error generating CSV file', 'error');
-    }
-  };
-
-  const exportToPDF = (data, title) => {
-    try {
-      const doc = new jsPDF();
-      doc.setFontSize(16);
-      doc.setTextColor(0, 106, 78);
-      doc.text(title.replace(/_/g, ' '), 14, 15);
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 22);
-      doc.text(`Total Records: ${data.length}`, 14, 28);
-
-      const tableColumn = ['Date', 'Time', 'Product', 'Size', 'Qty', 'Grade', 'Operator'];
-      const tableRows = [];
-
-      for (const item of data) {
-        const rowData = [
-          item.date,
-          item.time,
-          item.product.substring(0, 12) + (item.product.length > 12 ? '...' : ''),
-          item.size,
-          item.quantity.toString(),
-          item.grade,
-          item.operator
-        ];
-        tableRows.push(rowData);
-      }
-
-      doc.autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 35,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [0, 106, 78], textColor: 255 },
-        alternateRowStyles: { fillColor: [240, 248, 245] }
-      });
-
-      const totalQuantity = data.reduce((sum, item) => sum + item.quantity, 0);
-      const finalY = doc.lastAutoTable.finalY + 10;
-
-      doc.setFontSize(10);
-      doc.setTextColor(0, 106, 78);
-      doc.text('Summary', 14, finalY);
-      doc.setFontSize(9);
-      doc.setTextColor(0);
-      doc.text(`Total Records: ${data.length}`, 14, finalY + 7);
-      doc.text(`Total Quantity: ${totalQuantity} plates`, 14, finalY + 14);
-
-      doc.save(`${title}.pdf`);
-      showNotificationMessage(`✅ PDF report downloaded: ${title}.pdf`, 'success');
-    } catch (error) {
-      console.error('PDF export error:', error);
-      showNotificationMessage('❌ Error generating PDF file', 'error');
-    }
-  };
-
-
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleAddProduction = async () => {
@@ -589,8 +316,6 @@ const Production = () => {
       if (!event.target.closest('.date-picker-container')) {
         setShowProductionDatePicker(false);
         setShowSummaryDatePicker(false);
-        setShowStartDatePicker(false);
-        setShowEndDatePicker(false);
       }
     };
 
@@ -642,124 +367,9 @@ const Production = () => {
           <h1 className="page-title">Daily Production</h1>
         </div>
         <div className="header-actions">
-          <button className="btn-export-premium" onClick={openExportModal}>
-            <span className="material-symbols-outlined">description</span>
-            Export
-          </button>
+          {/* Export button removed */}
         </div>
       </div>
-
-      {showExportModal && (
-        <div className="modal-overlay">
-          <div className="export-modal" style={{ maxWidth: '700px' }}>
-            <div className="export-modal-header">
-              <h2>Export Production Report</h2>
-              <button className="modal-close" onClick={closeExportModal}>×</button>
-            </div>
-
-            <div className="export-modal-body">
-              <div className="export-section">
-                <h3>Export Format</h3>
-                <div className="radio-group">
-                  <label className="radio-label">
-                    <input type="radio" name="exportFormat" value="excel" checked={exportFormat === 'excel'} onChange={(e) => setExportFormat(e.target.value)} />
-                    <span>Excel File</span>
-                  </label>
-                  <label className="radio-label">
-                    <input type="radio" name="exportFormat" value="csv" checked={exportFormat === 'csv'} onChange={(e) => setExportFormat(e.target.value)} />
-                    <span>CSV File</span>
-                  </label>
-                  <label className="radio-label">
-                    <input type="radio" name="exportFormat" value="pdf" checked={exportFormat === 'pdf'} onChange={(e) => setExportFormat(e.target.value)} />
-                    <span>PDF Report</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="export-section">
-                <h3>Report Period</h3>
-                <div className="radio-group">
-                  <label className="radio-label">
-                    <input type="radio" name="exportPeriod" value="daily" checked={exportPeriod === 'daily'} onChange={(e) => setExportPeriod(e.target.value)} />
-                    <span>Daily Report (Single Day)</span>
-                  </label>
-                  <label className="radio-label">
-                    <input type="radio" name="exportPeriod" value="weekly" checked={exportPeriod === 'weekly'} onChange={(e) => setExportPeriod(e.target.value)} />
-                    <span>Weekly Report (Date Range)</span>
-                  </label>
-                  <label className="radio-label">
-                    <input type="radio" name="exportPeriod" value="monthly" checked={exportPeriod === 'monthly'} onChange={(e) => setExportPeriod(e.target.value)} />
-                    <span>Monthly Report (Month Range)</span>
-                  </label>
-                  <label className="radio-label">
-                    <input type="radio" name="exportPeriod" value="yearly" checked={exportPeriod === 'yearly'} onChange={(e) => setExportPeriod(e.target.value)} />
-                    <span>Yearly Report</span>
-                  </label>
-                  <label className="radio-label">
-                    <input type="radio" name="exportPeriod" value="overall" checked={exportPeriod === 'overall'} onChange={(e) => setExportPeriod(e.target.value)} />
-                    <span>Overall Report (All Time)</span>
-                  </label>
-                </div>
-              </div>
-
-              {exportPeriod === 'daily' && (
-                <div className="export-section">
-                  <h3>Select Date</h3>
-                  <div className="date-picker-container">
-                    <button className="date-picker-btn" onClick={() => setShowStartDatePicker(!showStartDatePicker)}>
-                      <span className="material-symbols-outlined">calendar_today</span>
-                      {exportStartDate ? formatDate(exportStartDate) : 'Select Date'}
-                    </button>
-                    {showStartDatePicker && (
-                      <div className="date-dropdown mui-calendar-dropdown">
-                        <CalendarPicker selectedDate={exportStartDate} onDateChange={(date) => handleExportDateSelect('start', date)} onClose={() => setShowStartDatePicker(false)} />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {exportPeriod === 'weekly' && (
-                <div className="export-section">
-                  <h3>Select Date Range</h3>
-                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                    <div className="date-picker-container" style={{ flex: 1 }}>
-                      <button className="date-picker-btn" onClick={() => setShowStartDatePicker(!showStartDatePicker)}>
-                        <span className="material-symbols-outlined">calendar_today</span>
-                        {exportStartDate ? formatDate(exportStartDate) : 'Start Date'}
-                      </button>
-                      {showStartDatePicker && (
-                        <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker selectedDate={exportStartDate} onDateChange={(date) => handleExportDateSelect('start', date)} onClose={() => setShowStartDatePicker(false)} />
-                        </div>
-                      )}
-                    </div>
-                    <div className="date-picker-container" style={{ flex: 1 }}>
-                      <button className="date-picker-btn" onClick={() => setShowEndDatePicker(!showEndDatePicker)}>
-                        <span className="material-symbols-outlined">calendar_today</span>
-                        {exportEndDate ? formatDate(exportEndDate) : 'End Date'}
-                      </button>
-                      {showEndDatePicker && (
-                        <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker selectedDate={exportEndDate} onDateChange={(date) => handleExportDateSelect('end', date)} onClose={() => setShowEndDatePicker(false)} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="export-modal-footer">
-              <button className="btn-outline" onClick={closeExportModal}>Cancel</button>
-              <button className="btn-primary" onClick={handleExport}>
-                <span className="material-symbols-outlined">download</span>
-                Export Report
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* --- DASHBOARD SECTION --- */}
       {/* --- PREMIUM DASHBOARD SECTION --- */}
@@ -941,9 +551,9 @@ const Production = () => {
         </div>
 
         <div className="view-history-button-wrapper mobile-only-flex">
-          <button className="btn-view-history-compact" onClick={() => setShowHistoryOnly(true)}>
+            <button className="btn-view-history-compact" onClick={() => setShowHistoryOnly(true)}>
             <span className="material-symbols-outlined">history</span>
-            View Transaction History
+            View Today Production
           </button>
         </div>
       </div>
@@ -955,7 +565,7 @@ const Production = () => {
             <span className="material-symbols-outlined">arrow_back</span>
             Back to Dashboard
           </button>
-          <h2>Transaction History</h2>
+          <h2>Today Production</h2>
         </div>
 
         <div className="history-section">
@@ -963,7 +573,7 @@ const Production = () => {
             <div className="card-header table-header">
               <h3>
                 <span className="material-symbols-outlined">history</span>
-                Transaction History
+                Today Production
               </h3>
               <div className="table-actions">
                 <select value={historySizeFilter} onChange={(e) => setHistorySizeFilter(e.target.value)}>
