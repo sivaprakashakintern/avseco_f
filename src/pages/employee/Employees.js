@@ -146,45 +146,41 @@ const Employees = () => {
     };
   }, [showAddModal]);
 
-  const confirmAddEmployee = (e) => {
+  const confirmAddEmployee = async (e) => {
     e.preventDefault();
 
-    // Validate form - Email is optional
-    if (
-      !formData.name ||
-      !formData.department ||
-      !formData.phone ||
-      !formData.joinDate ||
-      !formData.dob ||
-      !formData.aadhar ||
-      !formData.pan ||
-      !formData.address ||
-      !formData.salary
-    ) {
-      setFeedbackMessage("Please fill all required fields");
+    // Validate form - basic fields first
+    if (!formData.name || !formData.department || !formData.phone || !formData.joinDate) {
+      setFeedbackMessage("Please fill all required fields (Name, Dept, Phone, Join Date)");
       setTimeout(() => setFeedbackMessage(""), 3000);
       return;
     }
 
-    const newEmployee = {
-      name: formData.name,
-      department: formData.department,
-      email: formData.email,
-      phone: formData.phone,
-      joinDate: formData.joinDate,
-      avatar: formData.avatar ? URL.createObjectURL(formData.avatar) : "",
-      dob: formData.dob,
-      aadhar: formData.aadhar,
-      pan: formData.pan,
-      address: formData.address,
-      salary: Number(formData.salary) || 0
-    };
+    try {
+      setFeedbackMessage("Adding employee...");
+      const newEmployee = {
+        name: formData.name,
+        department: formData.department,
+        email: formData.email,
+        phone: formData.phone,
+        joinDate: formData.joinDate,
+        dob: formData.dob,
+        aadhar: formData.aadhar,
+        pan: formData.pan,
+        address: formData.address,
+        salary: Number(formData.salary) || 0
+      };
 
-    ctxAddEmployee(newEmployee);
-    setShowAddModal(false);
-    setFeedbackMessage("Employee added successfully");
-
-    setTimeout(() => setFeedbackMessage(""), 3000);
+      await ctxAddEmployee(newEmployee);
+      
+      setShowAddModal(false);
+      setFeedbackMessage("Employee added successfully! ✅");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+    } catch (error) {
+      console.error("Add employee error:", error);
+      setFeedbackMessage("❌ Failed to add employee: " + (error.response?.data?.message || error.message));
+      setTimeout(() => setFeedbackMessage(""), 5000);
+    }
   };
 
   // Edit Employee
@@ -205,45 +201,39 @@ const Employees = () => {
     setShowEditModal(true);
   };
 
-  const confirmEditEmployee = (e) => {
+  const confirmEditEmployee = async (e) => {
     e.preventDefault();
     if (!selectedEmployee) return;
 
-    // Validate form - Email is optional
-    if (
-      !formData.name ||
-      !formData.department ||
-      !formData.phone ||
-      !formData.joinDate ||
-      !formData.dob ||
-      !formData.aadhar ||
-      !formData.pan ||
-      !formData.address ||
-      !formData.salary
-    ) {
+    if (!formData.name || !formData.department || !formData.phone) {
       setFeedbackMessage("Please fill all required fields");
       setTimeout(() => setFeedbackMessage(""), 3000);
       return;
     }
 
-    ctxUpdateEmployee(selectedEmployee.id, {
-      name: formData.name,
-      department: formData.department,
-      email: formData.email,
-      phone: formData.phone,
-      joinDate: formData.joinDate,
-      dob: formData.dob,
-      aadhar: formData.aadhar,
-      pan: formData.pan,
-      address: formData.address,
-      salary: Number(formData.salary) || 0
-    });
+    try {
+      setFeedbackMessage("Updating employee...");
+      await ctxUpdateEmployee(selectedEmployee.id, {
+        name: formData.name,
+        department: formData.department,
+        email: formData.email,
+        phone: formData.phone,
+        joinDate: formData.joinDate,
+        dob: formData.dob,
+        aadhar: formData.aadhar,
+        pan: formData.pan,
+        address: formData.address,
+        salary: Number(formData.salary) || 0
+      });
 
-    setShowEditModal(false);
-    setSelectedEmployee(null);
-    setFeedbackMessage("Employee updated successfully");
-
-    setTimeout(() => setFeedbackMessage(""), 3000);
+      setShowEditModal(false);
+      setSelectedEmployee(null);
+      setFeedbackMessage("Employee updated successfully! ✅");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+    } catch (error) {
+      setFeedbackMessage("❌ Update failed: " + (error.response?.data?.message || error.message));
+      setTimeout(() => setFeedbackMessage(""), 5000);
+    }
   };
 
   // Delete Employee

@@ -31,7 +31,7 @@ export const AppProvider = ({ children }) => {
                 productionTargetApi.getAll()
             ]);
             
-            setEmployees(empData.map(e => ({ ...e, id: e._id })));
+            setEmployees(empData.map(e => ({ ...e, id: e._id })).sort((a, b) => a.name.localeCompare(b.name)));
             setExpenses(expData.map(e => ({ ...e, id: e._id })).sort((a, b) => {
                 const dateA = a.date.includes('-') ? new Date(a.date.split('-').reverse().join('-')) : new Date(a.date);
                 const dateB = b.date.includes('-') ? new Date(b.date.split('-').reverse().join('-')) : new Date(b.date);
@@ -61,13 +61,13 @@ export const AppProvider = ({ children }) => {
     // EMPLOYEES
     const addEmployee = useCallback(async (emp) => {
         const data = await employeeApi.add(emp);
-        setEmployees(prev => [...prev, { ...data, id: data._id }]);
+        setEmployees(prev => [...prev, { ...data, id: data._id }].sort((a, b) => a.name.localeCompare(b.name)));
         return data;
     }, []);
 
     const updateEmployee = useCallback(async (id, updates) => {
         const data = await employeeApi.update(id, updates);
-        setEmployees(prev => prev.map(e => e.id === id ? { ...data, id: data._id } : e));
+        setEmployees(prev => prev.map(e => e.id === id ? { ...data, id: data._id } : e).sort((a, b) => a.name.localeCompare(b.name)));
         return data;
     }, []);
 
