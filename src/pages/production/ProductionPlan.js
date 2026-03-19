@@ -82,7 +82,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const [summaryView, setSummaryView] = useState('daily');
   const [summaryDate, setSummaryDate] = useState(dayjs());
   const [showSummaryDatePicker, setShowSummaryDatePicker] = useState(false);
-  const [showHistoryOnly, setShowHistoryOnly] = useState(false); // For mobile view if needed
   
   // DYNAMIC OPERATORS FROM EMPLOYEES
   const operators = React.useMemo(() => {

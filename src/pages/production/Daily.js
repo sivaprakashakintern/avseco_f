@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
 import './Daily.css';
 
@@ -24,73 +21,12 @@ const Production = () => {
 
   // ========== STATE MANAGEMENT ==========
   // Notification State
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
-  const [notificationType, setNotificationType] = useState('success');
-
   const [historySearch, setHistorySearch] = useState('');
   const [historySizeFilter, setHistorySizeFilter] = useState('all');
   const [showHistoryOnly, setShowHistoryOnly] = useState(false);
 
-  // Summary view state
-  const [summaryView, setSummaryView] = useState('daily'); // 'daily', 'weekly', 'monthly'
-  const [summaryDate, setSummaryDate] = useState(dayjs());
+  const { productionHistory, productionTargets, deleteProduction } = useAppContext();
 
-  // Delete Modal State
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [productionToDelete, setProductionToDelete] = useState(null);
-  const [showSummaryDatePicker, setShowSummaryDatePicker] = useState(false);
-
-  // Production history from context
-  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts, employees, productionStats } = useAppContext();
-  const { today: todayCount, week, month, stock, todayBySize, weekBySize, monthBySize, availableSizes: sizesList } = productionStats || {};
-
-  // Production Entry Form State
-  const [productionDate, setProductionDate] = useState(dayjs());
-  const [showProductionDatePicker, setShowProductionDatePicker] = useState(false);
-  const [formData, setFormData] = useState({
-    product: "",
-    size: "",
-    quantity: "",
-    grade: "B",
-    operator: ""
-  });
-
-  // DYNAMIC OPERATORS FROM EMPLOYEES
-  const operators = React.useMemo(() => {
-    return (employees || [])
-      .filter(e => e.department === "Operator" || e.department === "Machine operator" || e.department === "Others")
-      .map(e => e.name);
-  }, [employees]);
-
-  // DERIVE DYNAMIC PRODUCTS FROM DATABASE
-  const productOptions = React.useMemo(() => {
-    if (!dbProducts || dbProducts.length === 0) return [];
-    const unique = {};
-    dbProducts.forEach(p => {
-      if (!unique[p.name]) unique[p.name] = { name: p.name, sizes: [] };
-      if (!unique[p.name].sizes.includes(p.size)) unique[p.name].sizes.push(p.size);
-    });
-    return Object.values(unique);
-  }, [dbProducts]);
-
-  // Initial form defaults
-  useEffect(() => {
-    if (operators.length > 0 && !formData.operator) {
-      setFormData(prev => ({ ...prev, operator: operators[0] }));
-    }
-  }, [operators, formData.operator]);
-
-  useEffect(() => {
-    if (productOptions.length > 0 && !formData.product) {
-      const firstProd = productOptions[0];
-      setFormData(prev => ({ 
-        ...prev, 
-        product: firstProd.name,
-        size: firstProd.sizes[0] || ""
-      }));
-    }
-  }, [productOptions, formData.product]);
 
 
 
@@ -117,98 +53,7 @@ const Production = () => {
 
 
 
-  // ========== GET SUMMARY DATA BY SIZE FOR SELECTED VIEW ==========
-  const getSummaryData = () => {
-    let filteredData = [];
 
-    switch (summaryView) {
-      case 'daily':
-        filteredData = productionHistory.filter(item => item.date === formatDate(summaryDate));
-        break;
-
-      case 'weekly':
-        if (!summaryDate) return { data: [], total: 0, bySize: {} };
-
-        const weekStart = summaryDate.startOf('week');
-        const weekEnd = summaryDate.endOf('week');
-
-        filteredData = productionHistory.filter(item => {
-          const itemDate = parseDate(item.date);
-          return itemDate && itemDate >= weekStart && itemDate <= weekEnd;
-        });
-        break;
-
-      case 'monthly':
-        if (!summaryDate) return { data: [], total: 0, bySize: {} };
-
-        const month = summaryDate.month() + 1;
-        const year = summaryDate.year();
-
-        filteredData = productionHistory.filter(item => {
-          const parts = item.date.split('-');
-          const itemMonth = parseInt(parts[1]);
-          const itemYear = parseInt(parts[2]);
-          return itemMonth === month && itemYear === year;
-        });
-        break;
-
-      default:
-        return { data: [], total: 0, bySize: {} };
-    }
-
-    // Calculate totals by size
-    const bySize = {};
-    let total = 0;
-
-    availableSizes.forEach(size => {
-      const sizeTotal = filteredData
-        .filter(item => item.size === size)
-        .reduce((sum, item) => sum + item.quantity, 0);
-      bySize[size] = sizeTotal;
-      total += sizeTotal;
-    });
-
-    // Group by date for weekly/monthly view
-    const groupedByDate = {};
-    filteredData.forEach(item => {
-      if (!groupedByDate[item.date]) {
-        groupedByDate[item.date] = {
-          date: item.date,
-          total: 0,
-          bySize: {}
-        };
-      }
-      groupedByDate[item.date].total += item.quantity;
-      groupedByDate[item.date].bySize[item.size] = (groupedByDate[item.date].bySize[item.size] || 0) + item.quantity;
-    });
-
-    const dailyBreakdown = Object.values(groupedByDate).sort((a, b) =>
-      parseDate(b.date) - parseDate(a.date)
-    );
-
-    return {
-      data: dailyBreakdown,
-      rawData: filteredData,
-      total,
-      bySize
-    };
-  };
-
-
-  // ========== NOTIFICATION FUNCTIONS ==========
-  const showNotificationMessage = (message, type = 'success') => {
-    setNotificationMessage(message);
-    setNotificationType(type);
-    setShowNotification(true);
-
-    setTimeout(() => {
-      setShowNotification(false);
-    }, 3000);
-  };
-
-  const hideNotification = () => {
-    setShowNotification(false);
-  };
 
   // ========== FILTER FUNCTIONS FOR PRODUCTION HISTORY ==========
   const getFilteredHistory = () => {
@@ -248,57 +93,7 @@ const Production = () => {
   };
 
 
-  const handleSummaryDateSelect = (date) => {
-    setSummaryDate(date);
-    setShowSummaryDatePicker(false);
-  };
 
-  // ========== EXPORT MODAL FUNCTIONS ==========
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddProduction = async () => {
-    if (!formData.quantity || parseInt(formData.quantity) <= 0) {
-      showNotificationMessage("Please enter valid quantity", 'error');
-      return;
-    }
-
-    const quantity = parseInt(formData.quantity);
-    const now = dayjs();
-    const timeString = now.format('hh:mm A');
-
-    const newProduction = {
-      date: formatDate(productionDate),
-      product: formData.product,
-      size: formData.size,
-      quantity: quantity,
-      grade: formData.grade,
-      operator: formData.operator,
-      time: timeString,
-      status: "completed"
-    };
-
-    try {
-      await addProduction(newProduction);
-      setFormData({
-        ...formData,
-        quantity: ""
-      });
-      showNotificationMessage(
-        `✅ Production added! 📦 +${quantity} plates (${formData.size})`,
-        'success'
-      );
-    } catch (err) {
-      showNotificationMessage("Failed to add production", "error");
-    }
-  };
-
-  const getSizesForProduct = () => {
-    const product = productOptions.find(p => p.name === formData.product);
-    return product ? product.sizes : [];
-  };
 
   const handleDeleteProduction = (id) => {
     setProductionToDelete(id);
@@ -316,56 +111,12 @@ const Production = () => {
 
 
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.date-picker-container')) {
-        setShowProductionDatePicker(false);
-        setShowSummaryDatePicker(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, []);
-
   const filteredHistory = getFilteredHistory();
-  const summaryData = getSummaryData();
 
-  const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
-    <div className="calendar-wrapper">
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <DateCalendar
-          value={selectedDate}
-          onChange={(newDate) => {
-            onDateChange(newDate);
-            onClose();
-          }}
-        />
-      </LocalizationProvider>
-    </div>
-  );
 
   return (
     <div className={`daily-production-page ${showHistoryOnly ? 'mobile-history-active' : ''}`}>
-      {showNotification && (
-        <div className={`notification-popup ${notificationType}`}>
-          <div className="notification-content">
-            <div className="notification-icon">
-              {notificationType === 'success' && <span className="material-symbols-outlined">check_circle</span>}
-              {notificationType === 'error' && <span className="material-symbols-outlined">error</span>}
-              {notificationType === 'warning' && <span className="material-symbols-outlined">warning</span>}
-              {notificationType === 'info' && <span className="material-symbols-outlined">info</span>}
-            </div>
-            <div className="notification-message">{notificationMessage}</div>
-            <button className="notification-close" onClick={hideNotification}>
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          </div>
-          <div className="notification-progress"></div>
-        </div>
-      )}
+
 
       <div className="page-header premium-header">
         <div className="header-left">
