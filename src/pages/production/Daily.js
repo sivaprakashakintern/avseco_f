@@ -346,10 +346,7 @@ const Production = () => {
 
 
 
-  const handleProductionDateSelect = (date) => {
-    setProductionDate(date);
-    setShowProductionDatePicker(false);
-  };
+
 
   const handleSummaryDateSelect = (date) => {
     setSummaryDate(date);
@@ -591,15 +588,11 @@ const Production = () => {
     }
   };
 
-  const getSizesForProduct = () => {
-    const product = productOptions.find(p => p.name === formData.product);
-    return product ? product.sizes : [];
-  };
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.date-picker-container')) {
-        setShowProductionDatePicker(false);
         setShowSummaryDatePicker(false);
         setShowStartDatePicker(false);
         setShowEndDatePicker(false);
