@@ -46,10 +46,11 @@ const ProductList = () => {
 
   // Grouped products for the main view
   const productGroups = products.reduce((acc, product) => {
-    if (!acc[product.name]) {
-      acc[product.name] = [];
+    const name = product.name || "Unknown Product";
+    if (!acc[name]) {
+      acc[name] = [];
     }
-    acc[product.name].push(product);
+    acc[name].push(product);
     return acc;
   }, {});
 
@@ -58,8 +59,8 @@ const ProductList = () => {
     return group.some(p => {
       const matchesSize = selectedSize === "All Sizes" || p.size === selectedSize;
       const matchesSearch = searchTerm === "" ||
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.sku.toLowerCase().includes(searchTerm.toLowerCase());
+        (p.name && p.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (p.sku && p.sku.toLowerCase().includes(searchTerm.toLowerCase()));
       return matchesSize && matchesSearch;
     });
   });
@@ -133,9 +134,8 @@ const ProductList = () => {
   const confirmEditProduct = async () => {
     if (!selectedProduct) return;
 
-    const cost = parseFloat(formData.costPrice);
-    const sell = parseFloat(formData.sellPrice);
-    const margin = ((sell - cost) / sell * 100).toFixed(1) + "%";
+    const cost = parseFloat(formData.costPrice) || 0;
+    const sell = parseFloat(formData.sellPrice) || 0;
 
     const updateData = {
       name: formData.name,
@@ -144,7 +144,7 @@ const ProductList = () => {
       category: "Plates",
       costPrice: cost,
       sellPrice: sell,
-      margin: margin,
+      margin: sell > 0 ? ((sell - cost) / sell * 100).toFixed(1) + "%" : "0.0%",
     };
 
     try {
@@ -543,9 +543,10 @@ const ProductList = () => {
                   <input
                     type="text"
                     name="name"
-                    value={formData.name}
-                    disabled
-                    className="modal-input disabled"
+                    value={formData.name || ""}
+                    onChange={handleInputChange}
+                    className="modal-input"
+                    placeholder="Enter product name"
                   />
                 </div>
                 <div className="modal-form-group">
