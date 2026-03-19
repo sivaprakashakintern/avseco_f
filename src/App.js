@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AppProvider } from "./context/AppContext.js";
+import { AppProvider, useAppContext } from "./context/AppContext.js";
 import { AuthProvider, useAuth } from "./context/AuthContext.js";
 import Sidebar from "./components/layout/Sidebar.js";
 import Topbar from "./components/layout/Topbar.js";
@@ -80,8 +80,16 @@ const PublicRoute = ({ children }) => {
 };
 
 const AppLayout = ({ children }) => {
+  const { loading } = useAppContext();
+  
   return (
     <div className="dashboard-wrapper">
+      {loading && (
+        <div className="glass-loading-overlay">
+          <div className="premium-spinner"></div>
+          <span>Syncing records...</span>
+        </div>
+      )}
       <Sidebar />
       <div className="right-area">
         <Topbar />

@@ -238,13 +238,51 @@ export const AppProvider = ({ children }) => {
         return acc;
     }, {});
 
+    // ── DERIVED METRICS ─────────────────────────────────────────────────────────
+    
+    // Group production by size/product
+    const stockData = products.map(product => {
+        // Sum total produced for this product/size
+        const produced = productionHistory
+            .filter(p => p.product === product.name && p.size === product.size)
+            .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+        
+        // Sold logic (PLACEHOLDER for future Sales model - currently assumed 0 if not tracked)
+        // Since the user wants it to be REAL from DB, until we have Sales, stock = ALL Produced.
+        const sold = 0; 
+        const quantity = produced - sold;
+        const totalValue = quantity * Number(product.sellPrice || 0);
+        
+        return {
+            ...product,
+            quantity,
+            totalValue
+        };
+    });
+
+    const totalStockUnits = stockData.reduce((sum, s) => sum + s.quantity, 0);
+    const totalStockValue = stockData.reduce((sum, s) => sum + s.totalValue, 0);
+
+    // Production metrics by period (Weekly, Monthly, Yearly)
+    const filterByDate = (history, days) => {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        return history.filter(p => new Date(p.date || p.createdAt) >= cutoff);
+    };
+
+    const productionStats = {
+        weekly: filterByDate(productionHistory, 7).reduce((sum, p) => sum + Number(p.quantity || 0), 0),
+        monthly: filterByDate(productionHistory, 30).reduce((sum, p) => sum + Number(p.quantity || 0), 0),
+        yearly: filterByDate(productionHistory, 365).reduce((sum, p) => sum + Number(p.quantity || 0), 0),
+    };
+
     const todayStr = new Date().toISOString().split("T")[0];
     const todayAttendance = attendanceRecords[todayStr] ?? [];
     const todayStats = {
         present: todayAttendance.filter(r => r.status === "present").length,
         absent: todayAttendance.filter(r => r.status === "absent").length,
         half: todayAttendance.filter(r => r.status === "half").length,
-        total: employees.length,
+        total: employees.length || 0,
     };
 
     const last7DaysTrend = Array.from({ length: 7 }, (_, i) => {
@@ -258,7 +296,7 @@ export const AppProvider = ({ children }) => {
             present: recs.filter(r => r.status === "present").length,
             absent: recs.filter(r => r.status === "absent").length,
             half: recs.filter(r => r.status === "half").length,
-            total: employees.length,
+            total: employees.length || 0,
         };
     });
 
@@ -295,9 +333,14 @@ export const AppProvider = ({ children }) => {
             employeesByDepartment,
             todayStats,
             last7DaysTrend,
+            totalStockUnits,
+            totalStockValue,
+            stockData,
+            productionStats,
             isMobileMenuOpen,
             setIsMobileMenuOpen,
             fetchData,
+            setLoading,
         }}>
             {children}
         </AppContext.Provider>

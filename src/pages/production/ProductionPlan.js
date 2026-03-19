@@ -10,13 +10,26 @@ import 'jspdf-autotable';
 
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
-  const { products: dbProducts, productionTargets, fetchTargets, addProduction } = useAppContext();
+  const { products: dbProducts, productionTargets, fetchTargets, addProduction, employees } = useAppContext();
   
   // ===== TARGET ENTRY FORM STATE =====
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
-  const [selectedOperator, setSelectedOperator] = useState('Rajesh');
+  const [selectedOperator, setSelectedOperator] = useState('');
   const [targetQty, setTargetQty] = useState('');
+  
+  // DYNAMIC OPERATORS FROM EMPLOYEES
+  const operators = React.useMemo(() => {
+    return employees
+      .filter(e => e.department === "Operator" || e.department === "Machine operator")
+      .map(e => e.name);
+  }, [employees]);
+
+  useEffect(() => {
+    if (operators.length > 0 && !selectedOperator) {
+      setSelectedOperator(operators[0]);
+    }
+  }, [operators, selectedOperator]);
 
   // ===== DYNAMIC PRODUCT DATA FROM DATABASE =====
   const uniqueProducts = React.useMemo(() => {
@@ -33,7 +46,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
     // Fallback if empty
     if (unique.length === 0) {
-      return [{ id: 'default', name: 'Areca Leaf Plate' }];
+      return [];
     }
     
     return unique;
@@ -475,19 +488,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             <p className="page-subtitle">Set targets and track daily production progress by size</p>
           </div>
           <div className="header-actions">
-            <button
-              className="refresh-db-btn"
-              onClick={async () => {
-                await fetchTargets();
-                showToast("Data refreshed from database", "success");
-              }}
-              title="Refresh Data"
-              disabled={loading}
-            >
-              <span className={`material-symbols-outlined ${loading ? 'spin' : ''}`}>refresh</span>
-              Refresh
-            </button>
-
             {/* Date Badge */}
             <div className="btn-export-premium" style={{ cursor: 'default', background: 'rgba(255, 255, 255, 0.1)' }}>
               <span className="material-symbols-outlined">calendar_today</span>
@@ -539,7 +539,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                 onChange={(e) => setSelectedOperator(e.target.value)}
                 className="form-select"
               >
-                {['Rajesh', 'Priya', 'Suresh', 'Anitha', 'Kumar'].map(op => (
+                {operators.map(op => (
                   <option key={op} value={op}>{op}</option>
                 ))}
               </select>

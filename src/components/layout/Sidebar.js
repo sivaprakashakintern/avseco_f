@@ -9,7 +9,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { isMobileMenuOpen, setIsMobileMenuOpen } = useContext(AppContext);
+  const { isMobileMenuOpen, setIsMobileMenuOpen, setLoading } = useContext(AppContext);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
   const [popupTop, setPopupTop] = useState(0);
   const [popupLeft, setPopupLeft] = useState(0);
@@ -50,10 +50,18 @@ const Sidebar = () => {
   }, [isMobile, isMobileMenuOpen, setIsMobileMenuOpen]);
 
   const handleNavigation = (path) => {
-    navigate(path);
-    if (isMobile) {
-      setIsMobileMenuOpen(false);
+    if (location.pathname === path) {
+      if (isMobile) setIsMobileMenuOpen(false);
+      return;
     }
+    setLoading(true);
+    setTimeout(() => {
+      navigate(path);
+      if (isMobile) {
+        setIsMobileMenuOpen(false);
+      }
+      setTimeout(() => setLoading(false), 500);
+    }, 300);
   };
 
   const handleLogoClick = () => {

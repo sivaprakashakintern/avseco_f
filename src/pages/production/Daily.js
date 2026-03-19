@@ -18,15 +18,6 @@ const SIZE_COLOR = {
   '12-inch': '#8b5cf6',
 };
 
-// Available sizes
-const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
-
-// Product Options (Fallbacks)
-const DEFAULT_PRODUCTS = [
-  { name: "Areca Leaf Plate", sizes: ['6-inch', '8-inch', '10-inch', '12-inch'] },
-];
-
-const operators = ['Rajesh', 'Priya', 'Suresh', 'Anitha', 'Kumar'];
 const grades = ['A', 'B', 'C'];
 
 const Production = () => {
@@ -78,11 +69,21 @@ const Production = () => {
   });
 
   // Production history from context
-  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts, fetchData, loading } = useAppContext();
+  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts, fetchData, loading, employees } = useAppContext();
+
+  // DYNAMIC OPERATORS FROM EMPLOYEES
+  const operators = React.useMemo(() => {
+    return employees
+      .filter(e => e.department === "Operator" || e.department === "Machine operator")
+      .map(e => e.name);
+  }, [employees]);
+
+  // Fallback if no operators found
+  const operatorList = operators.length > 0 ? operators : ["No Operators Found"];
 
   // DERIVE DYNAMIC PRODUCTS FROM DATABASE
   const productOptions = React.useMemo(() => {
-    if (!dbProducts || dbProducts.length === 0) return DEFAULT_PRODUCTS;
+    if (!dbProducts || dbProducts.length === 0) return [];
     
     const uniqueProducts = dbProducts.reduce((acc, p) => {
       if (!acc[p.name]) {
@@ -99,14 +100,15 @@ const Production = () => {
 
   // Update default product if database has products
   useEffect(() => {
-    if (productOptions.length > 0 && !productOptions.find(p => p.name === formData.product)) {
+    if (productOptions.length > 0) {
       setFormData(prev => ({
         ...prev,
         product: productOptions[0].name,
-        size: productOptions[0].sizes[0] || '6-inch'
+        size: productOptions[0].sizes[0] || "",
+        operator: operatorList[0]
       }));
     }
-  }, [productOptions, formData.product]);
+  }, [productOptions, operatorList]);
 
   // Stats state - Initialize with zeros
   const [stats, setStats] = useState({
@@ -708,17 +710,6 @@ const Production = () => {
           <p className="page-subtitle">Track daily production and update stock automatically</p>
         </div>
         <div className="header-actions">
-          <button 
-            className="refresh-db-btn-premium" 
-            onClick={async () => {
-              await fetchData();
-              showNotificationMessage("Production data refreshed successfully", "success");
-            }}
-            disabled={loading}
-          >
-            <span className={`material-symbols-outlined ${loading ? 'spin' : ''}`}>sync</span>
-            Refresh
-          </button>
           <button className="btn-export-premium" onClick={openExportModal}>
             <span className="material-symbols-outlined">description</span>
             Export
@@ -954,7 +945,7 @@ const Production = () => {
                     <div className="form-group">
                       <label>Operator</label>
                       <select name="operator" value={formData.operator} onChange={handleInputChange}>
-                        {operators.map(o => <option key={o} value={o}>{o}</option>)}
+                        {operatorList.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
                   </div>

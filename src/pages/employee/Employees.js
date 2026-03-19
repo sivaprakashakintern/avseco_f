@@ -42,7 +42,6 @@ const Employees = () => {
 
   // Form state for add/edit
   const [formData, setFormData] = useState({
-    empId: "",
     name: "",
     department: "Operator",
     email: "",
@@ -122,7 +121,6 @@ const Employees = () => {
   // Add Employee
   const handleAddEmployee = () => {
     setFormData({
-      empId: "",
       name: "",
       department: "Operator",
       email: "",
@@ -155,7 +153,6 @@ const Employees = () => {
 
     // Validate form - Email is optional
     if (
-      !formData.empId ||
       !formData.name ||
       !formData.department ||
       !formData.phone ||
@@ -172,7 +169,6 @@ const Employees = () => {
     }
 
     const newEmployee = {
-      empId: formData.empId,
       name: formData.name,
       department: formData.department,
       email: formData.email,
@@ -197,7 +193,6 @@ const Employees = () => {
   const handleEditEmployee = (employee) => {
     setSelectedEmployee(employee);
     setFormData({
-      empId: employee.empId || "",
       name: employee.name,
       department: employee.department,
       email: employee.email,
@@ -234,7 +229,6 @@ const Employees = () => {
     }
 
     ctxUpdateEmployee(selectedEmployee.id, {
-      empId: formData.empId,
       name: formData.name,
       department: formData.department,
       email: formData.email,
@@ -301,14 +295,6 @@ const Employees = () => {
 
   return (
     <div className={`employees-container ${showAddModal || showEditModal || showDeleteModal || showViewModal ? 'modal-open' : ''}`}>
-      {/* Glass Loading Overlay */}
-      {loading && (
-        <div className="glass-loading-overlay">
-          <div className="premium-spinner"></div>
-          <span>Syncing employee records...</span>
-        </div>
-      )}
-
       {/* Feedback Toast */}
       {feedbackMessage && (
         <div className="feedback-toast">
@@ -333,20 +319,6 @@ const Employees = () => {
             <p className="page-subtitle">Add, edit or manage your team records and organizational structure</p>
           </div>
           <div className="header-actions">
-            <button
-              className="refresh-db-btn"
-              onClick={async () => {
-                await fetchData();
-                setFeedbackMessage("Employee records refreshed");
-                setTimeout(() => setFeedbackMessage(""), 3000);
-              }}
-              title="Refresh Data"
-              disabled={loading}
-              style={{ marginRight: '12px' }}
-            >
-              <span className={`material-symbols-outlined ${loading ? 'spin' : ''}`}>refresh</span>
-              Refresh
-            </button>
             <button className="add-employee-btn" onClick={handleAddEmployee}>
               <span className="material-symbols-outlined">person_add</span>
               Add Employee
@@ -705,31 +677,17 @@ const Employees = () => {
               </div>
               <form onSubmit={confirmAddEmployee}>
                 <div className="modal-body">
-                  <div className="modal-row">
-                    <div className="modal-form-group">
-                      <label>Employee ID *</label>
-                      <input
-                        type="text"
-                        name="empId"
-                        value={formData.empId}
-                        onChange={handleInputChange}
-                        placeholder="e.g. EMP001"
-                        className="modal-input"
-                        required
-                      />
-                    </div>
-                    <div className="modal-form-group">
-                      <label>Full Name *</label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        placeholder="Enter full name"
-                        className="modal-input"
-                        required
-                      />
-                    </div>
+                  <div className="modal-form-group">
+                    <label>Full Name *</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Enter full name"
+                      className="modal-input"
+                      required
+                    />
                   </div>
 
                   {/* Avatar Upload (Optional) */}

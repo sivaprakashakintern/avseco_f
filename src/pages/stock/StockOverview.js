@@ -1,91 +1,28 @@
 import React, { useState, useEffect } from "react";
+import { useAppContext } from "../../context/AppContext.js";
 import "./Stock.css";
 
 const StockOverview = () => {
+  const { stockData, totalStockUnits, totalStockValue, loading } = useAppContext();
 
-  // ========== STATE MANAGEMENT ==========
-  const [stockItems] = useState([
-    {
-      id: 1,
-      name: "Areca Leaf Plate",
-      sku: "FG-PL-006",
-      category: "Finished Goods",
-      quantity: 6000,
-      unit: "pcs",
-      price: 6.50,
-      totalValue: 39000,
-      status: "normal",
-      size: "6 inch",
-      perPlateRate: 6.50
-    },
-    {
-      id: 2,
-      name: "Areca Leaf Plate",
-      sku: "FG-PL-008",
-      category: "Finished Goods",
-      quantity: 5000,
-      unit: "pcs",
-      price: 8.50,
-      totalValue: 42500,
-      status: "normal",
-      size: "8 inch",
-      perPlateRate: 8.50
-    },
-    {
-      id: 3,
-      name: "Areca Leaf Plate",
-      sku: "FG-PL-010",
-      category: "Finished Goods",
-      quantity: 3200,
-      unit: "pcs",
-      price: 12.00,
-      totalValue: 38400,
-      status: "normal",
-      size: "10 inch",
-      perPlateRate: 12.00
-    },
-    {
-      id: 4,
-      name: "Areca Leaf Plate",
-      sku: "FG-PL-012",
-      category: "Finished Goods",
-      quantity: 2500,
-      unit: "pcs",
-      price: 15.00,
-      totalValue: 37500,
-      status: "normal",
-      size: "12 inch",
-      perPlateRate: 15.00
-    }
-  ]);
+  // Low stock logic (threshold 3000)
+  const lowStockItems = stockData.filter(item => item.quantity < 3000);
+  const lowStockSizes = lowStockItems.map(item => item.size);
 
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    lowStock: 0,
-    lowStockDetails: [],
-    totalStock: 0,
-    plateTypes: 4,
-  });
+  const stats = {
+    totalProducts: [...new Set(stockData.map(p => p.name))].length,
+    lowStock: lowStockItems.length,
+    lowStockDetails: lowStockSizes,
+    totalStock: totalStockUnits,
+    plateTypes: stockData.length,
+  };
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  const filteredItems = stockItems;
-
-  useEffect(() => {
-    const totalStockValue = filteredItems.reduce((sum, item) => sum + item.quantity, 0);
-    const lowStockItems = filteredItems.filter(item => item.quantity < 3000);
-    const lowStockSizes = lowStockItems.map(item => item.size);
-    setStats({
-      totalProducts: 1,
-      lowStock: lowStockItems.length,
-      lowStockDetails: lowStockSizes,
-      totalStock: totalStockValue,
-      plateTypes: 4,
-    });
-  }, [filteredItems]);
+  const filteredItems = stockData;
 
   // ========== HANDLERS ==========
   const handleExport = () => setShowExportModal(true);

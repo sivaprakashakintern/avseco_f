@@ -224,13 +224,6 @@ const ProductList = () => {
   return (
     <div className="product-list-container">
 
-      {/* Glass Loading Overlay */}
-      {loading && (
-        <div className="glass-loading-overlay">
-          <div className="premium-spinner"></div>
-          <span>Loading products...</span>
-        </div>
-      )}
 
       {/* Feedback Toast */}
       {feedbackMessage && (
@@ -252,19 +245,7 @@ const ProductList = () => {
         </div>
 
         <div className="header-actions">
-          <button
-            className="refresh-db-btn"
-            onClick={async () => {
-              await fetchProducts();
-              setFeedbackMessage("Product list refreshed");
-            }}
-            title="Refresh Data"
-            disabled={loading}
-            style={{ marginRight: '12px' }}
-          >
-            <span className={`material-symbols-outlined ${loading ? 'spin' : ''}`}>refresh</span>
-            Refresh
-          </button>
+
 
           <button className="btn-transfer-premium" onClick={handleAddProduct}>
             <span className="material-symbols-outlined">add</span>

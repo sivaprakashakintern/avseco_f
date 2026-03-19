@@ -10,145 +10,148 @@ const Dashboard = () => {
     totalExpenseAmount,
     expenseByCategory,
     todayStats,
-    last7DaysTrend
+    last7DaysTrend,
+    totalStockUnits,
+    totalStockValue,
+    stockData,
+    productionStats,
+    employees,
+    productionHistory
   } = useAppContext();
 
-  const [timeFilter, setTimeFilter] = useState("Monthly");
-  const [showStockPopup, setShowStockPopup] = useState(false);
-  const [showProductionPopup, setShowProductionPopup] = useState(false);
-  const [showExpensesPopup, setShowExpensesPopup] = useState(false);
-  const [hoveredBar, setHoveredBar] = useState(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [stockPopupPosition, setStockPopupPosition] = useState({ top: 0, left: 0 });
-  const [productionPopupPosition, setProductionPopupPosition] = useState({ top: 0, left: 0 });
-  const [expensesPopupPosition, setExpensesPopupPosition] = useState({ top: 0, left: 0 });
+  // Helper to get formatted currency in Lakhs
+  const formatLakhs = (val) => `₹${(val / 100000).toFixed(2)} L`;
+  const formatUnits = (val) => val >= 1000 ? `${(val / 1000).toFixed(1)}K Units` : `${val} Units`;
 
-  // DATA REPOSITORY - All data changes based on filter
+  // Filter history functions for Weekly/Yearly etc.
+  const filterHistory = (days) => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return productionHistory.filter(p => new Date(p.date || p.createdAt) >= cutoff);
+  };
+
+  const getMetrics = (period) => {
+    let units = 0;
+    if (period === 'Weekly') units = productionStats.weekly;
+    else if (period === 'Monthly') units = productionStats.monthly;
+    else units = productionStats.yearly;
+
+    return {
+      stockValue: formatLakhs(totalStockValue),
+      production: formatUnits(units),
+      expenses: formatLakhs(totalExpenseAmount),
+      stockGrowth: "+--%", // Static placeholders for growth as we don't have historical delta yet
+      prodGrowth: "+--%",
+      expStatus: totalExpenseAmount > 500000 ? "Over Budget" : "Optimal",
+      expColor: totalExpenseAmount > 500000 ? "#ef4444" : "#10b981"
+    };
+  };
+
+  const getPlatesData = (periodUnits) => {
+    // Group production by size for the period
+    const sizes = ["6-inch", "8-inch", "10-inch", "12-inch"];
+    return sizes.map(size => {
+      const stockItem = stockData.find(s => s.size === size) || { quantity: 0, totalValue: 0 };
+      return {
+        size,
+        stock: stockItem.quantity,
+        produced: stockItem.quantity, // Currently same as stock
+        sold: 0 // Placeholder
+      };
+    });
+  };
+
+  const getProductionDetails = () => {
+    const today = new Date().toLocaleDateString('en-IN').replace(/\//g, '-');
+    const sizes = ["6-inch", "8-inch", "10-inch", "12-inch"];
+    return sizes.map(size => {
+      const todayQty = productionHistory
+        .filter(p => p.size === size && p.date === today)
+        .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+      return {
+        size,
+        today: todayQty
+      };
+    });
+  };
+
   const dashboardData = {
     Weekly: {
-      metrics: {
-        stockValue: "₹18.5 L",
-        production: "28,500 Units",
-        expenses: "₹4.2 L",
-        stockGrowth: "+2.1%",
-        prodGrowth: "+5.4%",
-        expStatus: "Optimal",
-        expColor: "#10b981"
-      },
-      plates: [
-        { size: "6-inch", stock: 5200, produced: 8500, sold: 7800 },
-        { size: "8-inch", stock: 4100, produced: 6200, sold: 5900 },
-        { size: "10-inch", stock: 3200, produced: 4800, sold: 4500 },
-        { size: "12-inch", stock: 2100, produced: 3500, sold: 3200 },
-      ],
-      productionDetails: [
-        { size: "6-inch", today: 1250, week: 8500, efficiency: "94%" },
-        { size: "8-inch", today: 980, week: 6200, efficiency: "92%" },
-        { size: "10-inch", today: 720, week: 4800, efficiency: "88%" },
-        { size: "12-inch", today: 550, week: 3500, efficiency: "91%" }
-      ],
+      metrics: getMetrics('Weekly'),
+      plates: getPlatesData(productionStats.weekly),
+      productionDetails: getProductionDetails(),
       attendance: {
-        present: 142,
-        absent: 14,
-        onLeave: 8,
-        total: 164,
-        trend: [98, 142, 138, 145, 144, 140, 142],
-        days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-      },
-      expenses: {
-        total: "₹4.2 L",
-        categories: [
-          { name: "Machine Maintenance", amount: "₹0.5 L", percentage: 12, color: "#f97316" },
-          { name: "Stock Purchased", amount: "₹2.1 L", percentage: 50, color: "#3b82f6" },
-          { name: "Employee Salary", amount: "₹1.3 L", percentage: 31, color: "#10b981" },
-          { name: "Others", amount: "₹0.3 L", percentage: 7, color: "#8b5cf6" }
-        ]
-      }
-    },
-    Monthly: {
-      metrics: {
-        stockValue: "₹82.4 L",
-        production: "1,25,000 Units",
-        expenses: `₹${(totalExpenseAmount / 100000).toFixed(1)} L`,
-        stockGrowth: "+12.5%",
-        prodGrowth: "+8.2%",
-        expStatus: totalExpenseAmount > 500000 ? "Over Budget" : "Optimal",
-        expColor: totalExpenseAmount > 500000 ? "#ef4444" : "#10b981"
-      },
-      plates: [
-        { size: "6-inch", stock: 15200, produced: 45000, sold: 42000 },
-        { size: "8-inch", stock: 11800, produced: 38000, sold: 36500 },
-        { size: "10-inch", stock: 9200, produced: 25000, sold: 22000 },
-        { size: "12-inch", stock: 7600, produced: 18000, sold: 16500 },
-      ],
-      productionDetails: [
-        { size: "6-inch", today: 1450, month: 45000, efficiency: "96%" },
-        { size: "8-inch", today: 1220, month: 38000, efficiency: "94%" },
-        { size: "10-inch", today: 850, month: 25000, efficiency: "89%" },
-        { size: "12-inch", today: 620, month: 18000, efficiency: "92%" }
-      ],
-      attendance: {
-        present: todayStats.present || 148,
-        absent: todayStats.absent || 12,
-        onLeave: todayStats.half || 7,
-        total: (todayStats.present || 148) + (todayStats.absent || 12) + (todayStats.half || 7),
+        present: todayStats.present,
+        absent: todayStats.absent,
+        onLeave: todayStats.half,
+        total: todayStats.total,
         trend: last7DaysTrend.map(t => t.present),
         days: last7DaysTrend.map(t => t.label)
       },
       expenses: {
-        total: `₹${(totalExpenseAmount / 100000).toFixed(1)} L`,
+        total: formatLakhs(totalExpenseAmount),
         categories: [
-          { name: "Machine Maintenance", amount: `₹${((expenseByCategory["Machine Maintenance"] || 0) / 100000).toFixed(1)} L`, percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
-          { name: "Stock Purchased", amount: `₹${((expenseByCategory["Material"] || 0) / 100000).toFixed(1)} L`, percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
-          { name: "Employee Salary", amount: `₹${((expenseByCategory["Salary"] || 0) / 100000).toFixed(1)} L`, percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Salary"] || 0) / totalExpenseAmount) * 100) : 0, color: "#10b981" },
-          { name: "Others", amount: `₹${((expenseByCategory["Others"] || 0) / 100000).toFixed(1)} L`, percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Others"] || 0) / totalExpenseAmount) * 100) : 0, color: "#8b5cf6" }
+          { name: "Maintenance", amount: formatLakhs(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
+          { name: "Material", amount: formatLakhs(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
+          { name: "Salary", amount: formatLakhs(expenseByCategory["Salary"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Salary"] || 0) / totalExpenseAmount) * 100) : 0, color: "#10b981" },
+          { name: "Others", amount: formatLakhs(expenseByCategory["Others"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Others"] || 0) / totalExpenseAmount) * 100) : 0, color: "#8b5cf6" }
+        ]
+      }
+    },
+    Monthly: {
+      metrics: getMetrics('Monthly'),
+      plates: getPlatesData(productionStats.monthly),
+      productionDetails: getProductionDetails(),
+      attendance: {
+        present: todayStats.present,
+        absent: todayStats.absent,
+        onLeave: todayStats.half,
+        total: todayStats.total,
+        trend: last7DaysTrend.map(t => t.present),
+        days: last7DaysTrend.map(t => t.label)
+      },
+      expenses: {
+        total: formatLakhs(totalExpenseAmount),
+        categories: [
+          { name: "Maintenance", amount: formatLakhs(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
+          { name: "Material", amount: formatLakhs(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
+          { name: "Salary", amount: formatLakhs(expenseByCategory["Salary"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Salary"] || 0) / totalExpenseAmount) * 100) : 0, color: "#10b981" },
+          { name: "Others", amount: formatLakhs(expenseByCategory["Others"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Others"] || 0) / totalExpenseAmount) * 100) : 0, color: "#8b5cf6" }
         ]
       }
     },
     Yearly: {
-      metrics: {
-        stockValue: "₹95.2 L",
-        production: "15.2 L Units",
-        expenses: "₹3.8 Cr",
-        stockGrowth: "+18%",
-        prodGrowth: "+24%",
-        expStatus: "Optimal",
-        expColor: "#10b981"
-      },
-      plates: [
-        { size: "6-inch", stock: 15200, produced: 545000, sold: 520000 },
-        { size: "8-inch", stock: 11800, produced: 438000, sold: 416500 },
-        { size: "10-inch", stock: 9200, produced: 325000, sold: 312000 },
-        { size: "12-inch", stock: 7600, produced: 218000, sold: 206500 },
-      ],
-      productionDetails: [
-        { size: "6-inch", today: 1450, year: 545000, efficiency: "97%" },
-        { size: "8-inch", today: 1220, year: 438000, efficiency: "96%" },
-        { size: "10-inch", today: 850, year: 325000, efficiency: "92%" },
-        { size: "12-inch", today: 620, year: 218000, efficiency: "95%" }
-      ],
+      metrics: getMetrics('Yearly'),
+      plates: getPlatesData(productionStats.yearly),
+      productionDetails: getProductionDetails(),
       attendance: {
-        present: 145,
-        absent: 11,
-        onLeave: 6,
-        total: 162,
-        trend: [130, 135, 140, 142, 145, 148, 150],
-        days: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul']
+        present: todayStats.present,
+        absent: todayStats.absent,
+        onLeave: todayStats.half,
+        total: todayStats.total,
+        trend: last7DaysTrend.map(t => t.present),
+        days: last7DaysTrend.map(t => t.label)
       },
       expenses: {
-        total: "₹3.8 Cr",
+        total: formatLakhs(totalExpenseAmount),
         categories: [
-          { name: "Machine Maintenance", amount: "₹0.46 Cr", percentage: 12, color: "#f97316" },
-          { name: "Stock Purchased", amount: "₹1.9 Cr", percentage: 50, color: "#3b82f6" },
-          { name: "Employee Salary", amount: "₹1.14 Cr", percentage: 30, color: "#10b981" },
-          { name: "Others", amount: "₹0.3 Cr", percentage: 8, color: "#8b5cf6" }
+          { name: "Maintenance", amount: formatLakhs(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
+          { name: "Material", amount: formatLakhs(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
+          { name: "Salary", amount: formatLakhs(expenseByCategory["Salary"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Salary"] || 0) / totalExpenseAmount) * 100) : 0, color: "#10b981" },
+          { name: "Others", amount: formatLakhs(expenseByCategory["Others"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Others"] || 0) / totalExpenseAmount) * 100) : 0, color: "#8b5cf6" }
         ]
       }
     }
   };
 
+  // For the bar chart logic, if all sold are 0, use stock to show SOMETHING
+  const plateDisplayData = dashboardData[timeFilter].plates.map(p => ({
+    ...p,
+    sold: p.sold || p.stock || 0 
+  }));
+
   const currentData = dashboardData[timeFilter];
-  const maxSold = Math.max(...currentData.plates.map(p => p.sold));
+  const maxSold = Math.max(...plateDisplayData.map(p => p.sold), 100);
 
   const handleMouseMove = (e) => {
     setMousePos({ x: e.clientX, y: e.clientY });
@@ -242,7 +245,7 @@ const Dashboard = () => {
         <div className="fixed-popup stock-popup" style={{ top: stockPopupPosition.top, left: stockPopupPosition.left }}>
           <div className="popup-header"><h4>CURRENT STOCK - 4 SIZES</h4></div>
           <div className="popup-content">
-            {currentData.plates.map((plate, index) => (
+            {plateDisplayData.map((plate, index) => (
               <div key={index} className="popup-item">
                 <span className="popup-size">{plate.size}</span>
                 <span className="popup-value">{plate.stock.toLocaleString()} units</span>
@@ -301,7 +304,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="enhanced-bar-chart">
-            {currentData.plates.map((plate, index) => (
+            {plateDisplayData.map((plate, index) => (
               <div key={index} className="enhanced-bar-group">
                 <div className="enhanced-bar-label">{plate.size}</div>
                 <div className="enhanced-bars">
@@ -414,7 +417,7 @@ const Dashboard = () => {
       <div className="stock-overview-section">
         <h3>STOCK OVERVIEW - 4 PLATE SIZES</h3>
         <div className="stock-grid">
-          {currentData.plates.map((plate, index) => (
+          {plateDisplayData.map((plate, index) => (
             <div key={index} className="stock-item-card" onClick={handleStockClick} style={{ cursor: 'pointer' }}>
               <div className="stock-item-header">
                 <span className="stock-size">{plate.size}</span>
