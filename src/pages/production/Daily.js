@@ -18,6 +18,7 @@ const SIZE_COLOR = {
   '12-inch': '#8b5cf6',
 };
 
+const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
 const grades = ['A', 'B', 'C'];
 
 const Production = () => {

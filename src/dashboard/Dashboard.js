@@ -19,6 +19,16 @@ const Dashboard = () => {
     productionHistory
   } = useAppContext();
 
+  const [timeFilter, setTimeFilter] = useState("Monthly");
+  const [showStockPopup, setShowStockPopup] = useState(false);
+  const [showProductionPopup, setShowProductionPopup] = useState(false);
+  const [showExpensesPopup, setShowExpensesPopup] = useState(false);
+  const [hoveredBar, setHoveredBar] = useState(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [stockPopupPosition, setStockPopupPosition] = useState({ top: 0, left: 0 });
+  const [productionPopupPosition, setProductionPopupPosition] = useState({ top: 0, left: 0 });
+  const [expensesPopupPosition, setExpensesPopupPosition] = useState({ top: 0, left: 0 });
+
   // Helper to get formatted currency in Lakhs
   const formatLakhs = (val) => `₹${(val / 100000).toFixed(2)} L`;
   const formatUnits = (val) => val >= 1000 ? `${(val / 1000).toFixed(1)}K Units` : `${val} Units`;
