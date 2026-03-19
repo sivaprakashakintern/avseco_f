@@ -6,10 +6,7 @@ import './ProductionPlan.css';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import dayjs from 'dayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
+
 
 
 
@@ -20,22 +17,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     productionTargets, 
     fetchTargets, 
     addProduction, 
-    employees,
-    productionHistory,
-    productionStats
+    employees
   } = useAppContext();
 
-  // DASHBOARD COUNTERS (from Context)
-  const { 
-    today: todayCount, 
-    week, 
-    month, 
-    stock, 
-    todayBySize, 
-    weekBySize, 
-    monthBySize, 
-    availableSizes: sizesList 
-  } = productionStats || {};
   
   // ===== TARGET ENTRY FORM STATE =====
   const [selectedProduct, setSelectedProduct] = useState('');
@@ -144,23 +128,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
 
 
-  // ===== PRODUCT OPTIONS FOR ENTRY FORM =====
-  const productOptions = React.useMemo(() => {
-    if (!dbProducts || dbProducts.length === 0) return [];
-    const unique = {};
-    dbProducts.forEach(p => {
-      if (!unique[p.name]) unique[p.name] = { name: p.name, sizes: [] };
-      if (!unique[p.name].sizes.includes(p.size)) unique[p.name].sizes.push(p.size);
-    });
-    return Object.values(unique);
-  }, [dbProducts]);
-
-  // Set defaults for form
-  useEffect(() => {
-    if (operators.length > 0 && !formData.operator) {
-      setFormData(prev => ({ ...prev, operator: operators[0] }));
-    }
-  }, [operators, formData.operator]);
 
 
 
