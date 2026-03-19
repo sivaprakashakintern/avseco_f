@@ -5,31 +5,10 @@ import "./AttendanceReport.css";
 const AttendanceReport = () => {
     const { employees, attendanceRecords, fetchAttendanceForDate } = useAppContext();
 
-    // Effect to fetch any missing attendance data for the month
-    React.useEffect(() => {
-        const fetchMonthData = async () => {
-            const days = getDaysInMonth(selectedYear, selectedMonth);
-            for (const day of days) {
-                const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`;
-                if (!attendanceRecords[dateKey]) {
-                    await fetchAttendanceForDate(dateKey);
-                }
-            }
-        };
-        fetchMonthData();
-    }, [selectedYear, selectedMonth, fetchAttendanceForDate, attendanceRecords]);
-
     // State for dates
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-11
     const [exportRange, setExportRange] = useState("month"); // 'month' or 'year'
-
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-    React.useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth <= 768);
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
 
     // Helper to get days in a specific month
     const getDaysInMonth = (year, month) => {
@@ -44,6 +23,27 @@ const AttendanceReport = () => {
             };
         });
     };
+
+    // Effect to fetch any missing attendance data for the month
+    React.useEffect(() => {
+        const fetchMonthData = async () => {
+            const days = getDaysInMonth(selectedYear, selectedMonth);
+            for (const day of days) {
+                const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`;
+                if (!attendanceRecords[dateKey]) {
+                    await fetchAttendanceForDate(dateKey);
+                }
+            }
+        };
+        fetchMonthData();
+    }, [selectedYear, selectedMonth, fetchAttendanceForDate, attendanceRecords]);
+
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    React.useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     // Current View Data
     const daysInCurrentView = useMemo(() => getDaysInMonth(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
@@ -89,7 +89,7 @@ const AttendanceReport = () => {
             };
         });
         return data;
-    }, [employees]);
+    }, [employees, attendanceRecords]);
 
     const currentMonthData = useMemo(() => generateMonthData(selectedYear, selectedMonth), [selectedYear, selectedMonth, generateMonthData]);
 
