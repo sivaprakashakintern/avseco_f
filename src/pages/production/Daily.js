@@ -70,7 +70,7 @@ const Production = () => {
   });
 
   // Production history from context
-  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts, fetchData, loading, employees } = useAppContext();
+  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts, employees } = useAppContext();
 
   // DYNAMIC OPERATORS FROM EMPLOYEES
   const operators = React.useMemo(() => {
@@ -80,7 +80,9 @@ const Production = () => {
   }, [employees]);
 
   // Fallback if no operators found
-  const operatorList = operators.length > 0 ? operators : ["No Operators Found"];
+  const operatorList = React.useMemo(() => {
+    return operators.length > 0 ? operators : ["No Operators Found"];
+  }, [operators]);
 
   // DERIVE DYNAMIC PRODUCTS FROM DATABASE
   const productOptions = React.useMemo(() => {

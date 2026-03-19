@@ -7,7 +7,7 @@ import { useAppContext } from "../../context/AppContext.js";
 
 
 const ProductList = () => {
-  const { products, fetchData, loading } = useAppContext();
+  const { products, fetchData } = useAppContext();
   const [viewMode, setViewMode] = useState("grid");
   const [selectedSize, setSelectedSize] = useState("All Sizes");
   const [searchTerm, setSearchTerm] = useState("");

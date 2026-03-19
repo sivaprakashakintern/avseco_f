@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAppContext } from "../../context/AppContext.js";
 import "./Stock.css";
 
 const StockOverview = () => {
-  const { stockData, totalStockUnits, totalStockValue, loading } = useAppContext();
+  const { stockData, totalStockUnits } = useAppContext();
 
   // Low stock logic (threshold 3000)
   const lowStockItems = stockData.filter(item => item.quantity < 3000);

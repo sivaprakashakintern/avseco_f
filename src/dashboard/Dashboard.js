@@ -11,11 +11,9 @@ const Dashboard = () => {
     expenseByCategory,
     todayStats,
     last7DaysTrend,
-    totalStockUnits,
     totalStockValue,
     stockData,
     productionStats,
-    employees,
     productionHistory
   } = useAppContext();
 
@@ -32,13 +30,6 @@ const Dashboard = () => {
   // Helper to get formatted currency in Lakhs
   const formatLakhs = (val) => `₹${(val / 100000).toFixed(2)} L`;
   const formatUnits = (val) => val >= 1000 ? `${(val / 1000).toFixed(1)}K Units` : `${val} Units`;
-
-  // Filter history functions for Weekly/Yearly etc.
-  const filterHistory = (days) => {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
-    return productionHistory.filter(p => new Date(p.date || p.createdAt) >= cutoff);
-  };
 
   const getMetrics = (period) => {
     let units = 0;

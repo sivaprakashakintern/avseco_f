@@ -13,9 +13,7 @@ const Employees = () => {
     addEmployee: ctxAddEmployee,
     updateEmployee: ctxUpdateEmployee,
     deleteEmployee: ctxDeleteEmployee,
-    departments,
-    fetchData,
-    loading
+    departments
   } = useAppContext();
 
   const [viewMode, setViewMode] = useState(window.innerWidth <= 768 ? "list" : "grid");
