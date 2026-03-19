@@ -2,10 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { formatDate } from '../../utils/dateUtils.js';
 import { useAppContext } from '../../context/AppContext.js';
 import { productionTargetApi } from '../../utils/api.js';
-import dayjs from 'dayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import './ProductionPlan.css';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -14,8 +10,7 @@ import 'jspdf-autotable';
 
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
-  const { products: dbProducts, productionTargets, fetchTargets, deleteProduction, addProduction, employees, productionStats } = useAppContext();
-  const { today: todayCount, week, month, stock, todayBySize, weekBySize, monthBySize, availableSizes: sizesList } = productionStats || {};
+  const { products: dbProducts, productionTargets, fetchTargets, addProduction, employees } = useAppContext();
   
   // ===== TARGET ENTRY FORM STATE =====
   const [selectedProduct, setSelectedProduct] = useState('');
