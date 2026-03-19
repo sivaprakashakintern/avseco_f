@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -56,7 +56,7 @@ const Production = () => {
   const [showSummaryDatePicker, setShowSummaryDatePicker] = useState(false);
 
   // Production history from context
-  const { productionHistory, productionTargets, deleteProduction, employees } = useAppContext();
+  const { productionHistory, productionTargets, deleteProduction } = useAppContext();
 
 
 
