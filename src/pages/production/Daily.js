@@ -248,6 +248,11 @@ const Production = () => {
   };
 
 
+  const handleSummaryDateSelect = (date) => {
+    setSummaryDate(date);
+    setShowSummaryDatePicker(false);
+  };
+
   // ========== EXPORT MODAL FUNCTIONS ==========
   const handleInputChange = (e) => {
     const { name, value } = e.target;
