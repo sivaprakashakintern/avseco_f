@@ -32,9 +32,17 @@ export const AppProvider = ({ children }) => {
             ]);
             
             setEmployees(empData.map(e => ({ ...e, id: e._id })));
-            setExpenses(expData.map(e => ({ ...e, id: e._id })));
+            setExpenses(expData.map(e => ({ ...e, id: e._id })).sort((a, b) => {
+                const dateA = a.date.includes('-') ? new Date(a.date.split('-').reverse().join('-')) : new Date(a.date);
+                const dateB = b.date.includes('-') ? new Date(b.date.split('-').reverse().join('-')) : new Date(b.date);
+                return dateB - dateA;
+            }));
             setClients(clientData.map(c => ({ ...c, id: c._id })));
-            setProductionHistory(prodData.map(p => ({ ...p, id: p._id })));
+            setProductionHistory(prodData.map(p => ({ ...p, id: p._id })).sort((a, b) => {
+                const dateA = a.date && a.date.includes('-') ? new Date(a.date.split('-').reverse().join('-')) : new Date(a.date || a.createdAt);
+                const dateB = b.date && b.date.includes('-') ? new Date(b.date.split('-').reverse().join('-')) : new Date(b.date || b.createdAt);
+                return dateB - dateA;
+            }));
             setProducts(productData.map(p => ({ ...p, id: p._id })));
             setProductionTargets(targetData.map(t => ({ ...t, id: t._id })));
         } catch (error) {

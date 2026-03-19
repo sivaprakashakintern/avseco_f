@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAppContext } from '../../context/AppContext.js';
-import { formatDate, isWithinLast2Days } from '../../utils/dateUtils.js';
+import { formatDate } from '../../utils/dateUtils.js';
 import "../stock/Stock.css";
 import "./ExpenseReport.css";
 
@@ -214,12 +214,12 @@ const Expenses = () => {
                                     <td style={{ fontWeight: '500' }}>{formatDate(expense.date)}</td>
                                     <td>
                                         <span className={`status-badge ${expense.category === 'Machine Maintenance' ? 'low' :
-                                            expense.category === 'Stock Purchased' ? 'normal' :
-                                                expense.category === 'Employee Salary' ? 'critical' : 'normal'
-                                            }`}>
-                                            {expense.category}
-                                        </span>
-                                    </td>
+                                             expense.category === 'Material' ? 'normal' :
+                                                 expense.category === 'Salary' ? 'critical' : 'normal'
+                                             }`}>
+                                             {expense.category}
+                                         </span>
+                                     </td>
                                     <td>
                                         <span className="payment-badge" style={{
                                             padding: '4px 8px',
@@ -235,26 +235,20 @@ const Expenses = () => {
                                     <td className="amount" style={{ fontWeight: '800', color: '#006A4E' }}>₹{Number(expense.amount).toLocaleString()}</td>
                                     <td>
                                         <div className="action-buttons">
-                                            {isWithinLast2Days(expense.date) ? (
-                                                <>
-                                                    <button 
-                                                        className="action-btn edit" 
-                                                        title="Edit"
-                                                        onClick={() => handleEditExpense(expense.id)}
-                                                    >
-                                                        <span className="material-symbols-outlined">edit</span>
-                                                    </button>
-                                                    <button 
-                                                        className="action-btn delete" 
-                                                        title="Delete"
-                                                        onClick={() => handleDeleteExpense(expense.id)}
-                                                    >
-                                                        <span className="material-symbols-outlined">delete</span>
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>Locked</span>
-                                            )}
+                                            <button 
+                                                className="action-btn edit" 
+                                                title="Edit"
+                                                onClick={() => handleEditExpense(expense.id)}
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button 
+                                                className="action-btn delete" 
+                                                title="Delete"
+                                                onClick={() => handleDeleteExpense(expense.id)}
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -300,7 +294,6 @@ const Expenses = () => {
                                                     <span className="info-value">{ex.paymentMode}</span>
                                                 </div>
                                             </div>
-                                            {isWithinLast2Days(ex.date) && (
                                                 <div className="expense-action-buttons">
                                                     <button
                                                         className="expense-mini-btn edit"
@@ -317,7 +310,6 @@ const Expenses = () => {
                                                         Delete
                                                     </button>
                                                 </div>
-                                            )}
                                         </div>
                                     )}
                                 </div>
