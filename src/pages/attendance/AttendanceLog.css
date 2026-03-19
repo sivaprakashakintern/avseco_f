@@ -584,6 +584,66 @@ td.text-center {
   text-align: center;
 }
 
+/* ── Details Column ── */
+.att-td-details {
+  min-width: 220px;
+  vertical-align: middle;
+}
+
+.att-detail-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  max-width: 260px;
+  text-align: left;
+}
+
+.att-detail-half {
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  color: #92400e;
+}
+
+.att-detail-absent {
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+}
+
+.att-detail-icon {
+  font-size: 18px !important;
+  margin-top: 1px;
+}
+
+.att-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.att-detail-time {
+  font-weight: 800;
+  display: block;
+  font-size: 13px;
+}
+
+.att-detail-note {
+  font-weight: 600;
+  opacity: 0.9;
+  line-height: 1.4;
+  word-break: break-word;
+  font-size: 12px;
+}
+
+.att-detail-present {
+  color: #cbd5e1;
+  font-weight: 500;
+  font-size: 14px;
+}
+
 /* Employee Cell */
 .att-emp-cell {
   display: flex;

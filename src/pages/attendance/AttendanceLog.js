@@ -388,6 +388,7 @@ const AttendanceLog = () => {
                   <th className="text-center" style={{ width: '50px' }}>S.NO</th>
                   <th>Employee</th>
                   <th>Department</th>
+                  <th>Details</th>
                   <th className="text-center">Mark Attendance</th>
                 </tr>
               </thead>
@@ -410,6 +411,33 @@ const AttendanceLog = () => {
                         </div>
                       </td>
                       <td><span className="att-dept-badge">{emp.department}</span></td>
+
+                      {/* ── DETAILS COLUMN ── */}
+                      <td className="att-td-details">
+                        {emp.status === "half" && emp.halfDayTime ? (
+                          <div className="att-detail-box att-detail-half">
+                            <span className="att-detail-icon material-symbols-outlined">schedule</span>
+                            <div className="att-detail-content">
+                              <span className="att-detail-time">
+                                {emp.halfDayTime.from} – {emp.halfDayTime.to}
+                              </span>
+                              {emp.note && (
+                                <span className="att-detail-note">{emp.note}</span>
+                              )}
+                            </div>
+                          </div>
+                        ) : emp.status === "absent" && emp.note ? (
+                          <div className="att-detail-box att-detail-absent">
+                            <span className="att-detail-icon material-symbols-outlined">info</span>
+                            <span className="att-detail-note">{emp.note}</span>
+                          </div>
+                        ) : emp.status === "present" ? (
+                          <span className="att-detail-present">—</span>
+                        ) : (
+                          <span className="att-detail-present">—</span>
+                        )}
+                      </td>
+
                       <td className="text-center">
                         <div className="att-toggle-group">
                           <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "present")} title="Present">P</button>
@@ -421,7 +449,7 @@ const AttendanceLog = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="att-empty">
+                    <td colSpan="5" className="att-empty">
                       <span className="material-symbols-outlined">search_off</span>
                       <p>No employees match the current filters</p>
                       <button className="att-btn att-btn-ghost" onClick={clearFilters}>Clear Filters</button>
