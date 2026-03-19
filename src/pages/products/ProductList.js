@@ -8,8 +8,7 @@ import { useAppContext } from "../../context/AppContext.js";
 
 const ProductList = () => {
   const { products, fetchData } = useAppContext();
-  // Simplified states - removed search and view toggle
-  const [selectedSize, setSelectedSize] = useState("All Sizes");
+  // Simplified states - removed unused filters
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -53,13 +52,7 @@ const ProductList = () => {
     return acc;
   }, {});
 
-  const uniqueProductNames = Object.keys(productGroups).filter(name => {
-    const group = productGroups[name];
-    return group.some(p => {
-      const matchesSize = selectedSize === "All Sizes" || p.size === selectedSize;
-      return matchesSize;
-    });
-  });
+  const uniqueProductNames = Object.keys(productGroups);
 
   // ========== HANDLERS ==========
 
@@ -199,11 +192,6 @@ const ProductList = () => {
         [name]: value,
       });
     }
-  };
-
-  // Clear filters
-  const clearFilters = () => {
-    setSelectedSize("All Sizes");
   };
 
   // Format currency
