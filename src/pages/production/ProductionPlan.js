@@ -159,6 +159,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showExportOptions, setShowExportOptions] = useState(false);
 
+
   // ===== EXPORT STATES =====
   const [selectedReportType, setSelectedReportType] = useState('size-wise');
   const [selectedFormat, setSelectedFormat] = useState('excel');
@@ -862,7 +863,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
         </div>
 
         <div className="view-history-button-wrapper mobile-only-flex">
-            <button className="btn-view-history-compact" onClick={() => setShowHistoryOnly(true)}>
+            <button className="btn-view-history-compact" onClick={() => onNavigate('daily')}>
             <span className="material-symbols-outlined">history</span>
             View Today Production
           </button>

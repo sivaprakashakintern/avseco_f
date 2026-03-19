@@ -25,6 +25,20 @@ const Production = () => {
   const [historySizeFilter, setHistorySizeFilter] = useState('all');
   const [showHistoryOnly, setShowHistoryOnly] = useState(false);
 
+  // Delete/Notification State
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [productionToDelete, setProductionToDelete] = useState(null);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationType, setNotificationType] = useState('success');
+
+  const showNotificationMessage = (message, type = 'success') => {
+    setNotificationMessage(message);
+    setNotificationType(type);
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
+  };
+
   const { productionHistory, productionTargets, deleteProduction } = useAppContext();
 
 
@@ -116,6 +130,24 @@ const Production = () => {
 
   return (
     <div className={`daily-production-page ${showHistoryOnly ? 'mobile-history-active' : ''}`}>
+      {showNotification && (
+        <div className={`notification-popup ${notificationType}`}>
+          <div className="notification-content">
+            <div className="notification-icon">
+              {notificationType === 'success' && <span className="material-symbols-outlined">check_circle</span>}
+              {notificationType === 'error' && <span className="material-symbols-outlined">error</span>}
+              {notificationType === 'warning' && <span className="material-symbols-outlined">warning</span>}
+              {notificationType === 'info' && <span className="material-symbols-outlined">info</span>}
+            </div>
+            <div className="notification-message">{notificationMessage}</div>
+            <button className="notification-close" onClick={() => setShowNotification(false)}>
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div className="notification-progress"></div>
+        </div>
+      )}
+
 
 
       <div className="page-header premium-header">
