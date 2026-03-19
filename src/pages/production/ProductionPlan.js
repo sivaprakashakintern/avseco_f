@@ -14,7 +14,7 @@ import 'jspdf-autotable';
 
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
-  const { products: dbProducts, productionTargets, fetchTargets, addProduction, employees, productionStats, productionHistory } = useAppContext();
+  const { products: dbProducts, productionTargets, fetchTargets, addProduction, employees, productionStats } = useAppContext();
   const { today: todayCount, week, month, stock, todayBySize, weekBySize, monthBySize, availableSizes: sizesList } = productionStats || {};
   
   // ===== PRODUCTION ENTRY FORM STATE =====

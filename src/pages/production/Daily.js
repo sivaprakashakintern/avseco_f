@@ -19,7 +19,6 @@ const SIZE_COLOR = {
 };
 
 const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
-const grades = ['A', 'B', 'C'];
 
 const Production = () => {
   // Mobile card expand state
@@ -57,47 +56,9 @@ const Production = () => {
   const [showSummaryDatePicker, setShowSummaryDatePicker] = useState(false);
 
   // Production history from context
-  const { productionHistory, productionTargets, addProduction, deleteProduction, products: dbProducts, employees } = useAppContext();
+  const { productionHistory, productionTargets, deleteProduction, employees } = useAppContext();
 
-  // DYNAMIC OPERATORS FROM EMPLOYEES
-  const operators = React.useMemo(() => {
-    return employees
-      .filter(e => e.department === "Operator" || e.department === "Machine operator")
-      .map(e => e.name);
-  }, [employees]);
 
-  // Fallback if no operators found
-  const operatorList = React.useMemo(() => {
-    return operators.length > 0 ? operators : ["No Operators Found"];
-  }, [operators]);
-
-  // DERIVE DYNAMIC PRODUCTS FROM DATABASE
-  const productOptions = React.useMemo(() => {
-    if (!dbProducts || dbProducts.length === 0) return [];
-    
-    const uniqueProducts = dbProducts.reduce((acc, p) => {
-      if (!acc[p.name]) {
-        acc[p.name] = { name: p.name, sizes: [] };
-      }
-      if (!acc[p.name].sizes.includes(p.size)) {
-        acc[p.name].sizes.push(p.size);
-      }
-      return acc;
-    }, {});
-    
-    return Object.values(uniqueProducts);
-  }, [dbProducts]);
-
-  // ANALYTICS STATS calculation from history only
-  const [stats, setStats] = useState({
-    today: 0,
-    week: 0,
-    month: 0,
-    stock: 0,
-    todayBySize: {},
-    weekBySize: {},
-    monthBySize: {}
-  });
 
 
   // ========== HELPER FUNCTIONS ==========
@@ -120,71 +81,7 @@ const Production = () => {
     return diffDays <= 2;
   };
 
-  // ========== CALCULATE STATS FUNCTION (DEFINED BEFORE USE) ==========
-  const calculateStats = useCallback((history, targets) => {
-    const today = formatDate(dayjs());
-    const data = history || [];
-    const targetList = targets || [];
 
-    // Helpers for dates
-    const currentMonth = dayjs().month() + 1;
-    const currentYear = dayjs().year();
-    const last7Days = [];
-    for (let i = 0; i < 7; i++) {
-      const date = dayjs().subtract(i, 'day');
-      last7Days.push(formatDate(date));
-    }
-
-    // Today's totals by size
-    const todayHistory = data.filter(item => item.date === today);
-
-    // 1. Temporal Stats from History Logs ONLY (prevents double counting)
-    const todayTotal = todayHistory.reduce((sum, item) => sum + item.quantity, 0);
-    
-    const todayBySize = {};
-    availableSizes.forEach(size => {
-      todayBySize[size] = todayHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
-    });
-
-    const weekHistory = data.filter(item => last7Days.includes(item.date));
-    const weekTotal = weekHistory.reduce((sum, item) => sum + item.quantity, 0);
-
-    const weekBySize = {};
-    availableSizes.forEach(size => {
-      weekBySize[size] = weekHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
-    });
-
-    const monthHistory = data.filter(item => {
-      const parts = item.date.split('-');
-      const month = parseInt(parts[1]);
-      const year = parseInt(parts[2]);
-      return month === currentMonth && year === currentYear;
-    });
-    const monthTotal = monthHistory.reduce((sum, item) => sum + item.quantity, 0);
-
-    const monthBySize = {};
-    availableSizes.forEach(size => {
-      monthBySize[size] = monthHistory.filter(item => item.size === size).reduce((sum, item) => sum + item.quantity, 0);
-    });
-
-    // 2. STOCK: Sum of all matches in targets + any records that didn't match a target
-    const stockTotal = targetList.reduce((sum, item) => sum + (item.producedQty || 0), 0);
-
-    setStats({
-      today: todayTotal,
-      week: weekTotal,
-      month: monthTotal,
-      stock: stockTotal,
-      todayBySize,
-      weekBySize,
-      monthBySize
-    });
-  }, []);
-
-  // ========== INITIAL STATS CALCULATION ==========
-  useEffect(() => {
-    calculateStats(productionHistory, productionTargets);
-  }, [productionHistory, productionTargets, calculateStats]);
 
   // ========== GET SUMMARY DATA BY SIZE FOR SELECTED VIEW ==========
   const getSummaryData = () => {
