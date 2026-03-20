@@ -5,15 +5,19 @@ import logo from '../../assets/logo.png';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
-const PRODUCTS_LIST = [
-    { id: 1, baseName: "Areca Leaf Plate", size: "6\" Round", name: "Areca Leaf Plate 6\" Round", sku: "FG-PL-006", hsn: "46021919", category: "Finished Goods", unit: "pcs", currentStock: 6000, price: 2.50 },
-    { id: 2, baseName: "Areca Leaf Plate", size: "8\" Round", name: "Areca Leaf Plate 8\" Round", sku: "FG-PL-008", hsn: "46021919", category: "Finished Goods", unit: "pcs", currentStock: 5000, price: 4.50 },
-    { id: 3, baseName: "Areca Leaf Plate", size: "10\" Round", name: "Areca Leaf Plate 10\" Round", sku: "FG-PL-010", hsn: "46021919", category: "Finished Goods", unit: "pcs", currentStock: 3200, price: 6.50 },
-    { id: 4, baseName: "Areca Leaf Plate", size: "12\" Round", name: "Areca Leaf Plate 12\" Round", sku: "FG-PL-012", hsn: "46021919", category: "Finished Goods", unit: "pcs", currentStock: 2500, price: 8.50 },
-];
+
 
 const Sales = () => {
-    const { clients, addClient, employees } = useAppContext();
+    const { clients, addClient, employees, products: dbProducts } = useAppContext();
+    
+    // Process products into unique base names and their variants
+    const products = React.useMemo(() => {
+        return (dbProducts || []).map(p => ({
+            ...p,
+            baseName: p.name,
+            price: p.sellPrice || 0
+        }));
+    }, [dbProducts]);
     const [showAddClientModal, setShowAddClientModal] = useState(false);
     const [newClientData, setNewClientData] = useState({
         companyName: "",
@@ -31,7 +35,15 @@ const Sales = () => {
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
 
     // Product Selection State
-    const [selectedBaseProduct, setSelectedBaseProduct] = useState("Areca Leaf Plate");
+    const [selectedBaseProduct, setSelectedBaseProduct] = useState("");
+    
+    // Auto-select first product if available
+    useEffect(() => {
+        if (products.length > 0 && !selectedBaseProduct) {
+            setSelectedBaseProduct(products[0].baseName);
+        }
+    }, [products, selectedBaseProduct]);
+    
     const [isBaseProductDropdownOpen, setIsBaseProductDropdownOpen] = useState(false);
     const [selectedSize, setSelectedSize] = useState("10\" Round");
     const [isSizeDropdownOpen, setIsSizeDropdownOpen] = useState(false);
@@ -63,11 +75,16 @@ const Sales = () => {
     const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
     const [editingTransactionId, setEditingTransactionId] = useState(null);
 
-    // Search and Filter states for Recent History
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState("all");
 
-    const products = PRODUCTS_LIST;
+    // Filtered employees for delivery (Sales or Delivery department)
+    const deliveryEmployees = React.useMemo(() => {
+        return (employees || []).filter(emp => 
+            emp.department?.toLowerCase().includes("sales") || 
+            emp.department?.toLowerCase().includes("delivery")
+        );
+    }, [employees]);
 
     // Derived selected product
     const selectedProduct = products.find(p => p.baseName === selectedBaseProduct && p.size === selectedSize)?.name || "";
@@ -767,7 +784,8 @@ const Sales = () => {
                                                 />
                                             </div>
                                             {clients.filter(c =>
-                                                c.companyName.toLowerCase().includes(companyName.toLowerCase())
+                                                c.companyName.toLowerCase().includes(companyName.toLowerCase()) ||
+                                                (c.contactPerson && c.contactPerson.toLowerCase().includes(companyName.toLowerCase()))
                                             ).length > 0 ? (
                                                 <>
                                                     {clients
@@ -1095,10 +1113,10 @@ const Sales = () => {
                                                     onChange={(e) => setDeliveryEmployee(e.target.value)}
                                                 />
                                             </div>
-                                            {employees.filter(emp =>
+                                            {deliveryEmployees.filter(emp =>
                                                 emp.name.toLowerCase().includes((deliveryEmployee || "").toLowerCase())
                                             ).length > 0 ? (
-                                                employees
+                                                deliveryEmployees
                                                     .filter(emp => emp.name.toLowerCase().includes((deliveryEmployee || "").toLowerCase()))
                                                     .map((emp) => (
                                                         <button
@@ -1114,7 +1132,7 @@ const Sales = () => {
                                                         </button>
                                                     ))
                                             ) : (
-                                                <div className="no-clients-found">No employees matching "{deliveryEmployee}"</div>
+                                                <div className="no-clients-found">No delivery staff found matching "{deliveryEmployee}"</div>
                                             )}
                                         </div>
                                     )}
@@ -2006,26 +2024,39 @@ const Sales = () => {
                                 <button
                                     className="modal-confirm"
                                     disabled={!newClientData.companyName || !newClientData.contactPerson || !newClientData.email}
-                                    onClick={() => {
-                                        const newClient = {
-                                            ...newClientData,
-                                            totalOrders: 0,
-                                            totalSpent: "₹0",
-                                            lastOrder: "Never",
-                                        };
-                                        addClient(newClient);
-                                        setCompanyName(newClientData.companyName);
-                                        setCustomerName(newClientData.contactPerson);
-                                        setShowAddClientModal(false);
-                                        // Reset form
-                                        setNewClientData({
-                                            companyName: "",
-                                            contactPerson: "",
-                                            email: "",
-                                            phone: "",
-                                            address: "",
-                                            gst: ""
-                                        });
+                                    onClick={async () => {
+                                        try {
+                                            const newClient = {
+                                                ...newClientData,
+                                                totalOrders: 0,
+                                                totalSpent: "₹0",
+                                                lastOrder: "Never",
+                                            };
+                                            await addClient(newClient);
+                                            setCompanyName(newClientData.companyName);
+                                            setCustomerName(newClientData.contactPerson);
+                                            setCustomerEmail(newClientData.email);
+                                            setCustomerPhone(newClientData.phone || "");
+                                            setCustomerGstin(newClientData.gst || "");
+                                            setCustomerAddress(newClientData.address || "");
+                                            setShowAddClientModal(false);
+                                            
+                                            setFeedbackMessage("✅ New client added to database");
+                                            setTimeout(() => setFeedbackMessage(""), 3000);
+
+                                            // Reset form
+                                            setNewClientData({
+                                                companyName: "",
+                                                contactPerson: "",
+                                                email: "",
+                                                phone: "",
+                                                address: "",
+                                                gst: ""
+                                            });
+                                        } catch (err) {
+                                            console.error("Error adding client from Sales:", err);
+                                            alert("Failed to save client. Please check details.");
+                                        }
                                     }}
                                 >
                                     Add Client
