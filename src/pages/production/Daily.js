@@ -87,20 +87,10 @@ const Production = () => {
     addProduction,
     deleteProduction,
     products: dbProducts, 
-    employees, 
-    productionStats 
+    employees
   } = useAppContext();
 
-  const { 
-    today: todayCount, 
-    week, 
-    month, 
-    stock, 
-    todayBySize, 
-    weekBySize, 
-    monthBySize, 
-    availableSizes: sizesList 
-  } = productionStats || {};
+
 
   // Production Entry Form State
   const [productionDate, setProductionDate] = useState(dayjs());

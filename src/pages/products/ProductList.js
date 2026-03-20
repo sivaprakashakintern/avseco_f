@@ -97,7 +97,11 @@ const ProductList = () => {
     });
 
     try {
-      await productsApi.add(newEntries);
+      // Add each size variant one by one to ensure compatibility with all backend versions (deployed vs local)
+      for (const entry of newEntries) {
+        await productsApi.add(entry);
+      }
+      
       await fetchProducts();
       setShowAddModal(false);
       setFeedbackMessage(`${newEntries.length} product(s) added successfully`);
