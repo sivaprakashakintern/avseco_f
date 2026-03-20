@@ -33,11 +33,24 @@ body,
 /* ===== TARGET ENTRY FORM ===== */
 .target-entry-section {
   background: white;
-  border-radius: 16px;
-  padding: 20px 24px;
-  margin-bottom: 24px;
-  border: 1px solid #e0f0e5;
-  box-shadow: 0 4px 12px rgba(0, 80, 60, 0.05);
+  border-radius: 20px;
+  padding: 32px;
+  margin: 0 auto 40px;
+  max-width: 800px;
+  border: 1px solid rgba(46, 139, 102, 0.1);
+  box-shadow: 0 10px 30px -10px rgba(0, 80, 60, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.target-entry-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #2e8b66, #10b981);
 }
 
 .target-entry-section h3 {
@@ -49,9 +62,9 @@ body,
 
 .target-form {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr 1fr;
-  gap: 16px;
-  align-items: end;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  align-items: flex-end;
 }
 
 .form-group {
@@ -60,12 +73,12 @@ body,
 }
 
 .form-group label {
-  font-size: 0.85rem;
-  margin-bottom: 6px;
-  font-weight: 600;
-  color: #3a6b58;
+  font-size: 0.75rem;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
 }
 
 .form-select,
@@ -96,21 +109,22 @@ body,
 }
 
 .btn-add-target {
-  padding: 10px 16px;
+  padding: 0 24px;
   background: #2e8b66;
   color: white;
   border: none;
-  border-radius: 10px;
-  font-weight: 600;
+  border-radius: 12px;
+  font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  transition: all 0.2s ease;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
-  height: 42px;
+  height: 48px;
+  margin-top: 8px;
 }
 
 .btn-add-target:hover:not(:disabled) {

@@ -24,23 +24,11 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   // ===== TARGET ENTRY FORM STATE =====
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
-  const [selectedOperator, setSelectedOperator] = useState('');
   const [targetQty, setTargetQty] = useState('');
 
 
   
-  // DYNAMIC OPERATORS FROM EMPLOYEES
-  const operators = React.useMemo(() => {
-    return employees
-      .filter(e => e.department === "Operator" || e.department === "Machine operator")
-      .map(e => e.name);
-  }, [employees]);
 
-  useEffect(() => {
-    if (operators.length > 0 && !selectedOperator) {
-      setSelectedOperator(operators[0]);
-    }
-  }, [operators, selectedOperator]);
 
   // ===== DYNAMIC PRODUCT DATA FROM DATABASE =====
   const uniqueProducts = React.useMemo(() => {
@@ -165,7 +153,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       status: 'pending',
       unit: 'Pieces',
       size: product.size,
-      operator: selectedOperator,
       date: new Date().toLocaleDateString('en-IN').replace(/\//g, '-') // DD-MM-YYYY
     };
 
@@ -475,9 +462,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
 
         {/* Central Entry Form (Target Setting Only) */}
-        <div className="target-entry-section" style={{ maxWidth: '600px', margin: '0 auto 30px' }}>
-          <h3 style={{ borderBottom: '2px solid #2e8b66' }}>Set Production Target by Size</h3>
-          <div className="target-form" style={{ gridTemplateColumns: '1fr' }}>
+        <div className="target-entry-section">
+          <h3>Set Production Target by Size</h3>
+          <div className="target-form">
             <div className="form-group">
               <label>Select Product</label>
               <select
@@ -510,18 +497,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
               </select>
             </div>
 
-            <div className="form-group">
-              <label>Assign Operator</label>
-              <select
-                value={selectedOperator}
-                onChange={(e) => setSelectedOperator(e.target.value)}
-                className="form-select"
-              >
-                {operators.map(op => (
-                  <option key={op} value={op}>{op}</option>
-                ))}
-              </select>
-            </div>
+
 
             <div className="form-group">
               <label>Target Quantity (Pieces)</label>
@@ -687,7 +663,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                 <tr>
                   <th className="hide-mobile">Product</th>
                   <th>Size</th>
-                  <th className="hide-mobile">Operator</th>
                   <th className="hide-mobile">SKU</th>
                   <th className="text-right">Target</th>
                   <th className="text-right">Produced</th>
@@ -712,9 +687,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                           </div>
                         </td>
                         <td><strong>{item.productSize}</strong></td>
-                        <td className="hide-mobile">
-                          <span className="operator-badge">{item.operator || 'N/A'}</span>
-                        </td>
+
                         <td className="hide-mobile"><span className="prod-sku">{item.sku}</span></td>
                         <td className="text-right">{item.targetQty.toLocaleString()}</td>
                         <td className="text-right">
