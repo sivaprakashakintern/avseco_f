@@ -460,7 +460,36 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
 
 
-        {/* Central Entry Form (Target Setting Only) */}
+        {/* Plan Summary Section - Now at top and centered */}
+        <div className="summary-section-centered">
+          <div className="premium-stats-grid plan-summary">
+            <div className="premium-stat-card today">
+              <div className="p-stat-info">
+                <span className="p-stat-label">Total Target</span>
+                <div className="p-stat-value">{(totalTarget || 0).toLocaleString()}</div>
+                <span className="p-stat-tag">Units</span>
+              </div>
+            </div>
+
+            <div className="premium-stat-card week">
+              <div className="p-stat-info">
+                <span className="p-stat-label">Produced</span>
+                <div className="p-stat-value">{(totalProduced || 0).toLocaleString()}</div>
+                <span className="p-stat-tag">{overallProgress}%</span>
+              </div>
+            </div>
+
+            <div className="premium-stat-card month">
+              <div className="p-stat-info">
+                <span className="p-stat-label">Balance</span>
+                <div className="p-stat-value">{(totalRemaining || 0).toLocaleString()}</div>
+                <span className="p-stat-tag">To do</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Central Entry Form */}
         <div className="target-entry-section">
           <h3>Set Production Target by Size</h3>
           <div className="target-form">
@@ -495,8 +524,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                 ))}
               </select>
             </div>
-
-
 
             <div className="form-group">
               <label>Target Quantity (Pieces)</label>
@@ -573,32 +600,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           </div>
         </div>
 
-        {/* Plan Summary Section - Premium Version */}
-        <div className="premium-stats-grid plan-summary">
-          <div className="premium-stat-card today"> {/* Using 'today' class for color consistency or 'target' if added to CSS */}
-            <div className="p-stat-info">
-              <span className="p-stat-label">Total Target</span>
-              <div className="p-stat-value">{(totalTarget || 0).toLocaleString()}</div>
-              <span className="p-stat-tag">Units</span>
-            </div>
-          </div>
 
-          <div className="premium-stat-card week">
-            <div className="p-stat-info">
-              <span className="p-stat-label">Produced</span>
-              <div className="p-stat-value">{(totalProduced || 0).toLocaleString()}</div>
-              <span className="p-stat-tag">{overallProgress}%</span>
-            </div>
-          </div>
-
-          <div className="premium-stat-card month">
-            <div className="p-stat-info">
-              <span className="p-stat-label">Balance</span>
-              <div className="p-stat-value">{(totalRemaining || 0).toLocaleString()}</div>
-              <span className="p-stat-tag">To do</span>
-            </div>
-          </div>
-        </div>
 
         {/* Search & Filter Section */}
         <div className="search-filter-section">
