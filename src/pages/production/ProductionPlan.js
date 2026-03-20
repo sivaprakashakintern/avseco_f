@@ -16,7 +16,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     products: dbProducts, 
     productionTargets, 
     fetchTargets, 
-    employees,
     productionStats
   } = useAppContext();
 
