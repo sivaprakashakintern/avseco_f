@@ -106,6 +106,11 @@ const ProductList = () => {
       setFeedbackMessage(`${newEntries.length} product(s) added successfully`);
     } catch (err) {
       console.error("Error adding products:", err);
+      // Detailed logging for debugging
+      if (err.response?.data) {
+        console.log("SERVER ERROR DETAILS:", err.response.data);
+      }
+      
       const serverMsg = err.response?.data?.message || err.message;
       setFeedbackMessage(`Error: ${serverMsg}`);
     }
