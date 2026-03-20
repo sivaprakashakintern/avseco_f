@@ -84,11 +84,14 @@ const ProductList = () => {
       const ts = Date.now().toString().slice(-4);
       const autoSku = `ARECA-${namePart}-${size.split('-')[0]}-${ts}${randomSuffix}`;
 
-      // Minimal payload - only required fields to bypass possible schema mismatches
       return {
         name: formData.name.trim(),
         sku: autoSku,
-        size: size
+        size: size,
+        category: "Plates",
+        costPrice: 0,
+        sellPrice: 0,
+        margin: "0.0%",
       };
     });
 
@@ -103,11 +106,6 @@ const ProductList = () => {
       setFeedbackMessage(`${newEntries.length} product(s) added successfully`);
     } catch (err) {
       console.error("Error adding products:", err);
-      // Detailed logging for debugging
-      if (err.response?.data) {
-        console.log("SERVER ERROR DETAILS:", err.response.data);
-      }
-      
       const serverMsg = err.response?.data?.message || err.message;
       setFeedbackMessage(`Error: ${serverMsg}`);
     }
