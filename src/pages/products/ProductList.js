@@ -78,9 +78,12 @@ const ProductList = () => {
       return;
     }
 
-    const newEntries = formData.selectedSizes.map((size, index) => {
-      // Auto-generate SKU
-      const autoSku = `ARP-${size.replace("-inch", "")}RND-${Math.floor(Math.random() * 90 + 10)}`;
+    const newEntries = formData.selectedSizes.map((size) => {
+      const namePart = formData.name.split(' ')[0].substring(0, 3).toUpperCase();
+      // Use timestamp + 6-digit random number for extreme uniqueness
+      const randomSuffix = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+      const ts = Date.now().toString().slice(-4);
+      const autoSku = `ARECA-${namePart}-${size.split('-')[0]}-${ts}${randomSuffix}`;
 
       return {
         name: formData.name,
@@ -100,7 +103,9 @@ const ProductList = () => {
       setFeedbackMessage(`${newEntries.length} product(s) added successfully`);
     } catch (err) {
       console.error("Error adding products:", err);
-      setFeedbackMessage("Error adding products");
+      // Try to get detailed error from backend
+      const serverMsg = err.response?.data?.message || err.message;
+      setFeedbackMessage(`Error: ${serverMsg}`);
     }
 
     setTimeout(() => setFeedbackMessage(""), 3000);

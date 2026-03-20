@@ -330,52 +330,7 @@ const Production = () => {
       {/* --- DASHBOARD SECTION --- */}
       <div className="dashboard-content-main" style={{ display: showHistoryOnly ? 'none' : 'block' }}>
         
-        {/* Stats Grid - Premium Version */}
-        <div className="premium-stats-grid">
-          <div className="premium-stat-card today">
-            <div className="p-stat-info">
-              <span className="p-stat-label">Today's Production</span>
-              <div className="p-stat-value">{(todayCount || 0).toLocaleString()}</div>
-              <div className="p-stat-breakdown">
-                {(sizesList || []).map(size => (
-                  <span key={size} className="breakdown-tag">{size.split('-')[0]}: {todayBySize?.[size] || 0}</span>
-                ))}
-              </div>
-            </div>
-          </div>
 
-          <div className="premium-stat-card week">
-            <div className="p-stat-info">
-              <span className="p-stat-label">Last 7 Days</span>
-              <div className="p-stat-value">{(week || 0).toLocaleString()}</div>
-              <div className="p-stat-breakdown">
-                {(sizesList || []).map(size => (
-                  <span key={size} className="breakdown-tag">{size.split('-')[0]}: {weekBySize?.[size] || 0}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="premium-stat-card month">
-            <div className="p-stat-info">
-              <span className="p-stat-label">This Month</span>
-              <div className="p-stat-value">{(month || 0).toLocaleString()}</div>
-              <div className="p-stat-breakdown">
-                {(sizesList || []).map(size => (
-                  <span key={size} className="breakdown-tag">{size.split('-')[0]}: {monthBySize?.[size] || 0}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="premium-stat-card stock">
-            <div className="p-stat-info">
-              <span className="p-stat-label">Total Produced</span>
-              <div className="p-stat-value">{(stock || 0).toLocaleString()}</div>
-              <span className="p-stat-tag">All time</span>
-            </div>
-          </div>
-        </div>
 
         <div className="production-main-grid">
           

@@ -16,7 +16,8 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     products: dbProducts, 
     productionTargets, 
     fetchTargets, 
-    employees
+    employees,
+    productionStats
   } = useAppContext();
 
   
@@ -471,12 +472,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
         </div>
 
 
-        <div className="view-history-button-wrapper mobile-only-flex">
-            <button className="btn-view-history-compact" onClick={() => onNavigate('daily')}>
-            <span className="material-symbols-outlined">history</span>
-            View Today Production
-          </button>
-        </div>
+
 
         {/* Central Entry Form (Target Setting Only) */}
         <div className="target-entry-section" style={{ maxWidth: '600px', margin: '0 auto 30px' }}>
@@ -546,6 +542,59 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
               <span className="material-symbols-outlined">add_task</span>
               Add / Update Target
             </button>
+          </div>
+        </div>
+
+        {/* Global Production Stats - New Section from Image */}
+        <div className="premium-stats-grid">
+          <div className="premium-stat-card today">
+            <div className="p-stat-info">
+              <span className="p-stat-label">Today's Production</span>
+              <div className="p-stat-value">{(productionStats?.today || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {(productionStats?.availableSizes || []).map(size => (
+                  <span key={size} className="breakdown-tag">
+                    {size.split('-')[0]}: {productionStats?.todayBySize?.[size] || 0}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="premium-stat-card week">
+            <div className="p-stat-info">
+              <span className="p-stat-label">Last 7 Days</span>
+              <div className="p-stat-value">{(productionStats?.week || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {(productionStats?.availableSizes || []).map(size => (
+                  <span key={size} className="breakdown-tag">
+                    {size.split('-')[0]}: {productionStats?.weekBySize?.[size] || 0}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="premium-stat-card month">
+            <div className="p-stat-info">
+              <span className="p-stat-label">This Month</span>
+              <div className="p-stat-value">{(productionStats?.month || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {(productionStats?.availableSizes || []).map(size => (
+                  <span key={size} className="breakdown-tag">
+                    {size.split('-')[0]}: {productionStats?.monthBySize?.[size] || 0}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="premium-stat-card stock">
+            <div className="p-stat-info">
+              <span className="p-stat-label">Total Produced</span>
+              <div className="p-stat-value">{(productionStats?.stock || 0).toLocaleString()}</div>
+              <span className="p-stat-tag">All time</span>
+            </div>
           </div>
         </div>
 
