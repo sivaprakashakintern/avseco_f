@@ -46,6 +46,12 @@ const ManageAccess = () => {
     setMessage({ type: '', text: '' });
   };
 
+  const copyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(text);
+    setMessage({ type: 'success', text: `${label} copied to clipboard!` });
+    setTimeout(() => setMessage({ type: '', text: '' }), 2000);
+  };
+
   const generatePassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
     let pass = '';
@@ -53,7 +59,7 @@ const ManageAccess = () => {
       pass += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     setCredentials({ ...credentials, password: pass });
-    setMessage({ type: 'success', text: `Temporary password generated: ${pass}. Make sure to share it with the employee!` });
+    setMessage({ type: 'success', text: `New password generated: ${pass}` });
   };
 
   const handleToggleModule = (moduleName) => {
@@ -160,13 +166,7 @@ const ManageAccess = () => {
     <div className="admin-container">
       <header className="admin-header">
         <div className="admin-header-left">
-          <h1>Manage Access & Security</h1>
-          <p>Configure employee modules, roles, and security credentials</p>
-        </div>
-        <div className="admin-header-right">
-          <div className="header-logo-container">
-            <img src={logo} alt="AVSECO" className="header-logo" />
-          </div>
+          <h1>Security & Access</h1>
         </div>
       </header>
 
@@ -280,36 +280,48 @@ const ManageAccess = () => {
                     <h3>Security Credentials</h3>
                   </div>
                   <div className="credential-form">
-                    <div className="form-group">
-                      <label>Login ID (Username or Email)</label>
+                <div className="form-group">
+                  <label>Login Username</label>
+                  <div className="input-with-actions">
+                    <input 
+                      value={credentials.username} 
+                      onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+                      placeholder="e.g. jdoe"
+                    />
+                    <button className="icon-action-btn" onClick={() => copyToClipboard(credentials.username, 'Username')} title="Copy Username">
+                      <span className="material-symbols-outlined">content_copy</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Assign New Password</label>
+                  <div className="input-with-actions">
+                    <div className="input-with-button" style={{ flex: 1 }}>
                       <input 
                         type="text" 
-                        value={credentials.username}
-                        onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
-                        placeholder="e.g. employee@avseco.in"
+                        value={credentials.password} 
+                        onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                        placeholder="Leave empty to keep existing"
                       />
+                      <button className="gen-btn" onClick={generatePassword}>
+                        <span className="material-symbols-outlined">key</span>
+                        Gen
+                      </button>
                     </div>
-                    <div className="form-group">
-                      <label>Reset Password</label>
-                      <div className="input-with-button">
-                        <input 
-                          type="text" 
-                          value={credentials.password}
-                          onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                          placeholder="Enter new password"
-                        />
-                        <button onClick={generatePassword} className="gen-btn">
-                          <span className="material-symbols-outlined">key</span>
-                          Generate
-                        </button>
-                      </div>
-                      <p className="hint">The user will be prompted to change this password on their next login.</p>
-                    </div>
+                    {credentials.password && (
+                      <button className="icon-action-btn" onClick={() => copyToClipboard(credentials.password, 'Password')} title="Copy Password">
+                        <span className="material-symbols-outlined">content_copy</span>
+                      </button>
+                    )}
                   </div>
+                  <p className="hint">Note: Existing passwords are encrypted. Setting a new one will override the current password.</p>
+                </div>
+              </div>
                   <div className="tab-footer">
                     <button 
                       onClick={handleSaveCredentials}
-                      disabled={saving || !credentials.username || !credentials.password}
+                      disabled={saving || !credentials.username}
                       className="save-btn creds"
                     >
                       {saving ? 'Updating...' : 'Set New Credentials'}

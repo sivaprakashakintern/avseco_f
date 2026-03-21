@@ -252,15 +252,6 @@ const Sidebar = () => {
 
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="nav-item logout-item" onClick={() => {
-            localStorage.removeItem('userInfo');
-            window.location.href = '/login';
-          }}>
-            <span className="material-symbols-outlined">logout</span>
-            <p className="nav-text">Logout</p>
-          </div>
-        </div>
       </aside >
     </>
   );

@@ -34,55 +34,25 @@
   letter-spacing: -0.01em;
 }
 
-.header-right-group {
+.btn-add-premium-outline {
   display: flex;
   align-items: center;
-  gap: 15px;
-}
-
-.btn-export-white {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 24px;
-  background: white;
-  color: #006A4E;
-  border: none;
-  border-radius: 50px;
+  gap: 10px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.btn-export-white:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
-  background: #f8fafc;
-}
-
-.btn-export-white .material-symbols-outlined {
-  font-size: 20px;
-}
-
-.btn-add-white-circle {
-  width: 44px;
-  height: 44px;
+.btn-add-premium-outline:hover {
   background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-add-white-circle:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
+  transform: translateY(-2px);
+  border-color: white;
 }
 
 /* ===== STATS CARDS ===== */

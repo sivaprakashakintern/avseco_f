@@ -151,12 +151,9 @@ const Clients = () => {
           <h1 className="page-title-white">Client Management</h1>
         </div>
         <div className="header-right-group">
-          <button className="btn-export-white" onClick={handleExport} disabled={exportLoading}>
-            <span className="material-symbols-outlined">{exportLoading ? "sync" : "download"}</span>
-            {exportLoading ? "Processing..." : "Export Report"}
-          </button>
-          <button className="btn-add-white-circle" onClick={() => { resetForm(); setShowAddModal(true); }} title="Add Client">
+          <button className="btn-add-premium-outline" onClick={() => { resetForm(); setShowAddModal(true); }}>
             <span className="material-symbols-outlined">person_add</span>
+            Add Client
           </button>
         </div>
       </div>
@@ -189,6 +186,10 @@ const Clients = () => {
             className="search-input"
           />
         </div>
+        <button className="btn-export-premium" onClick={handleExport} disabled={exportLoading}>
+          <span className="material-symbols-outlined">{exportLoading ? "sync" : "download"}</span>
+          {exportLoading ? "Processing..." : "Export Portfolio"}
+        </button>
       </div>
 
       <div className="table-container">

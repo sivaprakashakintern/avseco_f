@@ -635,3 +635,35 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Credential Actions */
+.input-with-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon-action-btn {
+  background: white;
+  border: 1px solid #e2e8f0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--avs-text-light);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.icon-action-btn:hover {
+  background: var(--avs-green-light);
+  color: var(--avs-green);
+  border-color: var(--avs-green);
+}
+
+.icon-action-btn .material-symbols-outlined {
+  font-size: 20px;
+}
