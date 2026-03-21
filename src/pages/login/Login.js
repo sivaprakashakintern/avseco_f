@@ -12,28 +12,34 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [loginStatus, setLoginStatus] = useState(null); // null, 'success', 'error'
     const [error, setError] = useState("");
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError("");
+        setLoginStatus(null);
 
         try {
             const data = await login(username, password);
+            setLoginStatus('success');
             setIsLoading(false);
             
-            // Redirect based on access
-            if (data.role === 'admin' || (data.modules && data.modules.includes('dashboard'))) {
-                navigate("/dashboard");
-            } else if (data.modules && data.modules.length > 0) {
-                // Navigate to first allowed module
-                navigate(`/${data.modules[0]}`);
-            } else {
-                navigate("/dashboard");
-            }
+            // Short delay to show success message
+            setTimeout(() => {
+                // Redirect based on access
+                if (data.role === 'admin' || (data.modules && data.modules.includes('dashboard'))) {
+                    navigate("/dashboard");
+                } else if (data.modules && data.modules.length > 0) {
+                    navigate(`/${data.modules[0]}`);
+                } else {
+                    navigate("/dashboard");
+                }
+            }, 1000);
         } catch (err) {
             setIsLoading(false);
+            setLoginStatus('error');
             const errorMessage = err.response?.data?.message || err.message || "Invalid Credentials";
             setError(errorMessage);
         }
@@ -55,7 +61,14 @@ const Login = () => {
                     </div>
 
                     <form className="login-form" onSubmit={handleLogin}>
-                        {error && <div className="login-error">{error}</div>}
+                        {loginStatus === 'error' && <div className="login-error-pill">
+                            <span className="material-symbols-outlined">error</span>
+                            {error}
+                        </div>}
+                        {loginStatus === 'success' && <div className="login-success-pill">
+                            <span className="material-symbols-outlined">check_circle</span>
+                            Login successful! Redirecting...
+                        </div>}
 
                         <div className="form-group">
                             <label htmlFor="username">Username</label>

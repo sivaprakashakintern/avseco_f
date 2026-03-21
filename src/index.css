@@ -48,6 +48,23 @@ code {
   scrollbar-width: thin;
   scrollbar-color: #2e7d32 #f1f5f9;
 }
+
+/* Page Transition Bar */
+.page-transition-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #006A4E, #4ade80);
+  z-index: 10000;
+  animation: pageLoad 0.6s ease-out forwards;
+}
+
+@keyframes pageLoad {
+  from { width: 0; }
+  to { width: 100%; transition: width 0.3s; }
+}
+
 /* ===== GLOBAL GLASS LOADING OVERLAY ===== */
 .glass-loading-overlay {
   position: fixed;
@@ -96,6 +113,41 @@ code {
   z-index: 100001;
   border: 1px solid #e2e8f0;
   animation: slideIn 0.3s ease;
+}
+
+.login-error-pill {
+    background: rgba(220, 38, 38, 0.2);
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    backdrop-filter: blur(10px);
+    color: #fca5a5;
+    padding: 14px 20px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    animation: shake 0.4s ease;
+}
+
+.login-success-pill {
+    background: rgba(0, 106, 78, 0.2);
+    border: 1px solid rgba(0, 106, 78, 0.4);
+    backdrop-filter: blur(10px);
+    color: #4ade80;
+    padding: 14px 20px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .mini-spinner {

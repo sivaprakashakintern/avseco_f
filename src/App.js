@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AppProvider, useAppContext } from "./context/AppContext.js";
 import { AuthProvider, useAuth } from "./context/AuthContext.js";
 import ProtectedRoute from "./components/ProtectedRoute.js";
@@ -66,9 +66,21 @@ const PublicRoute = ({ children }) => {
 const AppLayout = ({ children }) => {
   const { loading: appLoading, isUpdating } = useAppContext();
   const { user } = useAuth();
-  
-    return (
+  const location = useLocation();
+  const [isTransitioning, setIsTransitioning] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsTransitioning(true);
+    const timer = setTimeout(() => setIsTransitioning(false), 600);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  return (
     <div className="dashboard-wrapper">
+      {isTransitioning && (
+        <div className="page-transition-bar"></div>
+      )}
+      
       {!appLoading && isUpdating && (
         <div className="update-loading-overlay">
           <div className="mini-spinner"></div>
@@ -79,7 +91,7 @@ const AppLayout = ({ children }) => {
       {/* Force password change for new credentials */}
       <ChangePasswordModal 
         isOpen={user?.isFirstLogin} 
-        onClose={() => {}} // User cannot close without changing
+        onClose={() => {}} 
       />
 
       <Sidebar />
