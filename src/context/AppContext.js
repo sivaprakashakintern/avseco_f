@@ -186,6 +186,15 @@ export const AppProvider = ({ children }) => {
     }, []);
 
     // PRODUCTION
+    const fetchTargets = useCallback(async () => {
+        try {
+            const data = await productionTargetApi.getAll();
+            setProductionTargets(data.map(t => ({ ...t, id: t._id })));
+        } catch (error) {
+            console.error("Error fetching targets:", error);
+        }
+    }, []);
+
     const addProduction = useCallback(async (prod, skipTargetSync = false) => {
         setIsUpdating(true);
         try {
@@ -338,6 +347,47 @@ export const AppProvider = ({ children }) => {
             setIsUpdating(false);
         }
     }, []);
+
+    // ATTENDANCE
+    const fetchAttendanceForDate = useCallback(async (dateStr) => {
+        try {
+            const data = await attendanceApi.getByDate(dateStr);
+            const mapped = data.map(r => {
+                const empId = r.employee?._id ? String(r.employee._id) : String(r.employee);
+                return { ...r, empId, id: r._id };
+            });
+            setAttendanceRecords(prev => ({ ...prev, [dateStr]: mapped }));
+            return mapped;
+        } catch (error) {
+            console.error("Error fetching attendance for date:", dateStr, error);
+            return [];
+        }
+    }, []);
+
+    const buildDefaultAttendance = useCallback((dateStr) => {
+        return (employees || []).map(emp => ({
+            date: dateStr,
+            empId: emp.id,
+            status: "present",
+            note: "",
+            halfDayTime: null,
+        }));
+    }, [employees]);
+
+    const initAttendanceForDate = useCallback(async (dateStr) => {
+        const existing = await fetchAttendanceForDate(dateStr);
+        if (existing.length === 0) {
+            setAttendanceRecords(prev => ({ ...prev, [dateStr]: buildDefaultAttendance(dateStr) }));
+        }
+    }, [fetchAttendanceForDate, buildDefaultAttendance]);
+
+    const updateAttendanceRecord = useCallback((dateStr, empId, updates) => {
+        setAttendanceRecords(prev => {
+            const dayRecords = prev[dateStr] ?? buildDefaultAttendance(dateStr);
+            const updated = dayRecords.map(r => r.empId === empId ? { ...r, ...updates } : r);
+            return { ...prev, [dateStr]: updated };
+        });
+    }, [buildDefaultAttendance]);
 
     const saveAttendanceForDate = useCallback(async (dateStr, records) => {
         setIsUpdating(true);
