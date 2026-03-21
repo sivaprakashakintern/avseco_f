@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../utils/axiosConfig.js';
-import logo from '../assets/logo.png';
 import './ManageAccess.css';
 
 const ManageAccess = () => {
