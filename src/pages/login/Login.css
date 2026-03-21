@@ -153,6 +153,7 @@
     position: relative;
     display: flex;
     align-items: center;
+    width: 100%;
 }
 
 .input-icon {
@@ -161,31 +162,34 @@
     color: rgba(255, 255, 255, 0.6);
     /* Brighter icon */
     font-size: 20px;
+    pointer-events: none;
 }
 
 .input-wrapper input {
     width: 100%;
     background: rgba(255, 255, 255, 0.1);
-    /* Lighter background */
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
-    padding: 13px 13px 13px 44px;
-    /* Reduced padding */
+    padding: 14px 48px 14px 48px;
     color: #ffffff;
-    font-size: 14px;
+    font-size: 15px;
     transition: all 0.3s ease;
     outline: none;
 }
 
 .input-wrapper input:focus {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15) !important;
     border-color: #006A4E;
     box-shadow: 0 0 0 4px rgba(0, 106, 78, 0.2);
 }
 
-.input-wrapper input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-    /* Much more visible */
+/* Prevent Autofill from turning inputs white */
+.input-wrapper input:-webkit-autofill,
+.input-wrapper input:-webkit-autofill:hover,
+.input-wrapper input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #ffffff;
+    -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.1) inset;
+    transition: background-color 5000s ease-in-out 0s;
 }
 
 .password-toggle {
@@ -193,7 +197,7 @@
     right: 12px;
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -201,11 +205,12 @@
     padding: 4px;
     border-radius: 6px;
     transition: all 0.2s;
+    z-index: 10;
 }
 
 .password-toggle:hover {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .login-submit {
