@@ -16,7 +16,66 @@ const Sidebar = () => {
   const [popupTop, setPopupTop] = useState(0);
   const [popupLeft, setPopupLeft] = useState(0);
 
-  // ... (keep existing useEffects)
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 1024);
+      if (window.innerWidth > 1024) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [setIsMobileMenuOpen]);
+
+
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMobile && isMobileMenuOpen) {
+        const sidebar = document.querySelector(".sidebar");
+        const hamburger = document.querySelector(".mobile-hamburger");
+
+        if (
+          sidebar &&
+          !sidebar.contains(event.target) &&
+          hamburger &&
+          !hamburger.contains(event.target)
+        ) {
+          setIsMobileMenuOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMobile, isMobileMenuOpen, setIsMobileMenuOpen]);
+
+  const handleNavigation = (path) => {
+    if (location.pathname === path) {
+      if (isMobile) setIsMobileMenuOpen(false);
+      return;
+    }
+    setLoading(true);
+    setTimeout(() => {
+      navigate(path);
+      if (isMobile) {
+        setIsMobileMenuOpen(false);
+      }
+      setTimeout(() => setLoading(false), 500);
+    }, 300);
+  };
+
+  const handleLogoClick = () => {
+    navigate("/dashboard");
+    if (isMobile) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
 
   // ===== NAVIGATION ITEMS WITH CORRECT PATHS =====
   const navItems = [
