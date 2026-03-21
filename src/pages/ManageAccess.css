@@ -217,6 +217,13 @@
   flex-direction: column;
 }
 
+.management-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 .management-top-bar {
   padding: 25px 30px;
   border-bottom: 1px solid #f1f5f9;
