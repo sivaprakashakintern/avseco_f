@@ -667,9 +667,6 @@ const Sales = () => {
             if (!event.target.closest('.delivery-mode-dropdown')) {
                 setIsDeliveryModeDropdownOpen(false);
             }
-            if (!event.target.closest('.history-filter-dropdown')) {
-                setIsHistoryFilterDropdownOpen(false);
-            }
         };
 
         document.addEventListener('click', handleClickOutside);
