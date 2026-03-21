@@ -80,3 +80,34 @@ code {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Update Spinner */
+.update-loading-overlay {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  background: white;
+  padding: 10px 15px;
+  border-radius: 50px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 100001;
+  border: 1px solid #e2e8f0;
+  animation: slideIn 0.3s ease;
+}
+
+.mini-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e0f0e5;
+  border-top-color: #006A4E;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

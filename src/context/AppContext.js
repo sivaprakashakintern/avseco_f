@@ -17,6 +17,7 @@ export const AppProvider = ({ children }) => {
     const [attendanceRecords, setAttendanceRecords] = useState({});
     const [loading, setLoading] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
     const { user } = useAuth();
     
     // ✅ Helper to avoid UTC timezone shift (IST+5:30 bug)
@@ -84,145 +85,182 @@ export const AppProvider = ({ children }) => {
 
     // EMPLOYEES
     const addEmployee = useCallback(async (emp) => {
+        setIsUpdating(true);
         try {
             const data = await employeeApi.add(emp);
             setEmployees(prev => [...prev, { ...data, id: data._id }].sort((a, b) => a.name.localeCompare(b.name)));
             return data;
         } catch (error) {
-            if (error.response) {
-                console.error("Employee Creation Backend Error:", error.response.data);
-            }
+            console.error("Employee Creation Backend Error:", error);
             throw error;
+        } finally {
+            setIsUpdating(false);
         }
     }, []);
 
     const updateEmployee = useCallback(async (id, updates) => {
-        const data = await employeeApi.update(id, updates);
-        setEmployees(prev => prev.map(e => e.id === id ? { ...data, id: data._id } : e).sort((a, b) => a.name.localeCompare(b.name)));
-        return data;
+        setIsUpdating(true);
+        try {
+            const data = await employeeApi.update(id, updates);
+            setEmployees(prev => prev.map(e => e.id === id ? { ...data, id: data._id } : e).sort((a, b) => a.name.localeCompare(b.name)));
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
     }, []);
 
     const deleteEmployee = useCallback(async (id) => {
-        await employeeApi.delete(id);
-        setEmployees(prev => prev.filter(e => e.id !== id));
+        setIsUpdating(true);
+        try {
+            await employeeApi.delete(id);
+            setEmployees(prev => prev.filter(e => e.id !== id));
+        } finally {
+            setIsUpdating(false);
+        }
     }, []);
 
     // EXPENSES
     const addExpense = useCallback(async (exp) => {
-        const data = await expenseApi.add(exp);
-        setExpenses(prev => [{ ...data, id: data._id }, ...prev]);
-        return data;
+        setIsUpdating(true);
+        try {
+            const data = await expenseApi.add(exp);
+            setExpenses(prev => [{ ...data, id: data._id }, ...prev]);
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
     }, []);
 
     const updateExpense = useCallback(async (id, updates) => {
-        const data = await expenseApi.update(id, updates);
-        setExpenses(prev => prev.map(e => e.id === id ? { ...data, id: data._id } : e));
-        return data;
+        setIsUpdating(true);
+        try {
+            const data = await expenseApi.update(id, updates);
+            setExpenses(prev => prev.map(e => e.id === id ? { ...data, id: data._id } : e));
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
     }, []);
 
     const deleteExpense = useCallback(async (id) => {
-        await expenseApi.delete(id);
-        setExpenses(prev => prev.filter(e => e.id !== id));
+        setIsUpdating(true);
+        try {
+            await expenseApi.delete(id);
+            setExpenses(prev => prev.filter(e => e.id !== id));
+        } finally {
+            setIsUpdating(false);
+        }
     }, []);
 
     // CLIENTS
     const addClient = useCallback(async (client) => {
-        const data = await clientApi.add(client);
-        setClients(prev => [...prev, { ...data, id: data._id }]);
-        return data;
+        setIsUpdating(true);
+        try {
+            const data = await clientApi.add(client);
+            setClients(prev => [...prev, { ...data, id: data._id }]);
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
     }, []);
 
     const updateClient = useCallback(async (id, updates) => {
-        const data = await clientApi.update(id, updates);
-        setClients(prev => prev.map(c => c.id === id ? { ...data, id: data._id } : c));
-        return data;
+        setIsUpdating(true);
+        try {
+            const data = await clientApi.update(id, updates);
+            setClients(prev => prev.map(c => c.id === id ? { ...data, id: data._id } : c));
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
     }, []);
 
     const deleteClient = useCallback(async (id) => {
-        await clientApi.delete(id);
-        setClients(prev => prev.filter(c => c.id !== id));
+        setIsUpdating(true);
+        try {
+            await clientApi.delete(id);
+            setClients(prev => prev.filter(c => c.id !== id));
+        } finally {
+            setIsUpdating(false);
+        }
     }, []);
 
     // PRODUCTION
-    const fetchTargets = useCallback(async () => {
-        try {
-            const targetData = await productionTargetApi.getAll();
-            setProductionTargets(targetData.map(t => ({ ...t, id: t._id })));
-        } catch (error) {
-            console.error("Error fetching targets:", error);
-        }
-    }, []);
-
-    // PRODUCTION - Enhanced with Sync
     const addProduction = useCallback(async (prod, skipTargetSync = false) => {
-        // 1. Save the production record
-        const data = await productionApi.add(prod);
-        
-        setProductionHistory(prev => {
-            const exists = prev.find(p => p.id === data._id);
-            if (exists) {
-                return prev.map(p => p.id === data._id ? { ...data, id: data._id } : p);
-            }
-            return [{ ...data, id: data._id }, ...prev];
-        });
-
-        // 2. Sync with Production Plan (Targets)
-        if (!skipTargetSync) {
-            try {
-                const allTargets = await productionTargetApi.getAll();
-                const matchingTarget = allTargets.find(t => 
-                    t.operator === prod.operator && 
-                    t.productSize === prod.size
-                );
-
-                if (matchingTarget) {
-                    const newProduced = (matchingTarget.producedQty || 0) + Number(prod.quantity);
-                    await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
-                    await fetchTargets();
+        setIsUpdating(true);
+        try {
+            // 1. Save the production record
+            const data = await productionApi.add(prod);
+            
+            setProductionHistory(prev => {
+                const exists = prev.find(p => p.id === data._id);
+                if (exists) {
+                    return prev.map(p => p.id === data._id ? { ...data, id: data._id } : p);
                 }
-            } catch (err) {
-                console.warn("Sync with target failed:", err);
-            }
-        } else {
-            // Even if skipping sync, we should refresh the targets to show the new state
-            await fetchTargets();
-        }
+                return [{ ...data, id: data._id }, ...prev];
+            });
 
-        return data;
+            // 2. Sync with Production Plan (Targets)
+            if (!skipTargetSync) {
+                try {
+                    const allTargets = await productionTargetApi.getAll();
+                    const matchingTarget = allTargets.find(t => 
+                        t.operator === prod.operator && 
+                        t.productSize === prod.size
+                    );
+
+                    if (matchingTarget) {
+                        const newProduced = (matchingTarget.producedQty || 0) + Number(prod.quantity);
+                        await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
+                        await fetchTargets();
+                    }
+                } catch (err) {
+                    console.warn("Sync with target failed:", err);
+                }
+            } else {
+                await fetchTargets();
+            }
+
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
     }, [fetchTargets]);
 
     const deleteProduction = useCallback(async (id) => {
-        // Find the record before delete to sync back
-        const record = productionHistory.find(p => p.id === id);
-        
-        await productionApi.delete(id);
-        setProductionHistory(prev => prev.filter(p => p.id !== id));
+        setIsUpdating(true);
+        try {
+            const record = productionHistory.find(p => p.id === id);
+            await productionApi.delete(id);
+            setProductionHistory(prev => prev.filter(p => p.id !== id));
 
-        // Sync Back: Decrement target if found
-        if (record) {
-            try {
-                const allTargets = await productionTargetApi.getAll();
-                const matchingTarget = allTargets.find(t => 
-                    t.operator === record.operator && 
-                    t.productSize === record.size
-                );
+            if (record) {
+                try {
+                    const allTargets = await productionTargetApi.getAll();
+                    const matchingTarget = allTargets.find(t => 
+                        t.operator === record.operator && 
+                        t.productSize === record.size
+                    );
 
-                if (matchingTarget) {
-                    const newProduced = Math.max(0, (matchingTarget.producedQty || 0) - Number(record.quantity));
-                    await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
-                    await fetchTargets();
+                    if (matchingTarget) {
+                        const newProduced = Math.max(0, (matchingTarget.producedQty || 0) - Number(record.quantity));
+                        await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
+                        await fetchTargets();
+                    }
+                } catch (err) {
+                    console.warn("Sync delete with target failed:", err);
                 }
-            } catch (err) {
-                console.warn("Sync delete with target failed:", err);
             }
+        } finally {
+            setIsUpdating(false);
         }
     }, [productionHistory, fetchTargets]);
 
     const clearAllProduction = useCallback(async () => {
-        await productionApi.clearAll();
-        setProductionHistory([]);
-        // Sync back: reset all target producedQty to 0
+        setIsUpdating(true);
         try {
+            await productionApi.clearAll();
+            setProductionHistory([]);
             const allTargets = await productionTargetApi.getAll();
             for (const target of allTargets) {
                 await productionTargetApi.updateProduced(target._id, 0);
@@ -230,70 +268,79 @@ export const AppProvider = ({ children }) => {
             await fetchTargets();
         } catch (err) {
             console.warn("Failed to reset targets during production clear:", err);
+        } finally {
+            setIsUpdating(false);
         }
     }, [fetchTargets]);
-    
+
     // SALES
     const addSale = useCallback(async (sale) => {
-        const data = await salesApi.log(sale);
-        setSalesHistory(prev => [{ ...data, id: data._id }, ...prev]);
-        return data;
+        setIsUpdating(true);
+        try {
+            const data = await salesApi.log(sale);
+            setSalesHistory(prev => [{ ...data, id: data._id }, ...prev]);
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
     }, []);
 
     const updateSale = useCallback(async (id, updates) => {
-        const data = await salesApi.update(id, updates);
-        setSalesHistory(prev => prev.map(s => s.id === id ? { ...data, id: data._id } : s));
-        return data;
+        setIsUpdating(true);
+        try {
+            const data = await salesApi.update(id, updates);
+            setSalesHistory(prev => prev.map(s => s.id === id ? { ...data, id: data._id } : s));
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
     }, []);
 
     const deleteSale = useCallback(async (id) => {
-        await salesApi.delete(id);
-        setSalesHistory(prev => prev.filter(s => s.id !== id));
-    }, []);
-
-    // ATTENDANCE
-    const fetchAttendanceForDate = useCallback(async (dateStr) => {
+        setIsUpdating(true);
         try {
-            const data = await attendanceApi.getByDate(dateStr);
-            const mapped = data.map(r => {
-                // r.employee may be a populated object OR a plain ObjectId string
-                const empId = r.employee?._id ? String(r.employee._id) : String(r.employee);
-                return { ...r, empId, id: r._id };
-            });
-            setAttendanceRecords(prev => ({ ...prev, [dateStr]: mapped }));
-            return mapped;
-        } catch (error) {
-            console.error("Error fetching attendance:", error);
-            return [];
+            await salesApi.delete(id);
+            setSalesHistory(prev => prev.filter(s => s.id !== id));
+        } finally {
+            setIsUpdating(false);
         }
     }, []);
 
-
-    const buildDefaultAttendance = useCallback((dateStr) => {
-        return employees.map(emp => ({
-            empId: emp.id,
-            status: "present",
-            note: "",
-            halfDayTime: null,
-        }));
-    }, [employees]);
-
-    const initAttendanceForDate = useCallback(async (dateStr) => {
-        const existing = await fetchAttendanceForDate(dateStr);
-        if (existing.length === 0) {
-            setAttendanceRecords(prev => ({ ...prev, [dateStr]: buildDefaultAttendance(dateStr) }));
+    // PRODUCTS
+    const addProduct = useCallback(async (productData) => {
+        setIsUpdating(true);
+        try {
+            const data = await productsApi.add(productData);
+            setProducts(prev => [{ ...data, id: data._id }, ...prev]);
+            return data;
+        } finally {
+            setIsUpdating(false);
         }
-    }, [fetchAttendanceForDate, buildDefaultAttendance]);
+    }, []);
 
-    const updateAttendanceRecord = useCallback((dateStr, empId, updates) => {
-        setAttendanceRecords(prev => {
-            const dayRecords = prev[dateStr] ?? buildDefaultAttendance(dateStr);
-            const updated = dayRecords.map(r => r.empId === empId ? { ...r, ...updates } : r);
-            return { ...prev, [dateStr]: updated };
-        });
-    }, [buildDefaultAttendance]);
+    const updateProduct = useCallback(async (id, updates) => {
+        setIsUpdating(true);
+        try {
+            const data = await productsApi.update(id, updates);
+            setProducts(prev => prev.map(p => p.id === id ? { ...data, id: data._id } : p));
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
+    }, []);
+
+    const deleteProduct = useCallback(async (id) => {
+        setIsUpdating(true);
+        try {
+            await productsApi.delete(id);
+            setProducts(prev => prev.filter(p => p.id !== id));
+        } finally {
+            setIsUpdating(false);
+        }
+    }, []);
 
     const saveAttendanceForDate = useCallback(async (dateStr, records) => {
+        setIsUpdating(true);
         try {
             const formattedRecords = records.map(r => ({
                 employee: r.empId,
@@ -311,6 +358,8 @@ export const AppProvider = ({ children }) => {
         } catch (error) {
             console.error("Error saving attendance:", error);
             throw error;
+        } finally {
+            setIsUpdating(false);
         }
     }, []);
 
@@ -545,10 +594,14 @@ export const AppProvider = ({ children }) => {
             setIsMobileMenuOpen,
             fetchData,
             setLoading,
-            salesHistory, // 6. Provide these in values.
+            isUpdating,
+            salesHistory, 
             addSale,
             updateSale,
-            deleteSale
+            deleteSale,
+            addProduct,
+            updateProduct,
+            deleteProduct
         }}>
             {children}
         </AppContext.Provider>

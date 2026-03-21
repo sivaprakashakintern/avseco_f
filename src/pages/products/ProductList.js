@@ -7,7 +7,7 @@ import { useAppContext } from "../../context/AppContext.js";
 
 
 const ProductList = () => {
-  const { products, fetchData } = useAppContext();
+  const { products, fetchData, addProduct, updateProduct, deleteProduct } = useAppContext();
   // Simplified states - removed unused filters
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -105,7 +105,7 @@ const ProductList = () => {
     try {
       // Add each size variant one by one to ensure compatibility with all backend versions
       for (const entry of newEntries) {
-        await productsApi.add(entry);
+        await addProduct(entry);
       }
       
       await fetchProducts();
@@ -150,8 +150,8 @@ const ProductList = () => {
     };
 
     try {
-      await productsApi.add(newEntry);
-      await fetchProducts();
+      await addProduct(newEntry);
+      // await fetchProducts(); // context update is enough now
       setNewCustomSize("");
       setFeedbackMessage(`New size added successfully!`);
     } catch (err) {
@@ -192,8 +192,8 @@ const ProductList = () => {
     };
 
     try {
-      await productsApi.update(selectedProduct._id, updateData);
-      await fetchProducts();
+      await updateProduct(selectedProduct._id, updateData);
+      // await fetchProducts(); // context update is enough
       setShowEditModal(false);
       setSelectedProduct(null);
       setFeedbackMessage("Product updated successfully");
@@ -210,8 +210,8 @@ const ProductList = () => {
     if (!selectedProduct) return;
 
     try {
-      await productsApi.delete(selectedProduct._id);
-      await fetchProducts();
+      await deleteProduct(selectedProduct._id);
+      // await fetchProducts(); // context update is enough now
       setShowDeleteModal(false);
       setSelectedProduct(null);
       setFeedbackMessage("Product deleted successfully");
@@ -228,8 +228,8 @@ const ProductList = () => {
 
     try {
       const variants = productGroups[groupToDelete] || [];
-      await Promise.all(variants.map(v => productsApi.delete(v._id)));
-      await fetchProducts();
+      await Promise.all(variants.map(v => deleteProduct(v._id)));
+      // await fetchProducts(); // context update is enough now
       setShowGroupDeleteModal(false);
       
       if (viewingProductName === groupToDelete) {

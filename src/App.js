@@ -80,7 +80,7 @@ const PublicRoute = ({ children }) => {
 };
 
 const AppLayout = ({ children }) => {
-  const { loading } = useAppContext();
+  const { loading, isUpdating } = useAppContext();
   
   return (
     <div className="dashboard-wrapper">
@@ -88,6 +88,12 @@ const AppLayout = ({ children }) => {
         <div className="glass-loading-overlay">
           <div className="premium-spinner"></div>
           <span>Syncing records...</span>
+        </div>
+      )}
+      {!loading && isUpdating && (
+        <div className="update-loading-overlay">
+          <div className="mini-spinner"></div>
+          <span>Updating...</span>
         </div>
       )}
       <Sidebar />
