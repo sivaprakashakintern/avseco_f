@@ -370,7 +370,6 @@ export const AppProvider = ({ children }) => {
 
     const productionStats = useMemo(() => {
         const history = productionHistory || [];
-        const targets = productionTargets || [];
         const today = toFormattedDate(new Date());
         
         const currentMonthIdx = new Date().getMonth() + 1;

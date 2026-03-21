@@ -4,10 +4,9 @@ import { formatDate } from "../../utils/dateUtils.js";
 import "./Clients.css";
 
 const Clients = () => {
-  const { clients, addClient, updateClient, deleteClient, salesHistory } = useAppContext();
+  const { clients, addClient, updateClient, salesHistory } = useAppContext();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -77,16 +76,6 @@ const Clients = () => {
   }, [searchTerm]);
 
   // ========== HANDLERS ==========
-
-  // Format currency
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   // Add Client
   const handleAddClient = () => {
@@ -167,21 +156,7 @@ const Clients = () => {
     setTimeout(() => setFeedbackMessage(""), 2000);
   };
 
-  // Delete Client
-  const handleDeleteClient = (client) => {
-    setSelectedClient(client);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDeleteClient = () => {
-    if (!selectedClient) return;
-
-    deleteClient(selectedClient.id);
-    setShowDeleteModal(false);
-    setSelectedClient(null);
-    setFeedbackMessage("Client deleted");
-    setTimeout(() => setFeedbackMessage(""), 2000);
-  };
+  // View Client
 
   // View Client
   const handleViewClient = (client) => {

@@ -14,8 +14,7 @@ const Dashboard = () => {
     last7DaysTrend,
     totalStockValue,
     stockData,
-    productionStats,
-    productionHistory
+    productionStats
   } = useAppContext();
 
   const [timeFilter, setTimeFilter] = useState("Monthly");

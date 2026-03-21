@@ -142,32 +142,6 @@ const Employees = () => {
     }
   };
 
-  // Function to convert dd/mm/yyyy UI string to yyyy-mm-dd for backend
-    const toBackendDate = (ddmmyyyy) => {
-        if (!ddmmyyyy || !ddmmyyyy.includes("/")) return ddmmyyyy;
-        const [d, m, y] = ddmmyyyy.split("/");
-        if (!d || !m || !y || y.length !== 4) return ddmmyyyy;
-        return `${y}-${m}-${d}`;
-    };
-
-    // Function to convert yyyy-mm-dd (or ISO) back to dd/mm/yyyy for UI
-    const toUIDate = (dateInput) => {
-        if (!dateInput) return "";
-        let date;
-        if (typeof dateInput === 'string' && dateInput.includes("-")) {
-            const parts = dateInput.split('T')[0].split("-");
-            if (parts[0].length === 4) { // yyyy-mm-dd
-                return `${parts[2]}/${parts[1]}/${parts[0]}`;
-            }
-        }
-        date = new Date(dateInput);
-        if (isNaN(date.getTime())) return dateInput;
-        const day = String(date.getDate()).padStart(2, "0");
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-    };
-
   const confirmAddEmployee = async (e) => {
     e.preventDefault();
 

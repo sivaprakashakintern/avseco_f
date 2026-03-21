@@ -88,16 +88,7 @@ const Sales = () => {
     const [amountPaid, setAmountPaid] = useState("");
     const [deliveryMode, setDeliveryMode] = useState("Door Delivery");
     const [isDeliveryModeDropdownOpen, setIsDeliveryModeDropdownOpen] = useState(false);
-    const [isHistoryFilterDropdownOpen, setIsHistoryFilterDropdownOpen] = useState(false);
-    const [isLogging, setIsLogging] = useState(false);
-    const [showBillModal, setShowBillModal] = useState(false);
-    const [selectedBill, setSelectedBill] = useState(null);
-    const [billItems, setBillItems] = useState([]);
-    const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
-    const [editingTransactionId, setEditingTransactionId] = useState(null);
-
-    const [searchTerm, setSearchTerm] = useState("");
-    const [summaryType, setSummaryType] = useState("all");
+    const [summaryType] = useState("all");
     const [isAutoSharing, setIsAutoSharing] = useState(false);
 
     // Filtered employees for delivery
@@ -141,8 +132,6 @@ const Sales = () => {
     const allTransactions = salesHistory;
 
     // ========== PERSISTENCE ==========
-    // Persisted to database now via AppContext
-    const [dataLoaded, setDataLoaded] = useState(true);
 
     // Filtered transactions based on today's date only
     const getFilteredTransactions = () => {
@@ -241,12 +230,7 @@ const Sales = () => {
             });
         }
 
-        const totalPieces = itemsToLog.reduce((sum, item) => sum + item.qty, 0);
         const totalBillAmount = itemsToLog.reduce((sum, item) => sum + item.amount, 0);
-
-        const productSummary = itemsToLog.map(item =>
-            `${item.qty}x${item.product.replace('Areca Leaf Plate ', '').replace(' Round', '')}`
-        ).join(', ');
 
         const payload = {
             invoiceNo: editingTransactionId ? (salesHistory.find(s => s.id === editingTransactionId)?.invoiceNo || `INV-${Date.now().toString().slice(-6)}`) : `INV-${Date.now().toString().slice(-6)}`,

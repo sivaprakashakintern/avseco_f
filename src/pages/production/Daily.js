@@ -8,13 +8,6 @@ import './Daily.css';
 
 
 // Colour mapping for sizes
-const SIZE_COLOR = {
-  '6-inch': '#10b981',
-  '8-inch': '#3b82f6',
-  '10-inch': '#f59e0b',
-  '12-inch': '#8b5cf6',
-};
-
 const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
 
 const Production = () => {
@@ -27,15 +20,6 @@ const Production = () => {
   const parseDate = (dateStr) => {
     if (!dateStr) return null;
     return dayjs(dateStr, 'DD-MM-YYYY');
-  };
-
-  const isTodayOnly = (dateStr) => {
-    if (!dateStr) return false;
-    const date = parseDate(dateStr);
-    if (!date || !date.isValid()) return false;
-    const today = dayjs().startOf('day');
-    const diffDays = today.diff(date.startOf('day'), 'day');
-    return diffDays === 0;
   };
 
   const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
@@ -280,11 +264,6 @@ const Production = () => {
 
 
 
-
-  const handleDeleteProductionGroup = (group) => {
-    setProductionToDelete(group.allIds);
-    setShowDeleteConfirm(true);
-  };
 
   const confirmDeleteProduction = async () => {
     if (productionToDelete && productionToDelete.length > 0) {

@@ -3,7 +3,7 @@ import { useAppContext } from "../../context/AppContext.js";
 import "./Stock.css";
 
 const StockOverview = () => {
-  const { stockData, totalStockUnits } = useAppContext();
+  const { stockData } = useAppContext();
 
   // Group stock data by name
   const groupedProducts = stockData.reduce((acc, item) => {
@@ -75,8 +75,7 @@ const StockOverview = () => {
     }, 1500);
   };
 
-  const formatCurrency = (value) =>
-    `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  // Replaced unused formatCurrency
 
   return (
     <div className="stock-page">
