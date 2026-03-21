@@ -56,7 +56,7 @@ export const AppProvider = ({ children }) => {
             results.forEach((result, index) => {
                 if (result.status === 'fulfilled') {
                     const key = requestMap[index].key;
-                    const data = result.value.data || [];
+                    const data = result.value || [];
 
                     if (key === 'employees') {
                         setEmployees(data.map(e => ({ ...e, id: e._id })).sort((a, b) => a.name.localeCompare(b.name)));

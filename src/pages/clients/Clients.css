@@ -13,56 +13,76 @@
   background-color: #0a1f1a;
 }
 
-/* ===== PREMIUM HEADER ===== */
-.premium-header {
+/* ===== NEW PREMIUM GREEN HEADER (Matching Image) ===== */
+.premium-header-green {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 32px;
-  background: white;
-  padding: 24px 32px;
-  border-radius: 20px;
-  border: 1px solid #e0f0e5;
-  box-shadow: 0 4px 20px rgba(0, 106, 78, 0.05);
-}
-
-.dark .premium-header {
-  background: #1c2e21;
-  border-color: #2a3a2e;
-}
-
-.page-title {
-  font-size: 28px;
-  font-weight: 800;
-  color: #0a3b2e;
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
-.dark .page-title {
+  background: #006A4E;
+  padding: 30px 40px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 106, 78, 0.15);
   color: white;
 }
 
-.btn-transfer-premium {
+.page-title-white {
+  font-size: 32px;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.header-right-group {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 24px;
-  background: #006A4E;
-  color: white;
+  gap: 15px;
+}
+
+.btn-export-white {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: white;
+  color: #006A4E;
   border: none;
-  border-radius: 12px;
+  border-radius: 50px;
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 106, 78, 0.2);
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.btn-transfer-premium:hover {
-  background: #005a42;
+.btn-export-white:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 106, 78, 0.3);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  background: #f8fafc;
+}
+
+.btn-export-white .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.btn-add-white-circle {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-white-circle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
 }
 
 /* ===== STATS CARDS ===== */

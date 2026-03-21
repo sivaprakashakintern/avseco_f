@@ -146,15 +146,17 @@ const Clients = () => {
     <div className="clients-container">
       {feedbackMessage && <div className="feedback-toast"><span>{feedbackMessage}</span></div>}
 
-      <div className="premium-header">
-        <div>
-          <h1 className="page-title">Client Portfolio</h1>
-          <p className="subtitle-slim">Manage your business relationships & history</p>
+      <div className="premium-header-green">
+        <div className="header-left-group">
+          <h1 className="page-title-white">Client Management</h1>
         </div>
-        <div className="header-actions">
-          <button className="btn-transfer-premium" onClick={() => { resetForm(); setShowAddModal(true); }}>
+        <div className="header-right-group">
+          <button className="btn-export-white" onClick={handleExport} disabled={exportLoading}>
+            <span className="material-symbols-outlined">{exportLoading ? "sync" : "download"}</span>
+            {exportLoading ? "Processing..." : "Export Report"}
+          </button>
+          <button className="btn-add-white-circle" onClick={() => { resetForm(); setShowAddModal(true); }} title="Add Client">
             <span className="material-symbols-outlined">person_add</span>
-            Add Client
           </button>
         </div>
       </div>
@@ -187,10 +189,6 @@ const Clients = () => {
             className="search-input"
           />
         </div>
-        <button className="btn-export-premium" onClick={handleExport} disabled={exportLoading}>
-          <span className="material-symbols-outlined">{exportLoading ? "sync" : "download"}</span>
-          {exportLoading ? "Processing..." : "Export Portfolio"}
-        </button>
       </div>
 
       <div className="table-container">

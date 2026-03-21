@@ -80,12 +80,6 @@ const Sidebar = () => {
   // ===== NAVIGATION ITEMS WITH CORRECT PATHS =====
   const navItems = [
     { icon: "dashboard", label: "Dashboard", path: "/dashboard", module: "dashboard" },
-    {
-      icon: "check_circle",
-      label: "Status",
-      path: "/check",
-      apiStatus: true // Green dot indicator
-    },
     { icon: "inventory_2", label: "Stock", path: "/stock", module: "stock" },
     { icon: "format_list_bulleted", label: "Products", path: "/products", module: "products" },
 
@@ -141,6 +135,14 @@ const Sidebar = () => {
       module: "admin"
     });
   }
+
+  // Add Check Status for all (it's a system utility)
+  filteredNavItems.push({
+    icon: "check_circle",
+    label: "Status",
+    path: "/check",
+    apiStatus: true // Green dot indicator
+  });
 
 
   const [expandedMenu, setExpandedMenu] = useState(null);
