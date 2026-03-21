@@ -86,7 +86,7 @@ export const AppProvider = ({ children }) => {
         } finally {
             if (isInitial) setLoading(false);
         }
-    }, [todayStr]);
+    }, [todayStr, user, refreshUser]);
 
     useEffect(() => {
         if (user) {
