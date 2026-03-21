@@ -42,6 +42,7 @@ import Clients from "./pages/clients/Clients.js";
 
 import Sales from "./pages/sales/Sales.js";
 import Help from "./pages/Help.js";
+import ChangePasswordModal from "./components/ChangePasswordModal.jsx";
 
 // Public Route Component (Redirects to dashboard if already logged in)
 const PublicRoute = ({ children }) => {
@@ -61,8 +62,6 @@ const PublicRoute = ({ children }) => {
 
   return children;
 };
-
-import ChangePasswordModal from "./components/ChangePasswordModal.jsx";
 
 const AppLayout = ({ children }) => {
   const { loading: appLoading, isUpdating } = useAppContext();
