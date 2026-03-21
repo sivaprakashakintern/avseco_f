@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.js";
-import axios from '../../utils/axiosConfig.js';
 import logo from "../../assets/avs.png";
 import bgImage from "../../assets/bg1.png";
 import "./Login.css";
 
 const Login = () => {
     const navigate = useNavigate();
-    const { login, employee } = useAuth();
+    const { login } = useAuth();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
