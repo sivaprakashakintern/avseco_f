@@ -438,6 +438,43 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.input-with-button {
+  display: flex;
+  gap: 12px;
+}
+
+.input-with-button input {
+  flex: 1;
+}
+
+.gen-btn {
+  background: white;
+  border: 1px solid var(--admin-blue-main);
+  color: var(--admin-blue-main);
+  padding: 0 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.gen-btn:hover {
+  background: var(--admin-blue-soft);
+  transform: translateY(-2px);
+}
+
+.gen-btn:active {
+  transform: translateY(0);
+}
+
+.gen-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
 .hint {
   font-size: 0.8rem;
   color: var(--admin-muted-text);

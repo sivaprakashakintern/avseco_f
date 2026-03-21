@@ -37,8 +37,22 @@ const ManageAccess = () => {
 
   const handleSelectEmployee = (employee) => {
     setSelectedEmployee({ ...employee });
-    setCredentials({ username: employee.username || '', password: '' });
+    // Auto-fetch email as username
+    setCredentials({ 
+      username: employee.username || employee.email || '', 
+      password: '' 
+    });
     setMessage({ type: '', text: '' });
+  };
+
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+    let pass = '';
+    for (let i = 0; i < 8; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCredentials({ ...credentials, password: pass });
+    setMessage({ type: 'success', text: `Temporary password generated: ${pass}. Make sure to share it with the employee!` });
   };
 
   const handleToggleModule = (moduleName) => {
@@ -276,22 +290,28 @@ const ManageAccess = () => {
                     </div>
                     <div className="form-group">
                       <label>Reset Password</label>
-                      <input 
-                        type="password" 
-                        value={credentials.password}
-                        onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                        placeholder="Enter new password"
-                      />
+                      <div className="input-with-button">
+                        <input 
+                          type="text" 
+                          value={credentials.password}
+                          onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                          placeholder="Enter new password"
+                        />
+                        <button onClick={generatePassword} className="gen-btn">
+                          <span className="material-symbols-outlined">key</span>
+                          Generate
+                        </button>
+                      </div>
                       <p className="hint">The user will be prompted to change this password on their next login.</p>
                     </div>
                   </div>
                   <div className="tab-footer">
                     <button 
                       onClick={handleSaveCredentials}
-                      disabled={saving || !credentials.username}
+                      disabled={saving || !credentials.username || !credentials.password}
                       className="save-btn creds"
                     >
-                      {saving ? 'Updating...' : 'Update Credentials'}
+                      {saving ? 'Updating...' : 'Set New Credentials'}
                     </button>
                   </div>
                 </div>
