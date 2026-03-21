@@ -12,12 +12,23 @@ const UnauthorizedPage = () => {
         <p className="text-gray-600 mb-8">
           You do not have permission to view this module. Please contact your administrator if you believe this is an error.
         </p>
-        <Link 
-          to="/dashboard" 
-          className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200"
-        >
-          Return to Dashboard
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link 
+            to="/dashboard" 
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200"
+          >
+            Return to Dashboard
+          </Link>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('userInfo');
+              window.location.href = '/login';
+            }}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-8 rounded-lg transition-colors duration-200"
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );
