@@ -142,6 +142,14 @@ const Employees = () => {
     }
   };
 
+  // Function to convert dd/mm/yyyy UI string to yyyy-mm-dd for backend
+    const toBackendDate = (ddmmyyyy) => {
+        if (!ddmmyyyy || !ddmmyyyy.includes("/")) return ddmmyyyy;
+        const [d, m, y] = ddmmyyyy.split("/");
+        if (!d || !m || !y || y.length !== 4) return ddmmyyyy;
+        return `${y}-${m}-${d}`;
+    };
+
   const confirmAddEmployee = async (e) => {
     e.preventDefault();
 

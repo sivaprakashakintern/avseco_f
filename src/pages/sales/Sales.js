@@ -88,7 +88,16 @@ const Sales = () => {
     const [amountPaid, setAmountPaid] = useState("");
     const [deliveryMode, setDeliveryMode] = useState("Door Delivery");
     const [isDeliveryModeDropdownOpen, setIsDeliveryModeDropdownOpen] = useState(false);
-    const [summaryType] = useState("all");
+    const [isHistoryFilterDropdownOpen, setIsHistoryFilterDropdownOpen] = useState(false);
+    const [isLogging, setIsLogging] = useState(false);
+    const [showBillModal, setShowBillModal] = useState(false);
+    const [selectedBill, setSelectedBill] = useState(null);
+    const [billItems, setBillItems] = useState([]);
+    const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
+    const [editingTransactionId, setEditingTransactionId] = useState(null);
+
+    const [searchTerm, setSearchTerm] = useState("");
+    const [summaryType, setSummaryType] = useState("all");
     const [isAutoSharing, setIsAutoSharing] = useState(false);
 
     // Filtered employees for delivery
