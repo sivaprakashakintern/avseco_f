@@ -2,6 +2,9 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AppProvider, useAppContext } from "./context/AppContext.js";
 import { AuthProvider, useAuth } from "./context/AuthContext.js";
+import ProtectedRoute from "./components/ProtectedRoute.js";
+import UnauthorizedPage from "./pages/UnauthorizedPage.js";
+import ManageAccess from "./pages/ManageAccess.jsx";
 import Sidebar from "./components/layout/Sidebar.js";
 import Topbar from "./components/layout/Topbar.js";
 import ScrollToTop from "./components/layout/ScrollToTop.js";
@@ -39,26 +42,6 @@ import Clients from "./pages/clients/Clients.js";
 
 import Sales from "./pages/sales/Sales.js";
 import Help from "./pages/Help.js";
-
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  const location = useLocation();
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
-  }
-
-  return children;
-};
 
 // Public Route Component (Redirects to dashboard if already logged in)
 const PublicRoute = ({ children }) => {
@@ -112,48 +95,115 @@ const App = () => {
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ScrollToTop />
           <Routes>
-            {/* Auth */}
+            {/* Public Routes */}
             <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* Dashboard */}
-            <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute module="dashboard">
+                <AppLayout><Dashboard /></AppLayout>
+              </ProtectedRoute>
+            } />
 
             {/* Stock Management */}
-            <Route path="/stock" element={<ProtectedRoute><AppLayout><StockOverview /></AppLayout></ProtectedRoute>} />
-            <Route path="/expenses" element={<ProtectedRoute><AppLayout><Expenses /></AppLayout></ProtectedRoute>} />
-            <Route path="/expenses/report" element={<ProtectedRoute><AppLayout><ExpenseReport /></AppLayout></ProtectedRoute>} />
-            <Route path="/stock/transfer" element={<ProtectedRoute><AppLayout><StockTransfer /></AppLayout></ProtectedRoute>} />
-            <Route path="/stock/low-stock" element={<ProtectedRoute><AppLayout><LowStockAlert /></AppLayout></ProtectedRoute>} />
+            <Route path="/stock" element={
+              <ProtectedRoute module="stock">
+                <AppLayout><StockOverview /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/expenses" element={
+              <ProtectedRoute module="stock">
+                <AppLayout><Expenses /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/expenses/report" element={
+              <ProtectedRoute module="stock">
+                <AppLayout><ExpenseReport /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/stock/transfer" element={
+              <ProtectedRoute module="stock">
+                <AppLayout><StockTransfer /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/stock/low-stock" element={
+              <ProtectedRoute module="stock">
+                <AppLayout><LowStockAlert /></AppLayout>
+              </ProtectedRoute>
+            } />
 
             {/* Products */}
-            <Route path="/products" element={<ProtectedRoute><AppLayout><ProductList /></AppLayout></ProtectedRoute>} />
+            <Route path="/products" element={
+              <ProtectedRoute module="products">
+                <AppLayout><ProductList /></AppLayout>
+              </ProtectedRoute>
+            } />
 
             {/* Production */}
-            <Route path="/production/plan" element={<ProtectedRoute><AppLayout><ProductionPlan /></AppLayout></ProtectedRoute>} />
-            <Route path="/production/daily" element={<ProtectedRoute><AppLayout><DailyProduction /></AppLayout></ProtectedRoute>} />
+            <Route path="/production/plan" element={
+              <ProtectedRoute module="production">
+                <AppLayout><ProductionPlan /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/production/daily" element={
+              <ProtectedRoute module="production">
+                <AppLayout><DailyProduction /></AppLayout>
+              </ProtectedRoute>
+            } />
 
             {/* Employees */}
-            <Route path="/employees" element={<ProtectedRoute><AppLayout><Employees /></AppLayout></ProtectedRoute>} />
-            <Route path="/employees/:id" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
+            <Route path="/employees" element={
+              <ProtectedRoute module="employees">
+                <AppLayout><Employees /></AppLayout>
+              </ProtectedRoute>
+            } />
 
-            {/* Profile */}
-            <Route path="/profile" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
-            <Route path="/profile/:id" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
+            {/* Admin Management */}
+            <Route path="/admin/manage-access" element={
+              <ProtectedRoute adminOnly={true}>
+                <AppLayout><ManageAccess /></AppLayout>
+              </ProtectedRoute>
+            } />
 
-            <Route path="/clients" element={<ProtectedRoute><AppLayout><Clients /></AppLayout></ProtectedRoute>} />
-            <Route path="/sales" element={<ProtectedRoute><AppLayout><Sales /></AppLayout></ProtectedRoute>} />
+            {/* Clients */}
+            <Route path="/clients" element={
+              <ProtectedRoute module="clients">
+                <AppLayout><Clients /></AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Sales */}
+            <Route path="/sales" element={
+              <ProtectedRoute module="sales">
+                <AppLayout><Sales /></AppLayout>
+              </ProtectedRoute>
+            } />
 
             {/* Attendance */}
-            <Route path="/attendance" element={<ProtectedRoute><AppLayout><AttendanceLog /></AppLayout></ProtectedRoute>} />
-            <Route path="/attendance-report" element={<ProtectedRoute><AppLayout><AttendanceReport /></AppLayout></ProtectedRoute>} />
+            <Route path="/attendance" element={
+              <ProtectedRoute module="attendance">
+                <AppLayout><AttendanceLog /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/attendance-report" element={
+              <ProtectedRoute module="attendance">
+                <AppLayout><AttendanceReport /></AppLayout>
+              </ProtectedRoute>
+            } />
 
             {/* Reports */}
-            <Route path="/reports/stock" element={<ProtectedRoute><AppLayout><StockReport /></AppLayout></ProtectedRoute>} />
-            <Route path="/reports/production" element={<ProtectedRoute><AppLayout><ProductionReportPage /></AppLayout></ProtectedRoute>} />
-            <Route path="/reports/sales" element={<ProtectedRoute><AppLayout><SalesReport /></AppLayout></ProtectedRoute>} />
-            <Route path="/reports/employees" element={<ProtectedRoute><AppLayout><EmployeeReport /></AppLayout></ProtectedRoute>} />
-            <Route path="/reports/financial" element={<ProtectedRoute><AppLayout><FinancialReport /></AppLayout></ProtectedRoute>} />
+            <Route path="/reports/stock" element={<ProtectedRoute module="reports"><AppLayout><StockReport /></AppLayout></ProtectedRoute>} />
+            <Route path="/reports/production" element={<ProtectedRoute module="reports"><AppLayout><ProductionReportPage /></AppLayout></ProtectedRoute>} />
+            <Route path="/reports/sales" element={<ProtectedRoute module="reports"><AppLayout><SalesReport /></AppLayout></ProtectedRoute>} />
+            <Route path="/reports/employees" element={<ProtectedRoute module="reports"><AppLayout><EmployeeReport /></AppLayout></ProtectedRoute>} />
+            <Route path="/reports/financial" element={<ProtectedRoute module="reports"><AppLayout><FinancialReport /></AppLayout></ProtectedRoute>} />
+
+            {/* Profile (Self-access usually allowed) */}
+            <Route path="/profile" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
+            <Route path="/profile/:id" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
+            <Route path="/employees/:id" element={<ProtectedRoute module="employees"><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
 
             {/* Check System Status */}
             <Route path="/check" element={<ProtectedRoute><AppLayout><CheckPage /></AppLayout></ProtectedRoute>} />

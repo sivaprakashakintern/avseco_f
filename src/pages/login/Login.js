@@ -7,8 +7,8 @@ import "./Login.css";
 
 const Login = () => {
     const navigate = useNavigate();
-    const { login } = useAuth();
-    const [email, setEmail] = useState("");
+    const { login, employee } = useAuth();
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -20,9 +20,18 @@ const Login = () => {
         setError("");
 
         try {
-            await login(email, password);
+            const data = await login(username, password);
             setIsLoading(false);
-            navigate("/dashboard");
+            
+            // Redirect based on access
+            if (data.role === 'admin' || (data.modules && data.modules.includes('dashboard'))) {
+                navigate("/dashboard");
+            } else if (data.modules && data.modules.length > 0) {
+                // Navigate to first allowed module
+                navigate(`/${data.modules[0]}`);
+            } else {
+                navigate("/dashboard");
+            }
         } catch (err) {
             setIsLoading(false);
             const errorMessage = err.response?.data?.message || err.message || "Invalid Credentials";
@@ -49,15 +58,15 @@ const Login = () => {
                         {error && <div className="login-error">{error}</div>}
 
                         <div className="form-group">
-                            <label htmlFor="email">Email Address</label>
+                            <label htmlFor="username">Username</label>
                             <div className="input-wrapper">
-                                <span className="material-symbols-outlined input-icon">mail</span>
+                                <span className="material-symbols-outlined input-icon">person</span>
                                 <input
-                                    type="email"
-                                    id="email"
-                                    placeholder="Enter your email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    type="text"
+                                    id="username"
+                                    placeholder="Enter your username"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
                                     required
                                 />
                             </div>

@@ -7,6 +7,15 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Set axios default header whenever user state changes
+  useEffect(() => {
+    if (user && user.token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
+    } else {
+      delete axios.defaults.headers.common['Authorization'];
+    }
+  }, [user]);
+
   useEffect(() => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
     if (userInfo) {
@@ -15,13 +24,13 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const loginHelper = async (email, password) => {
-    if (!email || !password) {
-      throw new Error('Please enter both email and password');
+  const loginHelper = async (username, password) => {
+    if (!username || !password) {
+      throw new Error('Please enter both username and password');
     }
     
     try {
-      const { data } = await axios.post('/auth/login', { email, password });
+      const { data } = await axios.post('/auth/login', { username, password });
       
       if (data && data.token) {
         localStorage.setItem('userInfo', JSON.stringify(data));
@@ -31,31 +40,35 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Login response missing authentication token');
       }
     } catch (error) {
-      // Re-throw to be caught by the component
       throw error;
     }
-  };
-
-  const registerHelper = async (name, email, password) => {
-    const { data } = await axios.post('/auth/register', { name, email, password });
-    localStorage.setItem('userInfo', JSON.stringify(data));
-    setUser(data);
-    return data;
   };
 
   const logoutHelper = () => {
     localStorage.removeItem('userInfo');
     setUser(null);
+    window.location.href = '/login';
   };
+
+  const hasAccess = (moduleName) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    return user.modules && user.modules.includes(moduleName);
+  };
+
+  const isAdmin = user && user.role === 'admin';
 
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
+        employee: user,
+        modules: user?.modules || [],
+        isAdmin,
         login: loginHelper,
-        register: registerHelper,
         logout: logoutHelper,
+        hasAccess,
       }}
     >
       {children}
