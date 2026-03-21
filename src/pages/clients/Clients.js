@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext.js";
-import { formatDate } from "../../utils/dateUtils.js";
 import "./Clients.css";
 
 const Clients = () => {
   const { clients, addClient, updateClient, salesHistory } = useAppContext();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClient, setSelectedClient] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -346,35 +343,6 @@ const Clients = () => {
         </div>
       )}
 
-      {showViewModal && selectedClient && (
-        <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
-          <div className="modal-content" style={{ maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Client History</h2>
-              <button className="modal-close" onClick={() => setShowViewModal(false)}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <div className="modal-body" style={{ textAlign: 'center' }}>
-               <div className="company-icon" style={{ width: '80px', height: '80px', margin: '0 auto 20px', fontSize: '40px', borderRadius: '50%' }}>
-                 <span className="material-symbols-outlined">business</span>
-               </div>
-               <h3 style={{ fontSize: '22px', color: '#0f172a' }}>{selectedClient.companyName || "Private Client"}</h3>
-               <p style={{ color: '#64748b', marginBottom: '30px' }}>{selectedClient.contactPerson}</p>
-               
-               <div className="mobile-client-meta" style={{ gridTemplateColumns: '1fr', textAlign: 'left', gap: '15px' }}>
-                  <div className="meta-item"><span className="meta-label">GSTIN</span><span className="meta-value">{selectedClient.gst}</span></div>
-                  <div className="meta-item"><span className="meta-label">Total Volume</span><span className="meta-value">{selectedClient.totalOrders} Orders</span></div>
-                  <div className="meta-item"><span className="meta-label">Gross Value</span><span className="meta-value">{selectedClient.totalSpent}</span></div>
-                  <div className="meta-item"><span className="meta-label">Address</span><span className="meta-value" style={{ fontSize: '12px' }}>{selectedClient.address}</span></div>
-               </div>
-            </div>
-            <div className="modal-footer">
-              <button className="modal-confirm" onClick={() => setShowViewModal(false)} style={{ width: '100%' }}>Done</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
