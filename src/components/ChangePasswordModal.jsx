@@ -39,10 +39,14 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
   return (
     <div className="modal-overlay">
       <div className="password-modal">
-        <div className="modal-header">
-          <span className="material-symbols-outlined icon">security_update_good</span>
-          <h2>Secure Your Account</h2>
-          <p>This is your first time logging in with these credentials. For your security, please set a new password.</p>
+        <div className="modal-header-premium">
+          <div className="header-icon-box">
+             <span className="material-symbols-outlined header-icon">verified_user</span>
+          </div>
+          <div className="header-text-box">
+            <h2>Secure Your Account</h2>
+            <p>This is your first time logging in with these credentials. For your security, please set a new password.</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit}>
