@@ -67,14 +67,8 @@ const AppLayout = ({ children }) => {
   const { loading: appLoading, isUpdating } = useAppContext();
   const { user } = useAuth();
   
-  return (
+    return (
     <div className="dashboard-wrapper">
-      {appLoading && (
-        <div className="glass-loading-overlay">
-          <div className="premium-spinner"></div>
-          <span>Syncing records...</span>
-        </div>
-      )}
       {!appLoading && isUpdating && (
         <div className="update-loading-overlay">
           <div className="mini-spinner"></div>
