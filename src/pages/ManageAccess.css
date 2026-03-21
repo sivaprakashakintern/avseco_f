@@ -607,14 +607,43 @@
   .admin-layout {
     grid-template-columns: 1fr;
     height: auto;
+    gap: 24px;
+    padding: 24px 0;
   }
   
-  .employee-sidebar-card {
-    height: 400px;
-  }
-  
+  .employee-sidebar-card,
   .management-content-card {
-    height: 600px;
+    height: auto;
+    min-height: 500px;
+    padding: 24px;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 28px;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-header h1 {
+    font-size: 24px;
+  }
+
+  .credential-tab-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .input-with-actions {
+    flex-wrap: wrap;
+  }
+
+  .icon-action-btn {
+    width: 40px;
+    height: 40px;
   }
 }
 
@@ -666,4 +695,55 @@
 
 .icon-action-btn .material-symbols-outlined {
   font-size: 20px;
+}
+
+.db-status-badge {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #006A4E;
+  padding: 14px 18px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.db-status-badge .material-symbols-outlined {
+  color: #006A4E;
+  font-size: 20px;
+}
+
+.credentials-group {
+  margin-top: 24px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 24px;
+}
+
+.creds-input {
+  border-radius: 14px 0 0 14px !important;
+}
+
+.gen-btn {
+  border-radius: 0 14px 14px 0 !important;
+}
+
+@media (max-width: 576px) {
+  .input-with-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .icon-action-btn {
+    width: 100%;
+    height: 48px;
+  }
+
+  .input-with-button {
+    width: 100%;
+  }
 }

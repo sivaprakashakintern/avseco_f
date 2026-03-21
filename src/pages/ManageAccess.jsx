@@ -293,7 +293,12 @@ const ManageAccess = () => {
                   </div>
                 </div>
 
-                <div className="form-group">
+                <div className="form-group credentials-group">
+                  <div className="db-status-badge">
+                    <span className="material-symbols-outlined">verified_user</span>
+                    Database Status: 🔒 Encrypted & Secure
+                  </div>
+                  
                   <label>Assign New Password</label>
                   <div className="input-with-actions">
                     <div className="input-with-button" style={{ flex: 1 }}>
@@ -302,8 +307,9 @@ const ManageAccess = () => {
                         value={credentials.password} 
                         onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
                         placeholder="Leave empty to keep existing"
+                        className="creds-input"
                       />
-                      <button className="gen-btn" onClick={generatePassword}>
+                      <button className="gen-btn" onClick={generatePassword} type="button">
                         <span className="material-symbols-outlined">key</span>
                         Gen
                       </button>
@@ -314,7 +320,10 @@ const ManageAccess = () => {
                       </button>
                     )}
                   </div>
-                  <p className="hint">Note: Existing passwords are encrypted. Setting a new one will override the current password.</p>
+                  <p className="hint">
+                    <span className="material-symbols-outlined">info</span>
+                    Setting a new password will immediately override the current one in the database.
+                  </p>
                 </div>
               </div>
                   <div className="tab-footer">
