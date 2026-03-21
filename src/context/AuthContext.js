@@ -66,6 +66,7 @@ export const AuthProvider = ({ children }) => {
         employee: user,
         modules: user?.modules || [],
         isAdmin,
+        isFirstLogin: user?.isFirstLogin,
         login: loginHelper,
         logout: logoutHelper,
         hasAccess,

@@ -62,23 +62,33 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
+import ChangePasswordModal from "./components/ChangePasswordModal.jsx";
+
 const AppLayout = ({ children }) => {
-  const { loading, isUpdating } = useAppContext();
+  const { loading: appLoading, isUpdating } = useAppContext();
+  const { user } = useAuth();
   
   return (
     <div className="dashboard-wrapper">
-      {loading && (
+      {appLoading && (
         <div className="glass-loading-overlay">
           <div className="premium-spinner"></div>
           <span>Syncing records...</span>
         </div>
       )}
-      {!loading && isUpdating && (
+      {!appLoading && isUpdating && (
         <div className="update-loading-overlay">
           <div className="mini-spinner"></div>
           <span>Updating...</span>
         </div>
       )}
+      
+      {/* Force password change for new credentials */}
+      <ChangePasswordModal 
+        isOpen={user?.isFirstLogin} 
+        onClose={() => {}} // User cannot close without changing
+      />
+
       <Sidebar />
       <div className="right-area">
         <Topbar />

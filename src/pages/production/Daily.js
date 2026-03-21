@@ -511,6 +511,7 @@ const Production = () => {
                     <th style={{ textAlign: 'center' }}>PRODUCT NAME</th>
                     <th style={{ textAlign: 'center', width: '350px' }}>SIZES (QTY)</th>
                     <th style={{ textAlign: 'center' }}>GRADE</th>
+                    <th style={{ textAlign: 'center' }}>RECORDED BY</th>
                     <th style={{ textAlign: 'center' }}>ACTION</th>
                   </tr>
                 </thead>
@@ -533,6 +534,9 @@ const Production = () => {
                            </span>
                         </td>
                         <td style={{ textAlign: 'center' }}><span className={`grade-badge grade-${record.grade?.toLowerCase()}`}>{record.grade}</span></td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span className="recorded-by-tag">{record.recordedBy || 'System'}</span>
+                        </td>
                         <td style={{ textAlign: 'center' }}>
                           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                              <button className="btn-edit-premium" onClick={() => handleEditProduction(record)}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../utils/axiosConfig.js';
+import './ManageAccess.css';
 
 const ManageAccess = () => {
   const [employees, setEmployees] = useState([]);
@@ -9,6 +10,10 @@ const ManageAccess = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [activeTab, setActiveTab] = useState('permissions'); // 'permissions' or 'credentials'
+
+  // Credential editing state
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
 
   useEffect(() => {
     fetchData();
@@ -32,6 +37,7 @@ const ManageAccess = () => {
 
   const handleSelectEmployee = (employee) => {
     setSelectedEmployee({ ...employee });
+    setCredentials({ username: employee.username || '', password: '' });
     setMessage({ type: '', text: '' });
   };
 
@@ -71,7 +77,6 @@ const ManageAccess = () => {
         modules: selectedEmployee.modules
       });
       
-      // Update local state
       setEmployees(employees.map(emp => 
         emp._id === selectedEmployee._id ? selectedEmployee : emp
       ));
@@ -84,118 +89,219 @@ const ManageAccess = () => {
     }
   };
 
+  const handleSaveCredentials = async () => {
+    if (!selectedEmployee) return;
+    
+    setSaving(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      await axios.put(`/admin/employees/${selectedEmployee._id}/credentials`, credentials);
+      
+      const updatedEmployee = { ...selectedEmployee, username: credentials.username };
+      setEmployees(employees.map(emp => 
+        emp._id === selectedEmployee._id ? updatedEmployee : emp
+      ));
+      setSelectedEmployee(updatedEmployee);
+      setCredentials({ ...credentials, password: '' }); // Clear password for security
+      
+      setMessage({ type: 'success', text: 'Credentials updated successfully!' });
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to update credentials' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const filteredEmployees = employees.filter(emp => 
     emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    emp.username.toLowerCase().includes(searchQuery.toLowerCase())
+    (emp.username && emp.username.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    emp.department.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (loading) return <div className="p-8 text-center">Loading access management...</div>;
+  const getModuleIcon = (module) => {
+    const icons = {
+      dashboard: 'dashboard',
+      stock: 'inventory_2',
+      products: 'format_list_bulleted',
+      production: 'factory',
+      employees: 'badge',
+      attendance: 'event_available',
+      clients: 'group',
+      sales: 'sell',
+      reports: 'analytics'
+    };
+    return icons[module] || 'extension';
+  };
+
+  if (loading) return (
+    <div className="admin-loading">
+      <div className="spinner"></div>
+      <p>Loading administration console...</p>
+    </div>
+  );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Manage Module Access</h1>
-        <p className="text-gray-600">Assign permissions to employees for specific functional modules.</p>
+    <div className="admin-container">
+      <div className="admin-header">
+        <div className="header-info">
+          <h1>Security & Access Hub</h1>
+          <p>Grant module permissions and manage employee security credentials.</p>
+        </div>
+        <div className="header-actions">
+           <button onClick={fetchData} className="refresh-btn">
+             <span className="material-symbols-outlined">refresh</span>
+           </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Left: Employee List */}
-        <div className="md:col-span-1 bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-[600px]">
-          <div className="p-4 bg-gray-50 border-b">
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
-              <input 
-                type="text"
-                placeholder="Search employees..."
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+      <div className="admin-layout">
+        {/* Left: Employee Directory */}
+        <div className="employee-sidebar-card">
+          <div className="sidebar-search">
+            <span className="material-symbols-outlined">search</span>
+            <input 
+              type="text"
+              placeholder="Search directory..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <div className="flex-1 overflow-y-auto">
-            {filteredEmployees.map(emp => (
-              <div 
-                key={emp._id}
-                onClick={() => handleSelectEmployee(emp)}
-                className={`p-4 border-b cursor-pointer transition-colors ${selectedEmployee?._id === emp._id ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'hover:bg-gray-50'}`}
-              >
-                <div className="font-semibold text-gray-800">{emp.name}</div>
-                <div className="text-sm text-gray-500">@{emp.username} | {emp.department}</div>
-              </div>
-            ))}
+          <div className="employee-list">
+            {filteredEmployees.length > 0 ? (
+              filteredEmployees.map(emp => (
+                <div 
+                  key={emp._id}
+                  onClick={() => handleSelectEmployee(emp)}
+                  className={`employee-item ${selectedEmployee?._id === emp._id ? 'selected' : ''}`}
+                >
+                  <div className="emp-avatar">
+                   {emp.avatar ? <img src={emp.avatar} alt="" /> : <span>{emp.name.charAt(0)}</span>}
+                  </div>
+                  <div className="emp-info">
+                    <span className="emp-name">{emp.name}</span>
+                    <span className="emp-dept">{emp.department}</span>
+                    {emp.username && <span className="emp-user">@{emp.username}</span>}
+                  </div>
+                  {emp.role === 'admin' && <span className="admin-badge">Admin</span>}
+                </div>
+              ))
+            ) : (
+              <div className="no-results">No employees found</div>
+            )}
           </div>
         </div>
 
-        {/* Right: Permission Editor */}
-        <div className="md:col-span-2 bg-white rounded-xl shadow-md p-6 h-[600px] flex flex-col">
+        {/* Right: Management Content */}
+        <div className="management-content-card">
           {selectedEmployee ? (
-            <>
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-800">Permissions for {selectedEmployee.name}</h2>
-                  <p className="text-sm text-gray-500">Select which modules this employee can access.</p>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={handleSelectAll} className="text-sm text-blue-600 hover:underline">Select All</button>
-                  <span className="text-gray-300">|</span>
-                  <button onClick={handleClearAll} className="text-sm text-red-600 hover:underline">Clear All</button>
+            <div className="management-wrapper">
+              <div className="management-top-bar">
+                <div className="selected-user-header">
+                  <h2>{selectedEmployee.name}</h2>
+                  <div className="tabs">
+                    <button 
+                      className={activeTab === 'permissions' ? 'active' : ''} 
+                      onClick={() => setActiveTab('permissions')}
+                    >
+                      Permissions
+                    </button>
+                    <button 
+                      className={activeTab === 'credentials' ? 'active' : ''} 
+                      onClick={() => setActiveTab('credentials')}
+                    >
+                      Credentials
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {message.text && (
-                <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                <div className={`status-message ${message.type}`}>
                   <span className="material-symbols-outlined">{message.type === 'success' ? 'check_circle' : 'error'}</span>
                   {message.text}
                 </div>
               )}
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 flex-1 overflow-y-auto mb-6 p-1">
-                {availableModules.map(module => (
-                  <div 
-                    key={module}
-                    onClick={() => handleToggleModule(module)}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center gap-2 ${selectedEmployee.modules.includes(module) ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-100 hover:border-blue-200'}`}
-                  >
-                    <span className={`material-symbols-outlined text-3xl ${selectedEmployee.modules.includes(module) ? 'text-blue-600' : 'text-gray-400'}`}>
-                      {module === 'dashboard' ? 'dashboard' : 
-                       module === 'stock' ? 'inventory_2' :
-                       module === 'products' ? 'format_list_bulleted' :
-                       module === 'production' ? 'factory' :
-                       module === 'employees' ? 'badge' :
-                       module === 'attendance' ? 'event_available' :
-                       module === 'clients' ? 'group' :
-                       module === 'sales' ? 'sell' :
-                       module === 'reports' ? 'analytics' : 'extension'}
-                    </span>
-                    <span className={`font-medium capitalize ${selectedEmployee.modules.includes(module) ? 'text-blue-800' : 'text-gray-600'}`}>
-                      {module}
-                    </span>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedEmployee.modules.includes(module) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
-                      {selectedEmployee.modules.includes(module) && <span className="material-symbols-outlined text-white text-[12px]">check</span>}
+              {activeTab === 'permissions' ? (
+                <div className="permissions-tab">
+                  <div className="tab-header">
+                    <h3>Module Access</h3>
+                    <div className="tab-actions">
+                      <button onClick={handleSelectAll} className="bulk-btn select">Allow All</button>
+                      <button onClick={handleClearAll} className="bulk-btn clear">Revoke All</button>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              <div className="mt-auto border-t pt-6 flex justify-end">
-                <button 
-                  onClick={handleSavePermissions}
-                  disabled={saving}
-                  className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center gap-2 ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
-                >
-                  {saving ? (
-                    <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Saving...</>
-                  ) : (
-                    <><span className="material-symbols-outlined">save</span> Save Permissions</>
-                  )}
-                </button>
-              </div>
-            </>
+                  <div className="modules-grid">
+                    {availableModules.map(module => (
+                      <div 
+                        key={module}
+                        onClick={() => handleToggleModule(module)}
+                        className={`module-card ${selectedEmployee.modules.includes(module) ? 'active' : ''}`}
+                      >
+                        <div className="module-icon">
+                          <span className="material-symbols-outlined">{getModuleIcon(module)}</span>
+                        </div>
+                        <span className="module-name">{module}</span>
+                        <div className="check-box">
+                          {selectedEmployee.modules.includes(module) && <span className="material-symbols-outlined">done</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="tab-footer">
+                    <button 
+                      onClick={handleSavePermissions}
+                      disabled={saving}
+                      className="save-btn"
+                    >
+                      {saving ? 'Saving...' : 'Commit Changes'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="credentials-tab">
+                  <div className="tab-header">
+                    <h3>Security Credentials</h3>
+                  </div>
+                  <div className="credential-form">
+                    <div className="form-group">
+                      <label>Login ID (Username or Email)</label>
+                      <input 
+                        type="text" 
+                        value={credentials.username}
+                        onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+                        placeholder="e.g. employee@avseco.in"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Reset Password</label>
+                      <input 
+                        type="password" 
+                        value={credentials.password}
+                        onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                        placeholder="Enter new password"
+                      />
+                      <p className="hint">The user will be prompted to change this password on their next login.</p>
+                    </div>
+                  </div>
+                  <div className="tab-footer">
+                    <button 
+                      onClick={handleSaveCredentials}
+                      disabled={saving || !credentials.username}
+                      className="save-btn creds"
+                    >
+                      {saving ? 'Updating...' : 'Update Credentials'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-gray-400">
-              <span className="material-symbols-outlined text-6xl mb-4">person_search</span>
-              <p>Select an employee from the list to manage their permissions.</p>
+            <div className="empty-state">
+              <span className="material-symbols-outlined">manage_accounts</span>
+              <h3>No Employee Selected</h3>
+              <p>Please select an employee from the directory to configure their access.</p>
             </div>
           )}
         </div>
