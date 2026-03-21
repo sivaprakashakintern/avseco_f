@@ -18,7 +18,7 @@ export const AppProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     
     // ✅ Helper to avoid UTC timezone shift (IST+5:30 bug)
     const toLocalDateKey = useCallback((date) => {
@@ -34,7 +34,10 @@ export const AppProvider = ({ children }) => {
     const fetchData = useCallback(async (isInitial = false) => {
         try {
             if (isInitial) setLoading(true);
-            const [empData, expData, clientData, prodData, productData, targetData, salesData, attendanceData] = await Promise.all([
+            
+            // Refresh permissions from backend
+            if (user) await refreshUser();
+            const results = await Promise.allSettled([
                 employeeApi.getAll(),
                 expenseApi.getAll(),
                 clientApi.getAll(),
@@ -44,6 +47,17 @@ export const AppProvider = ({ children }) => {
                 salesApi.getAll(),
                 attendanceApi.getByDate(todayStr)
             ]);
+
+            const [empRes, expRes, clientRes, prodRes, productRes, targetRes, salesRes, attendanceRes] = results;
+            
+            const empData = empRes.status === 'fulfilled' ? empRes.value : [];
+            const expData = expRes.status === 'fulfilled' ? expRes.value : [];
+            const clientData = clientRes.status === 'fulfilled' ? clientRes.value : [];
+            const prodData = prodRes.status === 'fulfilled' ? prodRes.value : [];
+            const productData = productRes.status === 'fulfilled' ? productRes.value : [];
+            const targetData = targetRes.status === 'fulfilled' ? targetRes.value : [];
+            const salesData = salesRes.status === 'fulfilled' ? salesRes.value : [];
+            const attendanceData = attendanceRes.status === 'fulfilled' ? attendanceRes.value : [];
             
             setEmployees(empData.map(e => ({ ...e, id: e._id })).sort((a, b) => a.name.localeCompare(b.name)));
             setExpenses(expData.map(e => ({ ...e, id: e._id })).sort((a, b) => {

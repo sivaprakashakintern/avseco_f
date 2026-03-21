@@ -50,13 +50,25 @@ export const AuthProvider = ({ children }) => {
     window.location.href = '/login';
   };
 
+  const refreshUser = async () => {
+    try {
+      const { data } = await axios.get('/auth/me');
+      const updatedUser = { ...user, ...data };
+      localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      return updatedUser;
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error);
+    }
+  };
+
   const hasAccess = (moduleName) => {
     if (!user) return false;
-    if (user.role === 'admin') return true;
+    if (user.role && user.role.toLowerCase() === 'admin') return true;
     return user.modules && user.modules.includes(moduleName);
   };
 
-  const isAdmin = user && user.role === 'admin';
+  const isAdmin = user && user.role && user.role.toLowerCase() === 'admin';
 
   return (
     <AuthContext.Provider
@@ -69,6 +81,7 @@ export const AuthProvider = ({ children }) => {
         isFirstLogin: user?.isFirstLogin,
         login: loginHelper,
         logout: logoutHelper,
+        refreshUser,
         hasAccess,
       }}
     >

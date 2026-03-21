@@ -225,6 +225,30 @@ body {
   color: inherit;
 }
 
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+}
+
+.logout-item {
+  color: #ffb3b3 !important;
+  margin-bottom: 0;
+}
+
+.logout-item:hover {
+  background: rgba(220, 38, 38, 0.15) !important;
+  color: #ff8080 !important;
+}
+
+.logout-item .material-symbols-outlined {
+  color: #ffb3b3 !important;
+}
+
+.logout-item:hover .material-symbols-outlined {
+  color: #ff8080 !important;
+}
+
 
 /* ========== TOPBAR - COMPACT SIZE ========== */
 .topbar-fixed {
