@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import "./ExpenseReport.css";
 import { formatDate } from '../../utils/dateUtils.js';
+import { formatCurrency, getDynamicFontSize } from '../../utils/formatUtils.js';
 import { useAppContext } from '../../context/AppContext.js';
 
 // ── Category config: colour palette for all 7 categories ──────────────────────
@@ -297,7 +298,9 @@ const ExpenseReport = () => {
                     </div>
                     <div className="metric-content">
                         <span className="metric-label">Total Expenses</span>
-                        <span className="metric-value">₹{totalExpense.toLocaleString()}</span>
+                        <span className="metric-value" style={getDynamicFontSize(totalExpense)}>
+                            {formatCurrency(totalExpense, true)}
+                        </span>
                         <span className="metric-sub">{filteredExpenses.length} transactions</span>
                     </div>
                 </div>
@@ -307,7 +310,9 @@ const ExpenseReport = () => {
                     </div>
                     <div className="metric-content">
                         <span className="metric-label">Daily Average</span>
-                        <span className="metric-value">₹{Number(avgDaily).toLocaleString()}</span>
+                        <span className="metric-value" style={getDynamicFontSize(avgDaily)}>
+                            {formatCurrency(avgDaily, true)}
+                        </span>
                         <span className="metric-sub">per day ({daysDiff} days)</span>
                     </div>
                 </div>

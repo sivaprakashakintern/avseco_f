@@ -1,50 +1,55 @@
 import React, { useState, useEffect } from "react";
+import { healthApi } from "../utils/api.js";
 import "./CheckPage.css";
 
 const CheckPage = () => {
     const [connectionStatus, setConnectionStatus] = useState("checking"); // checking, connected, error
+    const [dbStatus, setDbStatus] = useState("unknown");
     const [errorMessage, setErrorMessage] = useState("");
     const [lastChecked, setLastChecked] = useState(null);
 
-    const checkConnection = () => {
+    const checkConnection = async () => {
         setConnectionStatus("checking");
         setErrorMessage("");
 
-        // Simulate API connection check
-        setTimeout(() => {
-            // For demonstration, we'll assume it succeeds most of the time
-            // unless we want to simulate an error.
-            // Let's use random for now, or just success as default.
-            const isSuccess = Math.random() > 0.1;
-
-            if (isSuccess) {
+        try {
+            const data = await healthApi.check();
+            if (data.status === 'healthy') {
                 setConnectionStatus("connected");
+                setDbStatus(data.database || "connected");
             } else {
                 setConnectionStatus("error");
-                setErrorMessage("Failed to connect to the server. Please check your internet connection or contact support.");
+                setErrorMessage("Backend reported an unhealthy status.");
             }
+        } catch (error) {
+            setConnectionStatus("error");
+            setErrorMessage("Failed to connect to the server. Please check if the backend is running and verify your network connection.");
+            setDbStatus("disconnected");
+        } finally {
             setLastChecked(new Date());
-        }, 1500);
+        }
     };
 
     useEffect(() => {
         checkConnection();
-
-        // Auto-check every 30 seconds
-        const interval = setInterval(checkConnection, 30000);
+        // Auto-check every 60 seconds
+        const interval = setInterval(checkConnection, 60000);
         return () => clearInterval(interval);
     }, []);
 
     return (
         <div className="check-page-container">
             <div className="check-card">
-                <h1 className="check-title">System Status Check</h1>
+                <header className="check-header">
+                    <h1 className="check-title">System Status Check</h1>
+                    <p className="check-subtitle">Real-time connection monitoring for database & API</p>
+                </header>
 
                 <div className="status-indicator-wrapper">
                     {connectionStatus === "checking" && (
                         <div className="status-animation checking">
                             <span className="material-symbols-outlined spin">sync</span>
-                            <p>Checking Connection...</p>
+                            <p>Establishing Connection...</p>
                         </div>
                     )}
 
@@ -52,8 +57,19 @@ const CheckPage = () => {
                         <div className="status-animation connected">
                             <div className="pulse-ring green"></div>
                             <span className="material-symbols-outlined icon-large">check_circle</span>
-                            <h2>System Connected</h2>
-                            <p className="status-text">All systems are operational.</p>
+                            <h2>Fully Connected</h2>
+                            <p className="status-text">Your system is optimally connected to the cloud infrastructure.</p>
+                            
+                            <div className="status-details-grid">
+                                <div className="detail-item">
+                                    <span className="detail-label">Backend API</span>
+                                    <span className="detail-value success">Active</span>
+                                </div>
+                                <div className="detail-item">
+                                    <span className="detail-label">Database</span>
+                                    <span className="detail-value success">{dbStatus.toUpperCase()}</span>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -63,9 +79,21 @@ const CheckPage = () => {
                             <span className="material-symbols-outlined icon-large">error</span>
                             <h2>Connection Failed</h2>
                             <p className="error-text">{errorMessage}</p>
+                            
+                            <div className="status-details-grid">
+                                <div className="detail-item">
+                                    <span className="detail-label">Backend API</span>
+                                    <span className="detail-value error">Unreachable</span>
+                                </div>
+                                <div className="detail-item">
+                                    <span className="detail-label">Database</span>
+                                    <span className="detail-value error">OFFLINE</span>
+                                </div>
+                            </div>
+
                             <button className="retry-btn" onClick={checkConnection}>
                                 <span className="material-symbols-outlined">refresh</span>
-                                Retry Connection
+                                Retry System Check
                             </button>
                         </div>
                     )}
@@ -73,7 +101,8 @@ const CheckPage = () => {
 
                 {lastChecked && (
                     <div className="last-checked">
-                        Last checked: {lastChecked.toLocaleTimeString()}
+                        <span className="material-symbols-outlined">schedule</span>
+                        Last verified at: {lastChecked.toLocaleTimeString()}
                     </div>
                 )}
             </div>

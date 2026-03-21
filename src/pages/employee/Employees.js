@@ -4,6 +4,10 @@ import "./Employees.css";
 import "../../dashboard/Dashboard.css"; // Reuse dashboard header styles
 
 import { formatDate } from '../../utils/dateUtils.js';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
 
 const Employees = () => {
 
@@ -118,13 +122,14 @@ const Employees = () => {
 
   // Add Employee
   const handleAddEmployee = () => {
+    const today = dayjs();
     setFormData({
       name: "",
       department: "Operator",
       email: "",
-      phone: "",
-      joinDate: new Date().toISOString().split("T")[0],
-      dob: "",
+      phone: "+91 ",
+      joinDate: today,
+      dob: null, // Initialized as null for cleaner typing experience
       aadhar: "",
       pan: "",
       address: "",
@@ -137,14 +142,31 @@ const Employees = () => {
     }
   };
 
-  useEffect(() => {
-    if (!showAddModal) {
-      document.body.classList.remove("hide-topbar-mobile");
-    }
-    return () => {
-      document.body.classList.remove("hide-topbar-mobile");
+  // Function to convert dd/mm/yyyy UI string to yyyy-mm-dd for backend
+    const toBackendDate = (ddmmyyyy) => {
+        if (!ddmmyyyy || !ddmmyyyy.includes("/")) return ddmmyyyy;
+        const [d, m, y] = ddmmyyyy.split("/");
+        if (!d || !m || !y || y.length !== 4) return ddmmyyyy;
+        return `${y}-${m}-${d}`;
     };
-  }, [showAddModal]);
+
+    // Function to convert yyyy-mm-dd (or ISO) back to dd/mm/yyyy for UI
+    const toUIDate = (dateInput) => {
+        if (!dateInput) return "";
+        let date;
+        if (typeof dateInput === 'string' && dateInput.includes("-")) {
+            const parts = dateInput.split('T')[0].split("-");
+            if (parts[0].length === 4) { // yyyy-mm-dd
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+        }
+        date = new Date(dateInput);
+        if (isNaN(date.getTime())) return dateInput;
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
 
   const confirmAddEmployee = async (e) => {
     e.preventDefault();
@@ -156,6 +178,55 @@ const Employees = () => {
       return;
     }
 
+    // Email validation (optional but if provided must be valid)
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setFeedbackMessage("❌ Please enter a valid email address");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    // PAN validation
+    if (formData.pan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan.toUpperCase())) {
+      setFeedbackMessage("❌ Please enter a valid PAN Number (e.g. ABCDE1234F)");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    if (!formData.joinDate || !dayjs(formData.joinDate).isValid()) {
+        setFeedbackMessage("❌ Please enter a valid Join Date");
+        setTimeout(() => setFeedbackMessage(""), 3000);
+        return;
+    }
+    if (formData.dob && !dayjs(formData.dob).isValid()) {
+        setFeedbackMessage("❌ Please enter a valid Date of Birth");
+        setTimeout(() => setFeedbackMessage(""), 3000);
+        return;
+    }
+
+    // Aadhar validation
+    const rawAadhar = formData.aadhar.replace(/\s/g, "");
+    if (rawAadhar.length !== 12) {
+      setFeedbackMessage("❌ Aadhar Number must be exactly 12 digits");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    // Uniqueness check (UI side before server call)
+    const normPhone = formData.phone.replace(/\s+/g, "");
+    const normAadhar = formData.aadhar.replace(/\s+/g, "");
+
+    const isDuplicate = employees.some(emp => {
+      const dbPhone = (emp.phone || "").replace(/\s+/g, "");
+      const dbAadhar = (emp.aadhar || "").replace(/\s+/g, "");
+      return dbPhone === normPhone || dbAadhar === normAadhar;
+    });
+
+    if (isDuplicate) {
+      setFeedbackMessage("❌ This employee (Mobile or Aadhar) already exists");
+      setTimeout(() => setFeedbackMessage(""), 4000);
+      return;
+    }
+
     try {
       setFeedbackMessage("Adding employee...");
       const newEmployee = {
@@ -163,12 +234,14 @@ const Employees = () => {
         department: formData.department,
         email: formData.email,
         phone: formData.phone,
-        joinDate: formData.joinDate,
-        dob: formData.dob,
+        joinDate: formData.joinDate && dayjs(formData.joinDate).isValid() ? formData.joinDate.format("YYYY-MM-DD") : null,
+        dob: formData.dob && dayjs(formData.dob).isValid() ? formData.dob.format("YYYY-MM-DD") : null,
         aadhar: formData.aadhar,
-        pan: formData.pan,
+        pan: formData.pan.toUpperCase(),
         address: formData.address,
-        salary: Number(formData.salary) || 0
+        salary: Number(formData.salary) || 0,
+        avatar: formData.avatar,
+        empId: 'EMP-' + Math.floor(100000 + Math.random() * 900000)
       };
 
       await ctxAddEmployee(newEmployee);
@@ -178,9 +251,6 @@ const Employees = () => {
       setTimeout(() => setFeedbackMessage(""), 3000);
     } catch (error) {
       console.error("Add employee error:", error);
-      if (error.response) {
-        console.dir(error.response.data);
-      }
       setFeedbackMessage("❌ Failed to add employee: " + (error.response?.data?.message || error.message));
       setTimeout(() => setFeedbackMessage(""), 5000);
     }
@@ -192,14 +262,15 @@ const Employees = () => {
     setFormData({
       name: employee.name,
       department: employee.department,
-      email: employee.email,
-      phone: employee.phone,
-      joinDate: employee.joinDate,
-      dob: employee.dob || "",
+      email: employee.email || "",
+      phone: employee.phone || "",
+      joinDate: employee.joinDate ? dayjs(employee.joinDate) : null,
+      dob: employee.dob ? dayjs(employee.dob) : null,
       aadhar: employee.aadhar || "",
       pan: employee.pan || "",
       address: employee.address || "",
-      salary: employee.salary || ""
+      salary: employee.salary || "",
+      avatar: employee.avatar || null
     });
     setShowEditModal(true);
   };
@@ -214,6 +285,57 @@ const Employees = () => {
       return;
     }
 
+    // Validate form - basic fields first
+    if (!formData.name || !formData.department || !formData.phone || !formData.joinDate) {
+      setFeedbackMessage("Please fill all required fields (Name, Dept, Phone, Join Date)");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    // Email validation
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setFeedbackMessage("❌ Please enter a valid email address");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    // PAN validation
+    if (formData.pan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan.toUpperCase())) {
+      setFeedbackMessage("❌ Please enter a valid PAN Number (e.g. ABCDE1234F)");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    // Date validation
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!dateRegex.test(formData.joinDate)) {
+        setFeedbackMessage("❌ Join Date must be in DD/MM/YYYY format");
+        setTimeout(() => setFeedbackMessage(""), 3000);
+        return;
+    }
+    if (!dateRegex.test(formData.dob)) {
+        setFeedbackMessage("❌ Date of Birth must be in DD/MM/YYYY format");
+        setTimeout(() => setFeedbackMessage(""), 3000);
+        return;
+    }
+
+    // Uniqueness check (excluding current employee)
+    const normPhone = formData.phone.replace(/\s+/g, "");
+    const normAadhar = formData.aadhar.replace(/\s+/g, "");
+
+    const isDuplicate = employees.some(emp => {
+      if (emp.id === selectedEmployee.id) return false;
+      const dbPhone = (emp.phone || "").replace(/\s+/g, "");
+      const dbAadhar = (emp.aadhar || "").replace(/\s+/g, "");
+      return dbPhone === normPhone || dbAadhar === normAadhar;
+    });
+
+    if (isDuplicate) {
+        setFeedbackMessage("❌ Another employee already has this Mobile or Aadhar number");
+        setTimeout(() => setFeedbackMessage(""), 4000);
+        return;
+    }
+
     try {
       setFeedbackMessage("Updating employee...");
       await ctxUpdateEmployee(selectedEmployee.id, {
@@ -221,12 +343,13 @@ const Employees = () => {
         department: formData.department,
         email: formData.email,
         phone: formData.phone,
-        joinDate: formData.joinDate,
-        dob: formData.dob,
+        joinDate: formData.joinDate && dayjs(formData.joinDate).isValid() ? formData.joinDate.format("YYYY-MM-DD") : null,
+        dob: formData.dob && dayjs(formData.dob).isValid() ? formData.dob.format("YYYY-MM-DD") : null,
         aadhar: formData.aadhar,
-        pan: formData.pan,
+        pan: formData.pan.toUpperCase(),
         address: formData.address,
-        salary: Number(formData.salary) || 0
+        salary: Number(formData.salary) || 0,
+        avatar: formData.avatar
       });
 
       setShowEditModal(false);
@@ -262,6 +385,10 @@ const Employees = () => {
     setShowViewModal(true);
   };
 
+  const handleDateChange = (name, newValue) => {
+    setFormData({ ...formData, [name]: newValue });
+  };
+
   // Form input change handler
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
@@ -270,6 +397,22 @@ const Employees = () => {
         ...formData,
         avatar: files[0],
       });
+    } else if (name === "aadhar") {
+      // Format Aadhar: 1234 5678 9012
+      let val = value.replace(/\D/g, "").substring(0, 12);
+      let formatted = val.match(/.{1,4}/g)?.join(" ") || val;
+      setFormData({
+        ...formData,
+        aadhar: formatted,
+      });
+    } else if (name === "phone") {
+        // Force +91 prefix and limit digits to 10
+        let digits = value.replace(/^\+91\s?/, "").replace(/\D/g, "").substring(0, 10);
+        setFormData({ ...formData, phone: "+91 " + digits });
+    } else if (name === "pan") {
+        // PAN is 10 characters (ABCDE1234F)
+        let val = value.toUpperCase().substring(0, 10);
+        setFormData({ ...formData, pan: val });
     } else {
       setFormData({
         ...formData,
@@ -471,7 +614,6 @@ const Employees = () => {
                   <th className="col-dept">Department</th>
                   <th className="col-contact">Contact</th>
                   <th className="col-date">Join Date</th>
-                  <th className="col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -507,17 +649,6 @@ const Employees = () => {
                         <p className="employee-phone">{employee.phone}</p>
                       </td>
                       <td className="col-date">{formatDate(employee.joinDate)}</td>
-                      <td className="col-actions" onClick={(e) => e.stopPropagation()}>
-                        <div className="action-buttons">
-                          <button
-                            className="action-btn delete"
-                            onClick={(e) => { e.stopPropagation(); handleDeleteEmployee(employee); }}
-                            title="Delete Employee"
-                          >
-                            <span className="material-symbols-outlined">delete</span>
-                          </button>
-                        </div>
-                      </td>
                     </tr>
                   ))
                 ) : (
@@ -567,13 +698,6 @@ const Employees = () => {
                   <span className="mobile-emp-phone">{employee.phone}</span>
 
                   {/* Delete */}
-                  <button
-                    className="mobile-emp-delete"
-                    onClick={(e) => { e.stopPropagation(); handleDeleteEmployee(employee); }}
-                    title="Delete"
-                  >
-                    <span className="material-symbols-outlined">delete</span>
-                  </button>
                 </div>
               ))
             ) : (
@@ -594,25 +718,27 @@ const Employees = () => {
             employeesToDisplay.map((employee) => (
               <div key={employee.id} className="employee-card" onClick={() => handleViewEmployee(employee)} style={{ cursor: 'pointer' }}>
                 <div className="employee-card-header">
-                  <div className="employee-card-avatar">
-                    {employee.avatar ? (
-                      <div
-                        className="avatar-image-large"
-                        style={{ backgroundImage: `url("${employee.avatar}")` }}
-                      ></div>
-                    ) : (
-                      <div className="avatar-initials-large">{getInitials(employee.name)}</div>
-                    )}
+                  <div className="employee-card-profile-section">
+                    <div className="employee-card-avatar">
+                      {employee.avatar ? (
+                        <div
+                          className="avatar-image-large"
+                          style={{ backgroundImage: `url("${employee.avatar}")` }}
+                        ></div>
+                      ) : (
+                        <div className="avatar-initials-large">{getInitials(employee.name)}</div>
+                      )}
+                    </div>
+                    <div className="employee-card-main">
+                      <h3 className="employee-card-name">{employee.name}</h3>
+                      <div className="employee-card-dept-tag">
+                        <span className="dept-dot"></span>
+                        {employee.department}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="employee-card-content">
-                  <div className="employee-card-main">
-                    <h3 className="employee-card-name">{employee.name}</h3>
-                    <div className="employee-card-dept-tag">
-                      <span className="dept-dot"></span>
-                      {employee.department}
-                    </div>
-                  </div>
 
                   <div className="employee-card-contact">
                     <div className="contact-item">
@@ -622,10 +748,6 @@ const Employees = () => {
                     <div className="contact-item">
                       <span className="material-symbols-outlined">call</span>
                       <span>{employee.phone}</span>
-                    </div>
-                    <div className="card-detail-item">
-                      <span className="detail-icon material-symbols-outlined">calendar_today</span>
-                      <span>Hired: {formatDate(employee.joinDate)}</span>
                     </div>
                   </div>
 
@@ -680,25 +802,26 @@ const Employees = () => {
                     />
                   </div>
 
-                  {/* Avatar Upload (Optional) */}
-                  <div className="modal-form-group">
-                    <label>Profile Image (Optional)</label>
-                    <div className="file-upload-wrapper">
-                      <input
-                        type="file"
-                        name="avatar"
-                        accept="image/*"
-                        onChange={handleInputChange}
-                        className="modal-file-input"
-                        id="avatar-upload"
-                      />
-                      <label htmlFor="avatar-upload" className="file-upload-label">
-                        <span className="material-symbols-outlined">cloud_upload</span>
-                        <span>{formData.avatar ? formData.avatar.name : "Choose an image file"}</span>
-                      </label>
-                    </div>
-                  </div>
                   <div className="modal-row">
+                    {/* Avatar Upload (Optional) */}
+                    <div className="modal-form-group">
+                        <label>Profile Image (Optional)</label>
+                        <div className="file-upload-wrapper">
+                        <input
+                            type="file"
+                            name="avatar"
+                            accept="image/*"
+                            onChange={handleInputChange}
+                            className="modal-file-input"
+                            id="avatar-upload"
+                        />
+                        <label htmlFor="avatar-upload" className="file-upload-label">
+                            <span className="material-symbols-outlined">cloud_upload</span>
+                            <span>{formData.avatar ? formData.avatar.name : "Choose an image file"}</span>
+                        </label>
+                        </div>
+                    </div>
+
                     <div className="modal-form-group">
                       <label>Department *</label>
                       <select
@@ -747,14 +870,19 @@ const Employees = () => {
                   <div className="modal-row">
                     <div className="modal-form-group">
                       <label>Date of Birth *</label>
-                      <input
-                        type="date"
-                        name="dob"
-                        value={formData.dob}
-                        onChange={handleInputChange}
-                        className="modal-input"
-                        required
-                      />
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                          value={formData.dob}
+                          onChange={(newValue) => handleDateChange("dob", newValue)}
+                          format="DD/MM/YYYY"
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              className: 'modal-mui-input'
+                            }
+                          }}
+                        />
+                      </LocalizationProvider>
                     </div>
                     <div className="modal-form-group">
                       <label>PAN Number *</label>
@@ -785,14 +913,19 @@ const Employees = () => {
                     </div>
                     <div className="modal-form-group">
                       <label>Join Date *</label>
-                      <input
-                        type="date"
-                        name="joinDate"
-                        value={formData.joinDate}
-                        onChange={handleInputChange}
-                        className="modal-input"
-                        required
-                      />
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                          value={formData.joinDate}
+                          onChange={(newValue) => handleDateChange("joinDate", newValue)}
+                          format="DD/MM/YYYY"
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              className: 'modal-mui-input'
+                            }
+                          }}
+                        />
+                      </LocalizationProvider>
                     </div>
                   </div>
 
@@ -804,8 +937,8 @@ const Employees = () => {
                       onChange={handleInputChange}
                       placeholder="Enter full residential address"
                       className="modal-input"
-                      rows="3"
-                      style={{ resize: "vertical" }}
+                      rows="4"
+                      style={{ resize: "vertical", minHeight: '100px' }}
                       required
                     ></textarea>
                   </div>
@@ -857,11 +990,31 @@ const Employees = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
+                      placeholder="Enter full name"
                       className="modal-input"
                       required
                     />
                   </div>
+
                   <div className="modal-row">
+                    <div className="modal-form-group">
+                      <label>Profile Image (Optional)</label>
+                      <div className="file-upload-wrapper">
+                        <input
+                          type="file"
+                          id="edit-employee-avatar"
+                          accept="image/*"
+                          onChange={handleInputChange}
+                          className="modal-file-input"
+                          name="avatar"
+                        />
+                        <label htmlFor="edit-employee-avatar" className="file-upload-label">
+                          <span className="material-symbols-outlined">cloud_upload</span>
+                          {formData.avatar ? "Change image file" : "Choose an image file"}
+                        </label>
+                      </div>
+                    </div>
+
                     <div className="modal-form-group">
                       <label>Department *</label>
                       <select
@@ -881,6 +1034,7 @@ const Employees = () => {
                       </select>
                     </div>
                   </div>
+
                   <div className="modal-row">
                     <div className="modal-form-group">
                       <label>Email Address</label>
@@ -889,6 +1043,7 @@ const Employees = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
+                        placeholder="Enter email address"
                         className="modal-input"
                       />
                     </div>
@@ -899,38 +1054,100 @@ const Employees = () => {
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
+                        placeholder="Enter phone number"
                         className="modal-input"
                         required
                       />
                     </div>
                   </div>
+
                   <div className="modal-row">
                     <div className="modal-form-group">
                       <label>Date of Birth *</label>
-                      <input type="date" name="dob" value={formData.dob} onChange={handleInputChange} className="modal-input" required />
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                          value={formData.dob ? dayjs(toBackendDate(formData.dob)) : null}
+                          onChange={(newValue) => handleDateChange("dob", newValue)}
+                          format="DD/MM/YYYY"
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              className: 'modal-mui-input'
+                            }
+                          }}
+                        />
+                      </LocalizationProvider>
                     </div>
                     <div className="modal-form-group">
                       <label>PAN Number *</label>
-                      <input type="text" name="pan" value={formData.pan} onChange={handleInputChange} className="modal-input" required />
+                      <input
+                        type="text"
+                        name="pan"
+                        value={formData.pan}
+                        onChange={handleInputChange}
+                        placeholder="Enter PAN Number"
+                        className="modal-input"
+                        required
+                      />
                     </div>
                   </div>
+
                   <div className="modal-row">
                     <div className="modal-form-group">
                       <label>Aadhar Number *</label>
-                      <input type="text" name="aadhar" value={formData.aadhar} onChange={handleInputChange} className="modal-input" required />
+                      <input
+                        type="text"
+                        name="aadhar"
+                        value={formData.aadhar}
+                        onChange={handleInputChange}
+                        placeholder="Enter Aadhar Number"
+                        className="modal-input"
+                        required
+                      />
                     </div>
                     <div className="modal-form-group">
                       <label>Join Date *</label>
-                      <input type="date" name="joinDate" value={formData.joinDate} onChange={handleInputChange} className="modal-input" required />
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                          value={formData.joinDate ? dayjs(toBackendDate(formData.joinDate)) : null}
+                          onChange={(newValue) => handleDateChange("joinDate", newValue)}
+                          format="DD/MM/YYYY"
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              className: 'modal-mui-input'
+                            }
+                          }}
+                        />
+                      </LocalizationProvider>
                     </div>
                   </div>
+
                   <div className="modal-form-group">
-                    <label>Address *</label>
-                    <textarea name="address" value={formData.address} onChange={handleInputChange} className="modal-input" rows="3" required></textarea>
+                    <label>Full Address *</label>
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="Enter full residential address"
+                      className="modal-input"
+                      rows="4"
+                      style={{ resize: "vertical", minHeight: '100px' }}
+                      required
+                    ></textarea>
                   </div>
+
                   <div className="modal-form-group">
                     <label>Default Salary (Monthly) *</label>
-                    <input type="number" name="salary" value={formData.salary} onChange={handleInputChange} className="modal-input" required />
+                    <input
+                      type="number"
+                      name="salary"
+                      value={formData.salary}
+                      onChange={handleInputChange}
+                      placeholder="Enter monthly salary"
+                      className="modal-input"
+                      required
+                    />
                   </div>
                 </div>
                 <div className="modal-footer">
@@ -1022,20 +1239,32 @@ const Employees = () => {
               </div>
               <div className="modal-footer">
                 <button
-                  className="modal-cancel"
-                  onClick={() => setShowViewModal(false)}
-                >
-                  Close
-                </button>
-                <button
-                  className="modal-confirm"
+                  className="modal-delete"
                   onClick={() => {
                     setShowViewModal(false);
-                    handleEditEmployee(selectedEmployee);
+                    handleDeleteEmployee(selectedEmployee);
                   }}
                 >
-                  Edit Employee
+                  <span className="material-symbols-outlined">delete</span>
+                  Delete Employee
                 </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    className="modal-cancel"
+                    onClick={() => setShowViewModal(false)}
+                  >
+                    Close
+                  </button>
+                  <button
+                    className="modal-confirm"
+                    onClick={() => {
+                      setShowViewModal(false);
+                      handleEditEmployee(selectedEmployee);
+                    }}
+                  >
+                    Edit Employee
+                  </button>
+                </div>
               </div>
             </div>
           </div>

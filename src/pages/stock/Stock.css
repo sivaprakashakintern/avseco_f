@@ -215,6 +215,8 @@
 .stat-info {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0; /* Ensures container can shrink if needed */
 }
 
 .stat-label {
@@ -224,6 +226,7 @@
   text-transform: uppercase;
   letter-spacing: 0.12em;
   margin-bottom: 4px;
+  white-space: nowrap;
 }
 
 .stat-value {
@@ -231,6 +234,10 @@
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: font-size 0.2s ease;
 }
 
 .stat-value-container {
@@ -1475,5 +1482,94 @@
   .stock-table-container {
     border: none;
     box-shadow: none;
+  }
+}
+
+/* Centering & Premium Stock Styles */
+.centered-header {
+  text-align: center;
+  padding: 30px 24px;
+}
+
+.stock-table th {
+  text-align: center !important;
+  vertical-align: middle;
+}
+
+.group-name-cell {
+  vertical-align: middle;
+  padding: 24px !important;
+  border-bottom: 2px solid #e2e8f0;
+  border-right: 1px solid #f8fafc;
+  background: #fafafa;
+  text-align: center;
+}
+
+.product-name {
+  font-size: 18px;
+  font-weight: 850;
+  color: #0f172a;
+  display: block;
+}
+
+.variant-label-badge {
+  font-size: 11px;
+  color: #059669;
+  margin-top: 10px;
+  font-weight: 800;
+  display: inline-block;
+  border: 1px solid #a7f3d0;
+  background: #ecfdf5;
+  padding: 6px 14px;
+  border-radius: 30px;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 5px rgba(16, 185, 129, 0.08);
+  text-transform: uppercase;
+}
+
+.size-cell, .quantity-cell {
+  padding: 18px 20px !important;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.size-badge-premium {
+  font-size: 14px;
+  font-weight: 700;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 10px;
+  color: #475569;
+}
+
+.quantity-cell {
+  font-weight: 700;
+  font-size: 16px;
+  color: #334155;
+}
+
+.total-stock-group-cell {
+  font-size: 22px;
+  font-weight: 900;
+  vertical-align: middle;
+  padding: 24px !important;
+  color: #10b981;
+  border-bottom: 2px solid #e2e8f0;
+  border-left: 1px solid #f8fafc;
+  background: #fafafa;
+  text-align: center;
+}
+
+/* Response Desktop/Mobile switch */
+@media screen and (max-width: 1024px) {
+  .desktop-table-view {
+    display: none !important;
+  }
+}
+
+@media screen and (min-width: 1025px) {
+  .mobile-cards-view {
+    display: none !important;
   }
 }

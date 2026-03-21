@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAppContext } from '../../context/AppContext.js';
 import { formatDate, isWithinLast2Days } from '../../utils/dateUtils.js';
+import { formatCurrency, getDynamicFontSize } from '../../utils/formatUtils.js';
 import "../stock/Stock.css";
 import "./ExpenseReport.css";
 
@@ -131,9 +132,9 @@ const Expenses = () => {
         setShowEmployeeDropdown(false);
     };
 
-    const filteredEmployees = employees.filter(emp => 
-        emp.name.toLowerCase().includes(employeeSearch.toLowerCase()) ||
-        emp.empId.toLowerCase().includes(employeeSearch.toLowerCase())
+    const filteredEmployees = (employees || []).filter(emp => 
+        (emp.name?.toLowerCase() || "").includes(employeeSearch?.toLowerCase() || "") ||
+        (emp.empId?.toLowerCase() || "").includes(employeeSearch?.toLowerCase() || "")
     );
 
     return (
@@ -159,7 +160,9 @@ const Expenses = () => {
                     </div>
                     <div className="stat-info">
                         <span className="stat-label">Total Expenses</span>
-                        <span className="stat-value">₹{totalExpense.toLocaleString()}</span>
+                        <span className="stat-value" style={getDynamicFontSize(totalExpense)}>
+                            {formatCurrency(totalExpense, true)}
+                        </span>
                     </div>
                 </div>
                 <div className="stat-card" onClick={() => { setDetailCategory("Machine Maintenance"); setShowDetailModal(true); }}>
@@ -168,7 +171,9 @@ const Expenses = () => {
                     </div>
                     <div className="stat-info">
                         <span className="stat-label">Machine Maint.</span>
-                        <span className="stat-value">₹{machineMaintTotal.toLocaleString()}</span>
+                        <span className="stat-value" style={getDynamicFontSize(machineMaintTotal)}>
+                            {formatCurrency(machineMaintTotal, true)}
+                        </span>
                     </div>
                 </div>
                 <div className="stat-card" onClick={() => { setDetailCategory("Material"); setShowDetailModal(true); }}>
@@ -177,7 +182,9 @@ const Expenses = () => {
                     </div>
                     <div className="stat-info">
                         <span className="stat-label">Material Total</span>
-                        <span className="stat-value">₹{materialTotal.toLocaleString()}</span>
+                        <span className="stat-value" style={getDynamicFontSize(materialTotal)}>
+                            {formatCurrency(materialTotal, true)}
+                        </span>
                     </div>
                 </div>
                 <div className="stat-card" onClick={() => { setDetailCategory("Salary & Others"); setShowDetailModal(true); }}>
@@ -186,7 +193,9 @@ const Expenses = () => {
                     </div>
                     <div className="stat-info">
                         <span className="stat-label">Salary & Others</span>
-                        <span className="stat-value">₹{(salaryTotal + othersTotal).toLocaleString()}</span>
+                        <span className="stat-value" style={getDynamicFontSize(salaryTotal + othersTotal)}>
+                            {formatCurrency(salaryTotal + othersTotal, true)}
+                        </span>
                     </div>
                 </div>
             </div>

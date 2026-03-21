@@ -29,13 +29,13 @@ const Production = () => {
     return dayjs(dateStr, 'DD-MM-YYYY');
   };
 
-  const isWithinLast2Days = (dateStr) => {
+  const isTodayOnly = (dateStr) => {
     if (!dateStr) return false;
     const date = parseDate(dateStr);
     if (!date || !date.isValid()) return false;
     const today = dayjs().startOf('day');
     const diffDays = today.diff(date.startOf('day'), 'day');
-    return diffDays <= 2;
+    return diffDays === 0;
   };
 
   const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
@@ -86,6 +86,7 @@ const Production = () => {
     productionHistory,
     addProduction,
     deleteProduction,
+    clearAllProduction,
     products: dbProducts, 
     employees
   } = useAppContext();
@@ -173,8 +174,8 @@ const Production = () => {
     let total = 0;
     availableSizes.forEach(size => {
       const sizeTotal = filteredData
-        .filter(item => item.size === size)
-        .reduce((sum, item) => sum + item.quantity, 0);
+        .filter(item => (item.size || "").toLowerCase() === size.toLowerCase())
+        .reduce((sum, item) => sum + Number(item.quantity || 0), 0);
       bySize[size] = sizeTotal;
       total += sizeTotal;
     });
@@ -246,36 +247,50 @@ const Production = () => {
 
   // ========== FILTER FUNCTIONS FOR PRODUCTION HISTORY ==========
   const getFilteredHistory = () => {
-    // Current Records
-    const hist = productionHistory.map(item => ({ ...item, type: 'record' }));
-
-    return hist.filter(item => {
+    const hist = productionHistory.filter(item => {
       const matchesSearch = !historySearch.trim() ||
-        (item.product && item.product.toLowerCase().includes(historySearch.toLowerCase())) ||
-        (item.operator && item.operator.toLowerCase().includes(historySearch.toLowerCase()));
+        (item.product?.toLowerCase() || "").includes(historySearch.toLowerCase()) ||
+        (item.operator?.toLowerCase() || "").includes(historySearch.toLowerCase());
 
       const matchesSize = historySizeFilter === 'all' || item.size === historySizeFilter;
 
       return matchesSearch && matchesSize;
-    }).sort((a, b) => {
-      const dateTimeA = dayjs(`${a.date} ${a.time}`, 'DD-MM-YYYY hh:mm A');
-      const dateTimeB = dayjs(`${b.date} ${b.time}`, 'DD-MM-YYYY hh:mm A');
-      return dateTimeB.unix() - dateTimeA.unix();
+    });
+
+    return [...hist].sort((a, b) => {
+       const dtA = dayjs(`${a.date} ${a.time}`, 'DD-MM-YYYY hh:mm A').unix();
+       const dtB = dayjs(`${b.date} ${b.time}`, 'DD-MM-YYYY hh:mm A').unix();
+       return dtB - dtA;
     });
   };
 
+  const [editingProduction, setEditingProduction] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  const handleEditProduction = (record) => {
+    setEditingProduction(record);
+    setIsEditModalOpen(true);
+  };
 
-
-  const handleDeleteProduction = (id) => {
-    setProductionToDelete(id);
+  const handleDeleteProduction = (record) => {
+    setProductionToDelete([record.id || record._id]);
     setShowDeleteConfirm(true);
   };
 
-  const confirmDeleteProduction = () => {
-    if (productionToDelete) {
-      deleteProduction(productionToDelete);
-      showNotificationMessage(`🗑️ Production record deleted successfully`, 'warning');
+
+
+
+  const handleDeleteProductionGroup = (group) => {
+    setProductionToDelete(group.allIds);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteProduction = async () => {
+    if (productionToDelete && productionToDelete.length > 0) {
+      for (const id of productionToDelete) {
+         await deleteProduction(id);
+      }
+      showNotificationMessage(`🗑️ Production record(s) deleted successfully`, 'warning');
       setShowDeleteConfirm(false);
       setProductionToDelete(null);
     }
@@ -313,7 +328,22 @@ const Production = () => {
           <h1 className="page-title">Daily Production</h1>
         </div>
         <div className="header-actions">
-          {/* Export button removed */}
+          <button 
+            className="clear-all-btn-premium" 
+            onClick={async () => {
+              if (window.confirm("Are you sure you want to clear ALL production history records from the database? This cannot be undone.")) {
+                try {
+                  await clearAllProduction();
+                  showNotificationMessage("✅ All production history has been cleared.");
+                } catch (err) {
+                  showNotificationMessage("❌ Failed to clear history.", "error");
+                }
+              }
+            }}
+          >
+            <span className="material-symbols-outlined">delete_sweep</span>
+            Clear All History
+          </button>
         </div>
       </div>
 
@@ -354,7 +384,11 @@ const Production = () => {
                     <div className="form-group-premium">
                       <label>Product</label>
                       <select name="product" value={formData.product} onChange={handleInputChange} className="premium-select">
-                        {productOptions.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                        {productOptions.length === 0 ? (
+                          <option value="">Please add a product first</option>
+                        ) : (
+                          productOptions.map(p => <option key={p.name} value={p.name}>{p.name}</option>)
+                        )}
                       </select>
                     </div>
                     <div className="form-group-premium">
@@ -481,48 +515,53 @@ const Production = () => {
                   {availableSizes.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <div className="search-box">
-                  <span className="material-symbols-outlined">search</span>
+                  <span className="material-symbols-outlined search-icon">search</span>
                   <input type="text" placeholder="Search operator..." value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} />
                 </div>
               </div>
             </div>
-            <div className="table-wrapper">
+            <div className="daily-table-wrapper">
               <table className="premium-table">
                 <thead>
                   <tr>
-                    <th>DATE</th>
-                    <th>TIME</th>
-                    <th>SIZE</th>
-                    <th>QTY</th>
-                    <th>GRADE</th>
-                    <th>OPERATOR</th>
-                    <th>ACTION</th>
+                    <th style={{ textAlign: 'center' }}>S.NO</th>
+                    <th style={{ textAlign: 'center', minWidth: '100px' }}>DATE</th>
+                    <th style={{ textAlign: 'center' }}>TIME</th>
+                    <th style={{ textAlign: 'center' }}>OPERATOR</th>
+                    <th style={{ textAlign: 'center' }}>PRODUCT NAME</th>
+                    <th style={{ textAlign: 'center', width: '350px' }}>SIZES (QTY)</th>
+                    <th style={{ textAlign: 'center' }}>GRADE</th>
+                    <th style={{ textAlign: 'center' }}>ACTION</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredHistory.length > 0 ? (
-                    filteredHistory.map((item) => (
-                      <tr key={item.id}>
-                        <td className="bold">{item.date}</td>
-                        <td>
-                          <span className={`time-badge ${item.type}`}>
-                            {item.time}
+                    filteredHistory.map((record, idx) => (
+                      <tr key={record.id || record._id || idx} style={{ textAlign: 'center' }}>
+                        <td className="bold" style={{ textAlign: 'center' }}>{idx + 1}</td>
+                        <td className="bold" style={{ textAlign: 'center' }}>{record.date}</td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span className={`time-badge`}>
+                            {record.time}
                           </span>
                         </td>
-                        <td><span className="size-badge">{item.size}</span></td>
-                        <td className="bold highlight">
-                          {(item.quantity || 0).toLocaleString()}
+                        <td style={{ textAlign: 'center' }}>{record.operator}</td>
+                        <td style={{ textAlign: 'center' }}><span className="bold">{record.product}</span></td>
+                        <td style={{ textAlign: 'center' }}>
+                           <span className="size-badge">
+                              {record.size}: <span style={{ color: '#059669' }}>{Number(record.quantity).toLocaleString()}</span>
+                           </span>
                         </td>
-                        <td><span className={`grade-badge ${item.grade.toLowerCase()}`}>{item.grade}</span></td>
-                        <td>{item.operator}</td>
-                        <td>
-                          {isWithinLast2Days(item.date) ? (
-                            <button className="btn-delete" onClick={() => handleDeleteProduction(item.id)}>
-                              <span className="material-symbols-outlined">delete</span>
-                            </button>
-                          ) : (
-                            <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>Locked</span>
-                          )}
+                        <td style={{ textAlign: 'center' }}><span className={`grade-badge grade-${record.grade?.toLowerCase()}`}>{record.grade}</span></td>
+                        <td style={{ textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                             <button className="btn-edit-premium" onClick={() => handleEditProduction(record)}>
+                               <span className="material-symbols-outlined">edit</span>
+                             </button>
+                             <button className="btn-delete" onClick={() => handleDeleteProduction(record)}>
+                               <span className="material-symbols-outlined">delete</span>
+                             </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -536,57 +575,62 @@ const Production = () => {
             {/* ── Mobile Cards ── */}
             <div className="mobile-production-cards">
               {filteredHistory.length > 0 ? (
-                filteredHistory.map((item, index) => (
+                filteredHistory.map((record, index) => (
                   <div
-                    key={item.id}
-                    className={`mobile-prod-card-item ${expandedProdId === item.id ? 'expanded' : ''}`}
+                    key={record.id || record._id || index}
+                    className={`mobile-prod-card-item ${expandedProdId === (record.id || record._id) ? 'expanded' : ''}`}
                   >
-                    <div className="prod-card-main" onClick={() => toggleProdCard(item.id)}>
+                    <div className="prod-card-main" onClick={() => toggleProdCard(record.id || record._id)}>
                       <span className="prod-card-sno">#{index + 1}</span>
-                      <div className="prod-card-size-wrap">
-                        <span
-                          className="prod-size-dot"
-                          style={{ backgroundColor: SIZE_COLOR[item.size] || '#10b981' }}
-                        />
-                        <span className="prod-card-size-label">{item.size}</span>
+                      <div className="prod-card-size-wrap" style={{ flex: 1 }}>
+                        <span className="prod-card-size-label" style={{ fontWeight: '800', color: '#0f172a' }}>{record.operator}</span>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{record.product}</div>
                       </div>
-                      <span className="prod-card-qty">{(item.quantity || 0).toLocaleString()} pcs</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: '10px' }}>
+                        <span className={`grade-badge grade-${record.grade?.toLowerCase()}`} style={{ scale: '0.8', transformOrigin: 'right' }}>{record.grade}</span>
+                      </div>
                       <span className="material-symbols-outlined prod-card-expand-icon">
-                        {expandedProdId === item.id ? 'expand_less' : 'expand_more'}
+                        {expandedProdId === (record.id || record._id) ? 'expand_less' : 'expand_more'}
                       </span>
                     </div>
 
-                    {expandedProdId === item.id && (
+                    {expandedProdId === (record.id || record._id) && (
                       <div className="prod-card-details">
                         <div className="prod-card-info-grid">
                           <div className="prod-info-row">
-                            <span className="prod-info-label">Date</span>
-                            <span className="prod-info-value">{item.date}</span>
+                            <span className="prod-info-label">Date & Time</span>
+                            <span className="prod-info-value">{record.date} • {record.time}</span>
                           </div>
-                          <div className="prod-info-row">
-                            <span className="prod-info-label">Time</span>
-                            <span className="prod-info-value">{item.time}</span>
-                          </div>
-                          <div className="prod-info-row">
-                            <span className="prod-info-label">Grade</span>
-                            <span className="prod-info-value">
-                              <span className={`grade-badge grade-${item.grade.toLowerCase()}`}>{item.grade}</span>
-                            </span>
-                          </div>
-                          <div className="prod-info-row">
-                            <span className="prod-info-label">Operator</span>
-                            <span className="prod-info-value">{item.operator}</span>
+                          
+                          <div className="prod-info-row" style={{ gridColumn: '1 / -1', borderTop: '1px solid #e2e8f0', paddingTop: '12px', marginTop: '4px' }}>
+                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                                <span className="prod-info-label">Produced Size & Quantity:</span>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                   <span style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '14px', fontWeight: 'bold' }}>
+                                      {record.size}: <span style={{ color: '#059669' }}>{Number(record.quantity).toLocaleString()}</span>
+                                   </span>
+                                </div>
+                             </div>
                           </div>
                         </div>
-                        {isWithinLast2Days(item.date) && (
-                          <button
-                            className="prod-card-delete-btn"
-                            onClick={() => handleDeleteProduction(item.id)}
-                          >
-                            <span className="material-symbols-outlined">delete</span>
-                            Delete Record
-                          </button>
-                        )}
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                           <button
+                             className="prod-card-edit-btn"
+                             onClick={() => handleEditProduction(record)}
+                             style={{ flex: 1 }}
+                           >
+                             <span className="material-symbols-outlined">edit</span>
+                             Edit
+                           </button>
+                           <button
+                             className="prod-card-delete-btn"
+                             onClick={() => handleDeleteProduction(record)}
+                             style={{ flex: 1 }}
+                           >
+                             <span className="material-symbols-outlined">delete</span>
+                             Delete
+                           </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -609,10 +653,74 @@ const Production = () => {
               <span className="material-symbols-outlined" style={{ fontSize: '36px' }}>warning</span>
             </div>
             <h2 style={{ marginBottom: '16px', color: '#1e293b' }}>Confirm Deletion</h2>
-            <p style={{ color: '#64748b', marginBottom: '32px' }}>Are you sure you want to delete this production record? This will also update your stock levels.</p>
+            <p style={{ color: '#64748b', marginBottom: '32px' }}>Are you sure you want to delete this production record? This will also update your stock levels and production plan.</p>
             <div style={{ display: 'flex', gap: '12px' }}>
               <button className="btn-outline" style={{ flex: 1 }} onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
               <button className="btn-primary" style={{ flex: 1, backgroundColor: '#f44336' }} onClick={confirmDeleteProduction}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isEditModalOpen && editingProduction && (
+        <div className="modal-overlay">
+          <div className="export-modal" style={{ maxWidth: '500px', padding: '24px' }}>
+            <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '20px', color: '#1e293b' }}>Edit Production Record</h2>
+              <button onClick={() => setIsEditModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <div className="edit-form" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="form-group-premium">
+                <label>Quantity (pcs)</label>
+                <input 
+                  type="number" 
+                  value={editingProduction.quantity} 
+                  onChange={(e) => setEditingProduction({...editingProduction, quantity: e.target.value})}
+                  className="premium-input"
+                />
+              </div>
+
+              <div className="form-row-premium">
+                 <div className="form-group-premium">
+                   <label>Grade</label>
+                   <select 
+                      value={editingProduction.grade} 
+                      onChange={(e) => setEditingProduction({...editingProduction, grade: e.target.value})}
+                      className="premium-select"
+                   >
+                     <option value="A">Grade A</option>
+                     <option value="B">Grade B</option>
+                     <option value="C">Grade C</option>
+                   </select>
+                 </div>
+                 <div className="form-group-premium">
+                    <label>Operator</label>
+                    <select 
+                       value={editingProduction.operator} 
+                       onChange={(e) => setEditingProduction({...editingProduction, operator: e.target.value})}
+                       className="premium-select"
+                    >
+                      {operators.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                 </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                <button className="btn-outline" style={{ flex: 1 }} onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+                <button className="btn-premium-submit" style={{ flex: 1, margin: 0 }} onClick={async () => {
+                  try {
+                    const { updateProduction } = useAppContext();
+                    await updateProduction(editingProduction.id || editingProduction._id, editingProduction);
+                    showNotificationMessage("✅ Record updated successfully");
+                    setIsEditModalOpen(false);
+                  } catch (err) {
+                    showNotificationMessage("❌ Failed to update record", "error");
+                  }
+                }}>Update Record</button>
+              </div>
             </div>
           </div>
         </div>

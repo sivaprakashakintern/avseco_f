@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi, productsApi, productionTargetApi } from "../utils/api.js";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi, productsApi, productionTargetApi, salesApi } from "../utils/api.js";
 import { useAuth } from "./AuthContext.js";
 
 const DEPARTMENTS = ["All Departments", "Ceo", "Hr", "It admin", "Operator", "Maitanice", "Machine operator", "Cleaning", "Driver", "Others"];
@@ -13,22 +13,35 @@ export const AppProvider = ({ children }) => {
     const [productionHistory, setProductionHistory] = useState([]);
     const [productionTargets, setProductionTargets] = useState([]);
     const [products, setProducts] = useState([]);
+    const [salesHistory, setSalesHistory] = useState([]);
     const [attendanceRecords, setAttendanceRecords] = useState({});
     const [loading, setLoading] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { user } = useAuth();
+    
+    // ✅ Helper to avoid UTC timezone shift (IST+5:30 bug)
+    const toLocalDateKey = useCallback((date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }, []);
+
+    const todayStr = toLocalDateKey(new Date());
 
     // ── Fetch Initial Data ──────────────────────────────────────────────────────
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isInitial = false) => {
         try {
-            setLoading(true);
-            const [empData, expData, clientData, prodData, productData, targetData] = await Promise.all([
+            if (isInitial) setLoading(true);
+            const [empData, expData, clientData, prodData, productData, targetData, salesData, attendanceData] = await Promise.all([
                 employeeApi.getAll(),
                 expenseApi.getAll(),
                 clientApi.getAll(),
                 productionApi.getAll(),
                 productsApi.getAll(),
-                productionTargetApi.getAll()
+                productionTargetApi.getAll(),
+                salesApi.getAll(),
+                attendanceApi.getByDate(todayStr)
             ]);
             
             setEmployees(empData.map(e => ({ ...e, id: e._id })).sort((a, b) => a.name.localeCompare(b.name)));
@@ -45,16 +58,27 @@ export const AppProvider = ({ children }) => {
             }));
             setProducts(productData.map(p => ({ ...p, id: p._id })));
             setProductionTargets(targetData.map(t => ({ ...t, id: t._id })));
+            setSalesHistory(salesData.map(s => ({ ...s, id: s._id })));
+            
+            // Sync attendance
+            const mappedAttendance = attendanceData.map(r => {
+                const empId = r.employee?._id ? String(r.employee._id) : String(r.employee);
+                return { ...r, empId, id: r._id };
+            });
+            setAttendanceRecords(prev => ({ ...prev, [todayStr]: mappedAttendance }));
         } catch (error) {
             console.error("Error fetching app data:", error);
         } finally {
-            setLoading(false);
+            if (isInitial) setLoading(false);
         }
-    }, []);
+    }, [todayStr]);
 
     useEffect(() => {
         if (user) {
-            fetchData();
+            fetchData(true); // First load with loading screen
+            // Periodic background sync (No loading screen)
+            const interval = setInterval(() => fetchData(false), 30000);
+            return () => clearInterval(interval);
         }
     }, [fetchData, user]);
 
@@ -133,7 +157,14 @@ export const AppProvider = ({ children }) => {
     const addProduction = useCallback(async (prod, skipTargetSync = false) => {
         // 1. Save the production record
         const data = await productionApi.add(prod);
-        setProductionHistory(prev => [{ ...data, id: data._id }, ...prev]);
+        
+        setProductionHistory(prev => {
+            const exists = prev.find(p => p.id === data._id);
+            if (exists) {
+                return prev.map(p => p.id === data._id ? { ...data, id: data._id } : p);
+            }
+            return [{ ...data, id: data._id }, ...prev];
+        });
 
         // 2. Sync with Production Plan (Targets)
         if (!skipTargetSync) {
@@ -186,6 +217,39 @@ export const AppProvider = ({ children }) => {
             }
         }
     }, [productionHistory, fetchTargets]);
+
+    const clearAllProduction = useCallback(async () => {
+        await productionApi.clearAll();
+        setProductionHistory([]);
+        // Sync back: reset all target producedQty to 0
+        try {
+            const allTargets = await productionTargetApi.getAll();
+            for (const target of allTargets) {
+                await productionTargetApi.updateProduced(target._id, 0);
+            }
+            await fetchTargets();
+        } catch (err) {
+            console.warn("Failed to reset targets during production clear:", err);
+        }
+    }, [fetchTargets]);
+    
+    // SALES
+    const addSale = useCallback(async (sale) => {
+        const data = await salesApi.log(sale);
+        setSalesHistory(prev => [{ ...data, id: data._id }, ...prev]);
+        return data;
+    }, []);
+
+    const updateSale = useCallback(async (id, updates) => {
+        const data = await salesApi.update(id, updates);
+        setSalesHistory(prev => prev.map(s => s.id === id ? { ...data, id: data._id } : s));
+        return data;
+    }, []);
+
+    const deleteSale = useCallback(async (id) => {
+        await salesApi.delete(id);
+        setSalesHistory(prev => prev.filter(s => s.id !== id));
+    }, []);
 
     // ATTENDANCE
     const fetchAttendanceForDate = useCallback(async (dateStr) => {
@@ -266,14 +330,22 @@ export const AppProvider = ({ children }) => {
     
     // Group production by size/product
     const stockData = products.map(product => {
-        // Sum total produced for this product/size
-        const produced = productionHistory
-            .filter(p => p.product === product.name && p.size === product.size)
-            .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+        const size = (product.size || "").toLowerCase().trim().replace(" ", "-");
+        const prodHistory = productionHistory.filter(h => 
+            (h.size || "").toLowerCase().trim().replace(" ", "-") === size
+        );
+        const produced = prodHistory.reduce((sum, h) => sum + (h.quantity || 0), 0);
         
-        // Sold logic (PLACEHOLDER for future Sales model - currently assumed 0 if not tracked)
-        // Since the user wants it to be REAL from DB, until we have Sales, stock = ALL Produced.
-        const sold = 0; 
+        // Calculate sold quantity from salesHistory (Case Insensitive)
+        const sold = salesHistory.reduce((sum, sale) => {
+            const itemMatch = sale.saleItems?.find(item => {
+                const prodNameMatch = (item.productName || item.baseName || "").toLowerCase() === (product.name || "").toLowerCase();
+                const sizeMatch = (item.size || "").toLowerCase() === (product.size || "").toLowerCase();
+                return prodNameMatch && sizeMatch;
+            });
+            return sum + (itemMatch ? Number(itemMatch.qty || 0) : 0);
+        }, 0);
+
         const quantity = produced - sold;
         const totalValue = quantity * Number(product.sellPrice || 0);
         
@@ -288,15 +360,15 @@ export const AppProvider = ({ children }) => {
     const totalStockUnits = stockData.reduce((sum, s) => sum + s.quantity, 0);
     const totalStockValue = stockData.reduce((sum, s) => sum + s.totalValue, 0);
 
-    const toFormattedDate = (date) => {
+    const toFormattedDate = useCallback((date) => {
         const d = new Date(date);
         const day = String(d.getDate()).padStart(2, '0');
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const year = d.getFullYear();
         return `${day}-${month}-${year}`;
-    };
+    }, []);
 
-    const productionStats = (() => {
+    const productionStats = useMemo(() => {
         const history = productionHistory || [];
         const targets = productionTargets || [];
         const today = toFormattedDate(new Date());
@@ -304,63 +376,109 @@ export const AppProvider = ({ children }) => {
         const currentMonthIdx = new Date().getMonth() + 1;
         const currentYear = new Date().getFullYear();
         const last7Days = [];
+        const prev7Days = [];
         for (let i = 0; i < 7; i++) {
             const d = new Date();
             d.setDate(d.getDate() - i);
             last7Days.push(toFormattedDate(d));
+            
+            const pd = new Date();
+            pd.setDate(pd.getDate() - (i + 7));
+            prev7Days.push(toFormattedDate(pd));
         }
 
         const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
         
-        const todayHistory = history.filter(item => item.date === today);
+        const todayHistory = history.filter(item => {
+            const itemDateStr = item.date || "";
+            // Handle both DD-MM-YYYY and YYYY-MM-DD
+            if (itemDateStr.includes("-")) {
+                const parts = itemDateStr.split("-");
+                const formatted = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : itemDateStr;
+                return formatted === today;
+            }
+            return itemDateStr === today;
+        });
         const todayTotal = todayHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
         const todayBySize = {};
         availableSizes.forEach(size => {
-            todayBySize[size] = todayHistory.filter(item => item.size === size).reduce((sum, item) => sum + (item.quantity || 0), 0);
+            const sKey = size.toLowerCase().trim().replace(" ", "-");
+            todayBySize[size] = todayHistory.filter(item => (item.size || "").toLowerCase().trim().replace(" ", "-") === sKey).reduce((sum, item) => sum + (item.quantity || 0), 0);
         });
 
-        const weekHistory = history.filter(item => last7Days.includes(item.date));
+        const weekHistory = history.filter(item => {
+            const itemDateStr = item.date || "";
+            if (itemDateStr.includes("-")) {
+                const parts = itemDateStr.split("-");
+                const formatted = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : itemDateStr;
+                return last7Days.includes(formatted);
+            }
+            return last7Days.includes(itemDateStr);
+        });
         const weekTotal = weekHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        const weekBySize = {};
-        availableSizes.forEach(size => {
-            weekBySize[size] = weekHistory.filter(item => item.size === size).reduce((sum, item) => sum + (item.quantity || 0), 0);
+        
+        const prevWeekHistory = history.filter(item => {
+            const itemDateStr = item.date || "";
+            if (itemDateStr.includes("-")) {
+                const parts = itemDateStr.split("-");
+                const formatted = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : itemDateStr;
+                return prev7Days.includes(formatted);
+            }
+            return prev7Days.includes(itemDateStr);
         });
+        const prevWeekTotal = prevWeekHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
-        const monthHistory = history.filter(item => {
-            if (!item.date) return false;
-            const parts = item.date.split('-');
-            const month = parseInt(parts[1]);
-            const year = parseInt(parts[2]);
-            return month === currentMonthIdx && year === currentYear;
+        const monthTotal = (history.filter(item => {
+            const itemDateStr = item.date || "";
+            if (!itemDateStr) return false;
+            let m, y;
+            if (itemDateStr.includes("-")) {
+                const parts = itemDateStr.split("-");
+                if (parts[0].length === 4) { // YYYY-MM-DD
+                    m = parseInt(parts[1]); y = parseInt(parts[0]);
+                } else { // DD-MM-YYYY
+                    m = parseInt(parts[1]); y = parseInt(parts[2]);
+                }
+                return m === currentMonthIdx && y === currentYear;
+            }
+            return false;
+        })).reduce((sum, item) => sum + (item.quantity || 0), 0);
+        
+        const prevMonthIdx = currentMonthIdx === 1 ? 12 : currentMonthIdx - 1;
+        const prevMonthYear = currentMonthIdx === 1 ? currentYear - 1 : currentYear;
+        const prevMonthHistory = history.filter(item => {
+            const itemDateStr = item.date || "";
+            if (!itemDateStr) return false;
+            let m, y;
+            if (itemDateStr.includes("-")) {
+                const parts = itemDateStr.split("-");
+                if (parts[0].length === 4) { // YYYY-MM-DD
+                    m = parseInt(parts[1]); y = parseInt(parts[0]);
+                } else { // DD-MM-YYYY
+                    m = parseInt(parts[1]); y = parseInt(parts[2]);
+                }
+                return m === prevMonthIdx && y === prevMonthYear;
+            }
+            return false;
         });
-        const monthTotal = monthHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        const monthBySize = {};
-        availableSizes.forEach(size => {
-            monthBySize[size] = monthHistory.filter(item => item.size === size).reduce((sum, item) => sum + (item.quantity || 0), 0);
-        });
+        const prevMonthTotal = prevMonthHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
-        const stockTotal = targets.reduce((sum, item) => sum + (item.producedQty || 0), 0);
+        const weekTrend = prevWeekTotal === 0 ? (weekTotal > 0 ? 100 : 0) : Math.round(((weekTotal - prevWeekTotal) / prevWeekTotal) * 100);
+        const monthTrend = prevMonthTotal === 0 ? (monthTotal > 0 ? 100 : 0) : Math.round(((monthTotal - prevMonthTotal) / prevMonthTotal) * 100);
 
         return {
             today: todayTotal,
             week: weekTotal,
+            weekTrend: weekTrend,
             month: monthTotal,
-            stock: stockTotal,
+            monthTrend: monthTrend,
+            stock: Object.values(availableSizes).reduce((sum, size) => sum + history.filter(item => item.size === size).reduce((sum, item) => sum + (item.quantity || 0), 0), 0),
             todayBySize,
-            weekBySize,
-            monthBySize,
             availableSizes
         };
-    })();
+    }, [productionHistory, toFormattedDate]);
 
-  // ✅ Local date key helper - avoids UTC timezone shift (IST+5:30 bug)
-  const toLocalDateKey = (date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
-  const todayStr = toLocalDateKey(new Date());
+    // Using todayStr calculated at the top of the component
 
     const todayAttendance = attendanceRecords[todayStr] ?? [];
     const todayStats = {
@@ -408,6 +526,7 @@ export const AppProvider = ({ children }) => {
             deleteClient,
             addProduction,
             deleteProduction,
+            clearAllProduction,
             fetchTargets,
             fetchAttendanceForDate,
             initAttendanceForDate,
@@ -427,6 +546,10 @@ export const AppProvider = ({ children }) => {
             setIsMobileMenuOpen,
             fetchData,
             setLoading,
+            salesHistory, // 6. Provide these in values.
+            addSale,
+            updateSale,
+            deleteSale
         }}>
             {children}
         </AppContext.Provider>

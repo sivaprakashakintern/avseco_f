@@ -5,24 +5,35 @@ import "./Stock.css";
 const StockOverview = () => {
   const { stockData, totalStockUnits } = useAppContext();
 
-  // Low stock logic (threshold 3000)
-  const lowStockItems = stockData.filter(item => item.quantity < 3000);
-  const lowStockSizes = lowStockItems.map(item => item.size);
+  // Group stock data by name
+  const groupedProducts = stockData.reduce((acc, item) => {
+    if (!acc[item.name]) {
+      acc[item.name] = {
+        name: item.name,
+        variants: [],
+        totalQuantity: 0,
+        totalValue: 0
+      };
+    }
+    // calculate value for this variant
+    const calcValue = (item.quantity * item.perPlateRate) || item.totalValue || 0;
+    
+    acc[item.name].variants.push({
+      ...item,
+      calculatedValue: calcValue
+    });
+    
+    acc[item.name].totalQuantity += (item.quantity || 0);
+    acc[item.name].totalValue += calcValue;
+    return acc;
+  }, {});
 
-  const stats = {
-    totalProducts: [...new Set(stockData.map(p => p.name))].length,
-    lowStock: lowStockItems.length,
-    lowStockDetails: lowStockSizes,
-    totalStock: totalStockUnits,
-    plateTypes: stockData.length,
-  };
+  const groupedItems = Object.values(groupedProducts);
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
-
-  const filteredItems = stockData;
 
   // ========== HANDLERS ==========
   const handleExport = () => setShowExportModal(true);
@@ -37,7 +48,7 @@ const StockOverview = () => {
 
       if (format === "CSV") {
         const headers = ["Product Name", "Size", "Per Plate Rate", "SKU", "Category", "Quantity", "Unit Price", "Total Value", "Status"];
-        const csvData = filteredItems.map((item) => [
+        const csvData = stockData.map((item) => [
           item.name,
           item.size || "-",
           item.perPlateRate ? `₹${item.perPlateRate}` : "-",
@@ -102,87 +113,60 @@ const StockOverview = () => {
         </div>
       </div>
 
-      {/* ===== STATS CARDS ===== */}
-      <div className="stock-stats">
-        <div className="stat-card">
-          <div className="stat-icon blue">
-            <span className="material-symbols-outlined">inventory</span>
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Total Products</span>
-            <span className="stat-value">{stats.totalProducts}</span>
-          </div>
-        </div>
-
-        <div className="stat-card clickable">
-          <div className="stat-icon yellow">
-            <span className="material-symbols-outlined">warning</span>
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Low Stock</span>
-            <div className="stat-value-container">
-              <span className="stat-value">{stats.lowStock}</span>
-              {stats.lowStockDetails.length > 0 && (
-                <span className="stat-detail">({stats.lowStockDetails.join(", ")})</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon green">
-            <span className="material-symbols-outlined">category</span>
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Total Stock</span>
-            <span className="stat-value">{stats.totalStock.toLocaleString("en-IN")}</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon purple">
-            <span className="material-symbols-outlined">flatware</span>
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Plate Types</span>
-            <span className="stat-value">{stats.plateTypes}</span>
-          </div>
-        </div>
-      </div>
+      {/* Stats Cards removed as per user request */}
 
       {/* ===== STOCK DETAILS ===== */}
       <div className="stock-table-container">
-        <div className="table-header">
+        <div className="table-header centered-header">
           <h2 className="section-title">Stock Details</h2>
         </div>
 
         {/* DESKTOP TABLE */}
         <div className="table-responsive desktop-table-view">
-          <table className="stock-table">
+          <table className="stock-table grouped-table">
             <thead>
               <tr>
-                <th>Product &amp; SKU</th>
+                <th>Product Name</th>
                 <th>Size</th>
                 <th>Stock</th>
-                <th>Per Plate Price</th>
+                <th>Total Stock</th>
               </tr>
             </thead>
             <tbody>
-              {filteredItems.length > 0 ? (
-                filteredItems.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <div className="product-info-cell">
-                        <span className="product-name">{item.name}</span>
-                        <span className="product-sku">{item.sku}</span>
-                      </div>
-                    </td>
-                    <td>
-                      {item.size && item.size !== "-" ? <span className="size-badge">{item.size}</span> : "-"}
-                    </td>
-                    <td className="quantity-cell">{item.quantity.toLocaleString("en-IN")} Pieces</td>
-                    <td className="per-plate-cell">{item.perPlateRate > 0 ? formatCurrency(item.perPlateRate) : "-"}</td>
-                  </tr>
+              {groupedItems.length > 0 ? (
+                groupedItems.map((group) => (
+                  <React.Fragment key={group.name}>
+                    {group.variants.map((v, idx) => (
+                      <tr key={v.sku || idx} className="product-variant-row" style={{ borderBottom: idx === group.variants.length - 1 ? '2px solid #e2e8f0' : '1px solid #f1f5f9' }}>
+                        
+                        {idx === 0 && (
+                          <td className="group-name-cell" rowSpan={group.variants.length}>
+                            <div className="product-info-cell">
+                              <span className="product-name">{group.name}</span>
+                              <span className="variant-label-badge">
+                                {group.variants.length} Sizes
+                              </span>
+                            </div>
+                          </td>
+                        )}
+
+                        <td className="size-cell">
+                          <span className="size-badge-premium">{v.size || "-"}</span>
+                        </td>
+                        
+                        <td className="quantity-cell">
+                          {v.quantity.toLocaleString("en-IN")} pcs
+                        </td>
+
+                        {idx === 0 && (
+                          <td className="total-stock-group-cell" rowSpan={group.variants.length}>
+                            {group.totalQuantity.toLocaleString("en-IN")} pcs
+                          </td>
+                        )}
+
+                      </tr>
+                    ))}
+                  </React.Fragment>
                 ))
               ) : (
                 <tr>
@@ -198,31 +182,48 @@ const StockOverview = () => {
           </table>
         </div>
 
-        {/* MOBILE CARDS — renders natively, no CSS hacks */}
+        {/* MOBILE CARDS */}
         <div className="mobile-cards-view">
-          {filteredItems.length > 0 ? (
-            filteredItems.map((item) => (
-              <div key={item.id} className="stock-mobile-card">
+          {groupedItems.length > 0 ? (
+            groupedItems.map((group) => (
+              <div key={group.name} className="stock-mobile-card premium-mobile-card" style={{ padding: '0', overflow: 'hidden', marginBottom: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
                 {/* Card Header */}
-                <div className="smc-header">
-                  <span className="smc-name">{item.name}</span>
-                  <span className="smc-sku">{item.sku}</span>
+                <div className="smc-header" style={{ padding: '20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <span className="smc-name" style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{group.name}</span>
+                    <span className="smc-sku" style={{ 
+                      marginTop: '10px', 
+                      display: 'inline-block', 
+                      background: '#ecfdf5', 
+                      padding: '6px 12px', 
+                      borderRadius: '30px', 
+                      fontWeight: '800', 
+                      color: '#059669',
+                      border: '1px solid #a7f3d0',
+                      fontSize: '11px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      boxShadow: '0 2px 5px rgba(16, 185, 129, 0.1)'
+                    }}>
+                      {group.variants.length} Sizes
+                    </span>
+                  </div>
                 </div>
                 {/* Card Rows */}
-                <div className="smc-body">
-                  <div className="smc-row">
-                    <span className="smc-label">Size</span>
-                    <span className="size-badge">{item.size || "-"}</span>
-                  </div>
-                  <div className="smc-row">
-                    <span className="smc-label">Stock</span>
-                    <span className="smc-value">{item.quantity.toLocaleString("en-IN")} Pieces</span>
-                  </div>
-                  <div className="smc-row">
-                    <span className="smc-label">Price</span>
-                    <span className="smc-price">
-                      {item.perPlateRate > 0 ? formatCurrency(item.perPlateRate) : "-"}
-                    </span>
+                <div className="smc-body" style={{ padding: '0' }}>
+                  {group.variants.map((v, idx) => (
+                    <div key={v.sku || idx} style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9' }}>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span className="size-badge">{v.size || "-"}</span>
+                          <span style={{ fontWeight: '700', fontSize: '15px', color: '#334155' }}>{v.quantity.toLocaleString("en-IN")} pcs</span>
+                       </div>
+                    </div>
+                  ))}
+                  <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0fdf4' }}>
+                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '0.05em' }}>Total Stock</span>
+                        <span style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b' }}>{group.totalQuantity.toLocaleString("en-IN")} pcs</span>
+                     </div>
                   </div>
                 </div>
               </div>

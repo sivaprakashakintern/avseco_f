@@ -95,6 +95,10 @@ export const productionApi = {
   delete: async (id) => {
     const { data } = await axios.delete(`/production/${id}`);
     return data;
+  },
+  clearAll: async () => {
+    const { data } = await axios.delete('/production');
+    return data;
   }
 };
 
@@ -132,3 +136,27 @@ export const productionTargetApi = {
   }
 };
 
+export const salesApi = {
+  getAll: async () => {
+    const { data } = await axios.get('/sales');
+    return data;
+  },
+  log: async (saleData) => {
+    const { data } = await axios.post('/sales', saleData);
+    return data;
+  },
+  update: async (id, saleData) => {
+    const { data } = await axios.put(`/sales/${id}`, saleData);
+    return data;
+  },
+  delete: async (id) => {
+    const { data } = await axios.delete(`/sales/${id}`);
+    return data;
+  }
+};
+export const healthApi = {
+  check: async () => {
+    const { data } = await axios.get('/health');
+    return data;
+  }
+};

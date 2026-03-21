@@ -8,16 +8,35 @@ import html2canvas from "html2canvas";
 
 
 const Sales = () => {
-    const { clients, addClient, employees, products: dbProducts } = useAppContext();
+    const { 
+        clients, addClient, employees, products: dbProducts, stockData,
+        salesHistory, addSale, updateSale, deleteSale 
+    } = useAppContext();
     
+    // Helper: Format date for display (Moved up to avoid initialization error)
+    const formatDate = (date) => {
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    };
+
     // Process products into unique base names and their variants
     const products = React.useMemo(() => {
-        return (dbProducts || []).map(p => ({
-            ...p,
-            baseName: p.name,
-            price: p.sellPrice || 0
-        }));
-    }, [dbProducts]);
+        const processed = (dbProducts || []).map(p => {
+            const stockItem = stockData?.find(s => s.name === p.name && s.size === p.size);
+            return {
+                ...p,
+                baseName: p.name,
+                price: p.sellPrice || 0,
+                stock: stockItem ? stockItem.quantity : 0
+            };
+        });
+        
+        // Return only products that have stock (as requested by user previously)
+        return processed.filter(p => p.stock > 0);
+    }, [dbProducts, stockData]);
     const [showAddClientModal, setShowAddClientModal] = useState(false);
     const [newClientData, setNewClientData] = useState({
         companyName: "",
@@ -37,12 +56,14 @@ const Sales = () => {
     // Product Selection State
     const [selectedBaseProduct, setSelectedBaseProduct] = useState("");
     
-    // Auto-select first product if available
+    // Removed auto-select first product to ensure Size dropdown only shows after manual selection
+    /*
     useEffect(() => {
         if (products.length > 0 && !selectedBaseProduct) {
             setSelectedBaseProduct(products[0].baseName);
         }
     }, [products, selectedBaseProduct]);
+    */
     
     const [isBaseProductDropdownOpen, setIsBaseProductDropdownOpen] = useState(false);
     const [selectedSize, setSelectedSize] = useState("10\" Round");
@@ -68,7 +89,7 @@ const Sales = () => {
     const [deliveryMode, setDeliveryMode] = useState("Door Delivery");
     const [isDeliveryModeDropdownOpen, setIsDeliveryModeDropdownOpen] = useState(false);
     const [isHistoryFilterDropdownOpen, setIsHistoryFilterDropdownOpen] = useState(false);
-    const isLogging = false;
+    const [isLogging, setIsLogging] = useState(false);
     const [showBillModal, setShowBillModal] = useState(false);
     const [selectedBill, setSelectedBill] = useState(null);
     const [billItems, setBillItems] = useState([]);
@@ -76,13 +97,14 @@ const Sales = () => {
     const [editingTransactionId, setEditingTransactionId] = useState(null);
 
     const [searchTerm, setSearchTerm] = useState("");
-    const [typeFilter, setTypeFilter] = useState("all");
+    const [summaryType, setSummaryType] = useState("all");
+    const [isAutoSharing, setIsAutoSharing] = useState(false);
 
-    // Filtered employees for delivery (Sales or Delivery department)
+    // Filtered employees for delivery
     const deliveryEmployees = React.useMemo(() => {
         return (employees || []).filter(emp => 
-            emp.department?.toLowerCase().includes("sales") || 
-            emp.department?.toLowerCase().includes("delivery")
+            emp.department?.toLowerCase().includes("delivery") || 
+            emp.department?.toLowerCase().includes("driver")
         );
     }, [employees]);
 
@@ -115,49 +137,25 @@ const Sales = () => {
         }
     }, [quantity, unitPrice]);
 
-    const [allTransactions, setAllTransactions] = useState([]);
+    // Using salesHistory from AppContext
+    const allTransactions = salesHistory;
 
     // ========== PERSISTENCE ==========
-    const [dataLoaded, setDataLoaded] = useState(false);
+    // Persisted to database now via AppContext
+    const [dataLoaded, setDataLoaded] = useState(true);
 
-    useEffect(() => {
-        const savedSales = localStorage.getItem('salesHistory');
-        if (savedSales) {
-            try {
-                setAllTransactions(JSON.parse(savedSales));
-            } catch (e) {
-                console.error("Error loading sales history:", e);
-            }
-        } else {
-            // Initial default data if none exists
-            setAllTransactions([
-                { id: 1, date: "Oct 24, 2023 14:32 PM", product: "Areca Leaf Plate 10\" Round", type: "SALE", quantity: -1200, unit: "pcs", balance: 4500, status: "success", customer: "Global Exports", company: "AVS Eco", amount: 7800, paymentStatus: "UPI" },
-                { id: 2, date: "Oct 24, 2023 12:15 PM", product: "Raw Areca Sheaths (Grade A)", type: "SALE", quantity: -500, unit: "kg", balance: 2100, status: "success", customer: "Local Vendor", company: "AVS Eco", amount: 3250, paymentStatus: "Cash" },
-                { id: 3, date: "Oct 23, 2023 16:20 PM", product: "Areca Leaf Bowl 6\"", type: "SALE", quantity: -800, unit: "pcs", balance: 1850, status: "success", customer: "Bulk Supplier", company: "AVS Eco", amount: 2000, paymentStatus: "Card" },
-            ]);
-        }
-        setDataLoaded(true);
-    }, []);
-
-    useEffect(() => {
-        if (dataLoaded) {
-            localStorage.setItem('salesHistory', JSON.stringify(allTransactions));
-        }
-    }, [allTransactions, dataLoaded]);
-
-    // Filtered transactions based on search and filters
+    // Filtered transactions based on today's date only
     const getFilteredTransactions = () => {
-        return allTransactions.filter((transaction) => {
-            const matchesSearch = searchTerm === "" ||
-                transaction.product.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (transaction.company && transaction.company.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                (transaction.customer && transaction.customer.toLowerCase().includes(searchTerm.toLowerCase()));
-
-            const matchesPayment = typeFilter === "all" ||
-                (transaction.paymentStatus && transaction.paymentStatus.toLowerCase() === typeFilter.toLowerCase());
-
-            return matchesSearch && matchesPayment;
+        const today = formatDate(new Date());
+        let filtered = allTransactions.filter(t => {
+            const saleDate = t.date || "";
+            return saleDate === today || saleDate.startsWith(today);
         });
+
+        if (summaryType !== 'all') {
+            filtered = filtered.filter(t => t.paymentStatus?.toLowerCase() === summaryType.toLowerCase());
+        }
+        return filtered;
     };
 
     const filteredTransactions = getFilteredTransactions();
@@ -168,14 +166,7 @@ const Sales = () => {
         return allTransactions.filter(t => t.paymentStatus?.toLowerCase() === type.toLowerCase());
     };
 
-    // Format date for display
-    const formatDate = (date) => {
-        return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        });
-    };
+
 
     // Add item to current bill session - Merges duplicates if the same product is added
     const handleAddItem = () => {
@@ -183,6 +174,20 @@ const Sales = () => {
 
         const qtyToAdd = parseFloat(quantity);
         const pricePerUnit = parseFloat(unitPrice) || 0;
+        
+        // Find available stock
+        const stockItem = stockData?.find(s => s.name === selectedBaseProduct && s.size === selectedSize);
+        const currentStock = stockItem ? stockItem.quantity : 0;
+        
+        // Find existing qty in bill for this product to ensure sum doesn't exceed stock
+        const existingItemIndex = billItems.findIndex(item => item.product === selectedProduct);
+        const currentQtyInBill = existingItemIndex !== -1 ? billItems[existingItemIndex].qty : 0;
+
+        if (currentQtyInBill + qtyToAdd > currentStock) {
+            setFeedbackMessage(`Error: Only ${currentStock} pieces available in stock!`);
+            setTimeout(() => setFeedbackMessage(""), 3000);
+            return;
+        }
 
         setBillItems(prevItems => {
             const existingItemIndex = prevItems.findIndex(item => item.product === selectedProduct);
@@ -213,8 +218,14 @@ const Sales = () => {
 
         setQuantity("");
     };
-    const handleLogTransaction = () => {
+    const handleLogTransaction = async () => {
         if (billItems.length === 0 && (!quantity || parseFloat(quantity) <= 0)) {
+            return;
+        }
+
+        if (!customerPhone || !customerAddress) {
+            setFeedbackMessage("Please enter Customer Phone and Address");
+            setTimeout(() => setFeedbackMessage(""), 3000);
             return;
         }
 
@@ -237,72 +248,49 @@ const Sales = () => {
             `${item.qty}x${item.product.replace('Areca Leaf Plate ', '').replace(' Round', '')}`
         ).join(', ');
 
-        if (editingTransactionId) {
-            // Update existing transaction
-            const updatedTransactions = allTransactions.map(t => {
-                if (t.id === editingTransactionId) {
-                    return {
-                        ...t,
-                        product: productSummary,
-                        quantity: -totalPieces,
-                        company: companyName,
-                        customer: customerName,
-                        amount: totalBillAmount,
-                        paymentStatus: paymentMode,
-                        paidStatus: paidStatus, // Explicitly tracking paid/unpaid status
-                        saleItems: itemsToLog.map(item => ({
-                            productName: item.product,
-                            baseName: item.baseName || item.product,
-                            size: item.size || "-",
-                            qty: item.qty,
-                            amount: item.amount
-                        })),
-                        deliveredBy: deliveryEmployee,
-                        deliveryMode: deliveryMode,
-                        customerEmail: customerEmail,
-                        customerPhone: customerPhone,
-                        customerGstin: customerGstin,
-                        customerAddress: customerAddress
-                    };
-                }
-                return t;
-            });
-            setAllTransactions(updatedTransactions);
-            setFeedbackMessage("✅ Sales record updated successfully");
-            setEditingTransactionId(null);
-        } else {
-            // Create new transaction
-            const newHistoryEntry = {
-                id: Date.now(),
-                date: formatDate(new Date()),
-                product: productSummary,
-                type: "SALE",
-                quantity: -totalPieces,
-                unit: "pcs",
-                balance: (allTransactions[0]?.balance || 10000) - totalPieces,
-                status: "success",
-                company: companyName,
-                customer: customerName,
-                amount: totalBillAmount,
-                paymentStatus: paymentMode,
-                paidStatus: paidStatus,
-                saleItems: itemsToLog.map(item => ({
-                    productName: item.product,
-                    baseName: item.baseName || item.product,
-                    size: item.size || "-",
-                    qty: item.qty,
-                    amount: item.amount
-                })),
-                deliveredBy: deliveryEmployee,
-                deliveryMode: deliveryMode,
-                customerEmail: customerEmail,
-                customerPhone: customerPhone,
-                customerGstin: customerGstin,
-                customerAddress: customerAddress
-            };
-            setAllTransactions([newHistoryEntry, ...allTransactions]);
-            setFeedbackMessage("✅ Sales record added successfully");
-        }
+        const payload = {
+            invoiceNo: editingTransactionId ? (salesHistory.find(s => s.id === editingTransactionId)?.invoiceNo || `INV-${Date.now().toString().slice(-6)}`) : `INV-${Date.now().toString().slice(-6)}`,
+            date: formatDate(new Date()) + ", " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            customer: customerName,
+            company: companyName,
+            customerEmail: customerEmail,
+            customerPhone: customerPhone,
+            customerGstin: customerGstin,
+            customerAddress: customerAddress,
+            totalAmount: totalBillAmount,
+            paidStatus: paidStatus,
+            paymentMode: paymentMode,
+            amountPaid: Number(amountPaid || 0),
+            deliveryMode: deliveryMode,
+            deliveredBy: deliveryEmployee,
+            saleItems: itemsToLog.map(item => ({
+                productName: item.product,
+                baseName: item.baseName || item.product,
+                size: item.size || "-",
+                qty: item.qty,
+                amount: item.amount,
+                unit: item.unit || "pcs"
+            }))
+        };
+
+        setIsLogging(true);
+        try {
+            if (editingTransactionId) {
+                // Update existing transaction
+                await updateSale(editingTransactionId, payload);
+                setFeedbackMessage("✅ Sales record updated successfully");
+                setEditingTransactionId(null);
+            } else {
+                // Create new transaction
+                await addSale(payload);
+                setFeedbackMessage("✅ Sales record added successfully");
+            }   
+        } catch (error) {
+            console.error("Sales logging error:", error);
+            setFeedbackMessage("❌ Failed to save sale. Please check all fields.");
+        } finally {
+            setIsLogging(false);
+        }   
 
         // Reset form
         setBillItems([]);
@@ -382,8 +370,8 @@ const Sales = () => {
     };
 
     const handleGenerateBill = () => {
-        if (!companyName) {
-            setFeedbackMessage("Please enter a Company Name");
+        if (!customerPhone || !customerAddress) {
+            setFeedbackMessage("Please enter Customer Phone and Address");
             setTimeout(() => setFeedbackMessage(""), 3000);
             return;
         }
@@ -468,7 +456,7 @@ const Sales = () => {
                 hsn: products.find(p => p.name === transaction.product)?.hsn || "-",
                 rate: transaction.quantity ? (transaction.amount / Math.abs(transaction.quantity)).toFixed(2) : 0
             }],
-            totalAmount: transaction.amount,
+            totalAmount: transaction.totalAmount || transaction.amount,
             paymentMode: transaction.paymentStatus,
             paidStatus: transaction.paidStatus || (transaction.paymentStatus === 'Unpaid' ? 'Unpaid' : 'Paid'),
             deliveredBy: transaction.deliveredBy
@@ -481,8 +469,8 @@ const Sales = () => {
 
     // Delete a transaction from history
     const handleDeleteTransaction = (id) => {
-        const updatedTransactions = allTransactions.filter(t => t.id !== id);
-        setAllTransactions(updatedTransactions);
+        // This should call deleteSale from useAppContext
+        deleteSale(id);
     };
 
     // ─── Shared: Capture HTML preview & Send to WhatsApp ──────────────────
@@ -599,6 +587,8 @@ const Sales = () => {
         } catch (err) {
             console.error('WhatsApp capture failed:', err);
             alert('Could not generate full invoice. Please try again.');
+        } finally {
+            setFeedbackMessage("");
         }
     };
 
@@ -647,9 +637,10 @@ const Sales = () => {
             item.customer || "-",
             item.company || "-",
             item.product,
-            Math.abs(item.quantity),
-            item.amount || 0,
-            item.paymentStatus || "Unpaid",
+            // Sum quantities from saleItems if available, otherwise use single quantity
+            item.saleItems?.reduce((sum, saleItem) => sum + (Number(saleItem.qty) || 0), 0) || Math.abs(item.quantity || 0),
+            item.totalAmount || item.amount || 0,
+            item.paidStatus || item.paymentStatus || "Unpaid",
         ]);
 
         const csvContent = [headers, ...csvData].map((e) => e.join(",")).join("\n");
@@ -745,7 +736,7 @@ const Sales = () => {
                     <div className="quick-entry-grid">
                         <div className="quick-entry-row">
                             <div className="quick-entry-item">
-                                <span className="quick-entry-label">Company:</span>
+                                <span className="quick-entry-label">Company (Optional):</span>
                                 <div className="product-dropdown client-dropdown">
                                     <div className="dropdown-input-wrapper">
                                         <button
@@ -784,12 +775,12 @@ const Sales = () => {
                                                 />
                                             </div>
                                             {clients.filter(c =>
-                                                c.companyName.toLowerCase().includes(companyName.toLowerCase()) ||
-                                                (c.contactPerson && c.contactPerson.toLowerCase().includes(companyName.toLowerCase()))
+                                                (c.companyName?.toLowerCase() || "").includes(companyName?.toLowerCase() || "") ||
+                                                (c.contactPerson?.toLowerCase() || "").includes(companyName?.toLowerCase() || "")
                                             ).length > 0 ? (
                                                 <>
                                                     {clients
-                                                        .filter(c => c.companyName.toLowerCase().includes(companyName.toLowerCase()))
+                                                        .filter(c => (c.companyName?.toLowerCase() || "").includes(companyName?.toLowerCase() || ""))
                                                         .map((client) => (
                                                             <button
                                                                 key={client.id}
@@ -871,12 +862,13 @@ const Sales = () => {
 
                         <div className="quick-entry-row">
                             <div className="quick-entry-item">
-                                <span className="quick-entry-label">Phone Number:</span>
+                                <span className="quick-entry-label">Phone Number *:</span>
                                 <div style={{ width: '100%' }}>
                                     <input
                                         type="tel"
-                                        placeholder="Enter phone number"
+                                        placeholder="Enter mandatory phone number"
                                         className="quick-entry-input"
+                                        style={{ borderLeft: '3px solid #10b981' }}
                                         value={customerPhone}
                                         onChange={(e) => setCustomerPhone(e.target.value)}
                                     />
@@ -897,12 +889,13 @@ const Sales = () => {
                             </div>
 
                             <div className="quick-entry-item">
-                                <span className="quick-entry-label">Address:</span>
+                                <span className="quick-entry-label">Address *:</span>
                                 <div style={{ width: '100%' }}>
                                     <input
                                         type="text"
-                                        placeholder="Enter complete address"
+                                        placeholder="Enter mandatory address"
                                         className="quick-entry-input"
+                                        style={{ borderLeft: '3px solid #10b981' }}
                                         value={customerAddress}
                                         onChange={(e) => setCustomerAddress(e.target.value)}
                                     />
@@ -915,7 +908,7 @@ const Sales = () => {
                         <h3 className="section-title">Billing Details</h3>
                     </div>
                     <div className="quick-entry-grid">
-                        <div className="quick-entry-row" style={{ marginBottom: '8px' }}>
+                        <div className="quick-entry-row" style={{ marginBottom: '16px' }}>
                             <div className="quick-entry-item">
                                 <span className="quick-entry-label">Product Name:</span>
                                 <div className="product-dropdown base-product-dropdown">
@@ -923,25 +916,29 @@ const Sales = () => {
                                         onClick={() => setIsBaseProductDropdownOpen(!isBaseProductDropdownOpen)}
                                         className="product-dropdown-toggle"
                                     >
-                                        <span className="product-dropdown-text">{selectedBaseProduct}</span>
+                                        <span className="product-dropdown-text">{selectedBaseProduct || "Select Product"}</span>
                                         <span className="material-symbols-outlined product-dropdown-arrow">
                                             {isBaseProductDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
                                         </span>
                                     </button>
                                     {isBaseProductDropdownOpen && (
                                         <div className="product-dropdown-menu">
-                                            {[...new Set(products.map(p => p.baseName))].map((baseName) => (
-                                                <button
-                                                    key={baseName}
-                                                    onClick={() => {
-                                                        setSelectedBaseProduct(baseName);
-                                                        setIsBaseProductDropdownOpen(false);
-                                                    }}
-                                                    className={`product-dropdown-item ${selectedBaseProduct === baseName ? 'active' : ''}`}
-                                                >
-                                                    <span className="product-name-text">{baseName}</span>
-                                                </button>
-                                            ))}
+                                            {products.length > 0 ? (
+                                                [...new Set(products.map(p => p.baseName))].map((baseName) => (
+                                                    <button
+                                                        key={baseName}
+                                                        onClick={() => {
+                                                            setSelectedBaseProduct(baseName);
+                                                            setIsBaseProductDropdownOpen(false);
+                                                        }}
+                                                        className={`product-dropdown-item ${selectedBaseProduct === baseName ? 'active' : ''}`}
+                                                    >
+                                                        <span className="product-name-text">{baseName}</span>
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <div className="no-items-dropdown">No stock available. Please add production first.</div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -953,13 +950,17 @@ const Sales = () => {
                                     <button
                                         onClick={() => setIsSizeDropdownOpen(!isSizeDropdownOpen)}
                                         className="product-dropdown-toggle"
+                                        disabled={!selectedBaseProduct}
+                                        style={!selectedBaseProduct ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
                                     >
-                                        <span className="product-dropdown-text">{selectedSize}</span>
+                                        <span className="product-dropdown-text">
+                                            {!selectedBaseProduct ? "Select Product First" : (selectedSize || "Select Size")}
+                                        </span>
                                         <span className="material-symbols-outlined product-dropdown-arrow">
                                             {isSizeDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
                                         </span>
                                     </button>
-                                    {isSizeDropdownOpen && (
+                                    {isSizeDropdownOpen && selectedBaseProduct && (
                                         <div className="product-dropdown-menu">
                                             {products.filter(p => p.baseName === selectedBaseProduct).map((product) => (
                                                 <button
@@ -971,7 +972,12 @@ const Sales = () => {
                                                     className={`product-dropdown-item ${selectedSize === product.size ? 'active' : ''}`}
                                                 >
                                                     <span className="product-name-text">{product.size}</span>
-                                                    <span className="product-sku-category">{product.sku}</span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ fontSize: '11px', color: '#059669', background: '#f0fdf4', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                                            {product.stock || 0} in stock
+                                                        </span>
+                                                        <span className="product-sku-category">{product.sku}</span>
+                                                    </div>
                                                 </button>
                                             ))}
                                         </div>
@@ -980,7 +986,14 @@ const Sales = () => {
                             </div>
 
                             <div className="quick-entry-item">
-                                <span className="quick-entry-label">Total Pieces:</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                    <span className="quick-entry-label">Total Pieces:</span>
+                                    {selectedBaseProduct && selectedSize && (
+                                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#10b981', background: '#ecfdf5', padding: '2px 8px', borderRadius: '12px', border: '1px solid #d1fae5' }}>
+                                            Available: {products.find(p => p.baseName === selectedBaseProduct && p.size === selectedSize)?.stock || 0}
+                                        </span>
+                                    )}
+                                </div>
                                 <div style={{ width: '100%' }}>
                                     <input
                                         type="number"
@@ -1331,75 +1344,8 @@ const Sales = () => {
                         </button>
                     </div>
 
-                    <div className="history-filters-wrapper">
-                        <div className="history-filters-header">
-                            <h3 className="section-title">Recent Sales History</h3>
-                        </div>
-
-                        <div className="history-filters">
-                            <div className="search-box">
-                                <span className="material-symbols-outlined search-icon">search</span>
-                                <input
-                                    type="text"
-                                    placeholder="Search by customer, company or product..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="search-input"
-                                />
-                                {searchTerm && (
-                                    <button className="clear-search" onClick={() => setSearchTerm("")}>
-                                        <span className="material-symbols-outlined">close</span>
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className="filter-group">
-                                <div className="product-dropdown history-filter-dropdown">
-                                    <button
-                                        onClick={() => setIsHistoryFilterDropdownOpen(!isHistoryFilterDropdownOpen)}
-                                        className="product-dropdown-toggle filter-dropdown-toggle"
-                                    >
-                                        <span className="product-dropdown-text">
-                                            {typeFilter === 'all' ? 'All Modes' : typeFilter.toUpperCase()}
-                                        </span>
-                                        <div className="filter-controls-inside">
-                                            {typeFilter !== 'all' && (
-                                                <span
-                                                    className="material-symbols-outlined clear-filter-inside"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setTypeFilter('all');
-                                                    }}
-                                                >
-                                                    close
-                                                </span>
-                                            )}
-                                            <span className="material-symbols-outlined product-dropdown-arrow">
-                                                {isHistoryFilterDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
-                                            </span>
-                                        </div>
-                                    </button>
-                                    {isHistoryFilterDropdownOpen && (
-                                        <div className="product-dropdown-menu">
-                                            {['all', 'upi', 'cash', 'card'].map((mode) => (
-                                                <button
-                                                    key={mode}
-                                                    onClick={() => {
-                                                        setTypeFilter(mode);
-                                                        setIsHistoryFilterDropdownOpen(false);
-                                                    }}
-                                                    className={`product-dropdown-item ${typeFilter === mode ? 'active' : ''}`}
-                                                >
-                                                    <span className="product-name-text">
-                                                        {mode === 'all' ? 'All Modes' : mode.toUpperCase()}
-                                                    </span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                    <div className="history-filters-header" style={{ textAlign: 'center', marginBottom: '20px' }}>
+                        <h3 className="section-title">Today's Sales History</h3>
                     </div>
 
                     <div className="stock-table-container">
@@ -1407,98 +1353,103 @@ const Sales = () => {
                             <table className="stock-table">
                                 <thead>
                                     <tr>
-                                        <th style={{ textAlign: 'left' }}>DATE</th>
-                                        <th style={{ textAlign: 'left' }}>COMPANY</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'left' }}>CUSTOMER NAME</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'left' }}>PRODUCT</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'right' }}>PIECES</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'right' }}>AMOUNT</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'left' }}>PAYMENT</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'left' }}>DELIVERED BY</th>
-                                        <th className="text-center">ACTIONS</th>
+                                        <th style={{ textAlign: 'center' }}>S.NO</th>
+                                        <th style={{ textAlign: 'center' }}>TIME</th>
+                                        <th style={{ textAlign: 'center' }}>COMPANY</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>PRODUCT</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>SIZE</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>PIECES</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>AMOUNT</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>PAYMENT</th>
+                                        <th className="text-center" style={{ textAlign: 'center' }}>ACTION</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredTransactions.length > 0 ? (
-                                        filteredTransactions.map((transaction) => (
-                                            <tr key={transaction.id}>
-                                                <td>
-                                                    {(() => {
-                                                        const parts = transaction.date?.split(', ') || [transaction.date || ''];
-                                                        const datePart = parts.slice(0, 2).join(', ');
-                                                        const timePart = parts.slice(2).join(', ');
-                                                        return (
-                                                            <>
-                                                                {datePart}
-                                                                {timePart && <span className="hide-mobile">, {timePart}</span>}
-                                                            </>
-                                                        );
-                                                    })()}
-                                                </td>
-                                                <td onClick={() => handleViewBill(transaction)} style={{ cursor: 'pointer' }}>
-                                                    <span className="company-text clickable-company">{transaction.company || '-'}</span>
-                                                </td>
-                                                <td className="hide-mobile">
-                                                    <span className="customer-text">{transaction.customer || '-'}</span>
-                                                </td>
-                                                <td className="hide-mobile">
-                                                    <div className="product-info">
-                                                        <span className="product-name">{transaction.product}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="quantity-cell hide-mobile" style={{ textAlign: 'right' }}>
-                                                    {Math.abs(transaction.quantity)}
-                                                </td>
-                                                <td className="amount-cell hide-mobile" style={{ textAlign: 'right' }}>
-                                                    ₹{transaction.amount?.toLocaleString() || '0'}
-                                                </td>
-                                                <td className="hide-mobile">
-                                                    <span className={`payment-badge ${transaction.paymentStatus?.toLowerCase()}`}>
-                                                        {transaction.paymentStatus || 'Unpaid'}
-                                                    </span>
-                                                </td>
-                                                <td className="hide-mobile">
-                                                    <div className="delivery-info">
-                                                        <span className="delivery-person">{transaction.deliveredBy || '-'}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="text-center">
-                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                                        <button
-                                                            className="icon-action-btn"
-                                                            onClick={() => sendInvoiceToWhatsApp(handleViewBill(transaction, true))}
-                                                            title="Send to WhatsApp"
-                                                            style={{ color: '#25D366', background: 'rgba(37, 211, 102, 0.1)' }}
-                                                        >
-                                                            <span className="material-symbols-outlined">share</span>
-                                                        </button>
-                                                        <button
-                                                            className="icon-action-btn edit"
-                                                            onClick={() => handleEditTransaction(transaction)}
-                                                            title="Edit Record"
-                                                            style={{ color: '#0ea5e9' }}
-                                                        >
-                                                            <span className="material-symbols-outlined">edit</span>
-                                                        </button>
-                                                        <button
-                                                            className="icon-action-btn delete"
-                                                            onClick={() => handleDeleteTransaction(transaction.id)}
-                                                            title="Delete Record"
-                                                        >
-                                                            <span className="material-symbols-outlined">delete</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
+                                        filteredTransactions.map((transaction, index) => {
+                                            const baseProducts = transaction.saleItems?.map(item => item.baseName).join(', ') || transaction.product;
+                                            const sizes = transaction.saleItems?.map(item => item.size).join(', ') || "-";
+                                            const totalPieces = transaction.saleItems?.reduce((sum, item) => sum + (Number(item.qty) || 0), 0) || Math.abs(transaction.quantity || 0);
+                                            const displayAmount = transaction.totalAmount || transaction.amount || 0;
+
+                                            return (
+                                                <tr key={transaction.id || transaction._id}>
+                                                    <td style={{ textAlign: 'center' }}>{index + 1}</td>
+                                                    <td style={{ textAlign: 'center' }}>
+                                                        {(() => {
+                                                            const parts = transaction.date?.split(', ') || [transaction.date || ''];
+                                                            const timePart = parts.length > 2 ? parts.slice(2).join(', ') : parts.length > 1 ? parts[1] : "";
+                                                            return timePart || parts[0];
+                                                        })()}
+                                                    </td>
+                                                    <td style={{ textAlign: 'center' }} onClick={() => handleViewBill(transaction)}>
+                                                        <span className="company-text clickable-company">{transaction.company || '-'}</span>
+                                                    </td>
+                                                    <td className="hide-mobile" style={{ textAlign: 'center' }}>
+                                                        <div className="product-info" style={{ justifyContent: 'center' }}>
+                                                            <span className="product-name">{baseProducts}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="hide-mobile" style={{ textAlign: 'center' }}>{sizes}</td>
+                                                    <td className="quantity-cell hide-mobile" style={{ textAlign: 'center' }}>
+                                                        {totalPieces}
+                                                    </td>
+                                                    <td className="amount-cell hide-mobile" style={{ textAlign: 'center' }}>
+                                                        ₹{displayAmount?.toLocaleString() || '0'}
+                                                    </td>
+                                                    <td className="hide-mobile" style={{ textAlign: 'center' }}>
+                                                        <span className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}>
+                                                            {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="text-center" style={{ textAlign: 'center' }}>
+                                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                                            <button
+                                                                className="icon-action-btn"
+                                                                onClick={async () => {
+                                                                    const billData = handleViewBill(transaction, true);
+                                                                    setSelectedBill(billData);
+                                                                    setIsAutoSharing(true);
+                                                                    setFeedbackMessage("🚀 Generating High-Res Bill & Connecting...");
+                                                                    
+                                                                    // Wait for DOM to render the hidden bill
+                                                                    setTimeout(async () => {
+                                                                        try {
+                                                                            await sendInvoiceToWhatsApp(billData);
+                                                                        } finally {
+                                                                            setIsAutoSharing(false);
+                                                                        }
+                                                                    }, 600);
+                                                                }}
+                                                                title="Send to WhatsApp"
+                                                                style={{ color: '#25D366', background: 'rgba(37, 211, 102, 0.1)' }}
+                                                            >
+                                                                <span className="material-symbols-outlined">share</span>
+                                                            </button>
+                                                            <button
+                                                                className="icon-action-btn edit"
+                                                                onClick={() => handleEditTransaction(transaction)}
+                                                                title="Edit Record"
+                                                                style={{ color: '#0ea5e9' }}
+                                                            >
+                                                                <span className="material-symbols-outlined">edit</span>
+                                                            </button>
+                                                            <button
+                                                                className="icon-action-btn delete"
+                                                                onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}
+                                                                title="Delete Record"
+                                                            >
+                                                                <span className="material-symbols-outlined">delete</span>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     ) : (
                                         <tr>
-                                            <td colSpan="10" className="no-data">
-                                                <div className="empty-state">
-                                                    <span className="material-symbols-outlined empty-icon">search_off</span>
-                                                    <h4>No sales records found</h4>
-                                                    <p>Try adjusting your search or filters</p>
-                                                </div>
+                                            <td colSpan="9" className="no-data" style={{ textAlign: 'center', padding: '40px' }}>
+                                                <h4>No sales records found for today</h4>
                                             </td>
                                         </tr>
                                     )}
@@ -1510,14 +1461,14 @@ const Sales = () => {
                         <div className="mobile-history-cards">
                             {filteredTransactions.length > 0 ? (
                                 filteredTransactions.map((transaction) => (
-                                    <div key={transaction.id} className="mobile-sale-card" onClick={() => handleViewBill(transaction)}>
+                                    <div key={transaction.id || transaction._id} className="mobile-sale-card" onClick={() => handleViewBill(transaction)}>
                                         <div className="sale-card-header">
                                             <div className="sale-date">
                                                 <span className="material-symbols-outlined">calendar_today</span>
                                                 {transaction.date?.split(', ')[0]}
                                             </div>
-                                            <span className={`payment-badge ${transaction.paymentStatus?.toLowerCase()}`}>
-                                                {transaction.paymentStatus}
+                                            <span className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}>
+                                                {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
                                             </span>
                                         </div>
                                         <div className="sale-card-body">
@@ -1528,22 +1479,37 @@ const Sales = () => {
                                             <div className="sale-details-grid">
                                                 <div className="detail-item">
                                                     <span className="detail-label">AMOUNT</span>
-                                                    <span className="detail-value amount">₹{transaction.amount?.toLocaleString()}</span>
+                                                    <span className="detail-value amount">₹{(transaction.totalAmount || transaction.amount || 0).toLocaleString()}</span>
                                                 </div>
                                                 <div className="detail-item">
-                                                    <span className="detail-label">QUANTITY</span>
-                                                    <span className="detail-value">{Math.abs(transaction.quantity)} Pcs</span>
+                                                    <span className="detail-label">PIECES</span>
+                                                    <span className="detail-value">
+                                                        {transaction.saleItems?.reduce((sum, item) => sum + (Number(item.qty) || 0), 0) || Math.abs(transaction.quantity || 0)} Pcs
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div className="sale-product-line">
                                                 <span className="material-symbols-outlined">inventory_2</span>
-                                                {transaction.product}
+                                                {transaction.saleItems?.map(item => item.baseName).join(', ') || transaction.product}
                                             </div>
                                         </div>
                                         <div className="sale-card-actions" onClick={(e) => e.stopPropagation()}>
                                             <button
                                                 className="sale-action-btn"
-                                                onClick={() => sendInvoiceToWhatsApp(handleViewBill(transaction, true))}
+                                                onClick={async () => {
+                                                    const billData = handleViewBill(transaction, true);
+                                                    setSelectedBill(billData);
+                                                    setIsAutoSharing(true);
+                                                    setFeedbackMessage("🚀 Generating Bill...");
+                                                    
+                                                    setTimeout(async () => {
+                                                        try {
+                                                            await sendInvoiceToWhatsApp(billData);
+                                                        } finally {
+                                                            setIsAutoSharing(false);
+                                                        }
+                                                    }, 600);
+                                                }}
                                                 style={{ color: '#25D366', background: 'rgba(37, 211, 102, 0.1)' }}
                                             >
                                                 <span className="material-symbols-outlined">share</span>
@@ -1553,7 +1519,7 @@ const Sales = () => {
                                                 <span className="material-symbols-outlined">edit</span>
                                                 Edit
                                             </button>
-                                            <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id)}>
+                                            <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}>
                                                 <span className="material-symbols-outlined">delete</span>
                                                 Delete
                                             </button>
@@ -1567,7 +1533,7 @@ const Sales = () => {
                             ) : (
                                 <div className="no-data-mobile">
                                     <span className="material-symbols-outlined">search_off</span>
-                                    <p>No sales records found</p>
+                                    <p>No sales records found for today</p>
                                 </div>
                             )}
                         </div>
@@ -1644,7 +1610,7 @@ const Sales = () => {
                     </div>
                 )}
 
-            {showBillModal && selectedBill && (
+            {(showBillModal || isAutoSharing) && selectedBill && (
                 <div
                     className="bill-modal-overlay"
                     onClick={() => setShowBillModal(false)}
@@ -1654,15 +1620,17 @@ const Sales = () => {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                        backgroundColor: isAutoSharing ? 'transparent' : 'rgba(0, 0, 0, 0.85)',
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
                         padding: '20px',
-                        zIndex: 3000,
+                        zIndex: isAutoSharing ? -1000 : 3000,
                         overflow: 'auto',
-                        backdropFilter: 'blur(6px)',
-                        cursor: 'pointer'
+                        backdropFilter: isAutoSharing ? 'none' : 'blur(6px)',
+                        cursor: 'pointer',
+                        opacity: isAutoSharing ? 0.01 : 1, // Keep it slightly visible so DOM rendering engine counts it
+                        pointerEvents: isAutoSharing ? 'none' : 'auto'
                     }}
                 >
                     <div
@@ -1956,11 +1924,11 @@ const Sales = () => {
                             </div>
                             <div className="modal-body">
                                 <div className="modal-form-group">
-                                    <label>COMPANY NAME *</label>
+                                    <label>COMPANY NAME (Optional)</label>
                                     <input
                                         type="text"
                                         className="modal-input"
-                                        placeholder="Enter company name"
+                                        placeholder="Enter company name (leave empty for individuals)"
                                         value={newClientData.companyName}
                                         onChange={(e) => setNewClientData({ ...newClientData, companyName: e.target.value })}
                                     />
@@ -1988,12 +1956,13 @@ const Sales = () => {
                                         />
                                     </div>
                                     <div className="modal-form-group">
-                                        <label>PHONE NUMBER</label>
+                                        <label>PHONE NUMBER *</label>
                                         <input
                                             type="tel"
                                             className="modal-input"
                                             placeholder="Enter phone number"
                                             value={newClientData.phone}
+                                            required
                                             onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })}
                                         />
                                     </div>
@@ -2009,11 +1978,12 @@ const Sales = () => {
                                     />
                                 </div>
                                 <div className="modal-form-group" style={{ marginBottom: 0 }}>
-                                    <label>ADDRESS</label>
+                                    <label>ADDRESS *</label>
                                     <textarea
                                         className="modal-textarea"
                                         placeholder="Enter complete address"
                                         rows="3"
+                                        required
                                         value={newClientData.address}
                                         onChange={(e) => setNewClientData({ ...newClientData, address: e.target.value })}
                                     ></textarea>
@@ -2023,7 +1993,7 @@ const Sales = () => {
                                 <button className="modal-cancel" onClick={() => setShowAddClientModal(false)}>Cancel</button>
                                 <button
                                     className="modal-confirm"
-                                    disabled={!newClientData.companyName || !newClientData.contactPerson || !newClientData.email}
+                                    disabled={!newClientData.contactPerson || !newClientData.phone || !newClientData.address}
                                     onClick={async () => {
                                         try {
                                             const newClient = {

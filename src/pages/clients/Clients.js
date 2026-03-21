@@ -4,11 +4,9 @@ import { formatDate } from "../../utils/dateUtils.js";
 import "./Clients.css";
 
 const Clients = () => {
-  const { clients, addClient, updateClient, deleteClient } = useAppContext();
-  const [viewMode, setViewMode] = useState("list");
+  const { clients, addClient, updateClient, salesHistory } = useAppContext();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,23 +35,32 @@ const Clients = () => {
   });
 
   // Calculate stats
-  const stats = {
-    totalClients: clients.length,
-    totalRevenue: clients.reduce((sum, c) => {
-      const amount = parseFloat(c.totalSpent?.toString().replace(/[^0-9.-]+/g, "") || 0);
-      return sum + amount;
-    }, 0),
-  };
+  // Filter and Enrich clients with real sales data
+  const processedClients = clients.map(client => {
+    const clientSales = (salesHistory || []).filter(s => 
+      s.customerPhone === client.phone || 
+      s.companyName === client.companyName
+    );
+    const totalOrders = clientSales.length;
+    const totalSpentValue = clientSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+    
+    return {
+      ...client,
+      totalOrders,
+      totalSpentValue,
+      totalSpent: `₹${totalSpentValue.toLocaleString('en-IN')}`
+    };
+  });
 
-  // Filter clients
-  const filteredClients = clients.filter((client) => {
+  const filteredClients = processedClients.filter((client) => {
     // Search filter
+    const searchLow = searchTerm.toLowerCase();
     const matchesSearch =
       searchTerm === "" ||
-      client.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone.includes(searchTerm);
+      (client.companyName?.toLowerCase() || "").includes(searchLow) ||
+      (client.contactPerson?.toLowerCase() || "").includes(searchLow) ||
+      (client.email?.toLowerCase() || "").includes(searchLow) ||
+      (client.phone || "").includes(searchTerm);
 
     return matchesSearch;
   });
@@ -96,9 +103,9 @@ const Clients = () => {
   const confirmAddClient = (e) => {
     e.preventDefault();
 
-    // Validate form
-    if (!formData.companyName || !formData.contactPerson || !formData.email || !formData.gst) {
-      setFeedbackMessage("Please fill all required fields");
+    // Validate form (Company Name is now optional)
+    if (!formData.contactPerson || !formData.email || !formData.gst) {
+      setFeedbackMessage("Please fill all required fields (Contact, Email, GST)");
       setTimeout(() => setFeedbackMessage(""), 2000);
       return;
     }
@@ -138,8 +145,8 @@ const Clients = () => {
 
   const confirmEditClient = (e) => {
     e.preventDefault();
-    if (!formData.companyName || !formData.contactPerson || !formData.email || !formData.gst) {
-      setFeedbackMessage("Please fill all required fields");
+    if (!formData.contactPerson || !formData.email || !formData.gst) {
+      setFeedbackMessage("Please fill all required fields (Contact, Email, GST)");
       setTimeout(() => setFeedbackMessage(""), 2000);
       return;
     }
@@ -289,7 +296,7 @@ const Clients = () => {
           </div>
           <div className="stat-info">
             <span className="stat-label">Total Clients</span>
-            <span className="stat-value">{stats.totalClients}</span>
+            <span className="stat-value">{filteredClients.length}</span>
           </div>
         </div>
 
@@ -298,31 +305,15 @@ const Clients = () => {
             <span className="material-symbols-outlined">currency_rupee</span>
           </div>
           <div className="stat-info">
-            <span className="stat-label">Revenue</span>
-            <span className="stat-value">{formatCurrency(stats.totalRevenue)}</span>
+            <span className="stat-label">Total Portfolio Value</span>
+            <span className="stat-value">
+              ₹{filteredClients.reduce((sum, c) => sum + (c.totalSpentValue || 0), 0).toLocaleString('en-IN')}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Subheader: hidden on mobile via .desktop-only */}
-      <div className="subheader desktop-only">
-        <div className="view-toggle">
-          <button
-            className={`view-btn ${viewMode === "list" ? "active" : ""}`}
-            onClick={() => setViewMode("list")}
-            title="List View"
-          >
-            <span className="material-symbols-outlined">view_list</span>
-          </button>
-          <button
-            className={`view-btn ${viewMode === "grid" ? "active" : ""}`}
-            onClick={() => setViewMode("grid")}
-            title="Grid View"
-          >
-            <span className="material-symbols-outlined">grid_view</span>
-          </button>
-        </div>
-      </div>
+
 
       {/* ===== SEARCH AND FILTERS ===== */}
       <div className="filters-section">
@@ -365,8 +356,7 @@ const Clients = () => {
       )}
 
       {/* ===== LIST VIEW ===== */}
-      {viewMode === "list" && (
-        <div className="table-container">
+      <div className="table-container">
           {/* ── Desktop Table (hidden on mobile) ── */}
           <div className="table-responsive desktop-table-view">
             <table className="clients-table">
@@ -418,11 +408,11 @@ const Clients = () => {
                       <td>
                         <div className="action-buttons">
                           <button
-                            className="action-btn delete"
-                            onClick={() => handleDeleteClient(client)}
-                            title="Delete Client"
+                            className="action-btn edit"
+                            onClick={() => handleEditClient(client)}
+                            title="Edit Client"
                           >
-                            <span className="material-symbols-outlined">delete</span>
+                            <span className="material-symbols-outlined">edit</span>
                           </button>
                         </div>
                       </td>
@@ -468,8 +458,8 @@ const Clients = () => {
                     <span className="mobile-orders-label">Orders</span>
                   </div>
                   <div className="mobile-client-actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="mobile-client-delete" onClick={(e) => { e.stopPropagation(); handleDeleteClient(client); }}>
-                      <span className="material-symbols-outlined">delete</span>
+                    <button className="mobile-client-edit" onClick={(e) => { e.stopPropagation(); handleEditClient(client); }}>
+                      <span className="material-symbols-outlined">edit</span>
                     </button>
                   </div>
                 </div>
@@ -530,67 +520,6 @@ const Clients = () => {
             </div>
           )}
         </div>
-      )}
-
-      {/* ===== GRID VIEW ===== */}
-      {viewMode === "grid" && (
-        <div className="clients-grid">
-          {paginatedClients.length > 0 ? (
-            paginatedClients.map((client) => (
-              <div key={client.id} className="client-card">
-                <div className="client-card-header">
-                  <div className="client-card-avatar">
-                    <span className="material-symbols-outlined">business</span>
-                  </div>
-                </div>
-                <div className="client-card-content">
-                  <h3 className="client-card-name">{client.companyName}</h3>
-                  <p className="client-card-contact">{client.contactPerson}</p>
-
-                  <div className="client-card-details">
-                    <div className="detail-row">
-                      <span className="detail-label">Email:</span>
-                      <span className="detail-value">{client.email}</span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="detail-label">Phone:</span>
-                      <span className="detail-value">{client.phone}</span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="detail-label">Orders:</span>
-                      <span className="detail-value">{client.totalOrders}</span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="detail-label">Total Spent:</span>
-                      <span className="detail-value">{client.totalSpent}</span>
-                    </div>
-                  </div>
-
-                  <div className="client-card-footer">
-                    <div className="client-card-actions">
-                      <button
-                        className="card-view-btn"
-                        onClick={() => handleViewClient(client)}
-                      >
-                        View
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="empty-state-grid">
-              <span className="material-symbols-outlined empty-icon">groups_off</span>
-              <h4>No clients found</h4>
-              <p>Try adjusting your filters or add a new client</p>
-              <button className="btn-primary" onClick={handleAddClient}>
-                Add Client
-              </button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* ===== ADD CLIENT MODAL ===== */}
       {showAddModal && (
@@ -605,15 +534,14 @@ const Clients = () => {
             <form onSubmit={confirmAddClient}>
               <div className="modal-body">
                 <div className="modal-form-group">
-                  <label>Company Name *</label>
+                  <label>Company Name</label>
                   <input
                     type="text"
                     name="companyName"
                     value={formData.companyName}
                     onChange={handleInputChange}
-                    placeholder="Enter company name"
+                    placeholder="Enter company name (Optional)"
                     className="modal-input"
-                    required
                   />
                 </div>
                 <div className="modal-form-group">
@@ -703,14 +631,13 @@ const Clients = () => {
             <form onSubmit={confirmEditClient}>
               <div className="modal-body">
                 <div className="modal-form-group">
-                  <label>Company Name *</label>
+                  <label>Company Name</label>
                   <input
                     type="text"
                     name="companyName"
                     value={formData.companyName}
                     onChange={handleInputChange}
                     className="modal-input"
-                    required
                   />
                 </div>
                 <div className="modal-row">
@@ -724,19 +651,6 @@ const Clients = () => {
                       className="modal-input"
                       required
                     />
-                  </div>
-                  <div className="modal-form-group">
-                    <label>Status</label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="modal-select"
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
                   </div>
                 </div>
                 <div className="modal-row">
@@ -870,37 +784,7 @@ const Clients = () => {
         </div>
       )}
 
-      {/* ===== DELETE CONFIRMATION MODAL ===== */}
-      {showDeleteModal && selectedClient && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Delete Client</h3>
-              <button className="modal-close" onClick={() => setShowDeleteModal(false)}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="modal-icon warning">
-                <span className="material-symbols-outlined">warning</span>
-              </div>
-              <p className="modal-title">Are you sure?</p>
-              <p className="modal-desc">
-                You are about to delete <strong>{selectedClient.companyName}</strong> from
-                your client records. This action cannot be undone.
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button className="modal-cancel" onClick={() => setShowDeleteModal(false)}>
-                Cancel
-              </button>
-              <button className="modal-confirm delete" onClick={confirmDeleteClient}>
-                Delete Client
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* ===== EXPORT MODAL ===== */}
       {showExportModal && (

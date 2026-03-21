@@ -113,6 +113,38 @@
 
 /* Global premium-header will handle these */
 
+/* Clear All Button Style */
+.clear-all-btn-premium {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1.5px solid #ff4d4d;
+  color: #ff4d4d;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 77, 77, 0.1);
+}
+
+.clear-all-btn-premium:hover {
+  background: #ff4d4d;
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 77, 77, 0.25);
+  transform: translateY(-1px);
+}
+
+.clear-all-btn-premium:active {
+  transform: translateY(0);
+}
+
+.clear-all-btn-premium .material-symbols-outlined {
+  font-size: 20px;
+}
+
 .header-right {
   display: flex;
   gap: 12px;
@@ -1122,7 +1154,7 @@
   color: #3a6b58;
 }
 
-.table-wrapper {
+.daily-table-wrapper {
   overflow-x: auto;
 }
 
@@ -2384,6 +2416,40 @@
   transform: scale(1.1);
 }
 
+.btn-edit-premium {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #0d9488;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-edit-premium:hover {
+  background: #f0fdfa;
+  transform: scale(1.1);
+}
+
+.prod-card-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #f0fdfa;
+  color: #0d9488;
+  border: 1px solid #ccfbf1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .premium-table .empty {
   text-align: center;
   padding: 40px !important;
@@ -3103,7 +3169,7 @@
   }
 
   /* HIDE desktop table on mobile */
-  .table-wrapper {
+  .daily-table-wrapper {
     display: none !important;
   }
 

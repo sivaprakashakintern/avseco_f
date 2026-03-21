@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../context/AppContext.js';
 import logo from '../assets/logo.png';
+import { formatCurrency, getDynamicFontSize } from '../utils/formatUtils.js';
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -23,26 +24,28 @@ const Dashboard = () => {
   const [showExpensesPopup, setShowExpensesPopup] = useState(false);
   const [hoveredBar, setHoveredBar] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [stockPopupPosition, setStockPopupPosition] = useState({ top: 0, left: 0 });
-  const [productionPopupPosition, setProductionPopupPosition] = useState({ top: 0, left: 0 });
-  const [expensesPopupPosition, setExpensesPopupPosition] = useState({ top: 0, left: 0 });
+  const [stockPopupPosition, setStockPopupPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [productionPopupPosition, setProductionPopupPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [expensesPopupPosition, setExpensesPopupPosition] = useState({ top: 0, left: 0, width: 0 });
 
-  // Helper to get formatted currency in Lakhs
-  const formatLakhs = (val) => `₹${(val / 100000).toFixed(2)} L`;
+  // Helper to get formatted currency with shortening
+  const formatStatValue = (val) => formatCurrency(val, true);
   const formatUnits = (val) => val >= 1000 ? `${(val / 1000).toFixed(1)}K Units` : `${val} Units`;
 
   const getMetrics = (period) => {
     let units = 0;
-    if (period === 'Weekly') units = productionStats.weekly;
-    else if (period === 'Monthly') units = productionStats.monthly;
-    else units = productionStats.yearly;
+    if (period === 'Weekly') units = productionStats.week;
+    else if (period === 'Monthly') units = productionStats.month;
+    else units = productionStats.month || 0; // Use month Total if yearly not available
+
+    const trendDisplay = "Optimal";
 
     return {
-      stockValue: formatLakhs(totalStockValue),
+      stockValue: formatStatValue(totalStockValue),
       production: formatUnits(units),
-      expenses: formatLakhs(totalExpenseAmount),
-      stockGrowth: "+--%", // Static placeholders for growth as we don't have historical delta yet
-      prodGrowth: "+--%",
+      expenses: formatStatValue(totalExpenseAmount),
+      stockGrowth: trendDisplay,
+      prodGrowth: trendDisplay,
       expStatus: totalExpenseAmount > 500000 ? "Over Budget" : "Optimal",
       expColor: totalExpenseAmount > 500000 ? "#ef4444" : "#10b981"
     };
@@ -63,17 +66,11 @@ const Dashboard = () => {
   };
 
   const getProductionDetails = () => {
-    const today = new Date().toLocaleDateString('en-IN').replace(/\//g, '-');
     const sizes = ["6-inch", "8-inch", "10-inch", "12-inch"];
-    return sizes.map(size => {
-      const todayQty = productionHistory
-        .filter(p => p.size === size && p.date === today)
-        .reduce((sum, p) => sum + Number(p.quantity || 0), 0);
-      return {
-        size,
-        today: todayQty
-      };
-    });
+    return sizes.map(size => ({
+      size,
+      today: productionStats.todayBySize[size] || 0
+    }));
   };
 
   const dashboardData = {
@@ -90,12 +87,12 @@ const Dashboard = () => {
         days: last7DaysTrend.map(t => t.label)
       },
       expenses: {
-        total: formatLakhs(totalExpenseAmount),
+        total: formatStatValue(totalExpenseAmount),
         categories: [
-          { name: "Maintenance", amount: formatLakhs(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
-          { name: "Material", amount: formatLakhs(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
-          { name: "Salary", amount: formatLakhs(expenseByCategory["Salary"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Salary"] || 0) / totalExpenseAmount) * 100) : 0, color: "#10b981" },
-          { name: "Others", amount: formatLakhs(expenseByCategory["Others"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Others"] || 0) / totalExpenseAmount) * 100) : 0, color: "#8b5cf6" }
+          { name: "Maintenance", amount: formatStatValue(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
+          { name: "Material", amount: formatStatValue(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
+          { name: "Salary", amount: formatStatValue(expenseByCategory["Salary"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Salary"] || 0) / totalExpenseAmount) * 100) : 0, color: "#10b981" },
+          { name: "Others", amount: formatStatValue(expenseByCategory["Others"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Others"] || 0) / totalExpenseAmount) * 100) : 0, color: "#8b5cf6" }
         ]
       }
     },
@@ -112,12 +109,12 @@ const Dashboard = () => {
         days: last7DaysTrend.map(t => t.label)
       },
       expenses: {
-        total: formatLakhs(totalExpenseAmount),
+        total: formatStatValue(totalExpenseAmount),
         categories: [
-          { name: "Maintenance", amount: formatLakhs(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
-          { name: "Material", amount: formatLakhs(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
-          { name: "Salary", amount: formatLakhs(expenseByCategory["Salary"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Salary"] || 0) / totalExpenseAmount) * 100) : 0, color: "#10b981" },
-          { name: "Others", amount: formatLakhs(expenseByCategory["Others"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Others"] || 0) / totalExpenseAmount) * 100) : 0, color: "#8b5cf6" }
+          { name: "Maintenance", amount: formatStatValue(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
+          { name: "Material", amount: formatStatValue(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
+          { name: "Salary", amount: formatStatValue(expenseByCategory["Salary"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Salary"] || 0) / totalExpenseAmount) * 100) : 0, color: "#10b981" },
+          { name: "Others", amount: formatStatValue(expenseByCategory["Others"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Others"] || 0) / totalExpenseAmount) * 100) : 0, color: "#8b5cf6" }
         ]
       }
     },
@@ -134,12 +131,12 @@ const Dashboard = () => {
         days: last7DaysTrend.map(t => t.label)
       },
       expenses: {
-        total: formatLakhs(totalExpenseAmount),
+        total: formatStatValue(totalExpenseAmount),
         categories: [
-          { name: "Maintenance", amount: formatLakhs(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
-          { name: "Material", amount: formatLakhs(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
-          { name: "Salary", amount: formatLakhs(expenseByCategory["Salary"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Salary"] || 0) / totalExpenseAmount) * 100) : 0, color: "#10b981" },
-          { name: "Others", amount: formatLakhs(expenseByCategory["Others"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Others"] || 0) / totalExpenseAmount) * 100) : 0, color: "#8b5cf6" }
+          { name: "Maintenance", amount: formatStatValue(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
+          { name: "Material", amount: formatStatValue(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
+          { name: "Salary", amount: formatStatValue(expenseByCategory["Salary"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Salary"] || 0) / totalExpenseAmount) * 100) : 0, color: "#10b981" },
+          { name: "Others", amount: formatStatValue(expenseByCategory["Others"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Others"] || 0) / totalExpenseAmount) * 100) : 0, color: "#8b5cf6" }
         ]
       }
     }
@@ -169,7 +166,8 @@ const Dashboard = () => {
     const rect = e.currentTarget.getBoundingClientRect();
     setStockPopupPosition({
       top: rect.bottom + 8,
-      left: rect.left
+      left: rect.left,
+      width: rect.width
     });
     setShowStockPopup(true);
   };
@@ -178,7 +176,8 @@ const Dashboard = () => {
     const rect = e.currentTarget.getBoundingClientRect();
     setProductionPopupPosition({
       top: rect.bottom + 8,
-      left: rect.left
+      left: rect.left,
+      width: rect.width
     });
     setShowProductionPopup(true);
   };
@@ -187,7 +186,8 @@ const Dashboard = () => {
     const rect = e.currentTarget.getBoundingClientRect();
     setExpensesPopupPosition({
       top: rect.bottom + 8,
-      left: rect.left
+      left: rect.left,
+      width: rect.width
     });
     setShowExpensesPopup(true);
   };
@@ -200,7 +200,7 @@ const Dashboard = () => {
           <div className="greetings-left-content">
             <div>
               <h1>Good Morning, Jofra! 👋</h1>
-              <p>Friday, 20 February 2026</p>
+              <p>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </div>
           </div>
         </div>
@@ -217,7 +217,9 @@ const Dashboard = () => {
           <div className="metric-icon stock-bg"><span className="material-symbols-outlined">inventory</span></div>
           <div className="metric-content">
             <span className="metric-label">STOCK VALUE</span>
-            <span className="metric-value">{currentData.metrics.stockValue}</span>
+            <span className="metric-value" style={getDynamicFontSize(totalStockValue)}>
+              {currentData.metrics.stockValue}
+            </span>
             <span className="metric-trend positive">{currentData.metrics.stockGrowth}</span>
           </div>
         </div>
@@ -235,7 +237,9 @@ const Dashboard = () => {
           <div className="metric-icon expenses-bg"><span className="material-symbols-outlined">payments</span></div>
           <div className="metric-content">
             <span className="metric-label">EXPENSES</span>
-            <span className="metric-value">{currentData.metrics.expenses}</span>
+            <span className="metric-value" style={getDynamicFontSize(totalExpenseAmount)}>
+              {currentData.metrics.expenses}
+            </span>
             <span className="metric-status" style={{ color: currentData.metrics.expColor }}>{currentData.metrics.expStatus}</span>
           </div>
         </div>
@@ -243,7 +247,7 @@ const Dashboard = () => {
 
       {/* POPUPS */}
       {showStockPopup && (
-        <div className="fixed-popup stock-popup" style={{ top: stockPopupPosition.top, left: stockPopupPosition.left }}>
+        <div className="fixed-popup stock-popup" style={{ top: stockPopupPosition.top, left: stockPopupPosition.left, width: stockPopupPosition.width }}>
           <div className="popup-header"><h4>CURRENT STOCK - 4 SIZES</h4></div>
           <div className="popup-content">
             {plateDisplayData.map((plate, index) => (
@@ -258,7 +262,7 @@ const Dashboard = () => {
       )}
 
       {showProductionPopup && (
-        <div className="fixed-popup production-popup" style={{ top: productionPopupPosition.top, left: productionPopupPosition.left }}>
+        <div className="fixed-popup production-popup" style={{ top: productionPopupPosition.top, left: productionPopupPosition.left, width: productionPopupPosition.width }}>
           <div className="popup-header"><h4>TODAY'S PRODUCTION</h4></div>
           <div className="popup-content">
             {currentData.productionDetails.map((prod, index) => (
@@ -272,7 +276,7 @@ const Dashboard = () => {
       )}
 
       {showExpensesPopup && (
-        <div className="fixed-popup expenses-popup" style={{ top: expensesPopupPosition.top, left: expensesPopupPosition.left }}>
+        <div className="fixed-popup expenses-popup" style={{ top: expensesPopupPosition.top, left: expensesPopupPosition.left, width: expensesPopupPosition.width }}>
           <div className="popup-header"><h4>EXPENSE BREAKDOWN</h4></div>
           <div className="popup-content">
             {currentData.expenses.categories.map((expense, index) => (
@@ -379,7 +383,7 @@ const Dashboard = () => {
                 <div className="legend-details">
                   <span className="legend-label">PRESENT</span>
                   <span className="legend-value">{currentData.attendance.present}</span>
-                  <span className="legend-percentage">({Math.round((currentData.attendance.present / currentData.attendance.total) * 100)}%)</span>
+                  <span className="legend-percentage">({currentData.attendance.total > 0 ? ((currentData.attendance.present / currentData.attendance.total) * 100).toFixed(1) : 0}%)</span>
                 </div>
               </div>
               <div className="legend-item">
@@ -387,7 +391,7 @@ const Dashboard = () => {
                 <div className="legend-details">
                   <span className="legend-label">ABSENT</span>
                   <span className="legend-value">{currentData.attendance.absent}</span>
-                  <span className="legend-percentage">({Math.round((currentData.attendance.absent / currentData.attendance.total) * 100)}%)</span>
+                  <span className="legend-percentage">({currentData.attendance.total > 0 ? ((currentData.attendance.absent / currentData.attendance.total) * 100).toFixed(1) : 0}%)</span>
                 </div>
               </div>
               <div className="legend-item">
@@ -395,7 +399,7 @@ const Dashboard = () => {
                 <div className="legend-details">
                   <span className="legend-label">ON LEAVE</span>
                   <span className="legend-value">{currentData.attendance.onLeave}</span>
-                  <span className="legend-percentage">({Math.round((currentData.attendance.onLeave / currentData.attendance.total) * 100)}%)</span>
+                  <span className="legend-percentage">({currentData.attendance.total > 0 ? ((currentData.attendance.onLeave / currentData.attendance.total) * 100).toFixed(1) : 0}%)</span>
                 </div>
               </div>
             </div>
@@ -404,11 +408,11 @@ const Dashboard = () => {
           <div className="attendance-stats-summary">
             <div className="summary-item">
               <span className="summary-label">ATTENDANCE RATE</span>
-              <span className="summary-value rate-high">{Math.round((currentData.attendance.present / currentData.attendance.total) * 100)}%</span>
+              <span className="summary-value rate-high">{currentData.attendance.total > 0 ? ((currentData.attendance.present / currentData.attendance.total) * 100).toFixed(1) : 0}%</span>
             </div>
             <div className="summary-item">
               <span className="summary-label">ABSENTEE RATE</span>
-              <span className="summary-value">{Math.round(((currentData.attendance.absent + currentData.attendance.onLeave) / currentData.attendance.total) * 100)}%</span>
+              <span className="summary-value">{currentData.attendance.total > 0 ? (((currentData.attendance.absent + currentData.attendance.onLeave) / currentData.attendance.total) * 100).toFixed(1) : 0}%</span>
             </div>
           </div>
         </div>

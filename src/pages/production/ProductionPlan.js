@@ -152,7 +152,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       status: 'pending',
       unit: 'Pieces',
       size: product.size,
-      date: new Date().toLocaleDateString('en-IN').replace(/\//g, '-') // DD-MM-YYYY
+      date: formatDate(new Date()) // Always use formatted string for matching
     };
 
     try {
@@ -218,9 +218,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     const productSize = item.productSize || '';
     const sku = item.sku || '';
 
-    const matchesSearch = productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      productSize.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sku.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (productName?.toLowerCase() || "").includes(searchTerm?.toLowerCase() || "") ||
+      (productSize?.toLowerCase() || "").includes(searchTerm?.toLowerCase() || "") ||
+      (sku?.toLowerCase() || "").includes(searchTerm?.toLowerCase() || "");
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -460,93 +460,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
 
 
-        {/* Plan Summary Section - Now at top and centered */}
-        <div className="summary-section-centered">
-          <div className="premium-stats-grid plan-summary">
-            <div className="premium-stat-card today">
-              <div className="p-stat-info">
-                <span className="p-stat-label">Total Target</span>
-                <div className="p-stat-value">{(totalTarget || 0).toLocaleString()}</div>
-                <span className="p-stat-tag">Units</span>
-              </div>
-            </div>
-
-            <div className="premium-stat-card week">
-              <div className="p-stat-info">
-                <span className="p-stat-label">Produced</span>
-                <div className="p-stat-value">{(totalProduced || 0).toLocaleString()}</div>
-                <span className="p-stat-tag">{overallProgress}%</span>
-              </div>
-            </div>
-
-            <div className="premium-stat-card month">
-              <div className="p-stat-info">
-                <span className="p-stat-label">Balance</span>
-                <div className="p-stat-value">{(totalRemaining || 0).toLocaleString()}</div>
-                <span className="p-stat-tag">To do</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Central Entry Form */}
-        <div className="target-entry-section">
-          <h3>Set Production Target by Size</h3>
-          <div className="target-form">
-            <div className="form-group">
-              <label>Select Product</label>
-              <select
-                value={selectedProduct}
-                onChange={handleProductChange}
-                className="form-select"
-              >
-                <option value="">-- Select Product --</option>
-                {uniqueProducts.map(product => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Select Size</label>
-              <select
-                value={selectedSize}
-                onChange={handleSizeChange}
-                className="form-select"
-              >
-                <option value="">-- Select Size --</option>
-                {availableSizes.map((size, index) => (
-                  <option key={index} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Target Quantity (Pieces)</label>
-              <input
-                type="number"
-                value={targetQty}
-                onChange={(e) => setTargetQty(e.target.value)}
-                placeholder="Enter target quantity"
-                className="form-input"
-                min="1"
-              />
-            </div>
-
-            <button
-              onClick={handleAddTarget}
-              className="btn-add-target"
-            >
-              <span className="material-symbols-outlined">add_task</span>
-              Add / Update Target
-            </button>
-          </div>
-        </div>
-
         {/* Global Production Stats - New Section from Image */}
         <div className="premium-stats-grid">
           <div className="premium-stat-card today">
@@ -595,8 +508,70 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             <div className="p-stat-info">
               <span className="p-stat-label">Total Produced</span>
               <div className="p-stat-value">{(productionStats?.stock || 0).toLocaleString()}</div>
-              <span className="p-stat-tag">All time</span>
+              <div className="p-stat-breakdown">
+                {(productionStats?.availableSizes || []).map(size => (
+                  <span key={size} className="breakdown-tag">
+                    {size.split('-')[0]}: {productionStats?.stockBySize?.[size] || 0}
+                  </span>
+                ))}
+              </div>
             </div>
+          </div>
+        </div>
+
+
+        {/* Central Entry Form */}
+        <div className="target-entry-section">
+          <h3>Set Production Target by Size</h3>
+          <div className="target-form-horizontal">
+            <div className="form-group-horizontal">
+              <select
+                value={selectedProduct}
+                onChange={handleProductChange}
+                className="form-select"
+              >
+                <option value="">-- Select Product --</option>
+                {uniqueProducts.map(product => (
+                  <option key={product.id} value={product.id}>
+                    {product.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group-horizontal">
+              <select
+                value={selectedSize}
+                onChange={handleSizeChange}
+                className="form-select"
+              >
+                <option value="">-- Select Size --</option>
+                {availableSizes.map((size, index) => (
+                  <option key={index} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group-horizontal">
+              <input
+                type="number"
+                value={targetQty}
+                onChange={(e) => setTargetQty(e.target.value)}
+                placeholder="Enter target quantity"
+                className="form-input"
+                min="1"
+              />
+            </div>
+
+            <button
+              onClick={handleAddTarget}
+              className="btn-add-target-horizontal"
+            >
+              <span className="material-symbols-outlined">add_task</span>
+              Add / Update Target
+            </button>
           </div>
         </div>
 

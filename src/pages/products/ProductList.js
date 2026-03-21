@@ -12,6 +12,8 @@ const ProductList = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showGroupDeleteModal, setShowGroupDeleteModal] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
@@ -37,12 +39,17 @@ const ProductList = () => {
 
   const stats = {
     totalProducts: [...new Set(products.map(p => p.name))].length,
+    totalSizes: [...new Set(products.map(p => p.size).filter(s => !!s))].length,
   };
 
   // State for detail view
   const [viewingProductName, setViewingProductName] = useState(null);
+  const [newCustomSize, setNewCustomSize] = useState("");
 
-  // Grouped products for the main view
+  const handleCloseViewingModal = () => {
+    setViewingProductName(null);
+    setNewCustomSize("");
+  };
   const productGroups = products.reduce((acc, product) => {
     const name = product.name || "Unknown Product";
     if (!acc[name]) {
@@ -118,6 +125,42 @@ const ProductList = () => {
     setTimeout(() => setFeedbackMessage(""), 3000);
   };
 
+  const handleAddSizeToProduct = async () => {
+    if (!newCustomSize.trim() || !viewingProductName) {
+      setFeedbackMessage("Please enter a valid size (e.g., 14-inch)");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    const namePart = viewingProductName.split(' ')[0].substring(0, 3).toUpperCase();
+    const sizeStr = newCustomSize.trim().toUpperCase();
+    const sizePart = sizeStr.includes('-') ? sizeStr.split('-')[0] : sizeStr.substring(0, 2);
+    const randomSuffix = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+    const ts = Date.now().toString().slice(-4);
+    const autoSku = `ARECA-${namePart}-${sizePart}-${ts}${randomSuffix}`;
+
+    const newEntry = {
+      name: viewingProductName.trim(),
+      sku: autoSku,
+      size: newCustomSize.trim(),
+      category: "Plates",
+      costPrice: 0,
+      sellPrice: 0,
+      margin: "0.0%",
+    };
+
+    try {
+      await productsApi.add(newEntry);
+      await fetchProducts();
+      setNewCustomSize("");
+      setFeedbackMessage(`New size added successfully!`);
+    } catch (err) {
+      console.error("Error adding variant:", err);
+      setFeedbackMessage(`Error: failed to add size`);
+    }
+    setTimeout(() => setFeedbackMessage(""), 3000);
+  };
+
   // Edit Product
   const handleEditProduct = (product) => {
     setSelectedProduct(product);
@@ -175,6 +218,29 @@ const ProductList = () => {
     } catch (err) {
       console.error("Error deleting product:", err);
       setFeedbackMessage("Error deleting product");
+    }
+
+    setTimeout(() => setFeedbackMessage(""), 3000);
+  };
+
+  const confirmGroupDelete = async () => {
+    if (!groupToDelete) return;
+
+    try {
+      const variants = productGroups[groupToDelete] || [];
+      await Promise.all(variants.map(v => productsApi.delete(v._id)));
+      await fetchProducts();
+      setShowGroupDeleteModal(false);
+      
+      if (viewingProductName === groupToDelete) {
+         handleCloseViewingModal();
+      }
+      
+      setGroupToDelete(null);
+      setFeedbackMessage(`Product group deleted`);
+    } catch (err) {
+      console.error("Error deleting group:", err);
+      setFeedbackMessage("Error deleting product group");
     }
 
     setTimeout(() => setFeedbackMessage(""), 3000);
@@ -250,7 +316,7 @@ const ProductList = () => {
 
       {/* ===== STATS CARDS (only Total Products and Sizes) ===== */}
       <div className="product-stats">
-        <div className="stat-card">
+        <div className="stat-card centered-stat">
           <div className="stat-icon blue">
             <span className="material-symbols-outlined">inventory</span>
           </div>
@@ -259,13 +325,13 @@ const ProductList = () => {
             <span className="stat-value">{stats.totalProducts}</span>
           </div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card centered-stat">
           <div className="stat-icon orange">
-            <span className="material-symbols-outlined">category</span>
+            <span className="material-symbols-outlined">straighten</span>
           </div>
           <div className="stat-info">
-            <span className="stat-label">Sizes</span>
-            <span className="stat-value">4</span>
+            <span className="stat-label">Total Sizes</span>
+            <span className="stat-value">{stats.totalSizes || 0}</span>
           </div>
         </div>
       </div>
@@ -289,19 +355,8 @@ const ProductList = () => {
                       style={{ padding: '4px', height: '32px', width: '32px' }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(`Delete all variations of ${name}?`)) {
-                          const variants = productGroups[name] || [];
-                          Promise.all(variants.map(v => productsApi.delete(v._id)))
-                            .then(() => {
-                              fetchProducts();
-                              setFeedbackMessage(`Product group deleted`);
-                              setTimeout(() => setFeedbackMessage(""), 3000);
-                            })
-                            .catch(err => {
-                              console.error("Error deleting group:", err);
-                              setFeedbackMessage("Error deleting product group");
-                            });
-                        }
+                        setGroupToDelete(name);
+                        setShowGroupDeleteModal(true);
                       }}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
@@ -326,38 +381,16 @@ const ProductList = () => {
 
       {/* ===== PRODUCT DETAILS MODAL (Inner View) ===== */}
       {viewingProductName && (
-        <div className="modal-overlay" onClick={() => setViewingProductName(null)}>
+        <div className="modal-overlay" onClick={handleCloseViewingModal}>
           <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+            <div className="modal-header centered-modal-header">
               <div className="header-info">
-                <h3>{viewingProductName}</h3>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <p style={{ margin: 0 }}>Manage sizes and pricing</p>
-                  <button 
-                    className="action-btn delete" 
-                    title="Delete All Sizes"
-                    onClick={() => {
-                      if (window.confirm(`Are you sure you want to delete all variations of ${viewingProductName}?`)) {
-                        const variants = productGroups[viewingProductName] || [];
-                        Promise.all(variants.map(v => productsApi.delete(v._id)))
-                          .then(() => {
-                            fetchProducts();
-                            setViewingProductName(null);
-                            setFeedbackMessage(`Product group deleted`);
-                            setTimeout(() => setFeedbackMessage(""), 3000);
-                          })
-                          .catch(err => {
-                            console.error("Error deleting group:", err);
-                            setFeedbackMessage("Error deleting product group");
-                          });
-                      }
-                    }}
-                  >
-                    <span className="material-symbols-outlined">delete_sweep</span>
-                  </button>
+                <h3 className="centered-text">{viewingProductName}</h3>
+                <div className="manage-sizes-subtitle">
+                   <p>Manage sizes and pricing</p>
                 </div>
               </div>
-              <button className="modal-close" onClick={() => setViewingProductName(null)}>
+              <button className="modal-close" onClick={handleCloseViewingModal}>
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -401,6 +434,31 @@ const ProductList = () => {
                         </td>
                       </tr>
                     ))}
+                    {/* Add Custom New Size Row */}
+                    <tr style={{ background: '#f8fafc', borderTop: '2px dashed #cbd5e1' }}>
+                      <td colSpan="2" style={{ padding: '12px' }}>
+                        <input 
+                          type="text" 
+                          placeholder="Enter new size (e.g., 14-inch)" 
+                          value={newCustomSize} 
+                          onChange={(e) => setNewCustomSize(e.target.value)} 
+                          className="modal-input" 
+                          style={{ margin: 0, width: '100%', padding: '10px 14px', borderRadius: '6px' }}
+                        />
+                      </td>
+                      <td colSpan="2" style={{ verticalAlign: 'middle', color: '#64748b', fontSize: '13px' }}>
+                        *SKU & Pricing auto-generated. Edit anytime.
+                      </td>
+                      <td style={{ verticalAlign: 'middle' }}>
+                        <button 
+                          style={{ padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}
+                          onClick={handleAddSizeToProduct}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
+                          Add Details
+                        </button>
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -568,6 +626,41 @@ const ProductList = () => {
               </button>
               <button className="modal-confirm delete" onClick={confirmDeleteProduct}>
                 Delete Product
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Group Confirmation Modal */}
+      {showGroupDeleteModal && groupToDelete && (
+        <div className="modal-overlay" onClick={() => setShowGroupDeleteModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Delete Product Group</h3>
+              <button className="modal-close" onClick={() => setShowGroupDeleteModal(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-icon warning">
+                <span className="material-symbols-outlined">warning</span>
+              </div>
+              <p className="modal-title">Are you sure?</p>
+              <p className="modal-desc">
+                You are about to delete <strong>all sizes</strong> of <strong>{groupToDelete}</strong>. 
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="modal-cancel"
+                onClick={() => setShowGroupDeleteModal(false)}
+              >
+                Cancel
+              </button>
+              <button className="modal-confirm delete" onClick={confirmGroupDelete}>
+                Delete All
               </button>
             </div>
           </div>
