@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../utils/axiosConfig.js';
+import logo from '../assets/logo.png';
 import './ManageAccess.css';
 
 const ManageAccess = () => {
@@ -157,17 +158,17 @@ const ManageAccess = () => {
 
   return (
     <div className="admin-container">
-      <div className="admin-header">
-        <div className="header-info">
-          <h1>Security & Access Hub</h1>
-          <p>Grant module permissions and manage employee security credentials.</p>
+      <header className="admin-header">
+        <div className="admin-header-left">
+          <h1>Manage Access & Security</h1>
+          <p>Configure employee modules, roles, and security credentials</p>
         </div>
-        <div className="header-actions">
-           <button onClick={fetchData} className="refresh-btn">
-             <span className="material-symbols-outlined">refresh</span>
-           </button>
+        <div className="admin-header-right">
+          <div className="header-logo-container">
+            <img src={logo} alt="AVSECO" className="header-logo" />
+          </div>
         </div>
-      </div>
+      </header>
 
       <div className="admin-layout">
         {/* Left: Employee Directory */}

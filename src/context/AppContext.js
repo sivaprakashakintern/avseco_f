@@ -18,7 +18,7 @@ export const AppProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
-    const { user, refreshUser } = useAuth();
+    const { user, refreshUser, hasAccess } = useAuth();
     
     // ✅ Helper to avoid UTC timezone shift (IST+5:30 bug)
     const toLocalDateKey = useCallback((date) => {
@@ -37,56 +37,61 @@ export const AppProvider = ({ children }) => {
             
             // Refresh permissions from backend
             if (user) await refreshUser();
-            const results = await Promise.allSettled([
-                employeeApi.getAll(),
-                expenseApi.getAll(),
-                clientApi.getAll(),
-                productionApi.getAll(),
-                productsApi.getAll(),
-                productionTargetApi.getAll(),
-                salesApi.getAll(),
-                attendanceApi.getByDate(todayStr)
-            ]);
 
-            const [empRes, expRes, clientRes, prodRes, productRes, targetRes, salesRes, attendanceRes] = results;
-            
-            const empData = empRes.status === 'fulfilled' ? empRes.value : [];
-            const expData = expRes.status === 'fulfilled' ? expRes.value : [];
-            const clientData = clientRes.status === 'fulfilled' ? clientRes.value : [];
-            const prodData = prodRes.status === 'fulfilled' ? prodRes.value : [];
-            const productData = productRes.status === 'fulfilled' ? productRes.value : [];
-            const targetData = targetRes.status === 'fulfilled' ? targetRes.value : [];
-            const salesData = salesRes.status === 'fulfilled' ? salesRes.value : [];
-            const attendanceData = attendanceRes.status === 'fulfilled' ? attendanceRes.value : [];
-            
-            setEmployees(empData.map(e => ({ ...e, id: e._id })).sort((a, b) => a.name.localeCompare(b.name)));
-            setExpenses(expData.map(e => ({ ...e, id: e._id })).sort((a, b) => {
-                const dateA = a.date.includes('-') ? new Date(a.date.split('-').reverse().join('-')) : new Date(a.date);
-                const dateB = b.date.includes('-') ? new Date(b.date.split('-').reverse().join('-')) : new Date(b.date);
-                return dateB - dateA;
-            }));
-            setClients(clientData.map(c => ({ ...c, id: c._id })));
-            setProductionHistory(prodData.map(p => ({ ...p, id: p._id })).sort((a, b) => {
-                const dateA = a.date && a.date.includes('-') ? new Date(a.date.split('-').reverse().join('-')) : new Date(a.date || a.createdAt);
-                const dateB = b.date && b.date.includes('-') ? new Date(b.date.split('-').reverse().join('-')) : new Date(b.date || b.createdAt);
-                return dateB - dateA;
-            }));
-            setProducts(productData.map(p => ({ ...p, id: p._id })));
-            setProductionTargets(targetData.map(t => ({ ...t, id: t._id })));
-            setSalesHistory(salesData.map(s => ({ ...s, id: s._id })));
-            
-            // Sync attendance
-            const mappedAttendance = attendanceData.map(r => {
-                const empId = r.employee?._id ? String(r.employee._id) : String(r.employee);
-                return { ...r, empId, id: r._id };
+            // Build request map
+            const requestMap = [];
+            if (hasAccess('employees')) requestMap.push({ key: 'employees', call: employeeApi.getAll() });
+            if (hasAccess('stock')) requestMap.push({ key: 'expenses', call: expenseApi.getAll() });
+            if (hasAccess('clients')) requestMap.push({ key: 'clients', call: clientApi.getAll() });
+            if (hasAccess('production')) {
+                requestMap.push({ key: 'production', call: productionApi.getAll() });
+                requestMap.push({ key: 'productionTargets', call: productionTargetApi.getAll() });
+            }
+            if (hasAccess('attendance')) requestMap.push({ key: 'attendance', call: attendanceApi.getByDate(todayStr) });
+            if (hasAccess('products')) requestMap.push({ key: 'products', call: productsApi.getAll() });
+            if (hasAccess('sales')) requestMap.push({ key: 'sales', call: salesApi.getAll() });
+
+            const results = await Promise.allSettled(requestMap.map(r => r.call));
+
+            results.forEach((result, index) => {
+                if (result.status === 'fulfilled') {
+                    const key = requestMap[index].key;
+                    const data = result.value.data || [];
+
+                    if (key === 'employees') {
+                        setEmployees(data.map(e => ({ ...e, id: e._id })).sort((a, b) => a.name.localeCompare(b.name)));
+                    } else if (key === 'expenses') {
+                        setExpenses(data.map(e => ({ ...e, id: e._id })).sort((a, b) => {
+                            const dateA = a.date.includes('-') ? new Date(a.date.split('-').reverse().join('-')) : new Date(a.date);
+                            const dateB = b.date.includes('-') ? new Date(b.date.split('-').reverse().join('-')) : new Date(b.date);
+                            return dateB - dateA;
+                        }));
+                    } else if (key === 'clients') {
+                        setClients(data.map(c => ({ ...c, id: c._id })));
+                    } else if (key === 'production') {
+                        setProductionHistory(data.map(p => ({ ...p, id: p._id })).sort((a, b) => {
+                            const dateA = a.date && a.date.includes('-') ? new Date(a.date.split('-').reverse().join('-')) : new Date(a.date || a.createdAt);
+                            const dateB = b.date && b.date.includes('-') ? new Date(b.date.split('-').reverse().join('-')) : new Date(b.date || b.createdAt);
+                            return dateB - dateA;
+                        }));
+                    } else if (key === 'productionTargets') {
+                        setProductionTargets(data.map(t => ({ ...t, id: t._id })));
+                    } else if (key === 'attendance') {
+                        const mapped = data.map(r => ({ ...r, empId: r.employee?._id ? String(r.employee._id) : String(r.employee), id: r._id }));
+                        setAttendanceRecords(prev => ({ ...prev, [todayStr]: mapped }));
+                    } else if (key === 'products') {
+                        setProducts(data.map(p => ({ ...p, id: p._id })));
+                    } else if (key === 'sales') {
+                        setSalesHistory(data.map(s => ({ ...s, id: s._id })));
+                    }
+                }
             });
-            setAttendanceRecords(prev => ({ ...prev, [todayStr]: mappedAttendance }));
         } catch (error) {
             console.error("Error fetching app data:", error);
         } finally {
             if (isInitial) setLoading(false);
         }
-    }, [todayStr, user, refreshUser]);
+    }, [todayStr, user, refreshUser, hasAccess]);
 
     useEffect(() => {
         if (user) {
