@@ -33,6 +33,8 @@ export const AuthProvider = ({ children }) => {
       const { data } = await axios.post('/auth/login', { username, password });
       
       if (data && data.token) {
+        // Set header IMMEDIATELY to avoid race conditions with initial fetches
+        axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
         localStorage.setItem('userInfo', JSON.stringify(data));
         setUser(data);
         return data;
@@ -46,12 +48,18 @@ export const AuthProvider = ({ children }) => {
 
   const logoutHelper = () => {
     localStorage.removeItem('userInfo');
+    delete axios.defaults.headers.common['Authorization'];
     setUser(null);
     window.location.href = '/login';
   };
 
   const refreshUser = async () => {
     try {
+      // Ensure header is set if we have a token (safety check)
+      if (user?.token && !axios.defaults.headers.common['Authorization']) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
+      }
+      
       const { data } = await axios.get('/auth/me');
       const updatedUser = { ...user, ...data };
       localStorage.setItem('userInfo', JSON.stringify(updatedUser));
@@ -59,6 +67,10 @@ export const AuthProvider = ({ children }) => {
       return updatedUser;
     } catch (error) {
       console.error('Failed to refresh user profile:', error);
+      // If we get a 401 here, the token might be expired
+      if (error.response?.status === 401) {
+        logoutHelper();
+      }
     }
   };
 

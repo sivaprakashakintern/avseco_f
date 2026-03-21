@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../context/AppContext.js';
+import { useAuth } from '../context/AuthContext.js';
 import logo from '../assets/logo.png';
 import { formatCurrency, getDynamicFontSize } from '../utils/formatUtils.js';
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     totalExpenseAmount,
     expenseByCategory,
@@ -198,7 +200,7 @@ const Dashboard = () => {
         <div className="greetings-left">
           <div className="greetings-left-content">
             <div>
-              <h1>Good Morning, Jofra! 👋</h1>
+              <h1>Good Morning, {user?.name || "User"}! 👋</h1>
               <p>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </div>
           </div>
