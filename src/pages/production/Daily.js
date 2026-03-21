@@ -86,6 +86,7 @@ const Production = () => {
     productionHistory,
     addProduction,
     deleteProduction,
+    updateProduction,
     clearAllProduction,
     products: dbProducts, 
     employees
@@ -712,7 +713,6 @@ const Production = () => {
                 <button className="btn-outline" style={{ flex: 1 }} onClick={() => setIsEditModalOpen(false)}>Cancel</button>
                 <button className="btn-premium-submit" style={{ flex: 1, margin: 0 }} onClick={async () => {
                   try {
-                    const { updateProduction } = useAppContext();
                     await updateProduction(editingProduction.id || editingProduction._id, editingProduction);
                     showNotificationMessage("✅ Record updated successfully");
                     setIsEditModalOpen(false);
