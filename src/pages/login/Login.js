@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.js";
+import axios from '../../utils/axiosConfig.js';
 import logo from "../../assets/avs.png";
 import bgImage from "../../assets/bg1.png";
 import "./Login.css";

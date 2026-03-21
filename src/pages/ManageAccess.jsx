@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from '../utils/axiosConfig';
+import axios from '../utils/axiosConfig.js';
 
 const ManageAccess = () => {
   const [employees, setEmployees] = useState([]);
