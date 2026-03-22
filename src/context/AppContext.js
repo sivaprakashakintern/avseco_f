@@ -457,9 +457,10 @@ export const AppProvider = ({ children }) => {
             const hProduct = (h.product || "").toLowerCase();
             const hSize = (h.size || "").toLowerCase().replace(/[^0-9]/g, '');
             
-            // Flexible match: Match by exact number (Size) and partial name
+            // Extremely Flexible match: Match by exact number (Size) and fallback on product name
             const matchesSize = hSize === pSize && hSize !== "";
-            const matchesName = hProduct.includes("areca") || hProduct.includes(rawPName) || rawPName.includes(hProduct);
+            // Match if names relate, OR if production record has NO name (assume primary product)
+            const matchesName = hProduct.includes("areca") || hProduct.includes(rawPName) || rawPName.includes(hProduct) || hProduct === "";
             
             if (matchesSize && matchesName) {
                 return sum + (h.quantity || h.qty || 0);
