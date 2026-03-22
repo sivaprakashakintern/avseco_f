@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from '../utils/axiosConfig.js';
 
 const AuthContext = createContext(null);
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     window.location.href = '/login';
   };
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       // Ensure header is set if we have a token (safety check)
       if (user?.token && !axios.defaults.headers.common['Authorization']) {
@@ -72,13 +72,13 @@ export const AuthProvider = ({ children }) => {
         logoutHelper();
       }
     }
-  };
+  }, [user]);
 
-  const hasAccess = (moduleName) => {
+  const hasAccess = useCallback((moduleName) => {
     if (!user) return false;
     if (user.role && user.role.toLowerCase() === 'admin') return true;
     return user.modules && user.modules.includes(moduleName);
-  };
+  }, [user]);
 
   const isAdmin = user && user.role && user.role.toLowerCase() === 'admin';
 

@@ -427,7 +427,14 @@ const Dashboard = () => {
         <h3>ALL STOCK ITEMS ({stockData.length})</h3>
         <div className="stock-grid">
           {stockData.map((item, index) => (
-            <div key={index} className="stock-item-card" onClick={handleStockClick} style={{ cursor: 'pointer' }}>
+            <div
+              key={index}
+              className="stock-item-card"
+              onClick={handleStockClick}
+              style={{
+                cursor: 'pointer'
+              }}
+            >
               <div className="stock-item-header">
                 <div>
                   <span className="stock-name" style={{ fontSize: '13px', fontWeight: '800', display: 'block', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>{item.name}</span>

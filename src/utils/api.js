@@ -17,6 +17,10 @@ export const productsApi = {
     const { data } = await axios.delete(`/products/${id}`);
     return data;
   },
+  resetStocks: async () => {
+    const { data } = await axios.post('/products/reset-stocks');
+    return data;
+  },
 };
 
 export const employeeApi = {
@@ -96,6 +100,10 @@ export const productionApi = {
     const { data } = await axios.delete(`/production/${id}`);
     return data;
   },
+  update: async (id, prod) => {
+    const { data } = await axios.put(`/production/${id}`, prod);
+    return data;
+  },
   clearAll: async () => {
     const { data } = await axios.delete('/production');
     return data;
@@ -151,6 +159,10 @@ export const salesApi = {
   },
   delete: async (id) => {
     const { data } = await axios.delete(`/sales/${id}`);
+    return data;
+  },
+  clearAll: async () => {
+    const { data } = await axios.delete('/sales');
     return data;
   }
 };

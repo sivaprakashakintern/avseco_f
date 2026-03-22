@@ -1,0 +1,140 @@
+.glass-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(248, 250, 252, 0.95);
+  backdrop-filter: blur(15px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.loader-card {
+  width: 420px;
+  background: white;
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 106, 78, 0.15);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.loader-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 24px;
+}
+
+.premium-spinner-small {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f1f5f9;
+  border-top-color: #006A4E;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.brand-load h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 850;
+  color: #006A4E;
+  letter-spacing: 0.1em;
+}
+
+.brand-load span {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.modules-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.module-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
+}
+
+.module-item.success {
+  background: #f0fdf4;
+  border-color: #dcfce7;
+}
+
+.mod-icon {
+  font-size: 20px;
+  color: #64748b;
+}
+
+.success .mod-icon {
+  color: #10b981;
+}
+
+.mod-label {
+  flex-grow: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.success-tick {
+  color: #10b981;
+  font-size: 20px;
+}
+
+.error-cross {
+  color: #ef4444;
+  font-size: 20px;
+}
+
+.dot-pulse {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #006A4E;
+  color: #006A4E;
+  animation: dot-pulse 1.5s infinite linear;
+}
+
+.load-footer {
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+@keyframes dot-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 106, 78, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 106, 78, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 106, 78, 0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

@@ -1187,34 +1187,7 @@
   }
 }
 
-/* ===== FEEDBACK TOAST ===== */
-.feedback-toast {
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #1e293b;
-  color: white;
-  border-radius: 12px;
-  font-size: 13.5px;
-  font-weight: 600;
-  z-index: 10000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
-}
-
-.feedback-toast span.material-symbols-outlined {
-  font-size: 18px;
-}
-
-.feedback-toast.success {
-  background: #10b981;
-}
+/* Removed local toast - handled globally */
 
 @keyframes slideIn {
   from {

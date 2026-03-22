@@ -116,9 +116,13 @@ const ManageAccess = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      await axios.put(`/admin/employees/${selectedEmployee._id}/credentials`, credentials);
+      const { data } = await axios.put(`/admin/employees/${selectedEmployee._id}/credentials`, credentials);
       
-      const updatedEmployee = { ...selectedEmployee, username: credentials.username };
+      const updatedEmployee = { 
+        ...selectedEmployee, 
+        username: credentials.username,
+        visiblePassword: data.visiblePassword || credentials.password
+      };
       setEmployees(employees.map(emp => 
         emp._id === selectedEmployee._id ? updatedEmployee : emp
       ));
@@ -291,6 +295,18 @@ const ManageAccess = () => {
                       <span className="material-symbols-outlined">content_copy</span>
                     </button>
                   </div>
+                </div>
+
+                <div className="form-group current-creds-info">
+                   <div className="current-pass-display">
+                     <span className="info-label">Current Data Password:</span>
+                     <span className="info-value">{selectedEmployee.visiblePassword || 'Not Set'}</span>
+                     {selectedEmployee.visiblePassword && (
+                       <button className="copy-mini-btn" onClick={() => copyToClipboard(selectedEmployee.visiblePassword, 'Password')}>
+                          <span className="material-symbols-outlined">content_copy</span>
+                       </button>
+                     )}
+                   </div>
                 </div>
 
                 <div className="form-group credentials-group">

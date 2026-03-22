@@ -14,6 +14,7 @@ import Employees from "./pages/employee/Employees.js";
 import AttendanceLog from "./pages/attendance/AttendanceLog.js";
 import AttendanceReport from "./pages/attendance/AttendanceReport.js";
 import ProfilePage from "./pages/profile/ProfilePage.js";
+import LoadingScreen from "./components/LoadingScreen.js";
 
 // Stock Pages
 import StockOverview from "./pages/stock/StockOverview.js";
@@ -49,11 +50,7 @@ const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (user) {
@@ -64,22 +61,13 @@ const PublicRoute = ({ children }) => {
 };
 
 const AppLayout = ({ children }) => {
-  const { loading: appLoading, isUpdating } = useAppContext();
+  const { loading: appLoading, isUpdating, products, salesHistory } = useAppContext();
   const { user } = useAuth();
   const location = useLocation();
-  const [isTransitioning, setIsTransitioning] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsTransitioning(true);
-    const timer = setTimeout(() => setIsTransitioning(false), 600);
-    return () => clearTimeout(timer);
-  }, [location.pathname]);
-
   return (
     <div className="dashboard-wrapper">
-      {isTransitioning && (
-        <div className="page-transition-bar"></div>
-      )}
+      {/* Only show LoadingScreen on initial cold start when data is empty */}
+      {appLoading && (!products || products.length === 0) && (!salesHistory || salesHistory.length === 0) && <LoadingScreen />}
       
       {!appLoading && isUpdating && (
         <div className="update-loading-overlay">

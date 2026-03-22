@@ -1,9 +1,17 @@
 import React, { useState } from "react";
 import { useAppContext } from "../../context/AppContext.js";
+import ConfirmModal from "../../components/ConfirmModal.js";
 import "./Stock.css";
 
 const StockOverview = () => {
-  const { stockData } = useAppContext();
+  const { stockData, deleteProduct, resetAllStockData } = useAppContext();
+  const [resetLoading, setResetLoading] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+      isOpen: false,
+      title: '',
+      message: '',
+      onConfirm: null
+  });
 
   // Group stock data by name
   const groupedProducts = stockData.reduce((acc, item) => {
@@ -37,6 +45,45 @@ const StockOverview = () => {
 
   // ========== HANDLERS ==========
   const handleExport = () => setShowExportModal(true);
+  
+  const handleResetAll = () => {
+    setConfirmModal({
+        isOpen: true,
+        title: "Reset Database Stock",
+        message: "CRITICAL: This will PERMANENTLY delete all Production history, Sales history, and reset stocks to zero. This cannot be undone.",
+        onConfirm: async () => {
+            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+            setResetLoading(true);
+            try {
+                await resetAllStockData();
+                setFeedbackMessage("Stock zeroed successfully.");
+                setTimeout(() => setFeedbackMessage(""), 4000);
+            } catch (error) {
+                setFeedbackMessage("Err: Connection issues.");
+            } finally {
+                setResetLoading(false);
+            }
+        }
+    });
+  };
+  
+  const handleDelete = (id, name, size) => {
+      setConfirmModal({
+          isOpen: true,
+          title: `Delete ${name}`,
+          message: `Are you sure you want to remove the ${size} variant? This will delete the product record and remove it from stock views.`,
+          onConfirm: async () => {
+              setConfirmModal(prev => ({ ...prev, isOpen: false }));
+              try {
+                  await deleteProduct(id);
+                  setFeedbackMessage("Product Removed.");
+                  setTimeout(() => setFeedbackMessage(""), 3000);
+              } catch (error) {
+                  setFeedbackMessage("Delete Failed.");
+              }
+          }
+      });
+  };
 
   const confirmExport = (format) => {
     setExportLoading(true);
@@ -103,6 +150,23 @@ const StockOverview = () => {
           <h1 className="page-title">Stock Overview</h1>
         </div>
         <div className="header-actions">
+          <button 
+            className="btn-export-premium" 
+            onClick={handleResetAll} 
+            disabled={resetLoading}
+            style={{ 
+              background: '#fee2e2', 
+              color: '#dc2626', 
+              borderColor: '#fecaca',
+              marginRight: '12px'
+            }}
+          >
+            <span className="material-symbols-outlined">
+              {resetLoading ? "hourglass_empty" : "restart_alt"}
+            </span>
+            {resetLoading ? "Resetting..." : "Reset All Data"}
+          </button>
+
           <button className="btn-export-premium" onClick={handleExport}>
             <span className="material-symbols-outlined">
               {exportLoading ? "hourglass_empty" : "file_download"}
@@ -129,6 +193,7 @@ const StockOverview = () => {
                 <th>Size</th>
                 <th>Stock</th>
                 <th>Total Stock</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -136,7 +201,7 @@ const StockOverview = () => {
                 groupedItems.map((group) => (
                   <React.Fragment key={group.name}>
                     {group.variants.map((v, idx) => (
-                      <tr key={v.sku || idx} className="product-variant-row" style={{ borderBottom: idx === group.variants.length - 1 ? '2px solid #e2e8f0' : '1px solid #f1f5f9' }}>
+                      <tr key={v.id || v.sku || idx} className="product-variant-row" style={{ borderBottom: idx === group.variants.length - 1 ? '2px solid #e2e8f0' : '1px solid #f1f5f9' }}>
                         
                         {idx === 0 && (
                           <td className="group-name-cell" rowSpan={group.variants.length}>
@@ -154,7 +219,9 @@ const StockOverview = () => {
                         </td>
                         
                         <td className="quantity-cell">
-                          {v.quantity.toLocaleString("en-IN")} pcs
+                          <span className={`stock-level ${v.quantity < 0 ? 'negative' : ''}`}>
+                            {v.quantity.toLocaleString("en-IN")} pcs
+                          </span>
                         </td>
 
                         {idx === 0 && (
@@ -163,13 +230,19 @@ const StockOverview = () => {
                           </td>
                         )}
 
+                        <td className="action-cell">
+                          <button className="btn-icon-delete" onClick={() => handleDelete(v.id, group.name, v.size)}>
+                            <span className="material-symbols-outlined">delete</span>
+                          </button>
+                        </td>
+
                       </tr>
                     ))}
                   </React.Fragment>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4">
+                  <td colSpan="5">
                     <div className="empty-state">
                       <span className="material-symbols-outlined empty-icon">inventory</span>
                       <h4>No items found</h4>
@@ -275,6 +348,14 @@ const StockOverview = () => {
           </div>
         </div>
       )}
+      {/* ===== CONFIRMATION MODAL ===== */}
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

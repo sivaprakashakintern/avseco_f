@@ -163,3 +163,55 @@ code {
   from { transform: translateX(100px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== GLOBAL FEEDBACK TOAST (Right Side) ===== */
+.feedback-toast {
+  position: fixed !important;
+  top: 100px !important;
+  right: 30px !important;
+  left: auto !important;
+  background: #006A4E !important;
+  color: white !important;
+  padding: 14px 28px !important;
+  border-radius: 60px !important;
+  display: flex !important;
+  flex-direction: row !important; /* Ensure it stays a horizontal bar */
+  align-items: center !important;
+  gap: 12px !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+  z-index: 10000000 !important; /* Extremely high */
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+  width: auto !important;
+  max-width: fit-content !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  pointer-events: auto !important;
+  overflow: hidden !important;
+}
+
+.feedback-toast .material-symbols-outlined {
+  font-size: 22px !important;
+  color: white !important;
+  flex-shrink: 0 !important;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(50px); }
+  to { opacity: 1; transform: translateX(0); }
+}

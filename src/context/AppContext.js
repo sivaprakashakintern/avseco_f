@@ -16,6 +16,15 @@ export const AppProvider = ({ children }) => {
     const [salesHistory, setSalesHistory] = useState([]);
     const [attendanceRecords, setAttendanceRecords] = useState({});
     const [loading, setLoading] = useState(true);
+    const [fetchStatus, setFetchStatus] = useState({
+        employees: 'pending',
+        expenses: 'pending',
+        clients: 'pending',
+        production: 'pending',
+        products: 'pending',
+        sales: 'pending',
+        attendance: 'pending'
+    });
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const { user, refreshUser, hasAccess } = useAuth();
@@ -54,8 +63,9 @@ export const AppProvider = ({ children }) => {
             const results = await Promise.allSettled(requestMap.map(r => r.call));
 
             results.forEach((result, index) => {
+                const key = requestMap[index].key;
                 if (result.status === 'fulfilled') {
-                    const key = requestMap[index].key;
+                    setFetchStatus(prev => ({ ...prev, [key]: 'success' }));
                     const data = result.value || [];
 
                     if (key === 'employees') {
@@ -84,6 +94,8 @@ export const AppProvider = ({ children }) => {
                     } else if (key === 'sales') {
                         setSalesHistory(data.map(s => ({ ...s, id: s._id })));
                     }
+                } else {
+                    setFetchStatus(prev => ({ ...prev, [key]: 'error' }));
                 }
             });
         } catch (error) {
@@ -94,13 +106,17 @@ export const AppProvider = ({ children }) => {
     }, [todayStr, user, refreshUser, hasAccess]);
 
     useEffect(() => {
-        if (user) {
-            fetchData(true); // First load with loading screen
-            // Periodic background sync (No loading screen)
-            const interval = setInterval(() => fetchData(false), 30000);
-            return () => clearInterval(interval);
+        if (!user) return;
+        
+        // Initial fetch ONLY if data is missing
+        if (employees.length === 0 && products.length === 0) {
+            fetchData(true);
         }
-    }, [fetchData, user]);
+
+        // Periodic background sync (5 mins)
+        const interval = setInterval(() => fetchData(false), 300000);
+        return () => clearInterval(interval);
+    }, [user?.id, fetchData]);
 
     // EMPLOYEES
     const addEmployee = useCallback(async (emp) => {
@@ -254,6 +270,32 @@ export const AppProvider = ({ children }) => {
             setIsUpdating(false);
         }
     }, [fetchTargets]);
+
+    const updateProduction = useCallback(async (id, updates) => {
+        setIsUpdating(true);
+        try {
+            const oldRecord = productionHistory.find(p => p.id === id);
+            const data = await productionApi.update(id, updates);
+            
+            // 1. Update history
+            setProductionHistory(prev => prev.map(p => p.id === id ? { ...data, id: data._id } : p));
+
+            // 2. Sync targets
+            if (oldRecord) {
+                const oldQty = Number(oldRecord.quantity || 0);
+                const newQty = Number(updates.quantity || 0);
+                const diff = newQty - oldQty;
+
+                if (diff !== 0 || oldRecord.size !== updates.size || oldRecord.operator !== updates.operator) {
+                    // Refresh targets to reflect backend changes
+                    await fetchTargets();
+                }
+            }
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
+    }, [productionHistory, fetchTargets]);
 
     const deleteProduction = useCallback(async (id) => {
         setIsUpdating(true);
@@ -443,6 +485,25 @@ export const AppProvider = ({ children }) => {
         acc[e.department] = (acc[e.department] || 0) + 1;
         return acc;
     }, {});
+
+    const resetAllStockData = async () => {
+        try {
+            setLoading(true);
+            await Promise.all([
+                productionApi.clearAll(),
+                salesApi.clearAll(),
+                productsApi.resetStocks(),
+                productionTargetApi.clearAll()
+            ]);
+            await fetchData(true);
+            return true;
+        } catch (error) {
+            console.error("Reset Error:", error);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // ── DERIVED METRICS ─────────────────────────────────────────────────────────
     
@@ -666,6 +727,7 @@ export const AppProvider = ({ children }) => {
             updateClient,
             deleteClient,
             addProduction,
+            updateProduction,
             deleteProduction,
             clearAllProduction,
             fetchTargets,
@@ -687,6 +749,7 @@ export const AppProvider = ({ children }) => {
             setIsMobileMenuOpen,
             fetchData,
             setLoading,
+            fetchStatus,
             isUpdating,
             salesHistory, 
             addSale,
@@ -694,7 +757,8 @@ export const AppProvider = ({ children }) => {
             deleteSale,
             addProduct,
             updateProduct,
-            deleteProduct
+            deleteProduct,
+            resetAllStockData
         }}>
             {children}
         </AppContext.Provider>
