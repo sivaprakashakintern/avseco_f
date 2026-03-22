@@ -25,17 +25,17 @@
 
 /* Greetings Header - Updated with Logo on Right */
 .greetings-header {
-  padding: 24px 40px;
-  border-radius: 28px;
+  padding: 32px 48px;
+  border-radius: 30px;
   margin-bottom: 32px;
-  box-shadow: 0 10px 30px -10px rgba(0, 106, 78, 0.2);
+  box-shadow: 0 20px 40px -15px rgba(0, 106, 78, 0.25);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #bbf7d0 0%, #bbf7d0 100%) !important;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%) !important;
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 /* Subtle pattern overlay */
@@ -60,21 +60,29 @@
   align-items: center;
 }
 
-.greetings-left h1 {
+.greetings-text h1 {
   margin: 0;
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 850;
   color: #064e3b;
-  line-height: 1.2;
-  letter-spacing: -0.03em;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
 }
 
-.greetings-left p {
-  margin: 8px 0 0;
+.current-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 16px;
   font-weight: 600;
   color: #166534;
-  opacity: 0.85;
+  opacity: 0.9;
+}
+
+.current-date span {
+  font-size: 18px;
+  color: #006A4E;
 }
 
 .greetings-right {
@@ -83,33 +91,27 @@
   align-items: center;
 }
 
-/* Logo Styles - Premium Crystal Look */
-.header-logo {
-  height: 75px;
-  width: auto;
-  max-width: 220px;
-  object-fit: contain;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  filter: drop-shadow(0 10px 15px rgba(0, 71, 52, 0.15)) brightness(1.05);
-  background: transparent;
-}
-
-/* Color Boost Effect for Logo */
-.logo-boost {
-  filter: drop-shadow(0 0 15px rgba(0, 255, 127, 0.3)) saturate(1.2) brightness(1.1);
-}
-
-.header-logo-container {
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 20px;
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.3);
+.header-logo-card {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 24px;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 8px 32px 0 rgba(0, 71, 52, 0.1),
+    inset 0 0 15px rgba(255, 255, 255, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--avs-transition);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.dashboard-brand-logo {
+  height: 48px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 71, 52, 0.15));
 }
 
 @media (hover: hover) {
@@ -136,13 +138,15 @@
 .metric-card {
   background: white;
   padding: 24px;
-  border-radius: var(--avs-base-radius);
+  border-radius: 20px;
   display: flex;
   align-items: center;
   gap: 20px;
-  box-shadow: var(--avs-card-shadow);
-  transition: var(--avs-transition);
-  border: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 106, 78, 0.05);
 }
 
 .metric-card.clickable {
@@ -356,9 +360,11 @@
 .chart-card {
   background: white;
   padding: 32px;
-  border-radius: var(--avs-base-radius);
-  box-shadow: var(--avs-card-shadow);
-  border: 1px solid rgba(0, 0, 0, 0.03);
+  border-radius: 24px;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 106, 78, 0.05);
 }
 
 .chart-card.large-chart {

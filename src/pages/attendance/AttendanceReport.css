@@ -127,13 +127,14 @@
 /* ===== FILTERS CARD ===== */
 .filters-card {
     background: #ffffff;
-    padding: 20px 24px;
+    padding: 24px 32px;
     border-radius: 24px;
     border: 1px solid #e2e8f0;
     margin-bottom: 24px;
     display: flex;
-    align-items: flex-start;
-    gap: 32px;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
     position: relative;
     z-index: 100;
@@ -488,6 +489,19 @@
 .status-cell {
     font-weight: 800;
     font-size: 11px;
+    transition: all 0.2s ease;
+}
+
+.status-indicator {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    margin: 0 auto;
 }
 
 .status-cell.present {

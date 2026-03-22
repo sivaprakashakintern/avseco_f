@@ -94,7 +94,7 @@ body,
 
 .btn-add-target-horizontal {
   padding: 0 24px;
-  background: #2e8b66;
+  background: #006A4E;
   color: white;
   border: none;
   border-radius: 12px;
@@ -108,12 +108,13 @@ body,
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 48px;
   white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 106, 78, 0.15);
 }
 
 .btn-add-target-horizontal:hover:not(:disabled) {
-  background: #1e6b4c;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(46, 139, 102, 0.2);
+  background: #004d39;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 106, 78, 0.25);
 }
 
 .btn-add-target-horizontal:disabled {
@@ -284,41 +285,52 @@ body,
   width: 100%;
   height: 48px;
   padding: 0 16px 0 48px;
-  background: white;
-  border: 1px solid #e0e7e3;
+  background: linear-gradient(to bottom, #ffffff, #f9fafb);
+  border: 1.5px solid #d1dbd5;
   border-radius: 12px;
   font-size: 15px;
   color: #1e3a2f;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #2e8b66;
+  border-color: #006A4E;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 106, 78, 0.08);
+  transform: translateY(-1px);
 }
 
 .search-input::placeholder {
-  color: #9fb0a8;
+  color: #94a3af;
   font-size: 14px;
 }
 
 /* Filter Box */
 .filter-box {
   position: relative;
-  background: white;
-  border: 1px solid #e0e7e3;
+  background: linear-gradient(to bottom, #ffffff, #f9fafb);
+  border: 1.5px solid #d1dbd5;
   border-radius: 12px;
-  min-width: 180px;
+  min-width: 200px;
   height: 48px;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   display: flex;
   align-items: center;
 }
 
+.filter-box:hover {
+  border-color: #006A4E;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
 .filter-box:focus-within {
-  border-color: #2e8b66;
+  border-color: #006A4E;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 106, 78, 0.1);
+  transform: translateY(-1px);
 }
 
 .filter-icon {
@@ -378,25 +390,26 @@ body,
 /* Clear All Button */
 .clear-all-btn {
   padding: 8px 20px;
-  background: #f44336;
+  background: #ef4444;
   color: white;
   border: none;
   border-radius: 12px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   height: 48px;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
 }
 
 .clear-all-btn:hover {
-  background: #d32f2f;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(244, 67, 54, 0.2);
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(239, 68, 68, 0.25);
 }
 
 .clear-all-btn .material-symbols-outlined {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider, useAppContext } from "./context/AppContext.js";
 import { AuthProvider, useAuth } from "./context/AuthContext.js";
@@ -48,8 +48,9 @@ import ChangePasswordModal from "./components/ChangePasswordModal.jsx";
 // Public Route Component (Redirects to dashboard if already logged in)
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const fastAuth = !!localStorage.getItem('userInfo');
 
-  if (loading) {
+  if (loading && !fastAuth) {
     return <LoadingScreen />;
   }
 
@@ -63,22 +64,16 @@ const PublicRoute = ({ children }) => {
 const AppLayout = ({ children }) => {
   const { loading: appLoading, isUpdating, products, salesHistory } = useAppContext();
   const { user } = useAuth();
+  const [isDismissed, setIsDismissed] = React.useState(false);
   return (
     <div className="dashboard-wrapper">
-      {/* Only show LoadingScreen on initial cold start when data is empty */}
-      {appLoading && (!products || products.length === 0) && (!salesHistory || salesHistory.length === 0) && <LoadingScreen />}
-      
-      {!appLoading && isUpdating && (
-        <div className="update-loading-overlay">
-          <div className="mini-spinner"></div>
-          <span>Updating...</span>
-        </div>
-      )}
+      {/* Show LoadingScreen on cold start OR when manually refreshing */}
+      {(appLoading || isUpdating) && <LoadingScreen />}
       
       {/* Force password change for new credentials */}
       <ChangePasswordModal 
-        isOpen={user?.isFirstLogin} 
-        onClose={() => {}} 
+        isOpen={user?.isFirstLogin && !isDismissed} 
+        onClose={() => setIsDismissed(true)} 
       />
 
       <Sidebar />
@@ -91,6 +86,22 @@ const AppLayout = ({ children }) => {
 };
 
 const App = () => {
+  useEffect(() => {
+    const handleOnline = () => document.body.classList.remove('website-offline');
+    const handleOffline = () => document.body.classList.add('website-offline');
+
+    // Set initial state
+    if (!navigator.onLine) handleOffline();
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   return (
     <AuthProvider>
       <AppProvider>

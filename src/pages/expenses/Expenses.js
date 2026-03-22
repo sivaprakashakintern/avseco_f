@@ -213,12 +213,12 @@ const Expenses = () => {
                     <table className="stock-table">
                         <thead>
                             <tr>
-                                <th>S.No</th>
-                                <th>Date & Time</th>
-                                <th>Category</th>
-                                <th>Payment Mode</th>
-                                <th>Amount (₹)</th>
-                                <th>Actions</th>
+                                <th style={{ textAlign: 'center' }}>S.No</th>
+                                <th style={{ textAlign: 'center' }}>Date & Time</th>
+                                <th style={{ textAlign: 'center' }}>Category</th>
+                                <th style={{ textAlign: 'center' }}>Payment Mode</th>
+                                <th style={{ textAlign: 'center' }}>Amount (₹)</th>
+                                <th style={{ textAlign: 'center' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -226,29 +226,30 @@ const Expenses = () => {
                                 <tr key={expense.id}>
                                     <td style={{ fontWeight: '700', color: '#94a3b8' }}>{index + 1}</td>
                                     <td style={{ fontWeight: '500' }}>{formatDate(expense.date)}</td>
-                                    <td>
-                                        <span className={`status-badge ${expense.category === 'Machine Maintenance' ? 'low' :
-                                             expense.category === 'Material' ? 'normal' :
-                                                 expense.category === 'Salary' ? 'critical' : 'normal'
-                                             }`}>
-                                             {expense.category}
+                                     <td style={{ textAlign: 'center' }}>
+                                         <span className={`status-badge ${expense.category === 'Machine Maintenance' ? 'low' :
+                                              expense.category === 'Material' ? 'normal' :
+                                                  expense.category === 'Salary' ? 'critical' : 'normal'
+                                              }`} style={{ display: 'inline-block', minWidth: '140px' }}>
+                                              {expense.category}
+                                          </span>
+                                      </td>
+                                     <td style={{ textAlign: 'center' }}>
+                                         <span className="payment-badge" style={{
+                                             padding: '4px 12px',
+                                             borderRadius: '20px',
+                                             fontSize: '11px',
+                                             fontWeight: '700',
+                                             backgroundColor: '#f1f5f9',
+                                             color: '#475569',
+                                             display: 'inline-block'
+                                         }}>
+                                             {expense.paymentMode}
                                          </span>
                                      </td>
-                                    <td>
-                                        <span className="payment-badge" style={{
-                                            padding: '4px 8px',
-                                            borderRadius: '4px',
-                                            fontSize: '12px',
-                                            fontWeight: '600',
-                                            backgroundColor: '#f1f5f9',
-                                            color: '#475569'
-                                        }}>
-                                            {expense.paymentMode}
-                                        </span>
-                                    </td>
-                                    <td className="amount" style={{ fontWeight: '800', color: '#006A4E' }}>₹{Number(expense.amount).toLocaleString()}</td>
-                                    <td>
-                                        <div className="action-buttons">
+                                     <td className="amount" style={{ fontWeight: '800', color: '#006A4E', textAlign: 'center' }}>₹{Number(expense.amount).toLocaleString()}</td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <div className="action-buttons" style={{ justifyContent: 'center' }}>
                                             {isWithinLast2Days(expense.date) ? (
                                                 <>
                                                     <button 
@@ -571,9 +572,9 @@ const Expenses = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f8fafc', zIndex: 1 }}>
                                     <tr>
-                                        <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>DETAILS</th>
-                                        <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>CATEGORY</th>
-                                        <th style={{ textAlign: 'right', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>AMOUNT (₹)</th>
+                                        <th style={{ textAlign: 'center', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>DETAILS</th>
+                                        <th style={{ textAlign: 'center', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>CATEGORY</th>
+                                        <th style={{ textAlign: 'center', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>AMOUNT (₹)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -586,27 +587,29 @@ const Expenses = () => {
                                         .sort((a, b) => b.amount - a.amount)
                                         .map((exp, idx) => (
                                             <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                                <td style={{ padding: '14px 20px' }}>
-                                                    <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px' }}>
-                                                        {exp.category === "Salary" ? (exp.description.replace('Salary for ', '')) : exp.description}
-                                                    </div>
-                                                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>{formatDate(exp.date)}</div>
-                                                </td>
-                                                <td style={{ padding: '14px 20px' }}>
-                                                    <span style={{ 
-                                                        padding: '4px 8px', 
-                                                        borderRadius: '4px', 
-                                                        fontSize: '11px', 
-                                                        fontWeight: '700',
-                                                        backgroundColor: exp.category === 'Salary' ? '#fff7ed' : '#f5f3ff',
-                                                        color: exp.category === 'Salary' ? '#9a3412' : '#5b21b6'
-                                                    }}>
-                                                        {exp.category}
-                                                    </span>
-                                                </td>
-                                                <td style={{ padding: '14px 20px', textAlign: 'right', fontWeight: '700', color: '#006A4E', fontSize: '14px' }}>
-                                                    ₹{Number(exp.amount).toLocaleString()}
-                                                </td>
+                                                 <td style={{ padding: '14px 20px', textAlign: 'center' }}>
+                                                     <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px' }}>
+                                                         {exp.category === "Salary" ? (exp.description.replace('Salary for ', '')) : exp.description}
+                                                     </div>
+                                                     <div style={{ fontSize: '11px', color: '#94a3b8' }}>{formatDate(exp.date)}</div>
+                                                 </td>
+                                                 <td style={{ padding: '14px 20px', textAlign: 'center' }}>
+                                                     <span style={{ 
+                                                         padding: '4px 12px', 
+                                                         borderRadius: '20px', 
+                                                         fontSize: '11px', 
+                                                         fontWeight: '700',
+                                                         display: 'inline-block',
+                                                         minWidth: '140px',
+                                                         backgroundColor: exp.category === 'Salary' ? '#fff7ed' : '#f5f3ff',
+                                                         color: exp.category === 'Salary' ? '#9a3412' : '#5b21b6'
+                                                     }}>
+                                                         {exp.category}
+                                                     </span>
+                                                 </td>
+                                                 <td style={{ padding: '14px 20px', textAlign: 'center', fontWeight: '700', color: '#006A4E', fontSize: '14px' }}>
+                                                     ₹{Number(exp.amount).toLocaleString()}
+                                                 </td>
                                             </tr>
                                         ))}
                                 </tbody>

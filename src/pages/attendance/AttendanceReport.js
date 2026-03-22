@@ -24,19 +24,27 @@ const AttendanceReport = () => {
         });
     };
 
+    // Cache to track fetched month-year data to avoid redundant calls
+    const [fetchedMonths, setFetchedMonths] = useState(new Set());
+    
     // Effect to fetch any missing attendance data for the month
     React.useEffect(() => {
+        const monthKey = `${selectedYear}-${selectedMonth}`;
+        if (fetchedMonths.has(monthKey)) return;
+
         const fetchMonthData = async () => {
             const days = getDaysInMonth(selectedYear, selectedMonth);
+            // Fetch all days sequentially but don't re-trigger on record changes
             for (const day of days) {
                 const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`;
                 if (!attendanceRecords[dateKey]) {
                     await fetchAttendanceForDate(dateKey);
                 }
             }
+            setFetchedMonths(prev => new Set(prev).add(monthKey));
         };
         fetchMonthData();
-    }, [selectedYear, selectedMonth, fetchAttendanceForDate, attendanceRecords]);
+    }, [selectedYear, selectedMonth, fetchAttendanceForDate, fetchedMonths]);
 
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     React.useEffect(() => {
@@ -58,15 +66,16 @@ const AttendanceReport = () => {
             let totalPresent = 0;
             let totalAbsent = 0;
             let totalHalf = 0;
+            const recorders = new Set(); // Initialize recorders here
 
             days.forEach(day => {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`;
+                const records = attendanceRecords[dateKey] || [];
+                const record = records.find(r => r.empId === emp.id);
+
                 if (day.isSunday) {
                     empData.push("Sunday");
                 } else {
-                    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`;
-                    const records = attendanceRecords[dateKey] || [];
-                    const record = records.find(r => r.empId === emp.id);
-                    
                     let status = record ? record.status : "-";
                     // Map status to abbreviations used in report
                     let abbr = "-";
@@ -81,11 +90,16 @@ const AttendanceReport = () => {
 
                     empData.push(abbr);
                 }
+
+                if (record && record.recordedBy) {
+                    recorders.add(record.recordedBy);
+                }
             });
 
             data[emp.id] = {
                 daily: empData,
-                stats: { present: totalPresent, absent: totalAbsent, half: totalHalf }
+                stats: { present: totalPresent, absent: totalAbsent, half: totalHalf },
+                recorders: Array.from(recorders).filter(Boolean).join(", ")
             };
         });
         return data;
@@ -147,6 +161,7 @@ const AttendanceReport = () => {
                 <th style="background-color: #dcfce7; border: 1px solid #000; font-weight: bold; width: 60px; text-align: center; color: #166534;">PRESENT</th>
                 <th style="background-color: #fee2e2; border: 1px solid #000; font-weight: bold; width: 60px; text-align: center; color: #991b1b;">ABSENT</th>
                 <th style="background-color: #ffedd5; border: 1px solid #000; font-weight: bold; width: 60px; text-align: center; color: #9a3412;">HALF</th>
+                <th style="background-color: #f1f5f9; border: 1px solid #000; font-weight: bold; width: 120px; text-align: center; color: #475569;">RECORDED BY</th>
             </tr>
             ${employees.map((emp, index) => {
             const empData = data[emp.id];
@@ -179,6 +194,7 @@ const AttendanceReport = () => {
                         <td style="border: 1px solid #000; background-color: #f0fdf4; font-weight: bold; text-align: center;">${empData.stats.present}</td>
                         <td style="border: 1px solid #000; background-color: #fef2f2; font-weight: bold; text-align: center;">${empData.stats.absent}</td>
                         <td style="border: 1px solid #000; background-color: #fff7ed; font-weight: bold; text-align: center;">${empData.stats.half}</td>
+                        <td style="border: 1px solid #000; background-color: #f8fafc; text-align: center; font-size: 10px;">${empData.recorders || "-"}</td>
                     </tr>
                 `;
         }).join('')}
@@ -226,7 +242,7 @@ const AttendanceReport = () => {
                 <table>
                     <thead>
                         <tr>
-                            <th colspan="36" style="height: 60px; font-size: 28px; font-weight: bold; text-align: center; vertical-align: middle; border: none; background-color: #ffffff; color: #006A4E;">
+                            <th colspan="38" style="height: 60px; font-size: 28px; font-weight: bold; text-align: center; vertical-align: middle; border: none; background-color: #ffffff; color: #006A4E;">
                                 ${exportTitle}
                             </th>
                         </tr>
@@ -404,7 +420,7 @@ const AttendanceReport = () => {
                                             return (
                                                 <td key={idx} className={statusClass}>
                                                     <div className="status-indicator">
-                                                        {status === 'Sunday' ? 'S' : status}
+                                                        {status === 'Sunday' ? 'S' : (status === '-' ? ' ' : status)}
                                                     </div>
                                                 </td>
                                             );

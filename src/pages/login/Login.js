@@ -46,17 +46,14 @@ const Login = () => {
     };
 
     return (
-        <div className="login-page" style={{
-            backgroundImage: `linear-gradient(180deg, rgba(0, 31, 23, 0.4) 0%, rgba(0, 15, 10, 0.75) 100%), url(${bgImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-        }}>
+        <div className="login-page">
             <div className="login-container">
                 <div className="login-card">
                     <div className="login-header">
                         <div className="logo-section">
                             <img src={logo} alt="AVSECO Logo" className="login-logo" />
                         </div>
+                        <div className="header-divider"></div>
                         <h1>Management Portal</h1>
                     </div>
 
@@ -71,13 +68,13 @@ const Login = () => {
                         </div>}
 
                         <div className="form-group">
-                            <label htmlFor="username">Username</label>
+                            <label htmlFor="username">Email Address</label>
                             <div className="input-wrapper">
-                                <span className="material-symbols-outlined input-icon">person</span>
+                                <span className="material-symbols-outlined input-icon">mail</span>
                                 <input
                                     type="text"
                                     id="username"
-                                    placeholder="Enter your username"
+                                    placeholder="Enter your email"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     required

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useAppContext } from '../../context/AppContext.js';
+import { useAuth } from '../../context/AuthContext.js';
 import { formatDate } from '../../utils/dateUtils.js';
 import './AttendanceLog.css';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -44,6 +45,7 @@ const AttendanceLog = () => {
     initAttendanceForDate,
     updateAttendanceRecord
   } = useAppContext();
+  const { user, isAdmin } = useAuth();
 
   // ── Date State ──────────────────────────────────────────────────────────────
   const [currentDate, setCurrentDate] = useState(today());
@@ -204,7 +206,10 @@ const AttendanceLog = () => {
   const handleSaveAttendance = async () => {
     setSaveLoading(true);
     try {
-      const dayRecords = attendanceRecords[dateKey] || [];
+      const dayRecords = (attendanceRecords[dateKey] || []).map(r => ({
+        ...r,
+        recordedBy: r.recordedBy || user?.name || "System"
+      }));
       await saveAttendanceForDate(dateKey, dayRecords);
       showToast("Attendance saved successfully!", "success");
     } catch (error) {
@@ -348,7 +353,6 @@ const AttendanceLog = () => {
 
         <div className="att-filter-spacer" />
 
-        {/* Bulk: Mark All Present */}
         <button className="att-btn att-btn-success-outline" onClick={handleMarkAllPresent}>
           <span className="material-symbols-outlined">done_all</span>
           Mark All Present

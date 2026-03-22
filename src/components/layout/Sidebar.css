@@ -99,36 +99,30 @@ body {
 /* Sidebar Header - Logo Centered */
 .sidebar-header {
   padding: 1.25rem 1rem;
-  /* Reduced padding */
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Centered horizontally */
   cursor: pointer;
   transition: var(--transition);
   height: 70px;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.03); /* Subtle glass base */
 }
 
 .sidebar-header:hover {
-  background: var(--hover-bg);
+  background: rgba(255, 255, 255, 0.08); /* More active glass on hover */
 }
 
 .logo-full {
   width: auto;
-  max-width: 130px;
-  /* Slightly smaller */
-  max-height: 42px;
-  /* Constrain height */
+  max-width: 100px;
+  max-height: 30px;
   height: auto;
   object-fit: contain;
-  transition: transform 0.2s;
-  filter: brightness(0) invert(1);
-  /* Makes logo white on dark green */
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0,0,0,0.1));
   display: block;
   margin: 0 auto;
-  /* Ensures centering */
 }
 
 .sidebar-header:hover .logo-full {

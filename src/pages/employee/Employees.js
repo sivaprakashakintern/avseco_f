@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useAppContext } from '../../context/AppContext.js';
+import { useAuth } from '../../context/AuthContext.js';
 import "./Employees.css";
 import "../../dashboard/Dashboard.css"; // Reuse dashboard header styles
 
@@ -19,6 +20,8 @@ const Employees = () => {
     deleteEmployee: ctxDeleteEmployee,
     departments
   } = useAppContext();
+
+  const { isAdmin } = useAuth();
 
   const [viewMode, setViewMode] = useState(window.innerWidth <= 768 ? "list" : "grid");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -434,10 +437,12 @@ const Employees = () => {
             <h1 className="page-title">Employees</h1>
           </div>
           <div className="header-actions">
-            <button className="add-employee-btn" onClick={handleAddEmployee}>
-              <span className="material-symbols-outlined">person_add</span>
-              Add Employee
-            </button>
+            {isAdmin && (
+              <button className="add-employee-btn" onClick={handleAddEmployee}>
+                <span className="material-symbols-outlined">person_add</span>
+                Add Employee
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -591,11 +596,11 @@ const Employees = () => {
             <table className="employee-table">
               <thead>
                 <tr>
-                  <th className="sticky-col-no">S.No</th>
-                  <th className="sticky-col">Employee</th>
-                  <th className="col-dept">Department</th>
-                  <th className="col-contact">Contact</th>
-                  <th className="col-date">Join Date</th>
+                  <th className="sticky-col-no" style={{ textAlign: 'center' }}>S.No</th>
+                  <th className="sticky-col" style={{ textAlign: 'center' }}>Employee</th>
+                  <th className="col-dept" style={{ textAlign: 'center' }}>Department</th>
+                  <th className="col-contact" style={{ textAlign: 'center' }}>Contact</th>
+                  <th className="col-date" style={{ textAlign: 'center' }}>Join Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -605,12 +610,12 @@ const Employees = () => {
                       key={employee.id}
                       className="employee-row clickable-row"
                       onClick={() => handleViewEmployee(employee)}
-                      style={{ cursor: "pointer" }}
+                      style={{ cursor: "pointer", textAlign: 'center' }}
                       title="Click to view full employee details"
                     >
-                      <td className="sticky-col-no">{startIndex + index + 1}</td>
-                      <td className="sticky-col">
-                        <div className="employee-info">
+                      <td className="sticky-col-no" style={{ textAlign: 'center' }}>{startIndex + index + 1}</td>
+                      <td className="sticky-col" style={{ textAlign: 'center' }}>
+                        <div className="employee-info" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                           <div className="employee-avatar">
                             {employee.avatar ? (
                               <div className="avatar-image" style={{ backgroundImage: `url("${employee.avatar}")` }}></div>
@@ -618,19 +623,24 @@ const Employees = () => {
                               <div className="avatar-initials">{getInitials(employee.name)}</div>
                             )}
                           </div>
-                          <div className="employee-details-text">
-                            <p className="employee-name" title={employee.name}>{employee.name}</p>
-                            <p className="employee-email" title={employee.email}>{employee.email}</p>
+                          <div className="employee-details-text" style={{ textAlign: 'left' }}>
+                            <div className="name-email-row">
+                              <p className="employee-name" title={employee.name}>{employee.name}</p>
+                              <span className="email-separator">|</span>
+                              <p className="employee-email" title={employee.email}>{employee.email}</p>
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td className="col-dept">
-                        <span className="department-badge" title={employee.department}>{employee.department}</span>
+                      <td className="col-dept" style={{ textAlign: 'center' }}>
+                        <span className="department-badge pill-badge" title={employee.department} style={{ minWidth: '120px', display: 'inline-block', borderRadius: '20px' }}>
+                          {employee.department}
+                        </span>
                       </td>
-                      <td className="col-contact">
+                      <td className="col-contact" style={{ textAlign: 'center' }}>
                         <p className="employee-phone">{employee.phone}</p>
                       </td>
-                      <td className="col-date">{formatDate(employee.joinDate)}</td>
+                      <td className="col-date" style={{ textAlign: 'center' }}>{formatDate(employee.joinDate)}</td>
                     </tr>
                   ))
                 ) : (
@@ -640,7 +650,7 @@ const Employees = () => {
                         <span className="material-symbols-outlined empty-icon">group_off</span>
                         <h4>No employees found</h4>
                         <p>Try adjusting your filters or add a new employee</p>
-                        <button className="add-employee-btn" onClick={handleAddEmployee}>Add Employee</button>
+                        {isAdmin && <button className="add-employee-btn" onClick={handleAddEmployee}>Add Employee</button>}
                       </div>
                     </td>
                   </tr>
@@ -686,7 +696,7 @@ const Employees = () => {
               <div className="mobile-emp-empty">
                 <span className="material-symbols-outlined">group_off</span>
                 <p>No employees found</p>
-                <button className="add-employee-btn" onClick={handleAddEmployee}>Add Employee</button>
+                {isAdmin && <button className="add-employee-btn" onClick={handleAddEmployee}>Add Employee</button>}
               </div>
             )}
           </div>
@@ -740,7 +750,15 @@ const Employees = () => {
                     >
                       View
                     </button>
-
+                    {isAdmin && (
+                      <button
+                        className="card-edit-btn"
+                        onClick={(e) => { e.stopPropagation(); handleEditEmployee(employee) }}
+                        style={{ marginLeft: '12px', padding: '6px 14px', borderRadius: '10px', background: '#006A4E', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '12px' }}
+                      >
+                        Edit
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -750,9 +768,11 @@ const Employees = () => {
               <span className="material-symbols-outlined empty-icon">group_off</span>
               <h4>No employees found</h4>
               <p>Try adjusting your filters or add a new employee</p>
-              <button className="add-employee-btn" onClick={handleAddEmployee}>
-                Add Employee
-              </button>
+              {isAdmin && (
+                <button className="add-employee-btn" onClick={handleAddEmployee}>
+                  Add Employee
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -1220,32 +1240,36 @@ const Employees = () => {
                 </div>
               </div>
               <div className="modal-footer">
-                <button
-                  className="modal-delete"
-                  onClick={() => {
-                    setShowViewModal(false);
-                    handleDeleteEmployee(selectedEmployee);
-                  }}
-                >
-                  <span className="material-symbols-outlined">delete</span>
-                  Delete Employee
-                </button>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                {isAdmin && (
+                  <button
+                    className="modal-delete"
+                    onClick={() => {
+                      setShowViewModal(false);
+                      handleDeleteEmployee(selectedEmployee);
+                    }}
+                  >
+                    <span className="material-symbols-outlined">delete</span>
+                    Delete Employee
+                  </button>
+                )}
+                <div style={{ display: 'flex', gap: '12px', marginLeft: 'auto' }}>
                   <button
                     className="modal-cancel"
                     onClick={() => setShowViewModal(false)}
                   >
                     Close
                   </button>
-                  <button
-                    className="modal-confirm"
-                    onClick={() => {
-                      setShowViewModal(false);
-                      handleEditEmployee(selectedEmployee);
-                    }}
-                  >
-                    Edit Employee
-                  </button>
+                  {isAdmin && (
+                    <button
+                      className="modal-confirm"
+                      onClick={() => {
+                        setShowViewModal(false);
+                        handleEditEmployee(selectedEmployee);
+                      }}
+                    >
+                      Edit Employee
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext.js';
 import axios from '../utils/axiosConfig.js';
 import './ManageAccess.css';
 
 const ManageAccess = () => {
+  const { user } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [availableModules, setAvailableModules] = useState([]);
@@ -11,6 +13,7 @@ const ManageAccess = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [activeTab, setActiveTab] = useState('permissions'); // 'permissions' or 'credentials'
+  const [initialModules, setInitialModules] = useState([]); // Track original state for 'changes' button color logic
 
   // Credential editing state
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -37,6 +40,7 @@ const ManageAccess = () => {
 
   const handleSelectEmployee = (employee) => {
     setSelectedEmployee({ ...employee });
+    setInitialModules([...(employee.modules || [])]);
     // Auto-fetch email as username
     setCredentials({ 
       username: employee.username || employee.email || '', 
@@ -101,6 +105,7 @@ const ManageAccess = () => {
         emp._id === selectedEmployee._id ? selectedEmployee : emp
       ));
       
+      setInitialModules([...selectedEmployee.modules]); // Update initial state after save
       setMessage({ type: 'success', text: 'Permissions saved successfully!' });
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to save permissions' });
@@ -157,6 +162,10 @@ const ManageAccess = () => {
     };
     return icons[module] || 'extension';
   };
+  
+  // Calculate if there are pending changes for the 'Commit Changes' button logic
+  const hasPendingChanges = selectedEmployee && 
+    JSON.stringify([...selectedEmployee.modules].sort()) !== JSON.stringify([...initialModules].sort());
 
   if (loading) return (
     <div className="admin-loading">
@@ -170,6 +179,10 @@ const ManageAccess = () => {
       <header className="admin-header">
         <div className="admin-header-left">
           <h1>Security & Access</h1>
+          <p className="admin-status-text">
+            <span className="live-stat-dot"></span>
+            <strong>{user?.name ? 1 : 0} Members</strong> currently active
+          </p>
         </div>
       </header>
 
@@ -195,6 +208,7 @@ const ManageAccess = () => {
                 >
                   <div className="emp-avatar">
                    {emp.avatar ? <img src={emp.avatar} alt="" /> : <span>{emp.name.charAt(0)}</span>}
+                   {user?._id === emp._id && <div className="online-indicator" title="Online now"></div>}
                   </div>
                   <div className="emp-info">
                     <span className="emp-name">{emp.name}</span>
@@ -270,11 +284,14 @@ const ManageAccess = () => {
                   <div className="tab-footer">
                     <button 
                       onClick={handleSavePermissions}
-                      disabled={saving}
-                      className="save-btn"
+                      disabled={saving || !hasPendingChanges}
+                      className={`save-btn ${hasPendingChanges ? 'has-changes' : 'no-changes'}`}
                     >
                       {saving ? 'Saving...' : 'Commit Changes'}
                     </button>
+                    {!hasPendingChanges && selectedEmployee && (
+                       <span className="no-changes-hint">No pending changes</span>
+                    )}
                   </div>
                 </div>
               ) : (

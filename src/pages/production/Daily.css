@@ -117,32 +117,32 @@
 .clear-all-btn-premium {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: white;
-  border: 1.5px solid #ff4d4d;
-  color: #ff4d4d;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px;
+  gap: 6px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(255, 77, 77, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
 }
 
 .clear-all-btn-premium:hover {
-  background: #ff4d4d;
-  color: white;
-  box-shadow: 0 4px 12px rgba(255, 77, 77, 0.25);
-  transform: translateY(-1px);
+  background: #fecaca;
+  color: #991b1b;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.15);
+  transform: translateY(-2px);
 }
 
 .clear-all-btn-premium:active {
-  transform: translateY(0);
+  transform: scale(0.96);
 }
 
 .clear-all-btn-premium .material-symbols-outlined {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .header-right {

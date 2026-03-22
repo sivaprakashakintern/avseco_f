@@ -27,6 +27,7 @@ export const AppProvider = ({ children }) => {
     });
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [hasFetched, setHasFetched] = useState(false);
     const { user, refreshUser, hasAccess } = useAuth();
     
     // ✅ Helper to avoid UTC timezone shift (IST+5:30 bug)
@@ -40,24 +41,34 @@ export const AppProvider = ({ children }) => {
     const todayStr = toLocalDateKey(new Date());
 
     // ── Fetch Initial Data ──────────────────────────────────────────────────────
-    const fetchData = useCallback(async (isInitial = false) => {
+    const fetchData = useCallback(async (isInitial = false, isBackground = false) => {
         try {
-            if (isInitial) setLoading(true);
+            if (isInitial) {
+                setLoading(true);
+            } else if (!isBackground) {
+                setIsUpdating(true);
+            }
             
             // Refresh permissions from backend
             if (user) await refreshUser();
 
             // Build request map
             const requestMap = [];
-            if (hasAccess('employees')) requestMap.push({ key: 'employees', call: employeeApi.getAll() });
+            if (hasAccess('employees') || hasAccess('production') || hasAccess('attendance')) {
+                requestMap.push({ key: 'employees', call: employeeApi.getAll() });
+            }
             if (hasAccess('stock')) requestMap.push({ key: 'expenses', call: expenseApi.getAll() });
-            if (hasAccess('clients')) requestMap.push({ key: 'clients', call: clientApi.getAll() });
+            if (hasAccess('clients') || hasAccess('sales')) {
+                requestMap.push({ key: 'clients', call: clientApi.getAll() });
+            }
             if (hasAccess('production')) {
                 requestMap.push({ key: 'production', call: productionApi.getAll() });
                 requestMap.push({ key: 'productionTargets', call: productionTargetApi.getAll() });
             }
             if (hasAccess('attendance')) requestMap.push({ key: 'attendance', call: attendanceApi.getByDate(todayStr) });
-            if (hasAccess('products')) requestMap.push({ key: 'products', call: productsApi.getAll() });
+            if (hasAccess('products') || hasAccess('production') || hasAccess('sales')) {
+                requestMap.push({ key: 'products', call: productsApi.getAll() });
+            }
             if (hasAccess('sales')) requestMap.push({ key: 'sales', call: salesApi.getAll() });
 
             const results = await Promise.allSettled(requestMap.map(r => r.call));
@@ -101,20 +112,33 @@ export const AppProvider = ({ children }) => {
         } catch (error) {
             console.error("Error fetching app data:", error);
         } finally {
-            if (isInitial) setLoading(false);
+            if (isInitial) {
+                setLoading(false);
+                setHasFetched(true);
+            } else if (!isBackground) {
+                setIsUpdating(false);
+            }
         }
     }, [todayStr, user, refreshUser, hasAccess]);
 
     useEffect(() => {
         if (!user) return;
         
-        // Initial fetch ONLY if data is missing
-        if (employees.length === 0 && products.length === 0) {
+        if (user.isFirstLogin) {
+            // Even if first login, we start the sync so sidebar/permissions update
+            if (!hasFetched) {
+                fetchData(true);
+            }
+        }
+        
+        
+        // Initial fetch ONLY if not done yet
+        if (!hasFetched) {
             fetchData(true);
         }
 
-        // Periodic background sync (5 mins)
-        const interval = setInterval(() => fetchData(false), 300000);
+        // Periodic background sync (5 mins) - Always run for everyone
+        const interval = setInterval(() => fetchData(false, true), 300000);
         return () => clearInterval(interval);
     }, [user, fetchData, employees.length, products.length]);
 
@@ -618,7 +642,12 @@ export const AppProvider = ({ children }) => {
             return last7Days.includes(itemDateStr);
         });
         const weekTotal = weekHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        
+        const weekBySize = {};
+        availableSizes.forEach(size => {
+            const sKey = size.toLowerCase().trim().replace(" ", "-");
+            weekBySize[size] = weekHistory.filter(item => (item.size || "").toLowerCase().trim().replace(" ", "-") === sKey).reduce((sum, item) => sum + (item.quantity || 0), 0);
+        });
+
         const prevWeekHistory = history.filter(item => {
             const itemDateStr = item.date || "";
             if (itemDateStr.includes("-")) {
@@ -630,7 +659,7 @@ export const AppProvider = ({ children }) => {
         });
         const prevWeekTotal = prevWeekHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
-        const monthTotal = (history.filter(item => {
+        const monthHistory = history.filter(item => {
             const itemDateStr = item.date || "";
             if (!itemDateStr) return false;
             let m, y;
@@ -644,7 +673,13 @@ export const AppProvider = ({ children }) => {
                 return m === currentMonthIdx && y === currentYear;
             }
             return false;
-        })).reduce((sum, item) => sum + (item.quantity || 0), 0);
+        });
+        const monthTotal = monthHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const monthBySize = {};
+        availableSizes.forEach(size => {
+            const sKey = size.toLowerCase().trim().replace(" ", "-");
+            monthBySize[size] = monthHistory.filter(item => (item.size || "").toLowerCase().trim().replace(" ", "-") === sKey).reduce((sum, item) => sum + (item.quantity || 0), 0);
+        });
         
         const prevMonthIdx = currentMonthIdx === 1 ? 12 : currentMonthIdx - 1;
         const prevMonthYear = currentMonthIdx === 1 ? currentYear - 1 : currentYear;
@@ -668,14 +703,23 @@ export const AppProvider = ({ children }) => {
         const weekTrend = prevWeekTotal === 0 ? (weekTotal > 0 ? 100 : 0) : Math.round(((weekTotal - prevWeekTotal) / prevWeekTotal) * 100);
         const monthTrend = prevMonthTotal === 0 ? (monthTotal > 0 ? 100 : 0) : Math.round(((monthTotal - prevMonthTotal) / prevMonthTotal) * 100);
 
+        const stockBySize = {};
+        availableSizes.forEach(size => {
+            const sKey = size.toLowerCase().trim().replace(" ", "-");
+            stockBySize[size] = history.filter(item => (item.size || "").toLowerCase().trim().replace(" ", "-") === sKey).reduce((sum, item) => sum + (item.quantity || 0), 0);
+        });
+
         return {
             today: todayTotal,
             week: weekTotal,
             weekTrend: weekTrend,
             month: monthTotal,
             monthTrend: monthTrend,
-            stock: Object.values(availableSizes).reduce((sum, size) => sum + history.filter(item => item.size === size).reduce((sum, item) => sum + (item.quantity || 0), 0), 0),
+            stock: Object.values(stockBySize).reduce((sum, val) => sum + val, 0),
             todayBySize,
+            weekBySize,
+            monthBySize,
+            stockBySize,
             availableSizes
         };
     }, [productionHistory, toFormattedDate]);
@@ -751,6 +795,7 @@ export const AppProvider = ({ children }) => {
             setLoading,
             fetchStatus,
             isUpdating,
+            setIsUpdating,
             salesHistory, 
             addSale,
             updateSale,

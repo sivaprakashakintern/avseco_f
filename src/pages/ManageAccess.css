@@ -52,19 +52,28 @@
 
 .admin-header h1 {
   margin: 0;
-  font-size: 30px;
+  font-size: 32px;
   font-weight: 850;
   color: white;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
-.admin-header p {
-  margin: 8px 0 0;
-  font-size: 16px;
+.admin-status-text {
+  margin: 10px 0 0;
+  font-size: 14px;
   font-weight: 600;
-  color: #166534;
-  opacity: 0.85;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-stat-dot {
+  width: 10px;
+  height: 10px;
+  background: #4ade80;
+  border-radius: 50%;
 }
 
 .admin-header-right {
@@ -90,12 +99,13 @@
   transform: rotate(30deg);
 }
 
-/* Layout */
+/* Layout - Fits perfectly on single page */
 .admin-layout {
   display: grid;
-  grid-template-columns: 350px 1fr;
-  gap: 30px;
-  height: 700px;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+  height: calc(100vh - 200px);
+  min-height: 550px;
 }
 
 /* Employee Sidebar */
@@ -195,6 +205,19 @@
   height: 100%;
   border-radius: 12px;
   object-fit: cover;
+}
+
+/* Online Status Indicator */
+.online-indicator {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  background-color: #22c55e; /* Bright Green */
+  border: 3px solid white;
+  border-radius: 50%;
+  z-index: 10;
 }
 
 .emp-info {
@@ -343,40 +366,62 @@
 
 .tab-actions {
   display: flex;
-  gap: 15px;
+  gap: 12px;
 }
 
 .bulk-btn {
-  font-size: 0.85rem;
-  font-weight: 600;
-  background: none;
-  border: none;
+  font-size: 0.75rem;
+  font-weight: 750;
+  background: white;
+  border: 1.5px solid #e2e8f0;
   cursor: pointer;
-  text-decoration: underline;
+  padding: 6px 14px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
 }
 
-.bulk-btn.select { color: var(--admin-blue-main); }
-.bulk-btn.clear { color: var(--admin-error); }
+.bulk-btn:active { transform: scale(0.95); }
 
-/* Modules Grid */
+.bulk-btn.select { 
+  color: var(--avs-green); 
+}
+
+.bulk-btn.select:hover { 
+  background: #f0fdf4; 
+  border-color: var(--avs-green);
+}
+
+.bulk-btn.clear { 
+  color: #ef4444; 
+}
+
+.bulk-btn.clear:hover { 
+  background: #fef2f2; 
+  border-color: #ef4444;
+}
+
+/* Modules Grid - Denser, cleaner grid */
 .modules-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 15px;
   flex: 1;
 }
 
 .module-card {
-  padding: 30px 24px;
-  border-radius: 22px;
+  padding: 16px 12px;
+  border-radius: 18px;
   border: 1px solid #f1f5f9;
   background: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
+  gap: 8px;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
   position: relative;
   overflow: hidden;
 }
@@ -411,29 +456,22 @@
 }
 
 .module-icon {
-  width: 64px;
-  height: 64px;
+  width: 44px;
+  height: 44px;
   background: #f8fafc;
-  border-radius: 18px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.02);
 }
 
 .module-card.active .module-icon {
   background: var(--avs-green);
-  transform: scale(1.05) rotate(2deg);
-  box-shadow: 0 10px 20px rgba(0, 106, 78, 0.3);
-}
-
-.module-card.active .module-icon .material-symbols-outlined {
-  color: white;
+  transform: scale(1.05);
 }
 
 .module-icon .material-symbols-outlined {
-  font-size: 32px;
+  font-size: 24px;
   color: #64748b;
   transition: all 0.3s;
 }
@@ -449,8 +487,8 @@
 .module-name {
   font-weight: 700;
   text-transform: capitalize;
-  color: #334155;
-  font-size: 1rem;
+  color: #475569;
+  font-size: 0.82rem;
   letter-spacing: -0.01em;
 }
 
@@ -459,25 +497,23 @@
 }
 
 .check-box {
-  width: 24px;
-  height: 24px;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 5px;
-  transition: all 0.3s;
+  margin-top: 2px;
 }
 
 .module-card.active .check-box {
   background: #006A4E;
   border-color: #006A4E;
-  transform: scale(1.1);
 }
 
 .check-box .material-symbols-outlined {
-  font-size: 16px;
+  font-size: 13px;
   color: white;
   font-weight: bold;
 }
@@ -557,44 +593,54 @@
   line-height: 1.4;
 }
 
-/* Footer */
 .tab-footer {
-  margin-top: 30px;
+  margin-top: 15px;
   border-top: 1px solid #f1f5f9;
-  padding-top: 25px;
+  padding-top: 15px;
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 15px;
 }
 
 .save-btn {
-  background: var(--avs-primary-gradient);
-  color: white;
-  padding: 16px 48px;
-  border-radius: 16px;
+  padding: 12px 36px;
+  border-radius: 12px;
   border: none;
   font-weight: 800;
-  font-size: 1.05rem;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 8px 25px rgba(0, 106, 78, 0.3);
+  transition: all 0.3s;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.save-btn:hover:not(:disabled) {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 15px 35px rgba(0, 106, 78, 0.4);
+/* SMART BUTTON COLORS: Reverts to neutral when saved / no changes */
+.save-btn.has-changes {
+  background: var(--avs-primary-gradient);
+  color: white;
+  box-shadow: 0 8px 15px rgba(0, 106, 78, 0.25);
+}
+.save-btn.has-changes:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(0, 106, 78, 0.3);
 }
 
-.save-btn:active:not(:disabled) {
-  transform: translateY(-1px);
-}
-
-.save-btn:disabled {
-  background: #cbd5e1;
-  cursor: not-allowed;
-  transform: none;
+.save-btn.no-changes {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: default;
   box-shadow: none;
+}
+
+.no-changes-hint {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  font-style: italic;
 }
 
 /* Empty State */

@@ -510,33 +510,34 @@ const ExpenseReport = () => {
                     <table className="stock-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Category</th>
-                                <th>Description</th>
-                                <th>Payment Mode</th>
-                                <th style={{ textAlign: "right" }}>Amount (₹)</th>
+                                <th style={{ textAlign: 'center' }}>Date</th>
+                                <th style={{ textAlign: 'center' }}>Category</th>
+                                <th style={{ textAlign: 'center' }}>Description</th>
+                                <th style={{ textAlign: 'center' }}>Payment Mode</th>
+                                <th style={{ textAlign: 'center' }}>Amount (₹)</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredExpenses.length > 0 ? (
                                 filteredExpenses.map((ex) => (
                                     <tr key={ex.id}>
-                                        <td style={{ fontWeight: 500 }}>{formatDate(ex.date)}</td>
-                                        <td>
-                                            <span className="status-badge" style={catStyle(ex.category)}>
+                                        <td style={{ fontWeight: 500, textAlign: 'center' }}>{formatDate(ex.date)}</td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <span className="status-badge" style={{ ...catStyle(ex.category), display: 'inline-block', minWidth: '140px' }}>
                                                 {ex.category}
                                             </span>
                                         </td>
-                                        <td style={{ color: "#64748b" }}>{ex.description}</td>
-                                        <td>
+                                        <td style={{ color: "#64748b", textAlign: 'center' }}>{ex.description}</td>
+                                        <td style={{ textAlign: 'center' }}>
                                             <span style={{
-                                                padding: "3px 8px", borderRadius: 4, fontSize: 12,
-                                                fontWeight: 600, backgroundColor: "#f1f5f9", color: "#475569"
+                                                padding: "4px 12px", borderRadius: "20px", fontSize: 12,
+                                                fontWeight: 700, backgroundColor: "#f1f5f9", color: "#475569",
+                                                display: 'inline-block'
                                             }}>
                                                 {ex.paymentMode}
                                             </span>
                                         </td>
-                                        <td style={{ textAlign: "right", fontWeight: 800, color: "#006A4E" }}>
+                                        <td style={{ textAlign: 'center', fontWeight: 800, color: "#006A4E" }}>
                                             ₹{Number(ex.amount).toLocaleString()}
                                         </td>
                                     </tr>
@@ -548,12 +549,12 @@ const ExpenseReport = () => {
                             )}
                         </tbody>
                         <tfoot>
-                            <tr>
-                                <td colSpan="4" style={{ textAlign: "right", fontWeight: 700, padding: "14px 20px" }}>Total:</td>
-                                <td style={{ textAlign: "right", fontWeight: 800, color: "#006A4E", padding: "14px 20px" }}>
-                                    ₹{totalExpense.toLocaleString()}
-                                </td>
-                            </tr>
+                             <tr>
+                                 <td colSpan="4" style={{ textAlign: "right", fontWeight: 700, padding: "14px 20px" }}>Total:</td>
+                                 <td style={{ textAlign: 'center', fontWeight: 800, color: "#006A4E", padding: "14px 20px" }}>
+                                     ₹{totalExpense.toLocaleString()}
+                                 </td>
+                             </tr>
                         </tfoot>
                     </table>
                 </div>

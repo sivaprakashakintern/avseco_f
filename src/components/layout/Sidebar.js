@@ -121,12 +121,28 @@ const Sidebar = () => {
         { label: "Attendance Report", path: "/attendance-report" }
       ]
     },
+    {
+      icon: "analytics",
+      label: "Reports",
+      path: "/reports",
+      module: "reports",
+      children: [
+        { label: "Stock Report", path: "/reports/stock" },
+        { label: "Production Report", path: "/reports/production" },
+        { label: "Sales Report", path: "/reports/sales" },
+        { label: "Employee Report", path: "/reports/employees" },
+        { label: "Financial Report", path: "/reports/financial" }
+      ]
+    },
   ];
 
-  // Filter items based on access
-  const filteredNavItems = navItems.filter(item => hasAccess(item.module));
+  // Filter items based on access and administrative exposure
+  const filteredNavItems = navItems.filter(item => {
+    // Basic module access check - Primary gatekeeper
+    return hasAccess(item.module);
+  });
 
-  // Add Admin items if admin
+  // Add Admin-specific Manage Access if admin
   if (isAdmin) {
     filteredNavItems.push({
       icon: "admin_panel_settings",

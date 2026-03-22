@@ -8,7 +8,7 @@ import "./Topbar.css";
 
 const Topbar = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useContext(AppContext);
-  const { logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
   const { fetchData } = useAppContext();
   const [open, setOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -16,11 +16,18 @@ const Topbar = () => {
   const dropdownRef = useRef(null);
   const profileRef = useRef(null);
 
+  const getInitials = (name) => {
+    if (!name) return "??";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
+
   const user = {
-    name: "Arun Kumar",
-    role: "Plant Manager",
-    initials: "AK",
-    avatar: avatar, // Set to image URL or null
+    name: authUser?.name || "User",
+    role: authUser?.role || "Staff",
+    initials: getInitials(authUser?.name),
+    avatar: authUser?.profileImage || authUser?.avatar || null,
   };
 
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);

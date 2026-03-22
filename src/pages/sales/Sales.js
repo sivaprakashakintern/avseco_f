@@ -82,6 +82,8 @@ const Sales = () => {
     const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
     const [deliveryEmployee, setDeliveryEmployee] = useState("");
     const [isEmployeeDropdownOpen, setIsEmployeeDropdownOpen] = useState(false);
+    const [soldBy, setSoldBy] = useState("");
+    const [isSoldByDropdownOpen, setIsSoldByDropdownOpen] = useState(false);
     const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
     const [paidStatus, setPaidStatus] = useState("Paid");
     const [isPaidStatusDropdownOpen, setIsPaidStatusDropdownOpen] = useState(false);
@@ -103,6 +105,17 @@ const Sales = () => {
         return (employees || []).filter(emp => 
             emp.department?.toLowerCase().includes("delivery") || 
             emp.department?.toLowerCase().includes("driver")
+        );
+    }, [employees]);
+
+    // Filtered employees for sales
+    const salesEmployees = React.useMemo(() => {
+        return (employees || []).filter(emp => 
+            emp.department?.toLowerCase().includes("sales") || 
+            emp.department?.toLowerCase().includes("admin") ||
+            emp.department?.toLowerCase().includes("office") ||
+            emp.department?.toLowerCase().includes("ceo") ||
+            emp.department?.toLowerCase().includes("hr")
         );
     }, [employees]);
 
@@ -254,6 +267,7 @@ const Sales = () => {
             amountPaid: Number(amountPaid || 0),
             deliveryMode: deliveryMode,
             deliveredBy: deliveryEmployee,
+            soldBy: soldBy,
             saleItems: itemsToLog.map(item => ({
                 productName: item.product,
                 baseName: item.baseName || item.product,
@@ -294,6 +308,7 @@ const Sales = () => {
         setCustomerGstin("");
         setCustomerAddress("");
         setDeliveryEmployee("");
+        setSoldBy("");
         setDeliveryMode("Door Delivery");
         setPaymentMode("Cash");
         setPaidStatus("Paid");
@@ -310,6 +325,7 @@ const Sales = () => {
         setCustomerGstin(transaction.customerGstin || "");
         setCustomerAddress(transaction.customerAddress || "");
         setDeliveryEmployee(transaction.deliveredBy || "");
+        setSoldBy(transaction.soldBy || "");
         setDeliveryMode(transaction.deliveryMode || "Door Delivery");
         setPaymentMode(transaction.paymentStatus || "Cash");
         setPaidStatus(transaction.paidStatus || (transaction.paymentStatus === 'Unpaid' ? 'Unpaid' : 'Paid'));
@@ -354,6 +370,7 @@ const Sales = () => {
         setCustomerGstin("");
         setCustomerAddress("");
         setDeliveryEmployee("");
+        setSoldBy("");
         setDeliveryMode("Door Delivery");
         setPaymentMode("Cash");
         setPaidStatus("Paid");
@@ -406,6 +423,7 @@ const Sales = () => {
                 rate: item.rate || (item.qty ? (item.amount / item.qty).toFixed(2) : 0)
             })),
             deliveredBy: deliveryEmployee,
+            soldBy: soldBy,
             paymentMode: paymentMode,
             paidStatus: paidStatus,
             deliveryMode: deliveryMode
@@ -450,7 +468,8 @@ const Sales = () => {
             totalAmount: transaction.totalAmount || transaction.amount,
             paymentMode: transaction.paymentStatus,
             paidStatus: transaction.paidStatus || (transaction.paymentStatus === 'Unpaid' ? 'Unpaid' : 'Paid'),
-            deliveredBy: transaction.deliveredBy
+            deliveredBy: transaction.deliveredBy,
+            soldBy: transaction.soldBy
         };
 
         if (returnOnly) return billData;
@@ -666,6 +685,9 @@ const Sales = () => {
             }
             if (!event.target.closest('.delivery-mode-dropdown')) {
                 setIsDeliveryModeDropdownOpen(false);
+            }
+            if (!event.target.closest('.sold-by-dropdown')) {
+                setIsSoldByDropdownOpen(false);
             }
         };
 
@@ -1141,6 +1163,63 @@ const Sales = () => {
                             </div>
 
                             <div className="quick-entry-item">
+                                <span className="quick-entry-label">Sold By:</span>
+                                <div className="product-dropdown sold-by-dropdown">
+                                    <div className="dropdown-input-wrapper">
+                                        <button
+                                            onClick={() => setIsSoldByDropdownOpen(!isSoldByDropdownOpen)}
+                                            className="product-dropdown-toggle"
+                                        >
+                                            <span className="product-dropdown-text">{soldBy || "Select Sales Employee"}</span>
+                                            <span className="material-symbols-outlined product-dropdown-arrow">
+                                                {isSoldByDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                            </span>
+                                        </button>
+                                        {soldBy && (
+                                            <button className="clear-selection-btn" onClick={(e) => { e.stopPropagation(); setSoldBy(""); }}>
+                                                <span className="material-symbols-outlined">close</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                    {isSoldByDropdownOpen && (
+                                        <div className="product-dropdown-menu">
+                                            <div className="dropdown-search-wrapper">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search sales staff..."
+                                                    className="dropdown-search-input"
+                                                    autoFocus
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    onChange={(e) => setSoldBy(e.target.value)}
+                                                />
+                                            </div>
+                                            {(salesEmployees.length > 0 ? salesEmployees : employees).filter(emp =>
+                                                emp.name.toLowerCase().includes((soldBy || "").toLowerCase())
+                                            ).length > 0 ? (
+                                                (salesEmployees.length > 0 ? salesEmployees : employees)
+                                                    .filter(emp => emp.name.toLowerCase().includes((soldBy || "").toLowerCase()))
+                                                    .map((emp) => (
+                                                        <button
+                                                            key={emp.id}
+                                                            onClick={() => {
+                                                                setSoldBy(emp.name);
+                                                                setIsSoldByDropdownOpen(false);
+                                                            }}
+                                                            className={`product-dropdown-item ${soldBy === emp.name ? 'active' : ''}`}
+                                                        >
+                                                            <span className="product-name-text">{emp.name}</span>
+                                                            <span className="product-sku-category">{emp.department}</span>
+                                                        </button>
+                                                    ))
+                                            ) : (
+                                                <div className="no-clients-found">No sales staff found matching "{soldBy}"</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="quick-entry-item">
                                 <span className="quick-entry-label">Payment Status:</span>
                                 <div className="product-dropdown payment-dropdown">
                                     <button
@@ -1349,6 +1428,7 @@ const Sales = () => {
                                         <th className="hide-mobile" style={{ textAlign: 'center' }}>PIECES</th>
                                         <th className="hide-mobile" style={{ textAlign: 'center' }}>AMOUNT</th>
                                         <th className="hide-mobile" style={{ textAlign: 'center' }}>PAYMENT</th>
+                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>SOLD BY</th>
                                         <th className="text-center" style={{ textAlign: 'center' }}>ACTION</th>
                                     </tr>
                                 </thead>
@@ -1389,6 +1469,9 @@ const Sales = () => {
                                                         <span className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}>
                                                             {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
                                                         </span>
+                                                    </td>
+                                                    <td className="hide-mobile" style={{ textAlign: 'center' }}>
+                                                        <span className="sold-by-badge">{transaction.soldBy || "-"}</span>
                                                     </td>
                                                     <td className="text-center" style={{ textAlign: 'center' }}>
                                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -1474,6 +1557,10 @@ const Sales = () => {
                                                     <span className="detail-value">
                                                         {transaction.saleItems?.reduce((sum, item) => sum + (Number(item.qty) || 0), 0) || Math.abs(transaction.quantity || 0)} Pcs
                                                     </span>
+                                                </div>
+                                                <div className="detail-item">
+                                                    <span className="detail-label">SOLD BY</span>
+                                                    <span className="detail-value">{transaction.soldBy || "-"}</span>
                                                 </div>
                                             </div>
                                             <div className="sale-product-line">

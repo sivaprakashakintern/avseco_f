@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
+import { useAuth } from '../../context/AuthContext.js';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
@@ -75,6 +76,7 @@ const Production = () => {
     products: dbProducts, 
     employees
   } = useAppContext();
+  const { user, isAdmin } = useAuth();
 
 
 
@@ -127,6 +129,8 @@ const Production = () => {
 
   // ========== GET SUMMARY DATA BY SIZE FOR SELECTED VIEW ==========
   const getSummaryData = () => {
+    let rawData = productionHistory || [];
+    
     let filteredData = [];
 
     switch (summaryView) {
@@ -232,7 +236,9 @@ const Production = () => {
 
   // ========== FILTER FUNCTIONS FOR PRODUCTION HISTORY ==========
   const getFilteredHistory = () => {
-    const hist = productionHistory.filter(item => {
+    let hist = productionHistory || [];
+
+    hist = hist.filter(item => {
       const matchesSearch = !historySearch.trim() ||
         (item.product?.toLowerCase() || "").includes(historySearch.toLowerCase()) ||
         (item.operator?.toLowerCase() || "").includes(historySearch.toLowerCase());
@@ -511,7 +517,7 @@ const Production = () => {
                     <th style={{ textAlign: 'center' }}>PRODUCT NAME</th>
                     <th style={{ textAlign: 'center', width: '350px' }}>SIZES (QTY)</th>
                     <th style={{ textAlign: 'center' }}>GRADE</th>
-                    <th style={{ textAlign: 'center' }}>RECORDED BY</th>
+                    {isAdmin && <th style={{ textAlign: 'center' }}>RECORDED BY</th>}
                     <th style={{ textAlign: 'center' }}>ACTION</th>
                   </tr>
                 </thead>
@@ -534,9 +540,11 @@ const Production = () => {
                            </span>
                         </td>
                         <td style={{ textAlign: 'center' }}><span className={`grade-badge grade-${record.grade?.toLowerCase()}`}>{record.grade}</span></td>
-                        <td style={{ textAlign: 'center' }}>
-                          <span className="recorded-by-tag">{record.recordedBy || 'System'}</span>
-                        </td>
+                        {isAdmin && (
+                          <td style={{ textAlign: 'center' }}>
+                            <span className="recorded-by-tag">{record.recordedBy || 'System'}</span>
+                          </td>
+                        )}
                         <td style={{ textAlign: 'center' }}>
                           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                              <button className="btn-edit-premium" onClick={() => handleEditProduction(record)}>
@@ -550,7 +558,7 @@ const Production = () => {
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan="7" className="empty">No records found</td></tr>
+                    <tr><td colSpan={isAdmin ? "9" : "8"} className="empty">No records found</td></tr>
                   )}
                 </tbody>
               </table>
@@ -585,6 +593,13 @@ const Production = () => {
                             <span className="prod-info-label">Date & Time</span>
                             <span className="prod-info-value">{record.date} • {record.time}</span>
                           </div>
+                          
+                          {isAdmin && (
+                            <div className="prod-info-row">
+                              <span className="prod-info-label">Recorded By</span>
+                              <span className="prod-info-value">{record.recordedBy || 'System'}</span>
+                            </div>
+                          )}
                           
                           <div className="prod-info-row" style={{ gridColumn: '1 / -1', borderTop: '1px solid #e2e8f0', paddingTop: '12px', marginTop: '4px' }}>
                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>

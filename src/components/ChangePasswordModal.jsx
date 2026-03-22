@@ -8,6 +8,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const { logout } = useAuth();
 
   if (!isOpen) return null;
@@ -27,8 +28,10 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
     setLoading(true);
     try {
       await axios.put('/auth/change-password', { newPassword });
-      alert('Password updated successfully! Please log in again with your new password.');
-      logout(); // Force re-login after password change
+      setSuccess(true);
+      setTimeout(() => {
+        logout(); 
+      }, 2500);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update password');
     } finally {
@@ -39,6 +42,9 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
   return (
     <div className="modal-overlay">
       <div className="password-modal">
+        <button className="modal-dismiss-btn" onClick={onClose}>
+          <span className="material-symbols-outlined">close</span>
+        </button>
         <div className="modal-header-premium">
           <div className="header-icon-box">
              <span className="material-symbols-outlined header-icon">verified_user</span>
@@ -51,8 +57,19 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
 
         <form onSubmit={handleSubmit}>
           {error && <div className="error-msg">{error}</div>}
+          {success && (
+            <div className="success-msg-inline">
+              <span className="material-symbols-outlined check-icon">check_circle</span>
+              <div className="success-text-box">
+                <strong>Password updated successfully!</strong>
+                <p>Redirecting you to log in with your new credentials...</p>
+              </div>
+            </div>
+          )}
           
-          <div className="input-group">
+          {!success && (
+            <>
+              <div className="input-group">
             <label>New Password</label>
             <div className="input-wrapper">
               <span className="material-symbols-outlined">lock</span>
@@ -80,9 +97,11 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? 'Updating...' : 'Update & Continue'}
-          </button>
+              <button type="submit" className="submit-btn" disabled={loading}>
+                {loading ? 'Updating...' : 'Update & Continue'}
+              </button>
+            </>
+          )}
         </form>
       </div>
     </div>

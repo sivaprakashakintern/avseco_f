@@ -81,12 +81,13 @@
   border: none;
   color: #006A4E !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 10px 20px;
+  padding: 6px 16px;
   border-radius: 50px;
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 6px !important;
   font-weight: 700;
+  font-size: 13px;
   transition: all 0.2s ease;
 }
 

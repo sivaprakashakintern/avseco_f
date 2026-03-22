@@ -198,38 +198,38 @@ const Clients = () => {
           <table className="clients-table">
             <thead>
               <tr>
-                <th>Company / GST</th>
-                <th>Contact</th>
-                <th>Communication</th>
-                <th>History</th>
-                <th>Actions</th>
+                <th style={{ textAlign: 'center' }}>Company / GST</th>
+                <th style={{ textAlign: 'center' }}>Contact</th>
+                <th style={{ textAlign: 'center' }}>Communication</th>
+                <th style={{ textAlign: 'center' }}>History</th>
+                <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {paginatedClients.map(client => (
                 <tr key={client.id} className="client-row">
-                  <td>
-                    <div className="company-info">
+                  <td style={{ textAlign: 'center' }}>
+                    <div className="company-info" style={{ justifyContent: 'center' }}>
                       <div className="company-icon"><span className="material-symbols-outlined">business</span></div>
-                      <div>
+                      <div style={{ textAlign: 'left' }}>
                         <p className="company-name">{client.companyName || "N/A"}</p>
                         <p className="company-gst">GST: {client.gst}</p>
                       </div>
                     </div>
                   </td>
-                  <td><p className="contact-person">{client.contactPerson}</p></td>
-                  <td>
+                  <td style={{ textAlign: 'center' }}><p className="contact-person">{client.contactPerson}</p></td>
+                  <td style={{ textAlign: 'center' }}>
                     <p className="client-email">{client.email}</p>
                     <p className="client-phone">{client.phone}</p>
                   </td>
-                  <td>
-                    <div className="history-badges">
+                  <td style={{ textAlign: 'center' }}>
+                    <div className="history-badges" style={{ alignItems: 'center' }}>
                       <span className="order-count">{client.totalOrders} Orders</span>
                       <p className="spent-amount">{client.totalSpent}</p>
                     </div>
                   </td>
-                  <td>
-                    <div className="action-buttons">
+                  <td style={{ textAlign: 'center' }}>
+                    <div className="action-buttons" style={{ justifyContent: 'center' }}>
                       <button className="action-btn" onClick={() => { 
                         setSelectedClient(client);
                         setFormData({

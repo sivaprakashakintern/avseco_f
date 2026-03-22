@@ -189,11 +189,10 @@ const StockOverview = () => {
           <table className="stock-table grouped-table">
             <thead>
               <tr>
-                <th>Product Name</th>
-                <th>Size</th>
-                <th>Stock</th>
-                <th>Total Stock</th>
-                <th>Action</th>
+                <th style={{ textAlign: 'center' }}>Product Name</th>
+                <th style={{ textAlign: 'center' }}>Size</th>
+                <th style={{ textAlign: 'center' }}>Stock</th>
+                <th style={{ textAlign: 'center' }}>Total Stock</th>
               </tr>
             </thead>
             <tbody>
@@ -204,8 +203,8 @@ const StockOverview = () => {
                       <tr key={v.id || v.sku || idx} className="product-variant-row" style={{ borderBottom: idx === group.variants.length - 1 ? '2px solid #e2e8f0' : '1px solid #f1f5f9' }}>
                         
                         {idx === 0 && (
-                          <td className="group-name-cell" rowSpan={group.variants.length}>
-                            <div className="product-info-cell">
+                          <td className="group-name-cell" rowSpan={group.variants.length} style={{ textAlign: 'center' }}>
+                            <div className="product-info-cell" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                               <span className="product-name">{group.name}</span>
                               <span className="variant-label-badge">
                                 {group.variants.length} Sizes
@@ -214,27 +213,23 @@ const StockOverview = () => {
                           </td>
                         )}
 
-                        <td className="size-cell">
+                        <td className="size-cell" style={{ textAlign: 'center' }}>
                           <span className="size-badge-premium">{v.size || "-"}</span>
                         </td>
                         
-                        <td className="quantity-cell">
+                        <td className="quantity-cell" style={{ textAlign: 'center' }}>
                           <span className={`stock-level ${v.quantity < 0 ? 'negative' : ''}`}>
                             {v.quantity.toLocaleString("en-IN")} pcs
                           </span>
                         </td>
 
                         {idx === 0 && (
-                          <td className="total-stock-group-cell" rowSpan={group.variants.length}>
+                          <td className="total-stock-group-cell" rowSpan={group.variants.length} style={{ textAlign: 'center' }}>
                             {group.totalQuantity.toLocaleString("en-IN")} pcs
                           </td>
                         )}
 
-                        <td className="action-cell">
-                          <button className="btn-icon-delete" onClick={() => handleDelete(v.id, group.name, v.size)}>
-                            <span className="material-symbols-outlined">delete</span>
-                          </button>
-                        </td>
+
 
                       </tr>
                     ))}
@@ -242,7 +237,7 @@ const StockOverview = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5">
+                  <td colSpan="4">
                     <div className="empty-state">
                       <span className="material-symbols-outlined empty-icon">inventory</span>
                       <h4>No items found</h4>

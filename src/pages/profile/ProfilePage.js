@@ -1,154 +1,224 @@
-import React, { useState } from "react";
-import "./ProfilePage.css";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext.js";
+import ProfilePasswordModal from "../../components/ProfilePasswordModal.jsx";
+
+import { formatDate } from "../../utils/dateUtils.js";
 
 const ProfilePage = () => {
-  const [isEditing, setIsEditing] = useState(false);
+    const { user: authUser, isAdmin } = useAuth();
+    const [isEditing, setIsEditing] = useState(false);
+    const [isPassModalOpen, setIsPassModalOpen] = useState(false);
 
-  const [profileData, setProfileData] = useState({
-    fullName: "Arjun Kumar",
-    jobRole: "Senior Production Supervisor",
-    email: "arjun.kumar@avseco.com",
-    // Keep profileImage in state just in case it's needed later or for initials logic
-    profileImage: null
-  });
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setProfileData({
-      ...profileData,
-      [name]: value
+    const [profileData, setProfileData] = useState({
+        fullName: authUser?.name || "Member Name",
+        jobRole: authUser?.role || "Staff Member",
+        email: authUser?.email || "member@avseco.com",
+        phone: authUser?.phone || "Not Set",
+        empId: authUser?.empId || "EMP-000000",
+        department: authUser?.department || "General",
+        profileImage: authUser?.profileImage || null,
+        address: authUser?.address || "Not Set",
+        joinDate: authUser?.joinDate || "Not Set"
     });
-  };
 
-  const handleEditToggle = () => {
-    setIsEditing(!isEditing);
-  };
+    // Sync with authUser when it changes
+    useEffect(() => {
+        if (authUser) {
+            setProfileData({
+                fullName: authUser.name,
+                jobRole: authUser.role,
+                email: authUser.email,
+                phone: authUser.phone || "Not Set",
+                empId: authUser.empId,
+                department: authUser.department,
+                profileImage: authUser.profileImage,
+                address: authUser.address || "Not Set",
+                joinDate: authUser.joinDate
+            });
+        }
+    }, [authUser]);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    console.log("Profile saved:", profileData);
-  };
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setProfileData({
+            ...profileData,
+            [name]: value
+        });
+    };
 
-  const handleCancel = () => {
-    setIsEditing(false);
-  };
+    const handleEditToggle = () => {
+        setIsEditing(!isEditing);
+    };
 
-  const getInitials = (name) => {
-    if (!name) return "AK";
-    return name
-      .split(" ")
-      .map(word => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+    const handleSave = () => {
+        setIsEditing(false);
+        // Here you would typically call an API to update the profile
+        console.log("Profile saved:", profileData);
+    };
 
-  return (
-    <div className="profile-page-container">
-      {/* Profile Header */}
-      <div className="profile-header">
-        <div className="profile-header-left">
-          <h1 className="profile-title">Employee Profile</h1>
+    const handleCancel = () => {
+        setIsEditing(false);
+    };
+
+    const getInitials = (name) => {
+        if (!name) return "AV";
+        return name
+            .split(" ")
+            .filter(Boolean)
+            .map(word => word[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+    };
+
+    return (
+        <div className="profile-page-modern">
+            {/* Header Section */}
+            <div className="profile-hero-section">
+                <div className="hero-content">
+                    <div className="profile-avatar-wrapper">
+                        {profileData.profileImage ? (
+                            <img src={profileData.profileImage} alt={profileData.fullName} className="hero-avatar" />
+                        ) : (
+                            <div className="hero-avatar-initials">{getInitials(profileData.fullName)}</div>
+                        )}
+                        <div className="status-indicator online"></div>
+                    </div>
+                    <div className="hero-text">
+                        <h1 className="hero-name">{profileData.fullName}</h1>
+                        <p className="hero-role-badge">{profileData.jobRole}</p>
+                    </div>
+                </div>
+                
+                {isAdmin && (
+                    <div className="hero-actions">
+                        {!isEditing ? (
+                            <button className="glass-btn edit-btn" onClick={handleEditToggle}>
+                                <span className="material-symbols-outlined">edit_square</span>
+                                Edit Profile
+                            </button>
+                        ) : (
+                            <div className="edit-group">
+                                <button className="glass-btn save-btn" onClick={handleSave}>
+                                    <span className="material-symbols-outlined">check_circle</span>
+                                    Save Changes
+                                </button>
+                                <button className="glass-btn cancel-btn" onClick={handleCancel}>
+                                    <span className="material-symbols-outlined">cancel</span>
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Main Info Grid */}
+            <div className="profile-info-grid">
+                {/* ID Card / Quick Info */}
+                <div className="info-card personal-details">
+                    <div className="card-header">
+                        <span className="material-symbols-outlined">person</span>
+                        <h3>Personal Information</h3>
+                    </div>
+                    <div className="card-body">
+                        <div className="detail-item">
+                            <label>Full Name</label>
+                            {isEditing ? (
+                                <input name="fullName" value={profileData.fullName} onChange={handleInputChange} className="profile-input" />
+                            ) : (
+                                <span>{profileData.fullName}</span>
+                            )}
+                        </div>
+                        <div className="detail-item">
+                            <label>Employee ID</label>
+                            <span>{profileData.empId}</span>
+                        </div>
+                        <div className="detail-item">
+                            <label>Department</label>
+                            <span>{profileData.department}</span>
+                        </div>
+                        <div className="detail-item">
+                            <label>Joining Date</label>
+                            <span>{formatDate(profileData.joinDate)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Contact Section */}
+                <div className="info-card contact-details">
+                    <div className="card-header">
+                        <span className="material-symbols-outlined">contact_emergency</span>
+                        <h3>Contact Details</h3>
+                    </div>
+                    <div className="card-body">
+                        <div className="detail-item">
+                            <label>Email Address</label>
+                            {isEditing ? (
+                                <input name="email" type="email" value={profileData.email} onChange={handleInputChange} className="profile-input" />
+                            ) : (
+                                <span>{profileData.email}</span>
+                            )}
+                        </div>
+                        <div className="detail-item">
+                            <label>Phone Number</label>
+                            {isEditing ? (
+                                <input name="phone" value={profileData.phone} onChange={handleInputChange} className="profile-input" />
+                            ) : (
+                                <span>{profileData.phone}</span>
+                            )}
+                        </div>
+                        <div className="detail-item">
+                            <label>Residential Address</label>
+                            {isEditing ? (
+                                <textarea name="address" value={profileData.address} onChange={handleInputChange} className="profile-input area" />
+                            ) : (
+                                <p className="address-text">{profileData.address}</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Permissions Section (Read Only) */}
+                <div className="info-card status-details">
+                    <div className="card-header">
+                        <span className="material-symbols-outlined">verified_user</span>
+                        <h3>System Access</h3>
+                    </div>
+                    <div className="card-body">
+                        <div className="access-info">
+                            <div className="status-pill active-status">
+                                <span className="dot"></span>
+                                Account Active
+                            </div>
+                            <div className="role-label">
+                                Role: <strong>{profileData.jobRole}</strong>
+                            </div>
+                            <button 
+                                className="change-pass-profile-btn"
+                                onClick={() => setIsPassModalOpen(true)}
+                            >
+                                <span className="material-symbols-outlined">lock_reset</span>
+                                Change Password
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <ProfilePasswordModal 
+                isOpen={isPassModalOpen} 
+                onClose={() => setIsPassModalOpen(false)} 
+            />
+            
+            {!isAdmin && (
+                <div className="admin-notice">
+                    <span className="material-symbols-outlined">info</span>
+                    <p>Profile editing is restricted to administrators. Contact HR for any corrections.</p>
+                </div>
+            )}
         </div>
-
-        <div className="profile-header-actions">
-          {!isEditing ? (
-            <button className="edit-profile-btn" onClick={handleEditToggle}>
-              <span className="material-symbols-outlined">edit</span>
-              Edit Profile
-            </button>
-          ) : (
-            <>
-              <button className="save-profile-btn" onClick={handleSave}>
-                <span className="material-symbols-outlined">save</span>
-                Save
-              </button>
-              <button className="cancel-profile-btn" onClick={handleCancel}>
-                <span className="material-symbols-outlined">close</span>
-                Cancel
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Simplified Profile Content - Centered */}
-      <div className="profile-main-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
-        <div className="profile-avatar-card" style={{ maxWidth: '600px', width: '100%', padding: '40px', textAlign: 'center' }}>
-
-          {/* Avatar */}
-          <div className="profile-avatar" style={{ margin: '0 auto 24px' }}>
-            {profileData.profileImage ? (
-              <img
-                src={profileData.profileImage}
-                alt={profileData.fullName}
-                className="avatar-image"
-              />
-            ) : (
-              <div className="avatar-initials-circle" style={{ width: '100px', height: '100px', fontSize: '36px' }}>
-                {getInitials(profileData.fullName)}
-              </div>
-            )}
-          </div>
-
-          {/* Name */}
-          <div className="info-field" style={{ marginBottom: '20px' }}>
-            <label className="field-label" style={{ display: 'block', marginBottom: '8px', color: '#64748b' }}>Full Name</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="fullName"
-                value={profileData.fullName}
-                onChange={handleInputChange}
-                className="field-input"
-                style={{ textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}
-              />
-            ) : (
-              <h2 className="profile-name" style={{ margin: 0, fontSize: '24px' }}>{profileData.fullName}</h2>
-            )}
-          </div>
-
-          {/* Position */}
-          <div className="info-field" style={{ marginBottom: '20px' }}>
-            <label className="field-label" style={{ display: 'block', marginBottom: '8px', color: '#64748b' }}>Position</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="jobRole"
-                value={profileData.jobRole}
-                onChange={handleInputChange}
-                className="field-input"
-                style={{ textAlign: 'center', fontSize: '16px' }}
-              />
-            ) : (
-              <p className="profile-role" style={{ margin: 0, fontSize: '18px', color: '#006A4E' }}>{profileData.jobRole}</p>
-            )}
-          </div>
-
-          {/* Email */}
-          <div className="info-field">
-            <label className="field-label" style={{ display: 'block', marginBottom: '8px', color: '#64748b' }}>Email Address</label>
-            {isEditing ? (
-              <input
-                type="email"
-                name="email"
-                value={profileData.email}
-                onChange={handleInputChange}
-                className="field-input"
-                style={{ textAlign: 'center' }}
-              />
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#64748b' }}>
-                <span className="material-symbols-outlined">mail</span>
-                <span>{profileData.email}</span>
-              </div>
-            )}
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default ProfilePage;
