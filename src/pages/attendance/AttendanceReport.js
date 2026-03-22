@@ -44,7 +44,7 @@ const AttendanceReport = () => {
             setFetchedMonths(prev => new Set(prev).add(monthKey));
         };
         fetchMonthData();
-    }, [selectedYear, selectedMonth, fetchAttendanceForDate, fetchedMonths]);
+    }, [selectedYear, selectedMonth, fetchAttendanceForDate, fetchedMonths, attendanceRecords]);
 
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     React.useEffect(() => {

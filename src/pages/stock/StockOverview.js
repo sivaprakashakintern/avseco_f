@@ -67,24 +67,7 @@ const StockOverview = () => {
     });
   };
   
-  const handleDelete = (id, name, size) => {
-      setConfirmModal({
-          isOpen: true,
-          title: `Delete ${name}`,
-          message: `Are you sure you want to remove the ${size} variant? This will delete the product record and remove it from stock views.`,
-          onConfirm: async () => {
-              setConfirmModal(prev => ({ ...prev, isOpen: false }));
-              try {
-                  await deleteProduct(id);
-                  setFeedbackMessage("Product Removed.");
-                  setTimeout(() => setFeedbackMessage(""), 3000);
-              } catch (error) {
-                  setFeedbackMessage("Delete Failed.");
-              }
-          }
-      });
-  };
-
+  
   const confirmExport = (format) => {
     setExportLoading(true);
     setTimeout(() => {

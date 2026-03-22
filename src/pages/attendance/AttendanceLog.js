@@ -45,7 +45,7 @@ const AttendanceLog = () => {
     initAttendanceForDate,
     updateAttendanceRecord
   } = useAppContext();
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
 
   // ── Date State ──────────────────────────────────────────────────────────────
   const [currentDate, setCurrentDate] = useState(today());

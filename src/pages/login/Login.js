@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.js";
 import logo from "../../assets/logo.png";
-import bgImage from "../../assets/bg1.png";
 import "./Login.css";
 
 const Login = () => {

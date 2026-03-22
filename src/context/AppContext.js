@@ -140,7 +140,7 @@ export const AppProvider = ({ children }) => {
         // Periodic background sync (5 mins) - Always run for everyone
         const interval = setInterval(() => fetchData(false, true), 300000);
         return () => clearInterval(interval);
-    }, [user, fetchData, employees.length, products.length]);
+    }, [user, fetchData, employees.length, products.length, hasFetched]);
 
     // EMPLOYEES
     const addEmployee = useCallback(async (emp) => {

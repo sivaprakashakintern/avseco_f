@@ -3,15 +3,7 @@ import { useAppContext } from '../context/AppContext.js';
 import './LoadingScreen.css';
 
 const LoadingScreen = () => {
-  const { fetchStatus, isUpdating } = useAppContext();
-
-  const modules = [
-    { key: 'products', label: 'Products & Stock', icon: 'inventory_2' },
-    { key: 'production', label: 'Production Line', icon: 'factory' },
-    { key: 'employees', label: 'Employee Records', icon: 'groups' },
-    { key: 'sales', label: 'Sales History', icon: 'payments' },
-    { key: 'expenses', label: 'Expense Logs', icon: 'receipt_long' }
-  ];
+  const { isUpdating } = useAppContext();
 
   return (
     <div className="glass-loading-overlay">

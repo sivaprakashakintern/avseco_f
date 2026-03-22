@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/avs.png";
-import avatar from "../../assets/avatar.png";
 import AppContext, { useAppContext } from "../../context/AppContext.js";
 import { useAuth } from "../../context/AuthContext.js";
 import "./Topbar.css";

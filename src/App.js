@@ -62,7 +62,7 @@ const PublicRoute = ({ children }) => {
 };
 
 const AppLayout = ({ children }) => {
-  const { loading: appLoading, isUpdating, products, salesHistory } = useAppContext();
+  const { loading: appLoading, isUpdating } = useAppContext();
   const { user } = useAuth();
   const [isDismissed, setIsDismissed] = React.useState(false);
   return (

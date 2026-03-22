@@ -76,7 +76,7 @@ const Production = () => {
     products: dbProducts, 
     employees
   } = useAppContext();
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
 
 
 
@@ -129,7 +129,6 @@ const Production = () => {
 
   // ========== GET SUMMARY DATA BY SIZE FOR SELECTED VIEW ==========
   const getSummaryData = () => {
-    let rawData = productionHistory || [];
     
     let filteredData = [];
 
