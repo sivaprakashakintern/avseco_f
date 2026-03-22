@@ -449,7 +449,6 @@ export const AppProvider = ({ children }) => {
     // Group production by size/product
     const stockData = products.map(product => {
         // NORMALIZE NAME & SIZE
-        const pName = (product.name || "").toLowerCase().trim().replace(/leaf|plate|areca/g, '').trim();
         const rawPName = (product.name || "").toLowerCase();
         const pSize = (product.size || "").toLowerCase().replace(/[^0-9]/g, ''); // Extract only numbers
 
