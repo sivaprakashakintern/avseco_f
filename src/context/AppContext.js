@@ -464,7 +464,7 @@ export const AppProvider = ({ children }) => {
             return sum + (itemMatch ? Number(itemMatch.qty || 0) : 0);
         }, 0);
 
-        const quantity = produced - sold;
+        const quantity = (product.stock || 0) + produced - sold;
         const totalValue = quantity * Number(product.sellPrice || 0);
         
         return {

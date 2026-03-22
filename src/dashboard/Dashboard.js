@@ -39,13 +39,16 @@ const Dashboard = () => {
     else if (period === 'Monthly') units = productionStats.month;
     else units = productionStats.month || 0; // Use month Total if yearly not available
 
+    const stockStatus = totalStockValue < 0 ? "Understock" : totalStockValue === 0 ? "No Stock" : "Optimal";
+    const stockColor = totalStockValue < 0 ? "#ef4444" : totalStockValue === 0 ? "#f97316" : "#10b981";
     const trendDisplay = "Optimal";
 
     return {
       stockValue: formatStatValue(totalStockValue),
       production: formatUnits(units),
       expenses: formatStatValue(totalExpenseAmount),
-      stockGrowth: trendDisplay,
+      stockGrowth: stockStatus,
+      stockColor: stockColor,
       prodGrowth: trendDisplay,
       expStatus: totalExpenseAmount > 500000 ? "Over Budget" : "Optimal",
       expColor: totalExpenseAmount > 500000 ? "#ef4444" : "#10b981"
@@ -221,7 +224,7 @@ const Dashboard = () => {
             <span className="metric-value" style={getDynamicFontSize(totalStockValue)}>
               {currentData.metrics.stockValue}
             </span>
-            <span className="metric-trend positive">{currentData.metrics.stockGrowth}</span>
+            <span className="metric-trend" style={{ color: currentData.metrics.stockColor }}>{currentData.metrics.stockGrowth}</span>
           </div>
         </div>
 
@@ -249,12 +252,12 @@ const Dashboard = () => {
       {/* POPUPS */}
       {showStockPopup && (
         <div className="fixed-popup stock-popup" style={{ top: stockPopupPosition.top, left: stockPopupPosition.left, width: stockPopupPosition.width }}>
-          <div className="popup-header"><h4>CURRENT STOCK - 4 SIZES</h4></div>
+          <div className="popup-header"><h4>CURRENT STOCK - {stockData.length} ITEMS</h4></div>
           <div className="popup-content">
-            {plateDisplayData.map((plate, index) => (
+            {stockData.map((item, index) => (
               <div key={index} className="popup-item">
-                <span className="popup-size">{plate.size}</span>
-                <span className="popup-value">{plate.stock.toLocaleString()} units</span>
+                <span className="popup-size">{item.name} {item.size}</span>
+                <span className="popup-value">{item.quantity.toLocaleString()} units</span>
               </div>
             ))}
             <div className="popup-footer"><span>Total Value: {currentData.metrics.stockValue}</span></div>
@@ -421,13 +424,19 @@ const Dashboard = () => {
 
       {/* STOCK OVERVIEW */}
       <div className="stock-overview-section">
-        <h3>STOCK OVERVIEW - 4 PLATE SIZES</h3>
+        <h3>ALL STOCK ITEMS ({stockData.length})</h3>
         <div className="stock-grid">
-          {plateDisplayData.map((plate, index) => (
+          {stockData.map((item, index) => (
             <div key={index} className="stock-item-card" onClick={handleStockClick} style={{ cursor: 'pointer' }}>
               <div className="stock-item-header">
-                <span className="stock-size">{plate.size}</span>
-                <span className="stock-value">{plate.stock.toLocaleString()} units</span>
+                <div>
+                  <span className="stock-name" style={{ fontSize: '13px', fontWeight: '800', display: 'block', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>{item.name}</span>
+                  <span className="stock-size" style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b' }}>{item.size}</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                  <span className="stock-value" style={{ fontSize: '15px', fontWeight: '800', color: '#2563eb' }}>{item.quantity.toLocaleString()} pcs</span>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Value: ₹{item.totalValue.toLocaleString()}</span>
+                </div>
               </div>
             </div>
           ))}

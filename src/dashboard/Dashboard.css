@@ -221,13 +221,30 @@
   position: fixed;
   background: white;
   border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.2);
   z-index: 10000;
-  min-width: 240px;
-  pointer-events: none;
+  min-width: 300px;
+  max-width: 400px;
+  max-height: 500px;
+  overflow-y: auto;
+  pointer-events: auto;
   border: 1px solid #e2e8f0;
   animation: popupFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  scrollbar-width: thin;
+}
+
+.fixed-popup::-webkit-scrollbar {
+  width: 6px;
+}
+
+.fixed-popup::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.fixed-popup::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
 }
 
 .stock-popup {
@@ -925,9 +942,9 @@
 }
 
 .stock-item-card {
-  padding: 24px;
+  padding: 20px;
   background: #f8fafc;
-  border-radius: 200px;
+  border-radius: var(--avs-base-radius);
   transition: var(--avs-transition);
   border: 1px solid #e2e8f0;
 }
