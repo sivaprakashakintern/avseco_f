@@ -116,7 +116,7 @@ export const AppProvider = ({ children }) => {
         // Periodic background sync (5 mins)
         const interval = setInterval(() => fetchData(false), 300000);
         return () => clearInterval(interval);
-    }, [user?.id, fetchData]);
+    }, [user, fetchData, employees.length, products.length]);
 
     // EMPLOYEES
     const addEmployee = useCallback(async (emp) => {
