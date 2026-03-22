@@ -4,7 +4,7 @@ import ConfirmModal from "../../components/ConfirmModal.js";
 import "./Stock.css";
 
 const StockOverview = () => {
-  const { stockData, deleteProduct, resetAllStockData } = useAppContext();
+  const { stockData, resetAllStockData } = useAppContext();
   const [resetLoading, setResetLoading] = useState(false);
   const [confirmModal, setConfirmModal] = useState({
       isOpen: false,
