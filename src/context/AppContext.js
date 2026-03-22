@@ -448,20 +448,32 @@ export const AppProvider = ({ children }) => {
     
     // Group production by size/product
     const stockData = products.map(product => {
-        const size = (product.size || "").toLowerCase().trim().replace(" ", "-");
-        const prodHistory = productionHistory.filter(h => 
-            (h.size || "").toLowerCase().trim().replace(" ", "-") === size
-        );
-        const produced = prodHistory.reduce((sum, h) => sum + (h.quantity || 0), 0);
+        const pName = (product.name || "").toLowerCase().trim();
+        const pSize = (product.size || "").toLowerCase().trim().replace(" ", "-");
+
+        // Calculate Produced from History (Match by Name & Size)
+        const produced = productionHistory.filter(h => {
+            const hProduct = (h.product || "").toLowerCase().trim();
+            const hSize = (h.size || "").toLowerCase().trim().replace(" ", "-");
+            // Match if names are similar (e.g., "Areca" matches "Areca Leaf Plate")
+            const nameMatch = hProduct.includes(pName) || pName.includes(hProduct) || hProduct === 'areca leaf plate';
+            // Match if sizes are similar (e.g., "6-inch" matches "6-inch" or "6")
+            const sizeMatch = hSize === pSize || hSize === pSize.split('-')[0] || pSize === hSize.split('-')[0];
+            return nameMatch && sizeMatch;
+        }).reduce((sum, h) => sum + (h.quantity || 0), 0);
         
-        // Calculate sold quantity from salesHistory (Case Insensitive)
+        // Calculate Sold from History (Match by Name & Size)
         const sold = salesHistory.reduce((sum, sale) => {
-            const itemMatch = sale.saleItems?.find(item => {
-                const prodNameMatch = (item.productName || item.baseName || "").toLowerCase() === (product.name || "").toLowerCase();
-                const sizeMatch = (item.size || "").toLowerCase() === (product.size || "").toLowerCase();
-                return prodNameMatch && sizeMatch;
+            if (sale.status && sale.status.toLowerCase().includes('cancel')) return sum;
+            
+            const itemMatches = (sale.saleItems || []).filter(item => {
+                const sName = (item.productName || item.baseName || "").toLowerCase().trim();
+                const sSize = (item.size || "").toLowerCase().trim().replace(" ", "-");
+                const nameMatch = sName.includes(pName) || pName.includes(sName);
+                const sizeMatch = sSize === pSize || sSize === pSize.split('-')[0] || pSize === sSize.split('-')[0];
+                return nameMatch && sizeMatch;
             });
-            return sum + (itemMatch ? Number(itemMatch.qty || 0) : 0);
+            return sum + itemMatches.reduce((s, m) => s + (m.qty || 0), 0);
         }, 0);
 
         const quantity = (product.stock || 0) + produced - sold;
