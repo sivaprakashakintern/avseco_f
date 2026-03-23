@@ -40,6 +40,10 @@ export const employeeApi = {
     const { data } = await axios.delete(`/employees/${id}`);
     return data;
   },
+  getById: async (id) => {
+    const { data } = await axios.get(`/employees/${id}`);
+    return data;
+  },
 };
 
 export const clientApi = {
@@ -166,6 +170,17 @@ export const salesApi = {
     return data;
   }
 };
+export const authApi = {
+  updateProfile: async (profileData) => {
+    const { data } = await axios.put('/auth/profile', profileData);
+    return data;
+  },
+  changePassword: async (passData) => {
+    const { data } = await axios.put('/auth/update-password', passData);
+    return data;
+  }
+};
+
 export const healthApi = {
   check: async () => {
     const { data } = await axios.get('/health');

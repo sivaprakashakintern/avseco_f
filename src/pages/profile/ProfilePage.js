@@ -1,110 +1,191 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.js";
 import ProfilePasswordModal from "../../components/ProfilePasswordModal.jsx";
-
+import { authApi, employeeApi } from "../../utils/api.js";
 import { formatDate } from "../../utils/dateUtils.js";
+import "./ProfilePage.css";
 
 const ProfilePage = () => {
-    const { user: authUser, isAdmin } = useAuth();
+    const { id: routeId } = useParams();
+    const { user: authUser, isAdmin, refreshUser } = useAuth();
+    
     const [isEditing, setIsEditing] = useState(false);
     const [isPassModalOpen, setIsPassModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [feedback, setFeedback] = useState({ message: "", type: "" });
+    const [errors, setErrors] = useState({});
 
+    // The data being displayed/edited
     const [profileData, setProfileData] = useState({
-        fullName: authUser?.name || "Member Name",
-        jobRole: authUser?.role || "Staff Member",
-        email: authUser?.email || "member@avseco.com",
-        phone: authUser?.phone || "Not Set",
-        empId: authUser?.empId || "EMP-000000",
-        department: authUser?.department || "General",
-        profileImage: authUser?.profileImage || null,
-        address: authUser?.address || "Not Set",
-        joinDate: authUser?.joinDate || "Not Set"
+        _id: "",
+        name: "",
+        role: "",
+        email: "",
+        phone: "",
+        empId: "",
+        department: "",
+        avatar: "",
+        address: "",
+        joinDate: "",
+        dob: ""
     });
 
-    // Sync with authUser when it changes
+    // Helper to determine if we are looking at our own profile
+    const isSelf = !routeId || routeId === authUser?._id;
+    const canEdit = isSelf || isAdmin;
+
+    // Load Profile Data
     useEffect(() => {
-        if (authUser) {
-            setProfileData({
-                fullName: authUser.name,
-                jobRole: authUser.role,
-                email: authUser.email,
-                phone: authUser.phone || "Not Set",
-                empId: authUser.empId,
-                department: authUser.department,
-                profileImage: authUser.profileImage,
-                address: authUser.address || "Not Set",
-                joinDate: authUser.joinDate
-            });
-        }
-    }, [authUser]);
+        const loadProfile = async () => {
+            setLoading(true);
+            try {
+                let data;
+                if (isSelf) {
+                    // Use authUser if available, otherwise fetch
+                    data = authUser;
+                } else {
+                    // Fetch other employee
+                    data = await employeeApi.getById(routeId);
+                }
+
+                if (data) {
+                    setProfileData({
+                        _id: data._id,
+                        name: data.name || "",
+                        role: data.role || "Member",
+                        email: data.email || "",
+                        phone: data.phone || "",
+                        empId: data.empId || "EMP-XXXXXX",
+                        department: data.department || "General",
+                        avatar: data.avatar || "",
+                        address: data.address || "",
+                        joinDate: data.joinDate || "",
+                        dob: data.dob || ""
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load profile:", err);
+                showFeedback("⚠️ Failed to load profile details", "error");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadProfile();
+    }, [routeId, isSelf, authUser]);
+
+    const showFeedback = (msg, type = "success") => {
+        setFeedback({ message: msg, type });
+        setTimeout(() => setFeedback({ message: "", type: "" }), 4000);
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setProfileData({
-            ...profileData,
-            [name]: value
-        });
+        setProfileData(prev => ({ ...prev, [name]: value }));
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
     };
 
-    const handleEditToggle = () => {
-        setIsEditing(!isEditing);
-    };
+    const handleSave = async () => {
+        // Validation
+        if (!profileData.name) {
+            setErrors({ name: "Name is required" });
+            return;
+        }
 
-    const handleSave = () => {
-        setIsEditing(false);
-        // Here you would typically call an API to update the profile
-        console.log("Profile saved:", profileData);
-    };
-
-    const handleCancel = () => {
-        setIsEditing(false);
+        try {
+            if (isSelf) {
+                // Update via self api
+                await authApi.updateProfile({
+                    name: profileData.name,
+                    email: profileData.email,
+                    phone: profileData.phone,
+                    address: profileData.address,
+                    avatar: profileData.avatar,
+                    dob: profileData.dob
+                });
+                await refreshUser();
+            } else if (isAdmin) {
+                // Admin updating another user via employee api
+                await employeeApi.update(routeId, {
+                    name: profileData.name,
+                    email: profileData.email,
+                    phone: profileData.phone,
+                    address: profileData.address,
+                    avatar: profileData.avatar,
+                    dob: profileData.dob
+                });
+            }
+            
+            setIsEditing(false);
+            showFeedback("✅ Profile updated successfully!");
+        } catch (error) {
+            console.error("Save error:", error);
+            showFeedback(error.response?.data?.message || "❌ Failed to save profile", "error");
+        }
     };
 
     const getInitials = (name) => {
         if (!name) return "AV";
-        return name
-            .split(" ")
-            .filter(Boolean)
-            .map(word => word[0])
-            .join("")
-            .toUpperCase()
-            .slice(0, 2);
+        return name.split(" ").filter(Boolean).map(w => w[0]).join("").toUpperCase().slice(0, 2);
     };
+
+    if (loading) {
+        return (
+            <div className="profile-loading-screen">
+                <div className="profile-loader"></div>
+                <p>Syncing Profile Data...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="profile-page-modern">
-            {/* Header Section */}
+            {/* Feedback Toast */}
+            {feedback.message && (
+                <div className={`profile-toast-modern ${feedback.type}`}>
+                    <span className="material-symbols-outlined">
+                        {feedback.type === 'error' ? 'report' : 'verified'}
+                    </span>
+                    {feedback.message}
+                </div>
+            )}
+
+            {/* Hero Section */}
             <div className="profile-hero-section">
                 <div className="hero-content">
                     <div className="profile-avatar-wrapper">
-                        {profileData.profileImage ? (
-                            <img src={profileData.profileImage} alt={profileData.fullName} className="hero-avatar" />
+                        {profileData.avatar ? (
+                            <img src={profileData.avatar} alt={profileData.name} className="hero-avatar" />
                         ) : (
-                            <div className="hero-avatar-initials">{getInitials(profileData.fullName)}</div>
+                            <div className="hero-avatar-initials">{getInitials(profileData.name)}</div>
                         )}
                         <div className="status-indicator online"></div>
                     </div>
                     <div className="hero-text">
-                        <h1 className="hero-name">{profileData.fullName}</h1>
-                        <p className="hero-role-badge">{profileData.jobRole}</p>
+                        <h1 className="hero-name">{profileData.name}</h1>
+                        <div className="badge-group">
+                            <span className="hero-role-badge">{profileData.role}</span>
+                            <span className="hero-dept-badge">{profileData.department}</span>
+                        </div>
                     </div>
                 </div>
                 
-                {isAdmin && (
+                {canEdit && (
                     <div className="hero-actions">
                         {!isEditing ? (
-                            <button className="glass-btn edit-btn" onClick={handleEditToggle}>
-                                <span className="material-symbols-outlined">edit_square</span>
+                            <button className="glass-btn edit-btn" onClick={() => setIsEditing(true)}>
+                                <span className="material-symbols-outlined">edit_note</span>
                                 Edit Profile
                             </button>
                         ) : (
                             <div className="edit-group">
                                 <button className="glass-btn save-btn" onClick={handleSave}>
-                                    <span className="material-symbols-outlined">check_circle</span>
-                                    Save Changes
+                                    <span className="material-symbols-outlined">save_as</span>
+                                    Save
                                 </button>
-                                <button className="glass-btn cancel-btn" onClick={handleCancel}>
-                                    <span className="material-symbols-outlined">cancel</span>
+                                <button className="glass-btn cancel-btn" onClick={() => setIsEditing(false)}>
+                                    <span className="material-symbols-outlined">close</span>
                                     Cancel
                                 </button>
                             </div>
@@ -113,51 +194,56 @@ const ProfilePage = () => {
                 )}
             </div>
 
-            {/* Main Info Grid */}
+            {/* Profile Content */}
             <div className="profile-info-grid">
-                {/* ID Card / Quick Info */}
-                <div className="info-card personal-details">
+                {/* Personal Section */}
+                <div className="info-card">
                     <div className="card-header">
-                        <span className="material-symbols-outlined">person</span>
-                        <h3>Personal Information</h3>
+                        <span className="material-symbols-outlined">account_circle</span>
+                        <h3>Account Identity</h3>
                     </div>
                     <div className="card-body">
-                        <div className="detail-item">
-                            <label>Full Name</label>
+                        <div className={`detail-item ${errors.name ? 'error' : ''}`}>
+                            <label>Full Name *</label>
                             {isEditing ? (
-                                <input name="fullName" value={profileData.fullName} onChange={handleInputChange} className="profile-input" />
+                                <input name="name" value={profileData.name} onChange={handleInputChange} className="profile-input" />
                             ) : (
-                                <span>{profileData.fullName}</span>
+                                <span>{profileData.name}</span>
                             )}
+                            {errors.name && <small className="err-msg">{errors.name}</small>}
                         </div>
                         <div className="detail-item">
                             <label>Employee ID</label>
-                            <span>{profileData.empId}</span>
+                            <span className="readonly-val">{profileData.empId}</span>
                         </div>
                         <div className="detail-item">
-                            <label>Department</label>
-                            <span>{profileData.department}</span>
+                            <label>System Designation</label>
+                            <span className="readonly-val">{profileData.role}</span>
                         </div>
                         <div className="detail-item">
-                            <label>Joining Date</label>
-                            <span>{formatDate(profileData.joinDate)}</span>
+                            <label>Birth Date</label>
+                            {isEditing ? (
+                                <input name="dob" type="date" value={profileData.dob} onChange={handleInputChange} className="profile-input" />
+                            ) : (
+                                <span>{profileData.dob || "Not specified"}</span>
+                            )}
                         </div>
                     </div>
                 </div>
 
                 {/* Contact Section */}
-                <div className="info-card contact-details">
+                <div className="info-card">
                     <div className="card-header">
-                        <span className="material-symbols-outlined">contact_emergency</span>
-                        <h3>Contact Details</h3>
+                        <span className="material-symbols-outlined">alternate_email</span>
+                        <h3>Contact Information</h3>
                     </div>
                     <div className="card-body">
                         <div className="detail-item">
                             <label>Email Address</label>
                             {isEditing ? (
-                                <input name="email" type="email" value={profileData.email} onChange={handleInputChange} className="profile-input" />
+                                <input name="email" value={profileData.email} onChange={handleInputChange} className="profile-input" />
                             ) : (
-                                <span>{profileData.email}</span>
+                                <span>{profileData.email || "N/A"}</span>
                             )}
                         </div>
                         <div className="detail-item">
@@ -165,56 +251,75 @@ const ProfilePage = () => {
                             {isEditing ? (
                                 <input name="phone" value={profileData.phone} onChange={handleInputChange} className="profile-input" />
                             ) : (
-                                <span>{profileData.phone}</span>
+                                <span>{profileData.phone || "Not linked"}</span>
                             )}
                         </div>
                         <div className="detail-item">
-                            <label>Residential Address</label>
+                            <label>Address Details</label>
                             {isEditing ? (
                                 <textarea name="address" value={profileData.address} onChange={handleInputChange} className="profile-input area" />
                             ) : (
-                                <p className="address-text">{profileData.address}</p>
+                                <p className="address-display">{profileData.address || "No address provided"}</p>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Permissions Section (Read Only) */}
-                <div className="info-card status-details">
+                {/* Avatar / Settings Section */}
+                {isEditing && (
+                    <div className="info-card avatar-settings-card">
+                        <div className="card-header">
+                            <span className="material-symbols-outlined">photo_camera</span>
+                            <h3>Customization</h3>
+                        </div>
+                        <div className="card-body">
+                            <div className="detail-item">
+                                <label>Avatar Image Link</label>
+                                <input 
+                                    name="avatar" 
+                                    placeholder="https://example.com/photo.jpg"
+                                    value={profileData.avatar} 
+                                    onChange={handleInputChange} 
+                                    className="profile-input" 
+                                />
+                                <small className="hint">Direct URL to your profile picture</small>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Account Security */}
+                <div className={`info-card ${isEditing ? 'security-card-compact' : 'security-card-wide'}`}>
                     <div className="card-header">
-                        <span className="material-symbols-outlined">verified_user</span>
-                        <h3>System Access</h3>
+                        <span className="material-symbols-outlined">shield_person</span>
+                        <h3>System Connection</h3>
                     </div>
                     <div className="card-body">
-                        <div className="access-info">
-                            <div className="status-pill active-status">
-                                <span className="dot"></span>
-                                Account Active
+                        <div className="security-belt">
+                            <div className="security-info">
+                                <div className="status-indicator-pill">
+                                    <span className="pulse-dot"></span>
+                                    Operational
+                                </div>
+                                <p className="join-date-inf">Onboarded since: <strong>{formatDate(profileData.joinDate)}</strong></p>
                             </div>
-                            <div className="role-label">
-                                Role: <strong>{profileData.jobRole}</strong>
-                            </div>
-                            <button 
-                                className="change-pass-profile-btn"
-                                onClick={() => setIsPassModalOpen(true)}
-                            >
-                                <span className="material-symbols-outlined">lock_reset</span>
-                                Change Password
-                            </button>
+                            {isSelf && (
+                                <button className="security-action-btn" onClick={() => setIsPassModalOpen(true)}>
+                                    <span className="material-symbols-outlined">key</span>
+                                    Change Password
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <ProfilePasswordModal 
-                isOpen={isPassModalOpen} 
-                onClose={() => setIsPassModalOpen(false)} 
-            />
+            <ProfilePasswordModal isOpen={isPassModalOpen} onClose={() => setIsPassModalOpen(false)} />
             
-            {!isAdmin && (
-                <div className="admin-notice">
-                    <span className="material-symbols-outlined">info</span>
-                    <p>Profile editing is restricted to administrators. Contact HR for any corrections.</p>
+            {(!isAdmin && !isSelf) && (
+                <div className="restricted-overlay">
+                    <span className="material-symbols-outlined">visibility_off</span>
+                    <p>Protected Data View</p>
                 </div>
             )}
         </div>
