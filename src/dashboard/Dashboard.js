@@ -15,12 +15,10 @@ const Dashboard = () => {
     todayStats,
     last7DaysTrend,
     totalSalesAmount,
-    totalStockValue,
     salesHistory,
     stockData,
     productionStats
   } = useAppContext();
-
   const [timeFilter, setTimeFilter] = useState("Monthly");
   const [showStockPopup, setShowStockPopup] = useState(false);
   const [showProductionPopup, setShowProductionPopup] = useState(false);
@@ -41,8 +39,6 @@ const Dashboard = () => {
     else if (period === 'Monthly') units = productionStats.month;
     else units = productionStats.month || 0; // Use month Total if yearly not available
 
-    const stockStatus = totalStockValue < 0 ? "Understock" : totalStockValue === 0 ? "No Stock" : "Optimal";
-    const stockColor = totalStockValue < 0 ? "#ef4444" : totalStockValue === 0 ? "#f97316" : "#10b981";
     const trendDisplay = "Optimal";
 
     return {
