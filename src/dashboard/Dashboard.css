@@ -175,6 +175,10 @@
   color: white;
 }
 
+.sales-bg {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+}
+
 .stock-bg {
   background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
 }
@@ -249,6 +253,10 @@
 .fixed-popup::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 10px;
+}
+
+.sales-popup {
+  border-left: 4px solid #0ea5e9;
 }
 
 .stock-popup {

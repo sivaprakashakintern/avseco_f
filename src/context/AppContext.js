@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi, productsApi, productionTargetApi, salesApi } from "../utils/api.js";
 import { useAuth } from "./AuthContext.js";
 
-const DEPARTMENTS = ["All Departments", "Ceo", "Hr", "It admin", "Operator", "Maitanice", "Machine operator", "Cleaning", "Driver", "Others"];
+const DEPARTMENTS = ["All Departments", "CEO", "HR", "IT Admin", "Operator", "Maintenance", "Machine Operator", "Cleaning", "Driver", "Others"];
 
 const AppContext = createContext(null);
 
@@ -537,19 +537,15 @@ export const AppProvider = ({ children }) => {
     
     // Group production by size/product
     const stockData = products.map(product => {
-        // NORMALIZE NAME & SIZE
-        const rawPName = (product.name || "").toLowerCase();
-        const pSize = (product.size || "").toLowerCase().replace(/[^0-9]/g, ''); // Extract only numbers
+        const rawPName = (product.name || "").toLowerCase().trim();
+        const rawPSize = (product.size || "").toLowerCase().trim();
 
-        // Calculate Produced from History
         const produced = productionHistory.reduce((sum, h) => {
-            const hProduct = (h.product || "").toLowerCase();
-            const hSize = (h.size || "").toLowerCase().replace(/[^0-9]/g, '');
+            const hProduct = (h.product || "").toLowerCase().trim();
+            const hSize = (h.size || "").toLowerCase().trim();
             
-            // Extremely Flexible match: Match by exact number (Size) and fallback on product name
-            const matchesSize = hSize === pSize && hSize !== "";
-            // Match if names relate, OR if production record has NO name (assume primary product)
-            const matchesName = hProduct.includes("areca") || hProduct.includes(rawPName) || rawPName.includes(hProduct) || hProduct === "";
+            const matchesSize = hSize === rawPSize;
+            const matchesName = hProduct === rawPName || hProduct.includes(rawPName) || rawPName.includes(hProduct) || hProduct === "";
             
             if (matchesSize && matchesName) {
                 return sum + (h.quantity || h.qty || 0);
@@ -557,16 +553,15 @@ export const AppProvider = ({ children }) => {
             return sum;
         }, 0);
         
-        // Calculate Sold from History
         const sold = salesHistory.reduce((sum, sale) => {
             if (sale.status && (sale.status.toLowerCase().includes('cancel') || sale.status.toLowerCase().includes('reject'))) return sum;
             
             const salesQty = (sale.saleItems || []).reduce((itemSum, item) => {
-                const sName = (item.productName || item.baseName || "").toLowerCase();
-                const sSize = (item.size || "").toLowerCase().replace(/[^0-9]/g, '');
+                const sName = (item.productName || item.baseName || "").toLowerCase().trim();
+                const sSize = (item.size || "").toLowerCase().trim();
                 
-                const matchesSize = sSize === pSize && sSize !== "";
-                const matchesName = sName.includes("areca") || sName.includes(rawPName) || rawPName.includes(sName);
+                const matchesSize = sSize === rawPSize;
+                const matchesName = sName === rawPName || sName.includes(rawPName) || rawPName.includes(sName);
                 
                 if (matchesSize && matchesName) {
                     return itemSum + (item.qty || item.quantity || 0);
@@ -590,6 +585,10 @@ export const AppProvider = ({ children }) => {
 
     const totalStockUnits = stockData.reduce((sum, s) => sum + s.quantity, 0);
     const totalStockValue = stockData.reduce((sum, s) => sum + s.totalValue, 0);
+    const totalSalesAmount = salesHistory.reduce((sum, sale) => {
+        if (sale.status && (sale.status.toLowerCase().includes('cancel') || sale.status.toLowerCase().includes('reject'))) return sum;
+        return sum + Number(sale.totalAmount || sale.amount || 0);
+    }, 0);
 
     const toFormattedDate = useCallback((date) => {
         const d = new Date(date);
@@ -800,6 +799,7 @@ export const AppProvider = ({ children }) => {
             fetchStatus,
             isUpdating,
             setIsUpdating,
+            totalSalesAmount,
             salesHistory, 
             addSale,
             updateSale,

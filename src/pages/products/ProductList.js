@@ -84,6 +84,15 @@ const ProductList = () => {
       return;
     }
 
+    const existingSizes = (productGroups[formData.name] || []).map(p => p.size.toLowerCase());
+    const duplicates = formData.selectedSizes.filter(s => existingSizes.includes(s.toLowerCase()));
+    
+    if (duplicates.length > 0) {
+      setFeedbackMessage(`Product already exists in sizes: ${duplicates.join(', ')}`);
+      setTimeout(() => setFeedbackMessage(""), 4000);
+      return;
+    }
+
     const newEntries = formData.selectedSizes.map((size) => {
       const namePart = formData.name.split(' ')[0].substring(0, 3).toUpperCase();
       const randomSuffix = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
@@ -128,6 +137,16 @@ const ProductList = () => {
     if (!newCustomSize.trim() || !viewingProductName) {
       setFeedbackMessage("Please enter a valid size (e.g., 14-inch)");
       setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    // Check if size already exists for this product
+    const existingVariants = productGroups[viewingProductName] || [];
+    const sizeExists = existingVariants.some(v => v.size.trim().toLowerCase() === newCustomSize.trim().toLowerCase());
+    
+    if (sizeExists) {
+      setFeedbackMessage(`Product with size ${newCustomSize} already exists!`);
+      setTimeout(() => setFeedbackMessage(""), 4000);
       return;
     }
 

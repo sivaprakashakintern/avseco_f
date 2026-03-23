@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
+import { useAuth } from '../../context/AuthContext.js';
 import './Sales.css';
 import logo from '../../assets/logo.png';
 import { jsPDF } from "jspdf";
@@ -12,6 +13,7 @@ const Sales = () => {
         clients, addClient, employees, products: dbProducts, stockData,
         salesHistory, addSale, updateSale, deleteSale 
     } = useAppContext();
+    const { user, isAdmin } = useAuth();
     
     // Helper: Format date for display (Moved up to avoid initialization error)
     const formatDate = (date) => {
@@ -25,7 +27,10 @@ const Sales = () => {
     // Process products into unique base names and their variants
     const products = React.useMemo(() => {
         const processed = (dbProducts || []).map(p => {
-            const stockItem = stockData?.find(s => s.name === p.name && s.size === p.size);
+            const stockItem = stockData?.find(s => 
+                (s.name || "").toLowerCase().trim() === (p.name || "").toLowerCase().trim() && 
+                (s.size || "").toLowerCase().trim() === (p.size || "").toLowerCase().trim()
+            );
             return {
                 ...p,
                 baseName: p.name,
@@ -53,20 +58,19 @@ const Sales = () => {
     const [exportFormat, setExportFormat] = useState('excel');
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
 
-    // Product Selection State
+    const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
+    const [editingTransactionId, setEditingTransactionId] = useState(null);
     const [selectedBaseProduct, setSelectedBaseProduct] = useState("");
-    
-    // Removed auto-select first product to ensure Size dropdown only shows after manual selection
-    /*
+
+    // Auto-select first product to streamline entry
     useEffect(() => {
-        if (products.length > 0 && !selectedBaseProduct) {
+        if (products.length > 0 && !selectedBaseProduct && !editingTransactionId) {
             setSelectedBaseProduct(products[0].baseName);
         }
-    }, [products, selectedBaseProduct]);
-    */
+    }, [products, selectedBaseProduct, editingTransactionId]);
     
     const [isBaseProductDropdownOpen, setIsBaseProductDropdownOpen] = useState(false);
-    const [selectedSize, setSelectedSize] = useState("10\" Round");
+    const [selectedSize, setSelectedSize] = useState("");
     const [isSizeDropdownOpen, setIsSizeDropdownOpen] = useState(false);
 
     const [quantity, setQuantity] = useState("");
@@ -83,6 +87,14 @@ const Sales = () => {
     const [deliveryEmployee, setDeliveryEmployee] = useState("");
     const [isEmployeeDropdownOpen, setIsEmployeeDropdownOpen] = useState(false);
     const [soldBy, setSoldBy] = useState("");
+    
+    // Auto-fill Sold By for non-admin employees
+    useEffect(() => {
+        if (!isAdmin && user && !soldBy && !editingTransactionId) {
+            setSoldBy(user.name);
+        }
+    }, [user, isAdmin, soldBy, editingTransactionId]);
+
     const [isSoldByDropdownOpen, setIsSoldByDropdownOpen] = useState(false);
     const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
     const [paidStatus, setPaidStatus] = useState("Paid");
@@ -94,8 +106,7 @@ const Sales = () => {
     const [showBillModal, setShowBillModal] = useState(false);
     const [selectedBill, setSelectedBill] = useState(null);
     const [billItems, setBillItems] = useState([]);
-    const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
-    const [editingTransactionId, setEditingTransactionId] = useState(null);
+
 
     const [summaryType] = useState("all");
     const [isAutoSharing, setIsAutoSharing] = useState(false);
@@ -185,7 +196,10 @@ const Sales = () => {
         const pricePerUnit = parseFloat(unitPrice) || 0;
         
         // Find available stock
-        const stockItem = stockData?.find(s => s.name === selectedBaseProduct && s.size === selectedSize);
+        const stockItem = stockData?.find(s => 
+            (s.name || "").toLowerCase().trim() === (selectedBaseProduct || "").toLowerCase().trim() && 
+            (s.size || "").toLowerCase().trim() === (selectedSize || "").toLowerCase().trim()
+        );
         const currentStock = stockItem ? stockItem.quantity : 0;
         
         // Find existing qty in bill for this product to ensure sum doesn't exceed stock
@@ -999,8 +1013,10 @@ const Sales = () => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                                     <span className="quick-entry-label">Total Pieces:</span>
                                     {selectedBaseProduct && selectedSize && (
-                                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#10b981', background: '#ecfdf5', padding: '2px 8px', borderRadius: '12px', border: '1px solid #d1fae5' }}>
-                                            Available: {products.find(p => p.baseName === selectedBaseProduct && p.size === selectedSize)?.stock || 0}
+                                        <span className="available-badge">
+                                            Available: {products.find(p => 
+                                                (p.baseName || "").toLowerCase().trim() === (selectedBaseProduct || "").toLowerCase().trim() && 
+                                                (p.size || "").toLowerCase().trim() === (selectedSize || "").toLowerCase().trim())?.stock || 0}
                                         </span>
                                     )}
                                 </div>
@@ -1304,13 +1320,13 @@ const Sales = () => {
                                 )}
                             </div>
 
-                            <div className="quick-entry-item hide-mobile">
+                            <div className="quick-entry-item" style={{ flex: 1.5, display: 'flex', alignItems: 'flex-end' }}>
                                 <button
                                     className="btn-primary"
                                     onClick={handleAddItem}
-                                    style={{ width: '100%', height: '48px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 129, 12, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    style={{ width: '100%', height: '50px', background: '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                 >
-                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add_circle</span>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>add_circle</span>
                                     ADD ITEM
                                 </button>
                             </div>

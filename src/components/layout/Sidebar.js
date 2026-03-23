@@ -121,19 +121,6 @@ const Sidebar = () => {
         { label: "Attendance Report", path: "/attendance-report" }
       ]
     },
-    {
-      icon: "analytics",
-      label: "Reports",
-      path: "/reports",
-      module: "reports",
-      children: [
-        { label: "Stock Report", path: "/reports/stock" },
-        { label: "Production Report", path: "/reports/production" },
-        { label: "Sales Report", path: "/reports/sales" },
-        { label: "Employee Report", path: "/reports/employees" },
-        { label: "Financial Report", path: "/reports/financial" }
-      ]
-    },
   ];
 
   // Filter items based on access and administrative exposure

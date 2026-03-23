@@ -162,7 +162,11 @@ const Production = () => {
     let total = 0;
     availableSizes.forEach(size => {
       const sizeTotal = filteredData
-        .filter(item => (item.size || "").toLowerCase() === size.toLowerCase())
+        .filter(item => {
+          const itemSize = (item.size || "").toLowerCase().trim();
+          const targetSize = size.toLowerCase().trim();
+          return itemSize === targetSize;
+        })
         .reduce((sum, item) => sum + Number(item.quantity || 0), 0);
       bySize[size] = sizeTotal;
       total += sizeTotal;
@@ -211,7 +215,9 @@ const Production = () => {
   };
 
   const getSizesForProduct = () => {
-    const product = productOptions.find(p => p.name === formData.product);
+    const product = productOptions.find(p => 
+      (p.name || "").toLowerCase().trim() === (formData.product || "").toLowerCase().trim()
+    );
     return product ? product.sizes : [];
   };
 

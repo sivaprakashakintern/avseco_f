@@ -140,9 +140,7 @@ const Employees = () => {
       salary: ""
     });
     setShowAddModal(true);
-    if (window.innerWidth <= 1024) {
-      document.body.classList.add("hide-topbar-mobile");
-    }
+
   };
 
   // Function to convert dd/mm/yyyy UI string to yyyy-mm-dd for backend
@@ -781,8 +779,8 @@ const Employees = () => {
       {/* ===== ADD EMPLOYEE MODAL ===== */}
       {
         showAddModal && (
-          <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="emp-modal-overlay" onClick={() => setShowAddModal(false)}>
+            <div className="emp-modal-frame" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h3>Add New Employee</h3>
                 <button className="modal-close" onClick={() => setShowAddModal(false)}>
@@ -975,8 +973,8 @@ const Employees = () => {
       {/* ===== EDIT EMPLOYEE MODAL ===== */}
       {
         showEditModal && selectedEmployee && (
-          <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="emp-modal-overlay" onClick={() => setShowEditModal(false)}>
+            <div className="emp-modal-frame" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h3>Edit Employee</h3>
                 <button className="modal-close" onClick={() => setShowEditModal(false)}>
@@ -1169,8 +1167,8 @@ const Employees = () => {
       {/* ===== VIEW EMPLOYEE MODAL ===== */}
       {
         showViewModal && selectedEmployee && (
-          <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
-            <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()}>
+          <div className="emp-modal-overlay" onClick={() => setShowViewModal(false)}>
+            <div className="emp-modal-frame modal-lg" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h3>Employee Details</h3>
                 <button className="modal-close" onClick={() => setShowViewModal(false)}>
@@ -1280,8 +1278,8 @@ const Employees = () => {
       {/* ===== DELETE CONFIRMATION MODAL ===== */}
       {
         showDeleteModal && selectedEmployee && (
-          <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="emp-modal-overlay" onClick={() => setShowDeleteModal(false)}>
+            <div className="emp-modal-frame" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h3>Delete Employee</h3>
                 <button className="modal-close" onClick={() => setShowDeleteModal(false)}>

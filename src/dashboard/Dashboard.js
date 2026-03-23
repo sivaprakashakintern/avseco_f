@@ -14,7 +14,9 @@ const Dashboard = () => {
     expenseByCategory,
     todayStats,
     last7DaysTrend,
+    totalSalesAmount,
     totalStockValue,
+    salesHistory,
     stockData,
     productionStats
   } = useAppContext();
@@ -44,11 +46,11 @@ const Dashboard = () => {
     const trendDisplay = "Optimal";
 
     return {
-      stockValue: formatStatValue(totalStockValue),
+      salesValue: formatStatValue(totalSalesAmount),
       production: formatUnits(units),
       expenses: formatStatValue(totalExpenseAmount),
-      stockGrowth: stockStatus,
-      stockColor: stockColor,
+      salesGrowth: "Optimal",
+      salesColor: "#10b981",
       prodGrowth: trendDisplay,
       expStatus: totalExpenseAmount > 500000 ? "Over Budget" : "Optimal",
       expColor: totalExpenseAmount > 500000 ? "#ef4444" : "#10b981"
@@ -160,13 +162,14 @@ const Dashboard = () => {
   };
 
   // Navigation handlers
+  const handleSalesClick = () => navigate("/sales");
   const handleStockClick = () => navigate("/stock");
   const handleProductionClick = () => navigate("/production/daily");
   const handleExpensesClick = () => navigate("/expenses");
   const handleAttendanceClick = () => navigate("/attendance");
 
   // Popup handlers with position calculation
-  const handleStockHover = (e) => {
+  const handleSalesHover = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setStockPopupPosition({
       top: rect.bottom + 8,
@@ -232,15 +235,15 @@ const Dashboard = () => {
 
       {/* KEY METRICS ROW */}
       <div className="metrics-row">
-        {hasAccess('stock') && (
-          <div className="metric-card clickable" onClick={handleStockClick} onMouseEnter={handleStockHover} onMouseLeave={() => setShowStockPopup(false)}>
-            <div className="metric-icon stock-bg"><span className="material-symbols-outlined">inventory</span></div>
+        {hasAccess('sales') && (
+          <div className="metric-card clickable" onClick={handleSalesClick} onMouseEnter={handleSalesHover} onMouseLeave={() => setShowStockPopup(false)}>
+            <div className="metric-icon sales-bg"><span className="material-symbols-outlined">payments</span></div>
             <div className="metric-content">
-              <span className="metric-label">STOCK VALUE</span>
-              <span className="metric-value" style={getDynamicFontSize(totalStockValue)}>
-                {currentData.metrics.stockValue}
+              <span className="metric-label">TOTAL SALES</span>
+              <span className="metric-value" style={getDynamicFontSize(totalSalesAmount)}>
+                {currentData.metrics.salesValue}
               </span>
-              <span className="metric-trend" style={{ color: currentData.metrics.stockColor }}>{currentData.metrics.stockGrowth}</span>
+              <span className="metric-trend" style={{ color: currentData.metrics.salesColor }}>{currentData.metrics.salesGrowth}</span>
             </div>
           </div>
         )}
@@ -272,16 +275,22 @@ const Dashboard = () => {
 
       {/* POPUPS */}
       {showStockPopup && (
-        <div className="fixed-popup stock-popup" style={{ top: stockPopupPosition.top, left: stockPopupPosition.left, width: stockPopupPosition.width }}>
-          <div className="popup-header"><h4>CURRENT STOCK - {stockData.length} ITEMS</h4></div>
+        <div className="fixed-popup sales-popup" style={{ top: stockPopupPosition.top, left: stockPopupPosition.left, width: stockPopupPosition.width }}>
+          <div className="popup-header"><h4>RECENT SALES - {salesHistory.length} ENTRIES</h4></div>
           <div className="popup-content">
-            {stockData.map((item, index) => (
-              <div key={index} className="popup-item">
-                <span className="popup-size">{item.name} {item.size}</span>
-                <span className="popup-value">{item.quantity.toLocaleString()} units</span>
-              </div>
-            ))}
-            <div className="popup-footer"><span>Total Value: {currentData.metrics.stockValue}</span></div>
+            {salesHistory.slice(0, 5).map((sale, index) => {
+              const saleItemsStr = sale.saleItems?.map(item => `${item.size} (${item.qty})`).join(', ') || sale.product || "Product";
+              return (
+                <div key={index} className="popup-item" style={{ alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span className="popup-size" style={{ color: '#0f172a', fontSize: '13px' }}>{sale.customer || sale.company || "Walk-in Customer"}</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '800' }}>{saleItemsStr}</span>
+                  </div>
+                  <span className="popup-value" style={{ fontSize: '13px', fontWeight: '800', color: '#10b981' }}>₹{(sale.totalAmount || sale.amount || 0).toLocaleString()}</span>
+                </div>
+              );
+            })}
+            <div className="popup-footer"><span>Grand Total: {currentData.metrics.salesValue}</span></div>
           </div>
         </div>
       )}
