@@ -100,7 +100,7 @@ const Sidebar = () => {
       icon: "payments",
       label: "Expenses",
       path: "/expenses",
-      module: "stock",
+      module: "expenses",
       children: [
         { label: "Daily Expenses", path: "/expenses" },
         { label: "Expense Report", path: "/expenses/report" }

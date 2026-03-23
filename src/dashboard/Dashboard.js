@@ -255,7 +255,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        {hasAccess('stock') && (
+        {hasAccess('expenses') && (
           <div className="metric-card clickable" onClick={handleExpensesClick} onMouseEnter={handleExpensesHover} onMouseLeave={() => setShowExpensesPopup(false)}>
             <div className="metric-icon expenses-bg"><span className="material-symbols-outlined">payments</span></div>
             <div className="metric-content">
@@ -483,7 +483,7 @@ const Dashboard = () => {
       )}
 
       {/* EXPENSES BREAKDOWN */}
-      {hasAccess('stock') && (
+      {hasAccess('expenses') && (
         <div className="expenses-breakdown-section">
           <h3>THIS MONTH EXPENSES BREAKDOWN</h3>
           <div className="expenses-categories-grid">
