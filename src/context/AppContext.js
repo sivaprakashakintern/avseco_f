@@ -54,22 +54,26 @@ export const AppProvider = ({ children }) => {
 
             // Build request map
             const requestMap = [];
-            if (hasAccess('employees') || hasAccess('production') || hasAccess('attendance')) {
+            if (hasAccess('employees') || hasAccess('production') || hasAccess('attendance') || hasAccess('sales')) {
                 requestMap.push({ key: 'employees', call: employeeApi.getAll() });
             }
             if (hasAccess('stock')) requestMap.push({ key: 'expenses', call: expenseApi.getAll() });
             if (hasAccess('clients') || hasAccess('sales')) {
                 requestMap.push({ key: 'clients', call: clientApi.getAll() });
             }
-            if (hasAccess('production')) {
+            if (hasAccess('production') || hasAccess('sales')) {
                 requestMap.push({ key: 'production', call: productionApi.getAll() });
-                requestMap.push({ key: 'productionTargets', call: productionTargetApi.getAll() });
+                if (hasAccess('production')) {
+                    requestMap.push({ key: 'productionTargets', call: productionTargetApi.getAll() });
+                }
             }
             if (hasAccess('attendance')) requestMap.push({ key: 'attendance', call: attendanceApi.getByDate(todayStr) });
             if (hasAccess('products') || hasAccess('production') || hasAccess('sales')) {
                 requestMap.push({ key: 'products', call: productsApi.getAll() });
             }
-            if (hasAccess('sales')) requestMap.push({ key: 'sales', call: salesApi.getAll() });
+            if (hasAccess('sales') || hasAccess('production') || hasAccess('stock')) {
+                requestMap.push({ key: 'sales', call: salesApi.getAll() });
+            }
 
             const results = await Promise.allSettled(requestMap.map(r => r.call));
 
