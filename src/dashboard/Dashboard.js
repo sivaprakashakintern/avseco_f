@@ -10,6 +10,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, hasAccess } = useAuth();
   const {
+    expenses,
     totalExpenseAmount,
     expenseByCategory,
     todayStats,
@@ -53,16 +54,65 @@ const Dashboard = () => {
     };
   };
 
-  const getPlatesData = (periodUnits) => {
-    // Group production by size for the period
+  const getPlatesData = (period = 'Monthly') => {
     const sizes = ["6-inch", "8-inch", "10-inch", "12-inch"];
+    const now = new Date();
+    
+    // 1. Determine period dates
+    const isYearly = period === 'Yearly';
+    const isWeekly = period === 'Weekly';
+    
+    const safeDate = (dateStr) => {
+      if (!dateStr) return new Date(0);
+      if (typeof dateStr === 'string' && dateStr.includes('-')) {
+        const parts = dateStr.split('-');
+        if (parts[0].length === 2) return new Date(parts[2], parts[1] - 1, parts[0]); // DD-MM-YYYY
+      }
+      return new Date(dateStr);
+    };
+
+    // 2. Filter sales and expenses by period
+    const filteredSales = (salesHistory || []).filter(s => {
+      const d = safeDate(s.date);
+      if (isYearly) return d.getFullYear() === now.getFullYear();
+      if (isWeekly) return (now - d) / (1000 * 60 * 60 * 24) <= 7;
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+
+    const periodExpenses = (expenses || []).filter(e => {
+      const d = safeDate(e.date);
+      if (isYearly) return d.getFullYear() === now.getFullYear();
+      if (isWeekly) return (now - d) / (1000 * 60 * 60 * 24) <= 7;
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+
+    const totalPeriodExpenses = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    
+    // 3. Get production for the period (already in context stats)
+    const productionBySize = period === 'Weekly' ? productionStats.weekBySize : 
+                             period === 'Yearly' ? productionStats.monthBySize : // Use monthly if yearly not mapped
+                             productionStats.monthBySize;
+    
+    const totalProduction = Object.values(productionBySize).reduce((sum, val) => sum + val, 0) || 1;
+    const expensePerUnit = totalPeriodExpenses / totalProduction;
+
+    // 4. Group data by size
     return sizes.map(size => {
-      const stockItem = stockData.find(s => s.size === size) || { quantity: 0, totalValue: 0 };
+      const sKey = size.toLowerCase().trim().replace(" ", "-");
+      
+      // Calculate sales value for this size
+      const salesValue = filteredSales.reduce((sum, sale) => {
+        const item = sale.saleItems?.find(i => (i.size || "").toLowerCase().trim().replace(" ", "-") === sKey);
+        return sum + (item ? Number(item.amount || 0) : 0);
+      }, 0);
+
+      const production = productionBySize[size] || 0;
+      const distributedExpense = production * expensePerUnit;
+
       return {
         size,
-        stock: stockItem.quantity,
-        produced: stockItem.quantity, // Currently same as stock
-        sold: 0 // Placeholder
+        salesValue,
+        expensesValue: distributedExpense || (salesValue * 0.15) // Fallback if no production but have sales
       };
     });
   };
@@ -145,13 +195,15 @@ const Dashboard = () => {
   };
 
   // For the bar chart logic, if all sold are 0, use stock to show SOMETHING
-  const plateDisplayData = dashboardData[timeFilter].plates.map(p => ({
-    ...p,
-    sold: p.sold || p.stock || 0 
-  }));
+  const plateDisplayData = getPlatesData(timeFilter);
+  const totalPeriodSales = plateDisplayData.reduce((sum, p) => sum + p.salesValue, 0);
+
+
+  const totalPeriodExpenses = plateDisplayData.reduce((sum, p) => sum + p.expensesValue, 0);
 
   const currentData = dashboardData[timeFilter];
-  const maxSold = Math.max(...plateDisplayData.map(p => p.sold), 100);
+  const maxVal = Math.max(totalPeriodSales, totalPeriodExpenses, 100000); // base max at 1L
+
 
   const handleMouseMove = (e) => {
     setMousePos({ x: e.clientX, y: e.clientY });
@@ -339,51 +391,66 @@ const Dashboard = () => {
                 ))}
               </div>
             </div>
-            <div className="enhanced-bar-chart">
-              {plateDisplayData.map((plate, index) => (
-                <div key={index} className="enhanced-bar-group">
-                  <div className="enhanced-bar-label">{plate.size}</div>
-                  <div className="enhanced-bars">
-                    <div className="bar-container" onMouseEnter={() => setHoveredBar({ type: 'sales', index, value: plate.sold })} onMouseMove={handleMouseMove} onMouseLeave={() => setHoveredBar(null)}>
-                      <div className="enhanced-bar sales-bar" style={{ height: `calc(${plate.sold / maxSold} * var(--bar-max-height))` }}></div>
-                    </div>
-                    <div className="bar-container" onMouseEnter={() => setHoveredBar({ type: 'expenses', index, value: plate.sold * 0.3 })} onMouseMove={handleMouseMove} onMouseLeave={() => setHoveredBar(null)}>
-                      <div className="enhanced-bar expenses-bar" style={{ height: `calc(${(plate.sold * 0.3) / maxSold} * var(--bar-max-height))` }}></div>
+            <div className="summary-pie-wrapper">
+                <div className="summary-pie-container">
+                    <div className="pie-chart-main">
+                        <div 
+                           className="pie-slice sales-slice" 
+                           style={{ 
+                              transform: `rotate(0deg)`, 
+                              background: `conic-gradient(#2563eb 0deg ${totalPeriodSales > 0 ? (totalPeriodSales / (totalPeriodSales + totalPeriodExpenses)) * 360 : 180}deg, transparent 0deg 360deg)` 
+                           }}
+                           onMouseEnter={() => setHoveredBar({ type: 'sales', value: totalPeriodSales })}
+                           onMouseMove={handleMouseMove}
+                           onMouseLeave={() => setHoveredBar(null)}
+                        ></div>
+                        <div 
+                           className="pie-slice expenses-slice" 
+                           style={{ 
+                              transform: `rotate(${totalPeriodSales > 0 ? (totalPeriodSales / (totalPeriodSales + totalPeriodExpenses)) * 360 : 180}deg)`, 
+                              background: `conic-gradient(#ef4444 0deg ${totalPeriodExpenses > 0 ? (totalPeriodExpenses / (totalPeriodSales + totalPeriodExpenses)) * 360 : 180}deg, transparent 0deg 360deg)` 
+                           }}
+                           onMouseEnter={() => setHoveredBar({ type: 'expenses', value: totalPeriodExpenses })}
+                           onMouseMove={handleMouseMove}
+                           onMouseLeave={() => setHoveredBar(null)}
+                        ></div>
+                        <div className="pie-center-hole">
+                            <span className="pie-center-label">BALANCE</span>
+                        </div>
                     </div>
 
-                    {hoveredBar?.index === index && (
-                      <div className="bar-tooltip dynamic-tooltip" style={{ position: 'fixed', left: mousePos.x + 15, top: mousePos.y - 40, pointerEvents: 'none' }}>
-                        {hoveredBar.type === 'sales' ? (
-                          <>
-                            <strong>{plate.size} Sales</strong><br />
-                            Volume: {plate.sold.toLocaleString()} units<br />
-                            Value: ₹{(plate.sold * 0.1).toFixed(1)}L
-                          </>
-                        ) : (
-                          <>
-                            <strong>{plate.size} Expenses</strong><br />
-                            Cost: ₹{((plate.sold * 0.3) / 1000).toFixed(1)}K<br />
-                            Ratio: {((plate.sold * 0.3) / plate.sold * 100).toFixed(1)}% of sales
-                          </>
-                        )}
-                      </div>
+                    {hoveredBar && (
+                        <div className="bar-tooltip dynamic-tooltip" style={{ position: 'fixed', left: mousePos.x + 15, top: mousePos.y - 40, pointerEvents: 'none' }}>
+                            <strong>{hoveredBar.type === 'sales' ? 'Total Sales' : 'Total Expenses'}</strong><br />
+                            Value: ₹{hoveredBar.value.toLocaleString()}<br />
+                            Percentage: {((hoveredBar.value / (totalPeriodSales + totalPeriodExpenses || 1)) * 100).toFixed(1)}%
+                        </div>
                     )}
-                  </div>
-                  <div className="bar-values">
-                    <span className="sales-value">₹{(plate.sold * 0.1).toFixed(1)}L</span>
-                    <span className="expenses-value">₹{((plate.sold * 0.3) / 1000).toFixed(1)}K</span>
-                  </div>
                 </div>
-              ))}
+                
+                <div className="pie-stats-column">
+                    <div className="stat-item sales">
+                        <span className="stat-dot blue"></span>
+                        <div className="stat-details">
+                            <span className="stat-val prominent">{formatCurrency(totalPeriodSales, true)}</span>
+                        </div>
+                    </div>
+                    <div className="stat-item expenses">
+                        <span className="stat-dot red"></span>
+                        <div className="stat-details">
+                            <span className="stat-val prominent">{formatCurrency(totalPeriodExpenses, true)}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div className="chart-legend-row-bottom">
               <div className="chart-legend-item">
                 <span className="legend-dot sales-dot"></span>
-                <span className="legend-text">Sales (Units)</span>
+                <span className="legend-text">Revenue</span>
               </div>
               <div className="chart-legend-item">
                 <span className="legend-dot expenses-dot"></span>
-                <span className="legend-text">Expenses (Cost)</span>
+                <span className="legend-text">Expenses</span>
               </div>
             </div>
           </div>

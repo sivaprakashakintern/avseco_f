@@ -425,9 +425,11 @@ const ProductList = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {(productGroups[viewingProductName] || []).map(variant => (
-                      <tr key={variant.id}>
-                        <td><strong>{variant.size}</strong></td>
+                    {(productGroups[viewingProductName] || [])
+                      .sort((a, b) => (parseInt(a.size) || 0) - (parseInt(b.size) || 0))
+                      .map(variant => (
+                        <tr key={variant._id || variant.id}>
+                          <td><strong>{variant.size}</strong></td>
                         <td>{variant.sku}</td>
                         <td>{formatCurrency(variant.costPrice)}</td>
                         <td>{formatCurrency(variant.sellPrice)}</td>

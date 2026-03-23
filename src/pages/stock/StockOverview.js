@@ -13,7 +13,7 @@ const StockOverview = () => {
       onConfirm: null
   });
 
-  // Group stock data by name
+  // Group stock data by name and sort by size numerically
   const groupedProducts = stockData.reduce((acc, item) => {
     if (!acc[item.name]) {
       acc[item.name] = {
@@ -31,6 +31,13 @@ const StockOverview = () => {
       calculatedValue: calcValue
     });
     
+    // Sort variants by size numerically (e.g., 6-inch, 8-inch, 10-inch, 12-inch)
+    acc[item.name].variants.sort((a, b) => {
+      const sizeA = parseInt(a.size) || 0;
+      const sizeB = parseInt(b.size) || 0;
+      return sizeA - sizeB;
+    });
+
     acc[item.name].totalQuantity += (item.quantity || 0);
     acc[item.name].totalValue += calcValue;
     return acc;

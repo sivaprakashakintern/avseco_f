@@ -16,12 +16,13 @@ const Sales = () => {
     const { user, isAdmin } = useAuth();
     
     // Helper: Format date for display (Moved up to avoid initialization error)
+    // Helper: Format date for display (Standardized to avoid split conflicts)
     const formatDate = (date) => {
-        return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        });
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
     };
 
     // Process products into unique base names and their variants
@@ -131,7 +132,9 @@ const Sales = () => {
     }, [employees]);
 
     // Derived selected product
-    const selectedProduct = products.find(p => p.baseName === selectedBaseProduct && p.size === selectedSize)?.name || "";
+    const selectedProductObj = products.find(p => p.baseName === selectedBaseProduct && p.size === selectedSize);
+    const selectedProduct = selectedProductObj?.name || "";
+    const selectedProductId = selectedProductObj?.id || "";
 
     // Auto-select first available size when base product changes
     useEffect(() => {
@@ -164,15 +167,18 @@ const Sales = () => {
 
     // ========== PERSISTENCE ==========
 
-    // Filtered transactions based on today's date only
+    // Filtered transactions based on today's date only (Robust across format changes)
     const getFilteredTransactions = () => {
-        const today = formatDate(new Date());
+        const now = new Date();
+        const todayNew = formatDate(now); // 23-03-2026
+        const todayOld = now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); // Mar 23, 2026
+        
         let filtered = allTransactions.filter(t => {
             const saleDate = t.date || "";
-            return saleDate === today || saleDate.startsWith(today);
+            return saleDate.includes(todayNew) || saleDate.includes(todayOld);
         });
 
-        if (summaryType !== 'all') {
+        if (summaryType && summaryType !== 'all') {
             filtered = filtered.filter(t => t.paymentStatus?.toLowerCase() === summaryType.toLowerCase());
         }
         return filtered;
@@ -202,18 +208,18 @@ const Sales = () => {
         );
         const currentStock = stockItem ? stockItem.quantity : 0;
         
-        // Find existing qty in bill for this product to ensure sum doesn't exceed stock
-        const existingItemIndex = billItems.findIndex(item => item.product === selectedProduct);
+        // Find existing qty in bill for THIS SPECIFIC variant to ensure sum doesn't exceed stock
+        const existingItemIndex = billItems.findIndex(item => item.productId === selectedProductId);
         const currentQtyInBill = existingItemIndex !== -1 ? billItems[existingItemIndex].qty : 0;
 
         if (currentQtyInBill + qtyToAdd > currentStock) {
-            setFeedbackMessage(`Error: Only ${currentStock} pieces available in stock!`);
+            setFeedbackMessage(`Error: Only ${currentStock - currentQtyInBill} pieces left (You already have ${currentQtyInBill} in bill)`);
             setTimeout(() => setFeedbackMessage(""), 3000);
             return;
         }
 
         setBillItems(prevItems => {
-            const existingItemIndex = prevItems.findIndex(item => item.product === selectedProduct);
+            const existingItemIndex = prevItems.findIndex(item => item.productId === selectedProductId);
 
             if (existingItemIndex !== -1) {
                 const updatedItems = [...prevItems];
@@ -227,13 +233,14 @@ const Sales = () => {
             } else {
                 const newItem = {
                     id: Date.now(),
+                    productId: selectedProductId, // Use ID for unique identification
                     product: selectedProduct,
                     baseName: selectedBaseProduct,
                     size: selectedSize,
                     qty: qtyToAdd,
                     amount: (pricePerUnit * qtyToAdd) || 0,
-                    unit: products.find(p => p.name === selectedProduct)?.unit || "pcs",
-                    hsn: products.find(p => p.name === selectedProduct)?.hsn || "-"
+                    unit: products.find(p => p.id === selectedProductId)?.unit || "pcs",
+                    hsn: products.find(p => p.id === selectedProductId)?.hsn || "-"
                 };
                 return [...prevItems, newItem];
             }
@@ -268,7 +275,7 @@ const Sales = () => {
 
         const payload = {
             invoiceNo: editingTransactionId ? (salesHistory.find(s => s.id === editingTransactionId)?.invoiceNo || `INV-${Date.now().toString().slice(-6)}`) : `INV-${Date.now().toString().slice(-6)}`,
-            date: formatDate(new Date()) + ", " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            date: formatDate(new Date()) + ", " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
             customer: customerName,
             company: companyName,
             customerEmail: customerEmail,
@@ -711,6 +718,24 @@ const Sales = () => {
         };
     }, []);
 
+    // Helper to extract and format time consistently (12h AM/PM)
+    const getFormattedTime = (transaction) => {
+        // Robust handling for older DD-MM-YYYY vs newer strings (Always pull the last comma part for time)
+        const parts = transaction.date?.split(', ') || [];
+        const rawTime = parts.length > 1 ? parts[parts.length - 1] : (transaction.time || "-");
+        
+        if (rawTime === "-") return "-";
+        
+        if (rawTime.includes('AM') || rawTime.includes('PM')) return rawTime;
+        
+        const [h, m] = rawTime.split(':').map(Number);
+        if (isNaN(h) || isNaN(m)) return rawTime;
+        
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
+    };
+
     return (
         <div className="stock-page">
             {/* Feedback Toast */}
@@ -759,7 +784,7 @@ const Sales = () => {
                     </div>
                     <div className="quick-entry-grid">
                         <div className="quick-entry-row">
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Company (Optional):</span>
                                 <div className="product-dropdown client-dropdown">
                                     <div className="dropdown-input-wrapper">
@@ -857,7 +882,7 @@ const Sales = () => {
                                 </div>
                             </div>
 
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Customer Name:</span>
                                 <div style={{ width: '100%' }}>
                                     <input
@@ -869,8 +894,10 @@ const Sales = () => {
                                     />
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="quick-entry-item">
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Email Address:</span>
                                 <div style={{ width: '100%' }}>
                                     <input
@@ -882,10 +909,8 @@ const Sales = () => {
                                     />
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="quick-entry-row">
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Phone Number *:</span>
                                 <div style={{ width: '100%' }}>
                                     <input
@@ -898,8 +923,10 @@ const Sales = () => {
                                     />
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="quick-entry-item">
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">GSTIN:</span>
                                 <div style={{ width: '100%' }}>
                                     <input
@@ -912,7 +939,7 @@ const Sales = () => {
                                 </div>
                             </div>
 
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Address *:</span>
                                 <div style={{ width: '100%' }}>
                                     <input
@@ -932,8 +959,8 @@ const Sales = () => {
                         <h3 className="section-title">Billing Details</h3>
                     </div>
                     <div className="quick-entry-grid">
-                        <div className="quick-entry-row" style={{ marginBottom: '16px' }}>
-                            <div className="quick-entry-item">
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Product Name:</span>
                                 <div className="product-dropdown base-product-dropdown">
                                     <button
@@ -968,7 +995,7 @@ const Sales = () => {
                                 </div>
                             </div>
 
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Size/Variant:</span>
                                 <div className="product-dropdown size-dropdown">
                                     <button
@@ -1008,19 +1035,26 @@ const Sales = () => {
                                     )}
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="quick-entry-item">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                    <span className="quick-entry-label">Total Pieces:</span>
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item two-col-item">
+                                <span className="quick-entry-label">Total Pieces:</span>
+                                <div style={{ width: '100%', position: 'relative' }}>
                                     {selectedBaseProduct && selectedSize && (
-                                        <span className="available-badge">
-                                            Available: {products.find(p => 
-                                                (p.baseName || "").toLowerCase().trim() === (selectedBaseProduct || "").toLowerCase().trim() && 
-                                                (p.size || "").toLowerCase().trim() === (selectedSize || "").toLowerCase().trim())?.stock || 0}
-                                        </span>
+                                        <div style={{ position: 'absolute', top: '-18px', right: '4px', zIndex: 1 }}>
+                                            <span className="available-badge">
+                                                {(() => {
+                                                    const product = products.find(p => 
+                                                        (p.baseName || "").toLowerCase().trim() === (selectedBaseProduct || "").toLowerCase().trim() && 
+                                                        (p.size || "").toLowerCase().trim() === (selectedSize || "").toLowerCase().trim());
+                                                    const stock = product?.stock || 0;
+                                                    const inBill = billItems.find(item => item.productId === product?.id)?.qty || 0;
+                                                    return `Available: ${stock - inBill}`;
+                                                })()}
+                                            </span>
+                                        </div>
                                     )}
-                                </div>
-                                <div style={{ width: '100%' }}>
                                     <input
                                         type="number"
                                         placeholder="Enter total pieces"
@@ -1030,10 +1064,8 @@ const Sales = () => {
                                     />
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="quick-entry-row" style={{ marginBottom: '16px' }}>
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Per Plate Price:</span>
                                 <div className="amount-input-wrapper">
                                     <span className="currency-prefix">₹</span>
@@ -1046,8 +1078,10 @@ const Sales = () => {
                                     />
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="quick-entry-item">
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Total Plate Amount:</span>
                                 <div className="amount-input-wrapper" style={{ background: '#f8fafc' }}>
                                     <span className="currency-prefix">₹</span>
@@ -1061,7 +1095,7 @@ const Sales = () => {
                                 </div>
                             </div>
 
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Overall Bill Amount:</span>
                                 <div className="amount-input-wrapper" style={{ background: '#f8fafc' }}>
                                     <span className="currency-prefix">₹</span>
@@ -1074,22 +1108,10 @@ const Sales = () => {
                                     />
                                 </div>
                             </div>
-
-                            {/* Mobile Only Add Item Button after Overall Bill Amount */}
-                            <div className="quick-entry-item mobile-only-item">
-                                <button
-                                    className="btn-primary"
-                                    onClick={handleAddItem}
-                                    style={{ width: '100%', height: '48px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                                >
-                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add_circle</span>
-                                    ADD ITEM
-                                </button>
-                            </div>
                         </div>
 
                         <div className="quick-entry-row" style={{ marginBottom: '16px' }}>
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Delivery Mode:</span>
                                 <div className="product-dropdown delivery-mode-dropdown">
                                     <button
@@ -1120,7 +1142,7 @@ const Sales = () => {
                                 </div>
                             </div>
 
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 <span className={`quick-entry-label ${deliveryMode !== 'Door Delivery' ? 'disabled-label' : ''}`} style={deliveryMode !== 'Door Delivery' ? { opacity: 0.5 } : {}}>Delivered By:</span>
                                 <div className={`product-dropdown employee-dropdown ${deliveryMode !== 'Door Delivery' ? 'disabled-dropdown' : ''}`} style={deliveryMode !== 'Door Delivery' ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
                                     <div className="dropdown-input-wrapper">
@@ -1177,8 +1199,10 @@ const Sales = () => {
                                     )}
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="quick-entry-item">
+                        <div className="quick-entry-row" style={{ marginBottom: '16px' }}>
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Sold By:</span>
                                 <div className="product-dropdown sold-by-dropdown">
                                     <div className="dropdown-input-wrapper">
@@ -1235,7 +1259,7 @@ const Sales = () => {
                                 </div>
                             </div>
 
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Payment Status:</span>
                                 <div className="product-dropdown payment-dropdown">
                                     <button
@@ -1268,7 +1292,7 @@ const Sales = () => {
                         </div>
 
                         <div className="quick-entry-row">
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 <span className={`quick-entry-label ${paidStatus === 'Unpaid' ? 'disabled-label' : ''}`} style={paidStatus === 'Unpaid' ? { opacity: 0.5 } : {}}>Payment Mode:</span>
                                 <div className={`product-dropdown payment-dropdown ${paidStatus === 'Unpaid' ? 'disabled-dropdown' : ''}`} style={paidStatus === 'Unpaid' ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
                                     <button
@@ -1300,7 +1324,7 @@ const Sales = () => {
                                 </div>
                             </div>
 
-                            <div className="quick-entry-item">
+                            <div className="quick-entry-item two-col-item">
                                 {(paidStatus === 'Pending' || paidStatus === 'Advance') ? (
                                     <>
                                         <span className="quick-entry-label">Amount Paid:</span>
@@ -1450,22 +1474,21 @@ const Sales = () => {
                                 </thead>
                                 <tbody>
                                     {filteredTransactions.length > 0 ? (
-                                        filteredTransactions.map((transaction, index) => {
-                                            const baseProducts = transaction.saleItems?.map(item => item.baseName).join(', ') || transaction.product;
-                                            const sizes = transaction.saleItems?.map(item => item.size).join(', ') || "-";
+                                        filteredTransactions.slice(0, 10).map((transaction, index) => {
+                                            const baseNames = [...new Set(transaction.saleItems?.map(item => item.baseName))].filter(Boolean);
+                                            const baseProducts = baseNames.length > 0 ? baseNames.join(', ') : (transaction.product || "-");
+                                            
+                                            const sizeValues = [...new Set(transaction.saleItems?.map(item => item.size))].filter(Boolean);
+                                            const sizes = sizeValues.length > 0 ? sizeValues.join(', ') : (transaction.size || "-");
+                                            
                                             const totalPieces = transaction.saleItems?.reduce((sum, item) => sum + (Number(item.qty) || 0), 0) || Math.abs(transaction.quantity || 0);
                                             const displayAmount = transaction.totalAmount || transaction.amount || 0;
+                                            const formattedTime = getFormattedTime(transaction);
 
                                             return (
                                                 <tr key={transaction.id || transaction._id}>
                                                     <td style={{ textAlign: 'center' }}>{index + 1}</td>
-                                                    <td style={{ textAlign: 'center' }}>
-                                                        {(() => {
-                                                            const parts = transaction.date?.split(', ') || [transaction.date || ''];
-                                                            const timePart = parts.length > 2 ? parts.slice(2).join(', ') : parts.length > 1 ? parts[1] : "";
-                                                            return timePart || parts[0];
-                                                        })()}
-                                                    </td>
+                                                    <td style={{ textAlign: 'center', fontSize: '13px', whiteSpace: 'nowrap' }}>{formattedTime}</td>
                                                     <td style={{ textAlign: 'center' }} onClick={() => handleViewBill(transaction)}>
                                                         <span className="company-text clickable-company">{transaction.company || '-'}</span>
                                                     </td>
@@ -1547,12 +1570,15 @@ const Sales = () => {
                         {/* Mobile History Cards */}
                         <div className="mobile-history-cards">
                             {filteredTransactions.length > 0 ? (
-                                filteredTransactions.map((transaction) => (
-                                    <div key={transaction.id || transaction._id} className="mobile-sale-card" onClick={() => handleViewBill(transaction)}>
+                                filteredTransactions.slice(0, 10).map((transaction) => {
+                                        const formattedTime = getFormattedTime(transaction);
+                                        return (
+                                            <div key={transaction.id || transaction._id} className="mobile-sale-card" onClick={() => handleViewBill(transaction)}>
                                         <div className="sale-card-header">
                                             <div className="sale-date">
                                                 <span className="material-symbols-outlined">calendar_today</span>
-                                                {transaction.date?.split(', ')[0]}
+                                                <span style={{ fontWeight: '500' }}>{transaction.date?.split(', ')[0]}</span>
+                                                <span style={{ marginLeft: '8px', opacity: 0.8, fontSize: '12px' }}>{formattedTime}</span>
                                             </div>
                                             <span className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}>
                                                 {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
@@ -1618,10 +1644,11 @@ const Sales = () => {
                                                 <span className="material-symbols-outlined">receipt_long</span>
                                                 Bill
                                             </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
-                            ) : (
+                                        );
+                                    })
+                                ) : (
                                 <div className="no-data-mobile">
                                     <span className="material-symbols-outlined">search_off</span>
                                     <p>No sales records found for today</p>
@@ -1631,7 +1658,9 @@ const Sales = () => {
 
                         <div className="table-footer">
                             <div className="pagination-info">
-                                Showing {filteredTransactions.length} of {allTransactions.length} sales records
+                                {filteredTransactions.length > 10 
+                                    ? `Showing 10 Most Recent of ${filteredTransactions.length} Today's Sales` 
+                                    : `Showing ${filteredTransactions.length} Sales Records`}
                             </div>
                         </div>
                     </div>
