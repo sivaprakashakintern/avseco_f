@@ -202,7 +202,6 @@ const Dashboard = () => {
   const totalPeriodExpenses = plateDisplayData.reduce((sum, p) => sum + p.expensesValue, 0);
 
   const currentData = dashboardData[timeFilter];
-  const maxVal = Math.max(totalPeriodSales, totalPeriodExpenses, 100000); // base max at 1L
 
 
   const handleMouseMove = (e) => {
