@@ -145,6 +145,7 @@ const Employees = () => {
 
   // Function to convert dd/mm/yyyy UI string to yyyy-mm-dd for backend
     const toBackendDate = (ddmmyyyy) => {
+        if (typeof ddmmyyyy !== 'string') return ddmmyyyy;
         if (!ddmmyyyy || !ddmmyyyy.includes("/")) return ddmmyyyy;
         const [d, m, y] = ddmmyyyy.split("/");
         if (!d || !m || !y || y.length !== 4) return ddmmyyyy;
@@ -289,15 +290,13 @@ const Employees = () => {
       return;
     }
 
-    // Date validation
-    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-    if (!dateRegex.test(formData.joinDate)) {
-        setFeedbackMessage("❌ Join Date must be in DD/MM/YYYY format");
+    if (!formData.joinDate || !dayjs(formData.joinDate).isValid()) {
+        setFeedbackMessage("❌ Please enter a valid Join Date");
         setTimeout(() => setFeedbackMessage(""), 3000);
         return;
     }
-    if (!dateRegex.test(formData.dob)) {
-        setFeedbackMessage("❌ Date of Birth must be in DD/MM/YYYY format");
+    if (formData.dob && !dayjs(formData.dob).isValid()) {
+        setFeedbackMessage("❌ Please enter a valid Date of Birth");
         setTimeout(() => setFeedbackMessage(""), 3000);
         return;
     }

@@ -212,20 +212,23 @@ const Clients = () => {
                     <div className="company-info" style={{ justifyContent: 'center' }}>
                       <div className="company-icon"><span className="material-symbols-outlined">business</span></div>
                       <div style={{ textAlign: 'left' }}>
-                        <p className="company-name">{client.companyName || "N/A"}</p>
-                        <p className="company-gst">GST: {client.gst}</p>
+                        <span className="company-name">{client.companyName || "N/A"}</span>
+                        <span className="company-gst-inline"> ({client.gst})</span>
                       </div>
                     </div>
                   </td>
                   <td style={{ textAlign: 'center' }}><p className="contact-person">{client.contactPerson}</p></td>
                   <td style={{ textAlign: 'center' }}>
-                    <p className="client-email">{client.email}</p>
-                    <p className="client-phone">{client.phone}</p>
+                    <div className="comm-inline-group">
+                      <span className="client-email">{client.email}</span>
+                      <span className="comm-divider">|</span>
+                      <span className="client-phone">{client.phone}</span>
+                    </div>
                   </td>
                   <td style={{ textAlign: 'center' }}>
-                    <div className="history-badges" style={{ alignItems: 'center' }}>
-                      <span className="order-count">{client.totalOrders} Orders</span>
-                      <p className="spent-amount">{client.totalSpent}</p>
+                    <div className="history-inline-group">
+                       <span className="order-count-badge">{client.totalOrders} Orders</span>
+                       <span className="spent-amount-bold">{client.totalSpent}</span>
                     </div>
                   </td>
                   <td style={{ textAlign: 'center' }}>

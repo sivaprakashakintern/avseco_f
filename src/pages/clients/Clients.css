@@ -502,25 +502,44 @@
 /* ===== MODALS ===== */
 .modal-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(10, 31, 26, 0.8);
-  backdrop-filter: blur(8px);
+  top: 70px !important; /* FORCED BELOW TOPBAR */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 31, 26, 0.45);
+  backdrop-filter: blur(4px);
   display: flex;
-  align-items: flex-start; /* Ensure it starts from top, not center */
+  align-items: flex-start;
   justify-content: center;
-  z-index: 100000; /* Extremely high to cover topbar */
-  padding: 40px 20px; /* Add top padding to avoid top-cutting */
-  overflow-y: auto; /* Enable scrolling if modal is too tall */
+  z-index: 1500;
+  padding: 30px 20px;
+  overflow-y: auto;
 }
 
 .modal-content {
   background: white;
   border-radius: 28px;
   width: 100%;
-  max-width: 580px;
-  margin: 40px auto; /* Better vertical spacing */
-  max-height: none; /* Let it expand */
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  max-width: 650px; /* Increased from 580px */
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 120px); /* Fixed frame height */
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+.modal-content form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  margin: 0;
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .dark .modal-content {
@@ -533,10 +552,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: white;
+  z-index: 10;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 24px; /* Increased */
+  font-weight: 800;
+  color: #0a3b2e;
 }
 
 .modal-body {
-  padding: 32px;
+  padding: 32px 32px 40px 32px; /* Extra bottom space to prevent cutting off */
+  overflow-y: auto; /* INNER SCROLLING ENABLED */
+  flex: 1;
 }
 
 .modal-form-group {
@@ -545,19 +575,21 @@
 
 .modal-form-group label {
   display: block;
-  font-size: 13px;
+  font-size: 15px; /* Increased */
   font-weight: 700;
-  color: #475569;
-  margin-bottom: 8px;
+  color: #2a3b2e;
+  margin-bottom: 10px;
 }
 
 .modal-input, .modal-textarea {
   width: 100%;
-  padding: 14px 18px;
+  padding: 14px 20px; /* Increased padding */
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 15px;
+  border-radius: 14px;
+  font-size: 16px; /* Increased */
+  color: #1e293b;
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 
 .modal-input:focus {
@@ -617,3 +649,36 @@
 }
 
 /* Removed local toast - handled globally by index.css */
+.company-gst-inline {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.comm-inline-group, .history-inline-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.comm-divider {
+  color: #e2e8f0;
+  font-weight: 300;
+}
+
+.order-count-badge {
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.spent-amount-bold {
+  font-weight: 800;
+  color: #006A4E;
+  font-size: 14px;
+}
