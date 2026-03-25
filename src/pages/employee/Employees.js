@@ -388,9 +388,13 @@ const Employees = () => {
         aadhar: formatted,
       });
     } else if (name === "phone") {
-        // Force +91 prefix and limit digits to 10
-        let digits = value.replace(/^\+91\s?/, "").replace(/\D/g, "").substring(0, 10);
-        setFormData({ ...formData, phone: "+91 " + digits });
+        // Always maintain '+91 ' and limit to 10 digits
+        if (!value.startsWith("+91 ")) {
+          value = "+91 " + value.replace(/^\+91\s*/, "");
+        }
+        const digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
+        value = "+91 " + digits;
+        setFormData({ ...formData, phone: value });
     } else if (name === "pan") {
         // PAN is 10 characters (ABCDE1234F)
         let val = value.toUpperCase().substring(0, 10);
@@ -848,7 +852,7 @@ const Employees = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="Enter email address"
+                        placeholder="jofra@avseco.in"
                         className="modal-input"
                       />
                     </div>
@@ -859,7 +863,7 @@ const Employees = () => {
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        placeholder="Enter phone number"
+                        placeholder="+91 00000 00000"
                         className="modal-input"
                         required
                       />
@@ -1042,7 +1046,7 @@ const Employees = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="Enter email address"
+                        placeholder="jofra@avseco.in"
                         className="modal-input"
                       />
                     </div>
@@ -1053,7 +1057,7 @@ const Employees = () => {
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        placeholder="Enter phone number"
+                        placeholder="+91 00000 00000"
                         className="modal-input"
                         required
                       />

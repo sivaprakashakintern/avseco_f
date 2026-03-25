@@ -258,12 +258,13 @@ export const AppProvider = ({ children }) => {
         }
     }, []);
 
-    const addProduction = useCallback(async (prod, skipTargetSync = false) => {
+    const addProduction = useCallback(async (prod) => {
         setIsUpdating(true);
         try {
             // 1. Save the production record
             const data = await productionApi.add(prod);
             
+            // 2. Update local state
             setProductionHistory(prev => {
                 const exists = prev.find(p => p.id === data._id);
                 if (exists) {
@@ -272,26 +273,8 @@ export const AppProvider = ({ children }) => {
                 return [{ ...data, id: data._id }, ...prev];
             });
 
-            // 2. Sync with Production Plan (Targets)
-            if (!skipTargetSync) {
-                try {
-                    const allTargets = await productionTargetApi.getAll();
-                    const matchingTarget = allTargets.find(t => 
-                        t.operator === prod.operator && 
-                        t.productSize === prod.size
-                    );
-
-                    if (matchingTarget) {
-                        const newProduced = (matchingTarget.producedQty || 0) + Number(prod.quantity);
-                        await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
-                        await fetchTargets();
-                    }
-                } catch (err) {
-                    console.warn("Sync with target failed:", err);
-                }
-            } else {
-                await fetchTargets();
-            }
+            // 3. Refresh targets (backend already updated them)
+            await fetchTargets();
 
             return data;
         } finally {
@@ -308,17 +291,8 @@ export const AppProvider = ({ children }) => {
             // 1. Update history
             setProductionHistory(prev => prev.map(p => p.id === id ? { ...data, id: data._id } : p));
 
-            // 2. Sync targets
-            if (oldRecord) {
-                const oldQty = Number(oldRecord.quantity || 0);
-                const newQty = Number(updates.quantity || 0);
-                const diff = newQty - oldQty;
-
-                if (diff !== 0 || oldRecord.size !== updates.size || oldRecord.operator !== updates.operator) {
-                    // Refresh targets to reflect backend changes
-                    await fetchTargets();
-                }
-            }
+            // 2. Refresh targets (backend already updated them)
+            await fetchTargets();
             return data;
         } finally {
             setIsUpdating(false);
@@ -332,40 +306,20 @@ export const AppProvider = ({ children }) => {
             await productionApi.delete(id);
             setProductionHistory(prev => prev.filter(p => p.id !== id));
 
-            if (record) {
-                try {
-                    const allTargets = await productionTargetApi.getAll();
-                    const matchingTarget = allTargets.find(t => 
-                        t.operator === record.operator && 
-                        t.productSize === record.size
-                    );
-
-                    if (matchingTarget) {
-                        const newProduced = Math.max(0, (matchingTarget.producedQty || 0) - Number(record.quantity));
-                        await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
-                        await fetchTargets();
-                    }
-                } catch (err) {
-                    console.warn("Sync delete with target failed:", err);
-                }
-            }
+            // 2. Refresh targets (backend already updated them)
+            await fetchTargets();
         } finally {
             setIsUpdating(false);
         }
     }, [productionHistory, fetchTargets]);
 
-    const clearAllProduction = useCallback(async () => {
+    const clearAllProduction = useCallback(async (date) => {
         setIsUpdating(true);
         try {
-            await productionApi.clearAll();
-            setProductionHistory([]);
-            const allTargets = await productionTargetApi.getAll();
-            for (const target of allTargets) {
-                await productionTargetApi.updateProduced(target._id, 0);
-            }
+            await productionApi.clearAll(date);
+            setProductionHistory(prev => date ? prev.filter(p => p.date !== date) : []);
+            // Refresh targets to show reset counts
             await fetchTargets();
-        } catch (err) {
-            console.warn("Failed to reset targets during production clear:", err);
         } finally {
             setIsUpdating(false);
         }

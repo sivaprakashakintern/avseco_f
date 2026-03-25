@@ -598,10 +598,46 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   font-size: 0.95rem;
+  font-weight: 600;
   color: #1e293b;
   background: white;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
+  cursor: pointer;
+}
+
+.premium-select option {
+  padding: 10px;
+  font-weight: 600;
+}
+
+.target-badge-premium {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  transition: all 0.3s ease;
+}
+
+.target-badge-premium.pending {
+  background: #fff9e6;
+  color: #b45b0b;
+  border: 1px solid #fee2e2;
+}
+
+.target-badge-premium.completed {
+  background: #e0f2e9;
+  color: #2e8b66;
+  border: 1px solid #d1e7d6;
+}
+
+.target-badge-premium span {
+  font-size: 14px;
 }
 
 .premium-input:focus, 

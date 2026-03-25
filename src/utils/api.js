@@ -108,8 +108,8 @@ export const productionApi = {
     const { data } = await axios.put(`/production/${id}`, prod);
     return data;
   },
-  clearAll: async () => {
-    const { data } = await axios.delete('/production');
+  clearAll: async (date) => {
+    const { data } = await axios.delete('/production', { params: { date } });
     return data;
   }
 };

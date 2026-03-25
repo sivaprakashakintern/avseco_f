@@ -74,7 +74,9 @@ const Production = () => {
     updateProduction,
     clearAllProduction,
     products: dbProducts, 
-    employees
+    employees,
+    productionTargets,
+    fetchTargets
   } = useAppContext();
   const { isAdmin } = useAuth();
 
@@ -106,8 +108,63 @@ const Production = () => {
       if (!unique[p.name]) unique[p.name] = { name: p.name, sizes: [] };
       if (!unique[p.name].sizes.includes(p.size)) unique[p.name].sizes.push(p.size);
     });
-    return Object.values(unique);
+    
+    return Object.values(unique).map(p => ({
+      ...p,
+      sizes: p.sizes.sort((a, b) => {
+        const numA = parseInt(a) || 0;
+        const numB = parseInt(b) || 0;
+        return numA - numB;
+      })
+    }));
   }, [dbProducts]);
+
+  useEffect(() => {
+    if (fetchTargets) fetchTargets();
+  }, [fetchTargets]);
+
+  const targetInfo = React.useMemo(() => {
+    if (!productionTargets || !formData.size) return null;
+    
+    // 1. Find target for this specific operator and size
+    let target = productionTargets.find(t => 
+      (t.operator === formData.operator) && 
+      (t.productSize === formData.size || t.size === formData.size)
+    );
+    
+    // 2. Fallback to any target for this size if no operator match
+    if (!target) {
+      target = productionTargets.find(t => 
+        (t.productSize === formData.size || t.size === formData.size)
+      );
+    }
+    
+    if (!target) return null;
+    
+    const quantityTyped = Number(formData.quantity || 0);
+    const totalProduced = (target.producedQty || 0) + quantityTyped;
+    const remaining = Math.max(0, target.targetQty - totalProduced);
+    
+    return {
+      targetQty: target.targetQty,
+      producedQty: totalProduced,
+      remaining: remaining,
+      isCompleted: totalProduced >= target.targetQty,
+      operator: target.operator
+    };
+  }, [productionTargets, formData.operator, formData.size, formData.quantity]);
+
+  // Global targets for analytics cards
+  const targetsBySize = React.useMemo(() => {
+    const map = {};
+    (productionTargets || []).forEach(t => {
+      const s = (t.productSize || t.size || "").toLowerCase().trim();
+      if (!map[s]) map[s] = { target: 0, produced: 0 };
+      map[s].target += (t.targetQty || 0);
+      map[s].produced += (t.producedQty || 0);
+    });
+    return map;
+  }, [productionTargets]);
 
   // Initial form defaults
   useEffect(() => {
@@ -221,6 +278,25 @@ const Production = () => {
     return product ? product.sizes : [];
   };
 
+  const getSizeTargetInfo = (size) => {
+    if (!productionTargets || !formData.operator || !size) return null;
+    let target = productionTargets.find(t => 
+      (t.operator === formData.operator) && 
+      (t.productSize === size || t.size === size)
+    );
+    if (!target) {
+      target = productionTargets.find(t => (t.productSize === size || t.size === size));
+    }
+    if (!target) return null;
+    
+    const remaining = Math.max(0, target.targetQty - (target.producedQty || 0));
+    return {
+      targetQty: target.targetQty,
+      remaining: remaining,
+      isCompleted: (target.producedQty || 0) >= target.targetQty
+    };
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.date-picker-container')) {
@@ -324,7 +400,7 @@ const Production = () => {
             onClick={async () => {
               if (window.confirm("Are you sure you want to clear ALL production history records from the database? This cannot be undone.")) {
                 try {
-                  await clearAllProduction();
+                  await clearAllProduction(formData.date);
                   showNotificationMessage("✅ All production history has been cleared.");
                 } catch (err) {
                   showNotificationMessage("❌ Failed to clear history.", "error");
@@ -383,16 +459,60 @@ const Production = () => {
                       </select>
                     </div>
                     <div className="form-group-premium">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <label>Size</label>
-                      <select name="size" value={formData.size} onChange={handleInputChange} className="premium-select">
-                        {getSizesForProduct().map(size => <option key={size} value={size}>{size}</option>)}
-                      </select>
+                      {targetInfo && (
+                        <span className={`target-badge-premium ${targetInfo.isCompleted ? 'completed' : 'pending'}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
+                          Target: {targetInfo.targetQty}
+                        </span>
+                      )}
+                    </div>
+                    <select name="size" value={formData.size} onChange={handleInputChange} className="premium-select">
+                      {getSizesForProduct().map(size => {
+                        const t = getSizeTargetInfo(size);
+                        let label = size;
+                        if (t) {
+                          label += t.isCompleted ? " (Complete)" : ` (Target: ${t.remaining})`;
+                        }
+                        return (
+                          <option 
+                            key={size} 
+                            value={size} 
+                            style={{ color: t?.isCompleted ? '#059669' : '#1e293b', fontWeight: t?.isCompleted ? 'bold' : 'normal' }}
+                          >
+                            {label}
+                          </option>
+                        );
+                      })}
+                    </select>
                     </div>
                   </div>
 
                   <div className="form-group-premium">
-                    <label>Quantity (pcs)</label>
-                    <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} placeholder="Enter quantity..." className="premium-input" />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label>Quantity (pcs)</label>
+                      {targetInfo && (
+                        <span className={`target-badge-premium ${targetInfo.isCompleted ? 'completed' : 'pending'}`}>
+                          {targetInfo.isCompleted ? (
+                             <><span className="material-symbols-outlined">check_circle</span> Target Complete</>
+                          ) : (
+                             <><span className="material-symbols-outlined">track_changes</span> Balance: {targetInfo.remaining}</>
+                          ) || `Balance: ${targetInfo.remaining}`}
+                        </span>
+                      )}
+                    </div>
+                    <input 
+                      type="number" 
+                      name="quantity" 
+                      value={formData.quantity} 
+                      onChange={handleInputChange} 
+                      onWheel={(e) => e.target.blur()}
+                      onFocus={(e) => e.target.select()}
+                      placeholder="Enter quantity..." 
+                      className="premium-input" 
+                      min="1"
+                      step="1"
+                    />
                   </div>
 
                   <div className="form-row-premium">
@@ -464,13 +584,24 @@ const Production = () => {
                 <div className="summary-grid">
                   {availableSizes.map(size => (
                     <div key={size} className="summary-item">
-                      <div className="item-label">{size}</div>
+                      <div className="item-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{size}</span>
+                      </div>
                       <div className="item-value">{summaryData.bySize[size] || 0}</div>
                       <div className="item-progress">
-                        <div
-                          className="progress-fill"
-                          style={{ width: `${summaryData.total > 0 ? (summaryData.bySize[size] / summaryData.total * 100) : 0}%` }}
-                        ></div>
+                        {(() => {
+                          const tData = targetsBySize[size.toLowerCase().trim()];
+                          const progress = tData && tData.target > 0 ? (tData.produced / tData.target * 100) : 0;
+                          return (
+                            <div
+                              className="progress-fill"
+                              style={{ 
+                                width: `${Math.min(100, progress)}%`,
+                                backgroundColor: progress >= 100 ? '#10b981' : '#3b82f6'
+                              }}
+                            ></div>
+                          );
+                        })()}
                       </div>
                     </div>
                   ))}
@@ -516,7 +647,6 @@ const Production = () => {
                 <thead>
                   <tr>
                     <th style={{ textAlign: 'center' }}>S.NO</th>
-                    <th style={{ textAlign: 'center', minWidth: '100px' }}>DATE</th>
                     <th style={{ textAlign: 'center' }}>TIME</th>
                     <th style={{ textAlign: 'center' }}>OPERATOR</th>
                     <th style={{ textAlign: 'center' }}>PRODUCT NAME</th>
@@ -531,7 +661,6 @@ const Production = () => {
                     filteredHistory.map((record, idx) => (
                       <tr key={record.id || record._id || idx} style={{ textAlign: 'center' }}>
                         <td className="bold" style={{ textAlign: 'center' }}>{idx + 1}</td>
-                        <td className="bold" style={{ textAlign: 'center' }}>{record.date}</td>
                         <td style={{ textAlign: 'center' }}>
                           <span className={`time-badge`}>
                             {record.time}
@@ -563,7 +692,7 @@ const Production = () => {
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan={isAdmin ? "9" : "8"} className="empty">No records found</td></tr>
+                    <tr><td colSpan={isAdmin ? "8" : "7"} className="empty">No records found</td></tr>
                   )}
                 </tbody>
               </table>
@@ -595,8 +724,8 @@ const Production = () => {
                       <div className="prod-card-details">
                         <div className="prod-card-info-grid">
                           <div className="prod-info-row">
-                            <span className="prod-info-label">Date & Time</span>
-                            <span className="prod-info-value">{record.date} • {record.time}</span>
+                            <span className="prod-info-label">Time</span>
+                            <span className="prod-info-value">{record.time}</span>
                           </div>
                           
                           {isAdmin && (
@@ -682,8 +811,12 @@ const Production = () => {
                 <input 
                   type="number" 
                   value={editingProduction.quantity} 
-                  onChange={(e) => setEditingProduction({...editingProduction, quantity: e.target.value})}
+                  onChange={(e) => setEditingProduction(prev => ({...prev, quantity: e.target.value}))}
+                  onWheel={(e) => e.target.blur()}
+                  onFocus={(e) => e.target.select()}
                   className="premium-input"
+                  min="1"
+                  step="1"
                 />
               </div>
 

@@ -25,6 +25,14 @@ const Sales = () => {
         return `${day}-${month}-${year}`;
     };
 
+    const formatPhone = (value) => {
+        if (!value.startsWith("+91 ")) {
+            value = "+91 " + value.replace(/^\+91\s*/, "");
+        }
+        const digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
+        return "+91 " + digits;
+    };
+
     // Process products into unique base names and their variants
     const products = React.useMemo(() => {
         const processed = (dbProducts || []).map(p => {
@@ -45,10 +53,11 @@ const Sales = () => {
     }, [dbProducts, stockData]);
     const [showAddClientModal, setShowAddClientModal] = useState(false);
     const [newClientData, setNewClientData] = useState({
+        clientType: "Company",
         companyName: "",
         contactPerson: "",
         email: "",
-        phone: "",
+        phone: "+91 ",
         address: "",
         gst: ""
     });
@@ -81,10 +90,11 @@ const Sales = () => {
     const [companyName, setCompanyName] = useState("");
     const [customerName, setCustomerName] = useState("");
     const [customerEmail, setCustomerEmail] = useState("");
-    const [customerPhone, setCustomerPhone] = useState("");
+    const [customerPhone, setCustomerPhone] = useState("+91 ");
     const [customerGstin, setCustomerGstin] = useState("");
     const [customerAddress, setCustomerAddress] = useState("");
     const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+    const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
     const [deliveryEmployee, setDeliveryEmployee] = useState("");
     const [isEmployeeDropdownOpen, setIsEmployeeDropdownOpen] = useState(false);
     const [soldBy, setSoldBy] = useState("");
@@ -301,6 +311,27 @@ const Sales = () => {
 
         setIsLogging(true);
         try {
+            // Check if customer exists in DB, if not, or if details differ, add/sync them automatically
+            const existingClientByPhone = clients.find(c => customerPhone && c.phone === customerPhone);
+            const existingClientByName = clients.find(c => !customerPhone && customerName && (c.contactPerson === customerName || c.companyName === customerName));
+            const existingClient = existingClientByPhone || existingClientByName;
+
+            if (!existingClient && !editingTransactionId) {
+                try {
+                    await addClient({
+                        clientType: companyName ? 'Company' : 'Personal',
+                        companyName: companyName || "",
+                        contactPerson: customerName || companyName || "Cash Customer",
+                        email: customerEmail || "",
+                        phone: customerPhone || "+91 ",
+                        address: customerAddress || "N/A",
+                        gst: customerGstin || ""
+                    });
+                } catch (err) {
+                    console.error("Auto-client creation failed:", err);
+                }
+            }
+
             if (editingTransactionId) {
                 // Update existing transaction
                 await updateSale(editingTransactionId, payload);
@@ -325,7 +356,7 @@ const Sales = () => {
         setCompanyName("");
         setCustomerName("");
         setCustomerEmail("");
-        setCustomerPhone("");
+        setCustomerPhone("+91 ");
         setCustomerGstin("");
         setCustomerAddress("");
         setDeliveryEmployee("");
@@ -387,7 +418,7 @@ const Sales = () => {
         setCompanyName("");
         setCustomerName("");
         setCustomerEmail("");
-        setCustomerPhone("");
+        setCustomerPhone("+91 ");
         setCustomerGstin("");
         setCustomerAddress("");
         setDeliveryEmployee("");
@@ -698,6 +729,9 @@ const Sales = () => {
             if (!event.target.closest('.client-dropdown')) {
                 setIsClientDropdownOpen(false);
             }
+            if (!event.target.closest('.customer-dropdown')) {
+                setIsCustomerDropdownOpen(false);
+            }
             if (!event.target.closest('.employee-dropdown')) {
                 setIsEmployeeDropdownOpen(false);
             }
@@ -803,7 +837,7 @@ const Sales = () => {
                                                 setCompanyName("");
                                                 setCustomerName("");
                                                 setCustomerEmail("");
-                                                setCustomerPhone("");
+                                                setCustomerPhone("+91 ");
                                                 setCustomerGstin("");
                                                 setCustomerAddress("");
                                             }}>
@@ -884,14 +918,65 @@ const Sales = () => {
 
                             <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Customer Name:</span>
-                                <div style={{ width: '100%' }}>
-                                    <input
-                                        type="text"
-                                        placeholder="Enter customer name"
-                                        className="quick-entry-input"
-                                        value={customerName}
-                                        onChange={(e) => setCustomerName(e.target.value)}
-                                    />
+                                <div className="product-dropdown customer-dropdown">
+                                    <div className="dropdown-input-wrapper">
+                                        <input
+                                            type="text"
+                                            placeholder="Enter or select customer"
+                                            className="quick-entry-input dropdown-search-input"
+                                            style={{ width: '100%' }}
+                                            value={customerName}
+                                            onChange={(e) => {
+                                                setCustomerName(e.target.value);
+                                                setIsCustomerDropdownOpen(true);
+                                            }}
+                                            onClick={() => setIsCustomerDropdownOpen(true)}
+                                            onFocus={() => setIsCustomerDropdownOpen(true)}
+                                        />
+                                        <span className="material-symbols-outlined dropdown-input-icon">
+                                            {isCustomerDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
+                                        </span>
+                                    </div>
+                                    {isCustomerDropdownOpen && (
+                                        <div className="product-dropdown-menu">
+                                            {clients.filter(c => 
+                                                (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) || 
+                                                 c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
+                                            ).length > 0 ? (
+                                                clients
+                                                    .filter(c => 
+                                                        (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) || 
+                                                         c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
+                                                    )
+                                                    .map((client) => (
+                                                        <button
+                                                            key={client.id || client._id}
+                                                            onClick={() => {
+                                                                setCustomerName(client.companyName || client.contactPerson);
+                                                                setCompanyName(client.companyName || "");
+                                                                setCustomerEmail(client.email || "");
+                                                                setCustomerPhone(client.phone || "+91 ");
+                                                                setCustomerGstin(client.gst || "");
+                                                                setCustomerAddress(client.address || "");
+                                                                setIsCustomerDropdownOpen(false);
+                                                            }}
+                                                            className="product-dropdown-item"
+                                                        >
+                                                            <div className="client-option-main">
+                                                                <span className="product-name-text">{client.companyName || client.contactPerson}</span>
+                                                                <span className="type-tag">{client.clientType || 'Personal'}</span>
+                                                            </div>
+                                                            <div className="client-option-sub">
+                                                                <span>{client.phone}</span>
+                                                                {client.gst && <span> | {client.gst}</span>}
+                                                            </div>
+                                                        </button>
+                                                    ))
+                                            ) : (
+                                                <div className="no-items-dropdown">No matching customer. Enter name manually.</div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -919,7 +1004,7 @@ const Sales = () => {
                                         className="quick-entry-input"
                                         style={{ borderLeft: '3px solid #10b981' }}
                                         value={customerPhone}
-                                        onChange={(e) => setCustomerPhone(e.target.value)}
+                                        onChange={(e) => setCustomerPhone(formatPhone(e.target.value))}
                                     />
                                 </div>
                             </div>
@@ -2070,7 +2155,7 @@ const Sales = () => {
                                         <input
                                             type="email"
                                             className="modal-input"
-                                            placeholder="Enter email address"
+                                            placeholder="jofra@avseco.in"
                                             value={newClientData.email}
                                             onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })}
                                         />
@@ -2083,7 +2168,7 @@ const Sales = () => {
                                             placeholder="Enter phone number"
                                             value={newClientData.phone}
                                             required
-                                            onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })}
+                                            onChange={(e) => setNewClientData({ ...newClientData, phone: formatPhone(e.target.value) })}
                                         />
                                     </div>
                                 </div>
@@ -2139,7 +2224,7 @@ const Sales = () => {
                                                 companyName: "",
                                                 contactPerson: "",
                                                 email: "",
-                                                phone: "",
+                                                phone: "+91 ",
                                                 address: "",
                                                 gst: ""
                                             });

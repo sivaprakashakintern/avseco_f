@@ -16,7 +16,8 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     products: dbProducts, 
     productionTargets, 
     fetchTargets, 
-    productionStats
+    productionStats,
+    employees
   } = useAppContext();
 
   
@@ -24,6 +25,19 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [targetQty, setTargetQty] = useState('');
+  const [selectedOperator, setSelectedOperator] = useState('');
+
+  const operators = React.useMemo(() => {
+    return (employees || [])
+      .filter(e => e.department === "Operator" || e.department === "Machine operator" || e.department === "Others")
+      .map(e => e.name);
+  }, [employees]);
+
+  useEffect(() => {
+    if (operators.length > 0 && !selectedOperator) {
+      setSelectedOperator(operators[0]);
+    }
+  }, [operators, selectedOperator]);
 
 
   
@@ -47,23 +61,55 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       return [];
     }
     
-    return unique;
+    return unique.map(p => {
+      const sizes = (dbProducts || [])
+        .filter(dp => dp.name === p.name)
+        .map(dp => dp.size);
+      
+      const uniqueSizes = [...new Set(sizes)].sort((a, b) => {
+        const numA = parseInt(a) || 0;
+        const numB = parseInt(b) || 0;
+        return numA - numB;
+      });
+
+      return { ...p, sizes: uniqueSizes };
+    });
   }, [dbProducts]);
+
+  useEffect(() => {
+    if (uniqueProducts.length > 0 && !selectedProduct) {
+      setSelectedProduct(uniqueProducts[0].id || uniqueProducts[0].name);
+    }
+  }, [uniqueProducts, selectedProduct]);
 
   // ===== DYNAMIC SIZES FOR SELECTED PRODUCT =====
   const availableSizes = React.useMemo(() => {
     if (!selectedProduct) return [];
     
-    // Find the product name for the selected ID
-    const productObj = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
-    const productName = productObj ? productObj.name : '';
-    
-    if (!productName) return [];
+    // Find the product object that matches the selectedProduct ID or name
+    const product = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
+    return product ? product.sizes : [];
+  }, [selectedProduct, uniqueProducts]);
 
-    return (dbProducts || [])
-      .filter(p => p.name === productName)
-      .map(p => p.size);
-  }, [selectedProduct, uniqueProducts, dbProducts]);
+  // ===== AUTO-FETCH EXISTING TARGET FROM DB =====
+  useEffect(() => {
+    if (selectedProduct && selectedSize && selectedOperator && productionTargets) {
+      const productObj = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
+      const productName = productObj ? productObj.name : '';
+      
+      const existingTarget = productionTargets.find(t => 
+        t.productName === productName && 
+        t.productSize === selectedSize && 
+        t.operator === selectedOperator
+      );
+      
+      if (existingTarget) {
+        setTargetQty(String(existingTarget.targetQty));
+      } else {
+        setTargetQty('');
+      }
+    }
+  }, [selectedProduct, selectedSize, selectedOperator, productionTargets, uniqueProducts]);
 
 
 
@@ -102,6 +148,8 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const handleProductChange = (e) => {
     const productId = e.target.value;
     setSelectedProduct(productId);
+    setSelectedSize(''); // Reset size when product changes
+    setTargetQty(''); // Reset target quantity
   };
 
   // ===== HANDLE SIZE SELECTION =====
@@ -152,6 +200,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       status: 'pending',
       unit: 'Pieces',
       size: product.size,
+      operator: selectedOperator,
       date: formatDate(new Date()) // Always use formatted string for matching
     };
 
@@ -525,44 +574,58 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           <h3>Set Production Target by Size</h3>
           <div className="target-form-horizontal">
             <div className="form-group-horizontal">
+              <label className="horizontal-label">PRODUCT NAME</label>
               <select
                 value={selectedProduct}
                 onChange={handleProductChange}
                 className="form-select"
               >
-                <option value="">-- Select Product --</option>
+                <option value="">- Select Product -</option>
                 {uniqueProducts.map(product => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
+                  <option key={product.id} value={product.id}>{product.name}</option>
                 ))}
               </select>
             </div>
 
             <div className="form-group-horizontal">
+              <label className="horizontal-label">SIZE</label>
               <select
                 value={selectedSize}
-                onChange={handleSizeChange}
+                onChange={(e) => setSelectedSize(e.target.value)}
                 className="form-select"
+                disabled={!selectedProduct}
               >
-                <option value="">-- Select Size --</option>
-                {availableSizes.map((size, index) => (
-                  <option key={index} value={size}>
-                    {size}
-                  </option>
+                <option value="">- Select Size -</option>
+                {availableSizes.map(size => (
+                  <option key={size} value={size}>{size}</option>
                 ))}
               </select>
             </div>
 
             <div className="form-group-horizontal">
+              <label className="horizontal-label">TARGET QUANTITY (PCS)</label>
               <input
                 type="number"
                 value={targetQty}
                 onChange={(e) => setTargetQty(e.target.value)}
-                placeholder="Enter target quantity"
+                onWheel={(e) => e.target.blur()}
+                onFocus={(e) => e.target.select()}
+                placeholder="Target qty..."
                 className="form-input"
                 min="1"
+                step="1"
               />
+            </div>
+
+            <div className="form-group-horizontal">
+               <label className="horizontal-label">OPERATOR</label>
+               <select 
+                  value={selectedOperator} 
+                  onChange={(e) => setSelectedOperator(e.target.value)}
+                  className="form-select"
+               >
+                  {operators.map(o => <option key={o} value={o}>{o}</option>)}
+               </select>
             </div>
 
             <button
@@ -639,6 +702,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                 <tr>
                   <th className="hide-mobile">Product</th>
                   <th>Size</th>
+                  <th>Operator</th>
                   <th className="hide-mobile">SKU</th>
                   <th className="text-right">Target</th>
                   <th className="text-right">Produced</th>
@@ -651,18 +715,17 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
               <tbody>
                 {filteredData.length > 0 ? (
                   filteredData.map(item => {
-                    const progress = ((item.producedQty / item.targetQty) * 100).toFixed(1);
+                    const rawProgress = (item.producedQty / item.targetQty) * 100;
+                    const progress = Math.min(100, rawProgress).toFixed(1);
                     return (
                       <tr key={item.id}>
                         <td className="hide-mobile">
                           <div className="prod-product-cell">
-                            <div className="prod-icon">
-                              <span className="material-symbols-outlined">eco</span>
-                            </div>
                             <span className="prod-name">{item.productName}</span>
                           </div>
                         </td>
                         <td><strong>{item.productSize}</strong></td>
+                        <td>{item.operator || 'Unknown'}</td>
 
                         <td className="hide-mobile"><span className="prod-sku">{item.sku}</span></td>
                         <td className="text-right">{item.targetQty.toLocaleString()}</td>
@@ -708,7 +771,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="9" className="no-data">
+                    <td colSpan="10" className="no-data">
                       No production targets set. Please add targets using the form above.
                     </td>
                   </tr>
