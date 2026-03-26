@@ -786,10 +786,51 @@
   z-index: 101;
 }
 
+.dropdown-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.dropdown-input-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  font-size: 20px;
+}
+
+.client-option-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.type-tag {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.client-option-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  display: flex;
+  gap: 8px;
+}
+
 .dropdown-search-input {
   width: 100%;
-  height: 36px;
-  padding: 0 12px;
+  height: 48px;
+  padding: 0 16px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 13px;
@@ -2264,3 +2305,9 @@
     display: none !important;
   }
 }
+/* --- STOCK BADGE OVERRIDES --- */
+.stock-badge-premium { padding: 4px 12px; border-radius: 20px; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.stock-badge-premium.ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.stock-badge-premium.low { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+.stock-badge-premium strong { font-weight: 800; font-size: 11px; }
+.stock-badge-text { white-space: nowrap; }

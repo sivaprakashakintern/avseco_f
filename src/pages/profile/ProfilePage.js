@@ -22,7 +22,7 @@ const ProfilePage = () => {
         name: "",
         role: "",
         email: "",
-        phone: "",
+        phone: "+91 ",
         empId: "",
         department: "",
         avatar: "",
@@ -81,7 +81,16 @@ const ProfilePage = () => {
     };
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+        
+        if (name === "phone") {
+            if (!value.startsWith("+91 ")) {
+                value = "+91 " + value.replace(/^\+91\s*/, "");
+            }
+            const digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
+            value = "+91 " + digits;
+        }
+
         setProfileData(prev => ({ ...prev, [name]: value }));
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
     };

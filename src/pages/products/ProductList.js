@@ -14,6 +14,7 @@ const ProductList = () => {
   const [showGroupDeleteModal, setShowGroupDeleteModal] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [variantToDelete, setVariantToDelete] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
   const fetchProducts = async () => {
@@ -25,202 +26,184 @@ const ProductList = () => {
     }
   };
 
+  const DEFAULT_SIZES = ["4-inch", "6-inch", "8-inch", "10-inch", "12-inch"];
+
   // Form state for add/edit
   const [formData, setFormData] = useState({
     name: "",
-    sku: "",
-    size: "10-inch",
-    selectedSizes: [], // For multiple size selection in Add modal
+    hsn: "",
     category: "Plates",
-    costPrice: "",
-    sellPrice: "",
   });
-
-  const stats = {
-    totalProducts: [...new Set(products.map(p => p.name))].length,
-    totalSizes: [...new Set(products.map(p => p.size).filter(s => !!s))].length,
-  };
-
-  // State for detail view
-  const [viewingProductName, setViewingProductName] = useState(null);
-  const [newCustomSize, setNewCustomSize] = useState("");
-
-  const handleCloseViewingModal = () => {
-    setViewingProductName(null);
-    setNewCustomSize("");
-  };
-  const productGroups = products.reduce((acc, product) => {
-    const name = product.name || "Unknown Product";
-    if (!acc[name]) {
-      acc[name] = [];
-    }
-    acc[name].push(product);
-    return acc;
-  }, {});
-
-  const uniqueProductNames = Object.keys(productGroups);
-
-  // ========== HANDLERS ==========
+  
+  const [variants, setVariants] = useState([]);
+  const [newSize, setNewSize] = useState({ size: "", hsn: "", cost: "", sell: "" });
 
   // Add Product
   const handleAddProduct = () => {
     setFormData({
       name: "",
-      sku: "",
-      size: "10-inch",
-      selectedSizes: [],
+      hsn: "",
       category: "Plates",
-      costPrice: "",
-      sellPrice: "",
     });
+    setVariants(DEFAULT_SIZES.map(s => ({
+      size: s,
+      cost: "",
+      sell: "",
+      checked: true,
+      isNew: true
+    })));
     setShowAddModal(true);
   };
 
   const confirmAddProduct = async () => {
-    // Validate form
-    if (!formData.name || formData.selectedSizes.length === 0) {
-      setFeedbackMessage("Please enter name and select at least one size");
+    if (!formData.name.trim()) {
+      setFeedbackMessage("Please enter product name");
       setTimeout(() => setFeedbackMessage(""), 3000);
       return;
     }
 
-    const existingSizes = (productGroups[formData.name] || []).map(p => p.size.toLowerCase());
-    const duplicates = formData.selectedSizes.filter(s => existingSizes.includes(s.toLowerCase()));
-    
-    if (duplicates.length > 0) {
-      setFeedbackMessage(`Product already exists in sizes: ${duplicates.join(', ')}`);
+    const activeVariants = variants.filter(v => v.checked && v.size.trim());
+    if (activeVariants.length === 0) {
+      setFeedbackMessage("Please select at least one size");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
+    }
+
+    if (productGroups[formData.name.trim()]) {
+      setFeedbackMessage(`Product group "${formData.name.trim()}" already exists!`);
       setTimeout(() => setFeedbackMessage(""), 4000);
       return;
     }
 
-    const newEntries = formData.selectedSizes.map((size) => {
-      const namePart = formData.name.split(' ')[0].substring(0, 3).toUpperCase();
-      const randomSuffix = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-      const ts = Date.now().toString().slice(-4);
-      const autoSku = `ARECA-${namePart}-${size.split('-')[0]}-${ts}${randomSuffix}`;
-
-      return {
-        name: formData.name.trim(),
-        sku: autoSku,
-        size: size,
-        category: "Plates",
-        costPrice: 0,
-        sellPrice: 0,
-        margin: "0.0%",
-      };
-    });
 
     try {
-      // Add each size variant one by one to ensure compatibility with all backend versions
-      for (const entry of newEntries) {
-        await addProduct(entry);
+      for (const v of activeVariants) {
+        const cost = parseFloat(v.cost) || 0;
+        const sell = parseFloat(v.sell) || 0;
+
+        await addProduct({
+          name: formData.name.trim(),
+          sku: formData.hsn.trim(), // Use manually entered HSN as SKU
+          size: v.size,
+          category: "Plates",
+          costPrice: cost,
+          sellPrice: sell,
+          margin: sell > 0 ? ((sell - cost) / sell * 100).toFixed(1) + "%" : "0.0%",
+        });
       }
       
       await fetchProducts();
       setShowAddModal(false);
-      setFeedbackMessage(`${newEntries.length} product(s) added successfully`);
+      setFeedbackMessage(`${activeVariants.length} sizes added successfully`);
     } catch (err) {
       console.error("Error adding products:", err);
-      // Detailed logging for debugging
-      if (err.response?.data) {
-        console.log("SERVER ERROR DETAILS:", err.response.data);
-      }
-      
-      const serverMsg = err.response?.data?.message || err.message;
-      setFeedbackMessage(`Error: ${serverMsg}`);
-    }
-
-    setTimeout(() => setFeedbackMessage(""), 3000);
-  };
-
-  const handleAddSizeToProduct = async () => {
-    if (!newCustomSize.trim() || !viewingProductName) {
-      setFeedbackMessage("Please enter a valid size (e.g., 14-inch)");
-      setTimeout(() => setFeedbackMessage(""), 3000);
-      return;
-    }
-
-    // Check if size already exists for this product
-    const existingVariants = productGroups[viewingProductName] || [];
-    const sizeExists = existingVariants.some(v => v.size.trim().toLowerCase() === newCustomSize.trim().toLowerCase());
-    
-    if (sizeExists) {
-      setFeedbackMessage(`Product with size ${newCustomSize} already exists!`);
-      setTimeout(() => setFeedbackMessage(""), 4000);
-      return;
-    }
-
-    const namePart = viewingProductName.split(' ')[0].substring(0, 3).toUpperCase();
-    const sizeStr = newCustomSize.trim().toUpperCase();
-    const sizePart = sizeStr.includes('-') ? sizeStr.split('-')[0] : sizeStr.substring(0, 2);
-    const randomSuffix = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
-    const ts = Date.now().toString().slice(-4);
-    const autoSku = `ARECA-${namePart}-${sizePart}-${ts}${randomSuffix}`;
-
-    const newEntry = {
-      name: viewingProductName.trim(),
-      sku: autoSku,
-      size: newCustomSize.trim(),
-      category: "Plates",
-      costPrice: 0,
-      sellPrice: 0,
-      margin: "0.0%",
-    };
-
-    try {
-      await addProduct(newEntry);
-      // await fetchProducts(); // context update is enough now
-      setNewCustomSize("");
-      setFeedbackMessage(`New size added successfully!`);
-    } catch (err) {
-      console.error("Error adding variant:", err);
-      setFeedbackMessage(`Error: failed to add size`);
+      setFeedbackMessage(`Error: ${err.response?.data?.message || err.message}`);
     }
     setTimeout(() => setFeedbackMessage(""), 3000);
   };
 
   // Edit Product
-  const handleEditProduct = (product) => {
-    setSelectedProduct(product);
+  const handleEditProduct = (name) => {
+    const group = productGroups[name] || [];
+    if (group.length === 0) return;
+
     setFormData({
-      name: product.name,
-      sku: product.sku,
-      size: product.size,
-      category: "Plates",
-      costPrice: product.costPrice,
-      sellPrice: product.sellPrice,
+      name: name,
+      hsn: group[0]?.sku || "", 
+      category: group[0]?.category || "Plates",
     });
+
+    const variantsFromDefault = DEFAULT_SIZES.map(s => {
+      const match = group.find(v => v.size === s);
+      return match ? 
+        { ...match, checked: true, cost: match.costPrice, sell: match.sellPrice, hsn: match.sku, isExisting: true } : 
+        { size: s, cost: "", sell: "", hsn: group[0]?.sku || "", checked: false, isNew: true };
+    });
+
+    const customVariants = group
+      .filter(v => !DEFAULT_SIZES.includes(v.size))
+      .map(v => ({ ...v, checked: true, cost: v.costPrice, sell: v.sellPrice, hsn: v.sku, isExisting: true }));
+
+    setVariants([...variantsFromDefault, ...customVariants]);
     setShowEditModal(true);
   };
 
   const confirmEditProduct = async () => {
-    if (!selectedProduct) return;
-
-    const cost = parseFloat(formData.costPrice) || 0;
-    const sell = parseFloat(formData.sellPrice) || 0;
-
-    const updateData = {
-      name: formData.name,
-      sku: formData.sku,
-      size: formData.size,
-      category: "Plates",
-      costPrice: cost,
-      sellPrice: sell,
-      margin: sell > 0 ? ((sell - cost) / sell * 100).toFixed(1) + "%" : "0.0%",
-    };
 
     try {
-      await updateProduct(selectedProduct._id, updateData);
-      // await fetchProducts(); // context update is enough
+      for (const v of variants) {
+        if (v.checked && v.isExisting) {
+          // Update existing
+          const cost = parseFloat(v.cost) || 0;
+          const sell = parseFloat(v.sell) || 0;
+          await updateProduct(v._id || v.id, {
+            ...v,
+            sku: v.hsn ? v.hsn.trim() : formData.hsn.trim(), // Use row-level HSN if present, else master
+            costPrice: cost,
+            sellPrice: sell,
+            margin: sell > 0 ? ((sell - cost) / sell * 100).toFixed(1) + "%" : "0.0%",
+          });
+        } else if (v.checked && v.isNew) {
+          const cost = parseFloat(v.cost) || 0;
+          const sell = parseFloat(v.sell) || 0;
+
+          await addProduct({
+            name: formData.name.trim(),
+            sku: v.hsn ? v.hsn.trim() : formData.hsn.trim(), 
+            size: v.size,
+            category: "Plates",
+            costPrice: cost,
+            sellPrice: sell,
+            margin: sell > 0 ? ((sell - cost) / sell * 100).toFixed(1) + "%" : "0.0%",
+          });
+        }
+        // If unchecked and existing, we could delete it, but user didn't explicitly ask for deletion here.
+        // Usually better to just leave it or keep it as is.
+      }
+      
+      await fetchProducts();
       setShowEditModal(false);
-      setSelectedProduct(null);
       setFeedbackMessage("Product updated successfully");
     } catch (err) {
-      console.error("Error updating product:", err);
-      setFeedbackMessage("Error updating product");
+      console.error("Error updating variants:", err);
+      setFeedbackMessage("Error updating products");
     }
-
     setTimeout(() => setFeedbackMessage(""), 3000);
+  };
+
+  const handleVariantChange = (index, field, value) => {
+    const newVariants = [...variants];
+    newVariants[index][field] = value;
+    setVariants(newVariants);
+  };
+
+  const handleIndividualDelete = (variantId, index, size) => {
+    if (!variantId) return;
+    setVariantToDelete({ id: variantId, index, size });
+  };
+
+  const confirmVariantDelete = async () => {
+    if (!variantToDelete) return;
+    const { id, index } = variantToDelete;
+    try {
+      await deleteProduct(id);
+      const newVariants = [...variants];
+      newVariants.splice(index, 1);
+      setVariants(newVariants);
+      setVariantToDelete(null);
+      setFeedbackMessage("Size variant deleted");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+    } catch (err) {
+      console.error("Error deleting variant:", err);
+      setFeedbackMessage("Failed to delete variant");
+    }
+  };
+
+  const handleAddCustomSize = () => {
+    if (!newSize.size.trim()) return;
+    const sizeHsn = newSize.hsn ? newSize.hsn.trim() : formData.hsn.trim();
+    setVariants([...variants, { ...newSize, hsn: sizeHsn, checked: true, isNew: true }]);
+    setNewSize({ size: "", hsn: "", cost: "", sell: "" });
   };
 
 
@@ -250,9 +233,6 @@ const ProductList = () => {
       // await fetchProducts(); // context update is enough now
       setShowGroupDeleteModal(false);
       
-      if (viewingProductName === groupToDelete) {
-         handleCloseViewingModal();
-      }
       
       setGroupToDelete(null);
       setFeedbackMessage(`Product group deleted`);
@@ -264,35 +244,12 @@ const ProductList = () => {
     setTimeout(() => setFeedbackMessage(""), 3000);
   };
 
-  // Form input change handler
-  // Form input change handler
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-
-    if (type === "checkbox") {
-      const currentSizes = [...formData.selectedSizes];
-      if (checked) {
-        setFormData({
-          ...formData,
-          selectedSizes: [...currentSizes, value]
-        });
-      } else {
-        setFormData({
-          ...formData,
-          selectedSizes: currentSizes.filter(s => s !== value)
-        });
-      }
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-    }
-  };
-
-  // Format currency
-  const formatCurrency = (value) => {
-    return `₹${value.toFixed(2)}`;
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
   };
 
   // Get product abbreviation (first word)
@@ -300,10 +257,25 @@ const ProductList = () => {
     return name ? name.split(" ")[0] : "Product";
   };
 
+  // Define stats and grouping inside render to stay fresh
+  const productGroups = products.reduce((acc, product) => {
+    const name = product.name || "Unknown Product";
+    if (!acc[name]) {
+      acc[name] = [];
+    }
+    acc[name].push(product);
+    return acc;
+  }, {});
+
+  const uniqueProductNames = Object.keys(productGroups).sort();
+
+  const stats = {
+    totalProducts: uniqueProductNames.length,
+    totalVariants: products.length
+  };
+
   return (
     <div className="product-list-container">
-
-
       {/* Feedback Toast */}
       {feedbackMessage && (
         <div className="feedback-toast">
@@ -323,8 +295,6 @@ const ProductList = () => {
         </div>
 
         <div className="header-actions">
-
-
           <button className="btn-transfer-premium" onClick={handleAddProduct}>
             <span className="material-symbols-outlined">add</span>
             <span className="btn-text">Add Product</span>
@@ -332,7 +302,7 @@ const ProductList = () => {
         </div>
       </div>
 
-      {/* ===== STATS CARDS (only Total Products and Sizes) ===== */}
+      {/* ===== STATS CARDS ===== */}
       <div className="product-stats">
         <div className="stat-card centered-stat">
           <div className="stat-icon blue">
@@ -344,30 +314,32 @@ const ProductList = () => {
           </div>
         </div>
         <div className="stat-card centered-stat">
-          <div className="stat-icon orange">
-            <span className="material-symbols-outlined">straighten</span>
+          <div className="stat-icon green">
+            <span className="material-symbols-outlined">category</span>
           </div>
           <div className="stat-info">
             <span className="stat-label">Total Sizes</span>
-            <span className="stat-value">{stats.totalSizes || 0}</span>
+            <span className="stat-value">{stats.totalVariants}</span>
           </div>
         </div>
       </div>
 
-      {/* Removed Search, View Toggles and Filter Badges as per user request */}
-
-      {/* ===== GRID VIEW (Default) ===== */}
+      {/* ===== GRID VIEW ===== */}
       <div className="product-grid">
-          {uniqueProductNames.length > 0 ? (
-            uniqueProductNames.map((name) => (
-              <div key={name} className="product-card" onClick={() => setViewingProductName(name)} style={{ cursor: "pointer" }}>
-                <div className="product-card-text-container">
-                  <span className="product-card-text-badge">{getAbbr(name)}</span>
-                </div>
+        {uniqueProductNames.length > 0 ? (
+          uniqueProductNames.map((name) => (
+            <div key={name} className="product-card" onClick={() => handleEditProduct(name)} style={{ cursor: "pointer" }}>
+              <div className="product-card-text-container">
+                <span className="product-card-text-badge">{getAbbr(name)}</span>
+              </div>
 
-                <div className="product-card-content">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <h3 className="product-card-title">{name}</h3>
+              <div className="product-card-content">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h3 className="product-card-title">{name}</h3>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <span className="product-card-text-badge" style={{ padding: '2px 8px', fontSize: '10px', display: 'block', marginBottom: '4px' }}>{productGroups[name].length} Sizes</span>
+                    </div>
                     <button 
                       className="action-btn delete" 
                       style={{ padding: '4px', height: '32px', width: '32px' }}
@@ -380,118 +352,27 @@ const ProductList = () => {
                       <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
                     </button>
                   </div>
-                  <div className="product-card-details">
-                    <span className="product-card-size">{productGroups[name]?.length || 0} Sizes</span>
-                  </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="empty-state-grid">
-              <span className="material-symbols-outlined empty-icon">category</span>
-              <h4>No products found</h4>
-              <button className="primary-btn" onClick={handleAddProduct}>
-                Add Product
-              </button>
             </div>
-          )}
-        </div>
-
-      {/* ===== PRODUCT DETAILS MODAL (Inner View) ===== */}
-      {viewingProductName && (
-        <div className="modal-overlay" onClick={handleCloseViewingModal}>
-          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header centered-modal-header">
-              <div className="header-info">
-                <h3 className="centered-text">{viewingProductName}</h3>
-                <div className="manage-sizes-subtitle">
-                   <p>Manage sizes and pricing</p>
-                </div>
-              </div>
-              <button className="modal-close" onClick={handleCloseViewingModal}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="nested-table-wrapper">
-                <table className="nested-table">
-                  <thead>
-                    <tr>
-                      <th>Size</th>
-                      <th>SKU</th>
-                      <th>Cost (₹)</th>
-                      <th>Price (₹)</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(productGroups[viewingProductName] || [])
-                      .sort((a, b) => (parseInt(a.size) || 0) - (parseInt(b.size) || 0))
-                      .map(variant => (
-                        <tr key={variant._id || variant.id}>
-                          <td><strong>{variant.size}</strong></td>
-                        <td>{variant.sku}</td>
-                        <td>{formatCurrency(variant.costPrice)}</td>
-                        <td>{formatCurrency(variant.sellPrice)}</td>
-                        <td>
-                          <div className="action-buttons">
-                            <button
-                              className="action-btn edit"
-                              onClick={() => handleEditProduct(variant)}
-                            >
-                              <span className="material-symbols-outlined">edit</span>
-                            </button>
-                            <button
-                              className="action-btn delete"
-                              onClick={() => {
-                                setSelectedProduct(variant);
-                                setShowDeleteModal(true);
-                              }}
-                            >
-                              <span className="material-symbols-outlined">delete</span>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {/* Add Custom New Size Row */}
-                    <tr style={{ background: '#f8fafc', borderTop: '2px dashed #cbd5e1' }}>
-                      <td colSpan="2" style={{ padding: '12px' }}>
-                        <input 
-                          type="text" 
-                          placeholder="Enter new size (e.g., 14-inch)" 
-                          value={newCustomSize} 
-                          onChange={(e) => setNewCustomSize(e.target.value)} 
-                          className="modal-input" 
-                          style={{ margin: 0, width: '100%', padding: '10px 14px', borderRadius: '6px' }}
-                        />
-                      </td>
-                      <td colSpan="2" style={{ verticalAlign: 'middle', color: '#64748b', fontSize: '13px' }}>
-                        *SKU & Pricing auto-generated. Edit anytime.
-                      </td>
-                      <td style={{ verticalAlign: 'middle' }}>
-                        <button 
-                          style={{ padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}
-                          onClick={handleAddSizeToProduct}
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
-                          Add Details
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          ))
+        ) : (
+          <div className="empty-state-grid">
+            <span className="material-symbols-outlined empty-icon">category</span>
+            <h4>No products found</h4>
+            <button className="primary-btn" onClick={handleAddProduct}>
+              Add Product
+            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
 
       {/* ===== MODALS ===== */}
       {/* Add Product Modal */}
       {showAddModal && (
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Add New Product</h3>
               <button className="modal-close" onClick={() => setShowAddModal(false)}>
@@ -499,119 +380,307 @@ const ProductList = () => {
               </button>
             </div>
             <div className="modal-body">
-              <div className="modal-form-group">
-                <label>Product Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter product name"
-                  className="modal-input"
-                />
-              </div>
-              <div className="modal-form-group">
-                <label>Sizes *</label>
-                <div className="checkbox-group">
-                  {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
-                    <label key={size} className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        name="size"
-                        value={size}
-                        checked={formData.selectedSizes.includes(size)}
-                        onChange={handleInputChange}
-                      />
-                      <span>{size}</span>
-                    </label>
-                  ))}
+              <div className="modal-row">
+                <div className="modal-form-group" style={{ flex: 1 }}>
+                  <label>Product Name *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter product name"
+                    className="modal-input"
+                  />
                 </div>
+              </div>
+
+              <div className="variants-header">
+                <h4>Manage Sizes & Pricing</h4>
+                <p>Tick the sizes you want to add and enter their prices</p>
+              </div>
+
+              <div className="variants-list">
+                <table className="variant-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '40px' }}>Tick</th>
+                      <th>Size</th>
+                      <th>HSN</th>
+                      <th>Cost (₹)</th>
+                      <th>Sell (₹)</th>
+                      <th style={{ width: '40px' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {variants.map((v, idx) => (
+                      <tr key={idx} className={v.checked ? "active-row" : "inactive-row"}>
+                        <td>
+                          <input 
+                            type="checkbox" 
+                            checked={v.checked} 
+                            onChange={(e) => handleVariantChange(idx, 'checked', e.target.checked)} 
+                          />
+                        </td>
+                        <td><strong>{v.size}</strong></td>
+                        <td>
+                          {v.checked && (
+                            <input 
+                              type="text" 
+                              value={v.hsn || ""} 
+                              onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
+                              placeholder="HSN"
+                              className="table-input"
+                              style={{ fontSize: '12px' }}
+                            />
+                          )}
+                        </td>
+                        <td>
+                          {v.checked && (
+                            <input 
+                              type="number" 
+                              value={v.cost} 
+                              onChange={(e) => handleVariantChange(idx, 'cost', e.target.value)}
+                              placeholder="0"
+                              className="table-input"
+                            />
+                          )}
+                        </td>
+                        <td>
+                          {v.checked && (
+                            <input 
+                              type="number" 
+                              value={v.sell} 
+                              onChange={(e) => handleVariantChange(idx, 'sell', e.target.value)}
+                              placeholder="0"
+                              className="table-input"
+                            />
+                          )}
+                        </td>
+                        <td>
+                          {!DEFAULT_SIZES.includes(v.size) && (
+                            <button 
+                              className="action-btn delete small" 
+                              onClick={() => {
+                                const next = [...variants];
+                                next.splice(idx, 1);
+                                setVariants(next);
+                              }}
+                              title="Remove custom size"
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Add Custom Row */}
+                    <tr className="add-custom-row">
+                      <td><span className="material-symbols-outlined">add</span></td>
+                      <td>
+                        <input 
+                          type="text" 
+                          placeholder="Size (e.g. 14-inch)" 
+                          value={newSize.size} 
+                          onChange={(e) => setNewSize({...newSize, size: e.target.value})}
+                          className="table-input"
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          placeholder="HSN" 
+                          value={newSize.hsn || ""} 
+                          onChange={(e) => setNewSize({...newSize, hsn: e.target.value})}
+                          className="table-input"
+                          style={{ fontSize: '12px' }}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="number" 
+                          placeholder="Cost" 
+                          value={newSize.cost} 
+                          onChange={(e) => setNewSize({...newSize, cost: e.target.value})}
+                          className="table-input"
+                        />
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input 
+                            type="number" 
+                            placeholder="Sell" 
+                            value={newSize.sell} 
+                            onChange={(e) => setNewSize({...newSize, sell: e.target.value})}
+                            className="table-input"
+                          />
+                          <button className="add-row-btn" onClick={handleAddCustomSize}>Add</button>
+                        </div>
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
             <div className="modal-footer">
-              <button
-                className="modal-cancel"
-                onClick={() => setShowAddModal(false)}
-              >
-                Cancel
-              </button>
-              <button className="modal-confirm" onClick={confirmAddProduct}>
-                Add Product
-              </button>
+              <button className="modal-cancel" onClick={() => setShowAddModal(false)}>Cancel</button>
+              <button className="modal-confirm" onClick={confirmAddProduct}>Add Product</button>
             </div>
           </div>
         </div>
       )}
 
       {/* Edit Product Modal */}
-      {showEditModal && selectedProduct && (
+      {showEditModal && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Edit Product</h3>
+              <h3>Edit Product: {formData.name}</h3>
               <button className="modal-close" onClick={() => setShowEditModal(false)}>
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
             <div className="modal-body">
               <div className="modal-row">
-                <div className="modal-form-group">
-                  <label>Product Name</label>
+                <div className="modal-form-group" style={{ flex: 1 }}>
+                  <label>Product Name (Read Only)</label>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name || ""}
-                    onChange={handleInputChange}
-                    className="modal-input"
-                    placeholder="Enter product name"
-                  />
-                </div>
-                <div className="modal-form-group">
-                  <label>Size</label>
-                  <input
-                    type="text"
-                    name="size"
-                    value={formData.size}
+                    value={formData.name}
                     disabled
                     className="modal-input disabled"
                   />
                 </div>
               </div>
-              <div className="modal-row">
-                <div className="modal-form-group">
-                  <label>Cost Price (₹) *</label>
-                  <input
-                    type="number"
-                    name="costPrice"
-                    value={formData.costPrice}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    className="modal-input"
-                  />
-                </div>
-                <div className="modal-form-group">
-                  <label>Sell Price (₹) *</label>
-                  <input
-                    type="number"
-                    name="sellPrice"
-                    value={formData.sellPrice}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    className="modal-input"
-                  />
-                </div>
+
+              <div className="variants-header">
+                <h4>Manage Sizes & Pricing</h4>
+                <p>Update prices for existing sizes or tick new ones to add them</p>
+              </div>
+
+              <div className="variants-list">
+                <table className="variant-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '40px' }}>Tick</th>
+                      <th>Size</th>
+                      <th>HSN</th>
+                      <th>Cost (₹)</th>
+                      <th>Sell (₹)</th>
+                      <th style={{ width: '40px' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {variants.map((v, idx) => (
+                      <tr key={idx} className={v.checked ? "active-row" : "inactive-row"}>
+                        <td>
+                          <input 
+                            type="checkbox" 
+                            checked={v.checked} 
+                            onChange={(e) => handleVariantChange(idx, 'checked', e.target.checked)} 
+                            disabled={v.isExisting} 
+                          />
+                        </td>
+                        <td><strong>{v.size}</strong></td>
+                        <td>
+                          {v.checked && (
+                            <input 
+                              type="text" 
+                              value={v.hsn || ""} 
+                              onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
+                              placeholder="HSN"
+                              className="table-input"
+                              style={{ fontSize: '12px' }}
+                            />
+                          )}
+                        </td>
+                        <td>
+                          {v.checked && (
+                            <input 
+                              type="number" 
+                              value={v.cost} 
+                              onChange={(e) => handleVariantChange(idx, 'cost', e.target.value)}
+                              placeholder="0"
+                              className="table-input"
+                            />
+                          )}
+                        </td>
+                        <td>
+                          {v.checked && (
+                            <input 
+                              type="number" 
+                              value={v.sell} 
+                              onChange={(e) => handleVariantChange(idx, 'sell', e.target.value)}
+                              placeholder="0"
+                              className="table-input"
+                            />
+                          )}
+                        </td>
+                        <td>
+                          {v.isExisting && (
+                            <button 
+                              className="action-btn delete small" 
+                              onClick={() => handleIndividualDelete(v._id || v.id, idx, v.size)}
+                              title="Delete this size"
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Add Custom Row */}
+                    <tr className="add-custom-row">
+                      <td><span className="material-symbols-outlined">add</span></td>
+                      <td>
+                        <input 
+                          type="text" 
+                          placeholder="Custom Size" 
+                          value={newSize.size} 
+                          onChange={(e) => setNewSize({...newSize, size: e.target.value})}
+                          className="table-input"
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          placeholder="HSN" 
+                          value={newSize.hsn || ""} 
+                          onChange={(e) => setNewSize({...newSize, hsn: e.target.value})}
+                          className="table-input"
+                          style={{ fontSize: '12px' }}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="number" 
+                          placeholder="Cost" 
+                          value={newSize.cost} 
+                          onChange={(e) => setNewSize({...newSize, cost: e.target.value})}
+                          className="table-input"
+                        />
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input 
+                            type="number" 
+                            placeholder="Sell" 
+                            value={newSize.sell} 
+                            onChange={(e) => setNewSize({...newSize, sell: e.target.value})}
+                            className="table-input"
+                          />
+                          <button className="add-row-btn" onClick={handleAddCustomSize}>Add</button>
+                        </div>
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
             <div className="modal-footer">
-              <button
-                className="modal-cancel"
-                onClick={() => setShowEditModal(false)}
-              >
-                Cancel
-              </button>
-              <button className="modal-confirm" onClick={confirmEditProduct}>
-                Save Changes
-              </button>
+              <button className="modal-cancel" onClick={() => setShowEditModal(false)}>Cancel</button>
+              <button className="modal-confirm" onClick={confirmEditProduct}>Save Changes</button>
             </div>
           </div>
         </div>
@@ -681,6 +750,39 @@ const ProductList = () => {
               </button>
               <button className="modal-confirm delete" onClick={confirmGroupDelete}>
                 Delete All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {variantToDelete && (
+        <div className="modal-overlay variant-modal-overlay" style={{ zIndex: 3000 }} onClick={() => setVariantToDelete(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Delete Size Variant</h3>
+              <button className="modal-close" onClick={() => setVariantToDelete(null)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-icon warning">
+                <span className="material-symbols-outlined">delete_forever</span>
+              </div>
+              <p className="modal-title">Delete {variantToDelete.size} Variant?</p>
+              <p className="modal-desc">
+                Are you sure you want to delete this specific size for <strong>{formData.name}</strong>? 
+                This will permanently remove the variant from your catalog.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="modal-cancel"
+                onClick={() => setVariantToDelete(null)}
+              >
+                Cancel
+              </button>
+              <button className="modal-confirm delete" onClick={confirmVariantDelete}>
+                Delete Variant
               </button>
             </div>
           </div>

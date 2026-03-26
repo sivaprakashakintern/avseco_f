@@ -258,12 +258,40 @@ export const AppProvider = ({ children }) => {
         }
     }, []);
 
-    const addProduction = useCallback(async (prod, skipTargetSync = false) => {
+    const saveProductionTarget = useCallback(async (target) => {
+        setIsUpdating(true);
+        try {
+            const data = await productionTargetApi.save(target);
+            setProductionTargets(prev => {
+                const exists = prev.find(t => t.id === data._id || (t.productName === data.productName && t.productSize === data.productSize));
+                if (exists) {
+                    return prev.map(t => (t.id === exists.id) ? { ...data, id: data._id } : t);
+                }
+                return [{ ...data, id: data._id }, ...prev];
+            });
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
+    }, []);
+
+    const deleteProductionTarget = useCallback(async (id) => {
+        setIsUpdating(true);
+        try {
+            await productionTargetApi.delete(id);
+            setProductionTargets(prev => prev.filter(t => t.id !== id));
+        } finally {
+            setIsUpdating(false);
+        }
+    }, []);
+
+    const addProduction = useCallback(async (prod) => {
         setIsUpdating(true);
         try {
             // 1. Save the production record
             const data = await productionApi.add(prod);
             
+            // 2. Update local state
             setProductionHistory(prev => {
                 const exists = prev.find(p => p.id === data._id);
                 if (exists) {
@@ -272,26 +300,8 @@ export const AppProvider = ({ children }) => {
                 return [{ ...data, id: data._id }, ...prev];
             });
 
-            // 2. Sync with Production Plan (Targets)
-            if (!skipTargetSync) {
-                try {
-                    const allTargets = await productionTargetApi.getAll();
-                    const matchingTarget = allTargets.find(t => 
-                        t.operator === prod.operator && 
-                        t.productSize === prod.size
-                    );
-
-                    if (matchingTarget) {
-                        const newProduced = (matchingTarget.producedQty || 0) + Number(prod.quantity);
-                        await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
-                        await fetchTargets();
-                    }
-                } catch (err) {
-                    console.warn("Sync with target failed:", err);
-                }
-            } else {
-                await fetchTargets();
-            }
+            // 3. Refresh targets (backend already updated them)
+            await fetchTargets();
 
             return data;
         } finally {
@@ -302,70 +312,39 @@ export const AppProvider = ({ children }) => {
     const updateProduction = useCallback(async (id, updates) => {
         setIsUpdating(true);
         try {
-            const oldRecord = productionHistory.find(p => p.id === id);
             const data = await productionApi.update(id, updates);
             
             // 1. Update history
             setProductionHistory(prev => prev.map(p => p.id === id ? { ...data, id: data._id } : p));
 
-            // 2. Sync targets
-            if (oldRecord) {
-                const oldQty = Number(oldRecord.quantity || 0);
-                const newQty = Number(updates.quantity || 0);
-                const diff = newQty - oldQty;
-
-                if (diff !== 0 || oldRecord.size !== updates.size || oldRecord.operator !== updates.operator) {
-                    // Refresh targets to reflect backend changes
-                    await fetchTargets();
-                }
-            }
+            // 2. Refresh targets (backend already updated them)
+            await fetchTargets();
             return data;
         } finally {
             setIsUpdating(false);
         }
-    }, [productionHistory, fetchTargets]);
+    }, [fetchTargets]);
 
     const deleteProduction = useCallback(async (id) => {
         setIsUpdating(true);
         try {
-            const record = productionHistory.find(p => p.id === id);
             await productionApi.delete(id);
             setProductionHistory(prev => prev.filter(p => p.id !== id));
 
-            if (record) {
-                try {
-                    const allTargets = await productionTargetApi.getAll();
-                    const matchingTarget = allTargets.find(t => 
-                        t.operator === record.operator && 
-                        t.productSize === record.size
-                    );
-
-                    if (matchingTarget) {
-                        const newProduced = Math.max(0, (matchingTarget.producedQty || 0) - Number(record.quantity));
-                        await productionTargetApi.updateProduced(matchingTarget._id, newProduced);
-                        await fetchTargets();
-                    }
-                } catch (err) {
-                    console.warn("Sync delete with target failed:", err);
-                }
-            }
+            // 2. Refresh targets (backend already updated them)
+            await fetchTargets();
         } finally {
             setIsUpdating(false);
         }
-    }, [productionHistory, fetchTargets]);
+    }, [fetchTargets]);
 
-    const clearAllProduction = useCallback(async () => {
+    const clearAllProduction = useCallback(async (date) => {
         setIsUpdating(true);
         try {
-            await productionApi.clearAll();
-            setProductionHistory([]);
-            const allTargets = await productionTargetApi.getAll();
-            for (const target of allTargets) {
-                await productionTargetApi.updateProduced(target._id, 0);
-            }
+            await productionApi.clearAll(date);
+            setProductionHistory(prev => date ? prev.filter(p => p.date !== date) : []);
+            // Refresh targets to show reset counts
             await fetchTargets();
-        } catch (err) {
-            console.warn("Failed to reset targets during production clear:", err);
         } finally {
             setIsUpdating(false);
         }
@@ -778,6 +757,8 @@ export const AppProvider = ({ children }) => {
             deleteProduction,
             clearAllProduction,
             fetchTargets,
+            saveProductionTarget,
+            deleteProductionTarget,
             fetchAttendanceForDate,
             initAttendanceForDate,
             updateAttendanceRecord,

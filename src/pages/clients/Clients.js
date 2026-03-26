@@ -23,10 +23,11 @@ const Clients = () => {
 
   // Form state
   const [formData, setFormData] = useState({
+    clientType: "Company",
     companyName: "",
     contactPerson: "",
     email: "",
-    phone: "",
+    phone: "+91 ",
     address: "",
     gst: "",
   });
@@ -66,16 +67,27 @@ const Clients = () => {
   useEffect(() => setCurrentPage(1), [searchTerm]);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    
+    if (name === "phone") {
+      // Always maintain '+91 ' and limit to 10 digits
+      if (!value.startsWith("+91 ")) {
+        value = "+91 " + value.replace(/^\+91\s*/, "");
+      }
+      const digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
+      value = "+91 " + digits;
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const resetForm = () => {
     setFormData({
+      clientType: "Company",
       companyName: "",
       contactPerson: "",
       email: "",
-      phone: "",
+      phone: "+91 ",
       address: "",
       gst: "",
     });
@@ -83,8 +95,15 @@ const Clients = () => {
 
   const confirmAddClient = async (e) => {
     e.preventDefault();
-    if (!formData.contactPerson || !formData.email || !formData.gst) {
-      setFeedbackMessage("Please fill all required fields (Contact, Email, GST)");
+    const isCompany = formData.clientType === "Company";
+    if (!formData.contactPerson || !formData.phone || !formData.address) {
+      setFeedbackMessage("Please fill required fields (Contact, Phone & Address)");
+      setTimeout(() => setFeedbackMessage(""), 2500);
+      return;
+    }
+    
+    if (isCompany && !formData.companyName) {
+      setFeedbackMessage("Company name is required for Company clients");
       setTimeout(() => setFeedbackMessage(""), 2500);
       return;
     }
@@ -98,7 +117,7 @@ const Clients = () => {
       });
       setShowAddModal(false);
       resetForm();
-      setFeedbackMessage("Client added successfully");
+      setFeedbackMessage("Harsath - Client Added Successfully!");
     } catch (err) {
       setFeedbackMessage("Error adding client");
     }
@@ -112,7 +131,7 @@ const Clients = () => {
       setShowEditModal(false);
       setSelectedClient(null);
       resetForm();
-      setFeedbackMessage("Client updated successfully");
+      setFeedbackMessage("Harsath - Client Updated Successfully!");
     } catch (err) {
       setFeedbackMessage("Error updating client");
     }
@@ -137,7 +156,7 @@ const Clients = () => {
       a.download = `clients_portfolio_${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
       setExportLoading(false);
-      setFeedbackMessage("CSV Exported successfully");
+      setFeedbackMessage("Harsath - CSV Exported Successfully!");
       setTimeout(() => setFeedbackMessage(""), 2500);
     }, 1200);
   };
@@ -212,8 +231,15 @@ const Clients = () => {
                     <div className="company-info" style={{ justifyContent: 'center' }}>
                       <div className="company-icon"><span className="material-symbols-outlined">business</span></div>
                       <div style={{ textAlign: 'left' }}>
-                        <span className="company-name">{client.companyName || "N/A"}</span>
-                        <span className="company-gst-inline"> ({client.gst})</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="company-name">{client.companyName || client.contactPerson}</span>
+                          <span className={`type-badge-mini ${client.clientType?.toLowerCase() || 'company'}`}>
+                            {client.clientType || 'Company'}
+                          </span>
+                        </div>
+                        {client.companyName && client.gst && (
+                          <span className="company-gst-inline">{client.gst}</span>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -225,10 +251,10 @@ const Clients = () => {
                       <span className="client-phone">{client.phone}</span>
                     </div>
                   </td>
-                  <td style={{ textAlign: 'center' }}>
+                  <td>
                     <div className="history-inline-group">
-                       <span className="order-count-badge">{client.totalOrders} Orders</span>
-                       <span className="spent-amount-bold">{client.totalSpent}</span>
+                      <span className="order-count-badge">{client.orderCount || 0} Orders</span>
+                      <span className="spent-amount-bold">₹{parseFloat(client.totalSpent || 0).toLocaleString()}</span>
                     </div>
                   </td>
                   <td style={{ textAlign: 'center' }}>
@@ -236,12 +262,13 @@ const Clients = () => {
                       <button className="action-btn" onClick={() => { 
                         setSelectedClient(client);
                         setFormData({
-                          companyName: client.companyName,
-                          contactPerson: client.contactPerson,
-                          email: client.email,
-                          phone: client.phone,
-                          address: client.address,
-                          gst: client.gst
+                          clientType: client.clientType || "Company",
+                          companyName: client.companyName || "",
+                          contactPerson: client.contactPerson || "",
+                          email: client.email || "",
+                          phone: client.phone || "",
+                          address: client.address || "",
+                          gst: client.gst || ""
                         });
                         setShowEditModal(true);
                        }}><span className="material-symbols-outlined">edit</span></button>
@@ -287,14 +314,16 @@ const Clients = () => {
         </div>
 
         {/* PAGINATION */}
-        <div className="pagination">
-          <p className="pagination-info">Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredClients.length)} of {filteredClients.length}</p>
-          <div className="pagination-controls">
-            <button className="pagination-btn" onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1}>Prev</button>
-            <button className="pagination-btn active">{currentPage}</button>
-            <button className="pagination-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage === totalPages}>Next</button>
+        {filteredClients.length > itemsPerPage && (
+          <div className="pagination">
+            <p className="pagination-info">Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredClients.length)} of {filteredClients.length}</p>
+            <div className="pagination-controls">
+              <button className="pagination-btn" onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1}>Prev</button>
+              <button className="pagination-btn active">{currentPage}</button>
+              <button className="pagination-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage === totalPages}>Next</button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* MODALS (Add/Edit/View) */}
@@ -310,30 +339,62 @@ const Clients = () => {
             <form onSubmit={showAddModal ? confirmAddClient : confirmEditClient}>
               <div className="modal-body">
                 <div className="modal-form-group">
-                  <label>Company Name</label>
-                  <input className="modal-input" name="companyName" value={formData.companyName} onChange={handleInputChange} placeholder="e.g. Acme Corp" />
+                  <label>Client Portfolio Type</label>
+                  <div className="client-type-selector">
+                    <label className={`type-option ${formData.clientType === 'Company' ? 'active' : ''}`}>
+                      <input 
+                        type="radio" 
+                        name="clientType" 
+                        value="Company" 
+                        checked={formData.clientType === 'Company'} 
+                        onChange={handleInputChange} 
+                      />
+                      <span className="material-symbols-outlined">business</span>
+                      Business / Company
+                    </label>
+                    <label className={`type-option ${formData.clientType === 'Personal' ? 'active' : ''}`}>
+                      <input 
+                        type="radio" 
+                        name="clientType" 
+                        value="Personal" 
+                        checked={formData.clientType === 'Personal'} 
+                        onChange={handleInputChange} 
+                      />
+                      <span className="material-symbols-outlined">person</span>
+                      Personal / Individuals
+                    </label>
+                  </div>
                 </div>
+
+                {formData.clientType === 'Company' && (
+                  <div className="modal-form-group animation-fade">
+                    <label>Company Name *</label>
+                    <input className="modal-input" name="companyName" value={formData.companyName} onChange={handleInputChange} placeholder="e.g. Acme Corp" required />
+                  </div>
+                )}
                 <div className="modal-form-group">
                   <label>Contact Person *</label>
-                  <input className="modal-input" name="contactPerson" value={formData.contactPerson} onChange={handleInputChange} required />
+                  <input className="modal-input" name="contactPerson" value={formData.contactPerson} onChange={handleInputChange} placeholder="Harsath" required />
                 </div>
                 <div className="modal-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                   <div className="modal-form-group">
-                    <label>Email *</label>
-                    <input className="modal-input" type="email" name="email" value={formData.email} onChange={handleInputChange} required />
+                    <label>Email</label>
+                    <input className="modal-input" type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="jofra@avseco.in" />
                   </div>
                   <div className="modal-form-group">
-                    <label>Phone</label>
-                    <input className="modal-input" name="phone" value={formData.phone} onChange={handleInputChange} />
+                    <label>Phone *</label>
+                    <input className="modal-input" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="e.g. +91 98765 43210" required />
                   </div>
                 </div>
+                {formData.clientType === 'Company' && (
+                  <div className="modal-form-group animation-fade">
+                    <label>GSTIN</label>
+                    <input className="modal-input" name="gst" value={formData.gst} onChange={handleInputChange} placeholder="e.g. 33AAAAA0000A1Z5" />
+                  </div>
+                )}
                 <div className="modal-form-group">
-                  <label>GSTIN *</label>
-                  <input className="modal-input" name="gst" value={formData.gst} onChange={handleInputChange} required />
-                </div>
-                <div className="modal-form-group">
-                  <label>Address</label>
-                  <textarea className="modal-textarea" name="address" value={formData.address} onChange={handleInputChange} rows="3" />
+                  <label>Address *</label>
+                  <textarea className="modal-textarea" name="address" value={formData.address} onChange={handleInputChange} rows="3" placeholder="Enter complete office/billing address..." required />
                 </div>
               </div>
               <div className="modal-footer">

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../context/AppContext.js';
 import { useAuth } from '../context/AuthContext.js';
 import logo from '../assets/logo.png';
-import { formatCurrency, getDynamicFontSize } from '../utils/formatUtils.js';
+import { formatCurrency } from '../utils/formatUtils.js';
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -21,14 +21,8 @@ const Dashboard = () => {
     productionStats
   } = useAppContext();
   const [timeFilter, setTimeFilter] = useState("Monthly");
-  const [showStockPopup, setShowStockPopup] = useState(false);
-  const [showProductionPopup, setShowProductionPopup] = useState(false);
-  const [showExpensesPopup, setShowExpensesPopup] = useState(false);
   const [hoveredBar, setHoveredBar] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [stockPopupPosition, setStockPopupPosition] = useState({ top: 0, left: 0, width: 0 });
-  const [productionPopupPosition, setProductionPopupPosition] = useState({ top: 0, left: 0, width: 0 });
-  const [expensesPopupPosition, setExpensesPopupPosition] = useState({ top: 0, left: 0, width: 0 });
 
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
@@ -209,42 +203,10 @@ const Dashboard = () => {
   };
 
   // Navigation handlers
-  const handleSalesClick = () => navigate("/sales");
   const handleStockClick = () => navigate("/stock");
-  const handleProductionClick = () => navigate("/production/daily");
-  const handleExpensesClick = () => navigate("/expenses");
   const handleAttendanceClick = () => navigate("/attendance");
 
   // Popup handlers with position calculation
-  const handleSalesHover = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setStockPopupPosition({
-      top: rect.bottom + 8,
-      left: rect.left,
-      width: rect.width
-    });
-    setShowStockPopup(true);
-  };
-
-  const handleProductionHover = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setProductionPopupPosition({
-      top: rect.bottom + 8,
-      left: rect.left,
-      width: rect.width
-    });
-    setShowProductionPopup(true);
-  };
-
-  const handleExpensesHover = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setExpensesPopupPosition({
-      top: rect.bottom + 8,
-      left: rect.left,
-      width: rect.width
-    });
-    setShowExpensesPopup(true);
-  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -280,96 +242,65 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* KEY METRICS ROW */}
-      <div className="metrics-row">
-        {hasAccess('sales') && (
-          <div className="metric-card clickable" onClick={handleSalesClick} onMouseEnter={handleSalesHover} onMouseLeave={() => setShowStockPopup(false)}>
-            <div className="metric-icon sales-bg"><span className="material-symbols-outlined">payments</span></div>
-            <div className="metric-content">
-              <span className="metric-label">TOTAL SALES</span>
-              <span className="metric-value" style={getDynamicFontSize(totalSalesAmount)}>
-                {currentData.metrics.salesValue}
-              </span>
-              <span className="metric-trend" style={{ color: currentData.metrics.salesColor }}>{currentData.metrics.salesGrowth}</span>
+      {/* PREMIUM ANALYTICS GRID (Production Stats) */}
+      <div className="premium-stats-grid dashboard-top-stats">
+        <div className="premium-stat-card today">
+          <div className="p-stat-info">
+            <span className="p-stat-label">Today's Production</span>
+            <div className="p-stat-value">{(productionStats?.today || 0).toLocaleString()}</div>
+            <div className="p-stat-breakdown">
+              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+                <span key={size} className="breakdown-tag">
+                  {size.split('-')[0]}: {productionStats?.todayBySize?.[size] || 0}
+                </span>
+              ))}
             </div>
           </div>
-        )}
+        </div>
 
-        {hasAccess('production') && (
-          <div className="metric-card clickable" onClick={handleProductionClick} onMouseEnter={handleProductionHover} onMouseLeave={() => setShowProductionPopup(false)}>
-            <div className="metric-icon production-bg"><span className="material-symbols-outlined">manufacturing</span></div>
-            <div className="metric-content">
-              <span className="metric-label">PRODUCTION</span>
-              <span className="metric-value">{currentData.metrics.production}</span>
-              <span className="metric-trend positive">{currentData.metrics.prodGrowth}</span>
+        <div className="premium-stat-card week">
+          <div className="p-stat-info">
+            <span className="p-stat-label">Last 7 Days</span>
+            <div className="p-stat-value">{(productionStats?.week || 0).toLocaleString()}</div>
+            <div className="p-stat-breakdown">
+              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+                <span key={size} className="breakdown-tag">
+                  {size.split('-')[0]}: {productionStats?.weekBySize?.[size] || 0}
+                </span>
+              ))}
             </div>
           </div>
-        )}
+        </div>
 
-        {hasAccess('expenses') && (
-          <div className="metric-card clickable" onClick={handleExpensesClick} onMouseEnter={handleExpensesHover} onMouseLeave={() => setShowExpensesPopup(false)}>
-            <div className="metric-icon expenses-bg"><span className="material-symbols-outlined">payments</span></div>
-            <div className="metric-content">
-              <span className="metric-label">EXPENSES</span>
-              <span className="metric-value" style={getDynamicFontSize(totalExpenseAmount)}>
-                {currentData.metrics.expenses}
-              </span>
-              <span className="metric-status" style={{ color: currentData.metrics.expColor }}>{currentData.metrics.expStatus}</span>
+        <div className="premium-stat-card month">
+          <div className="p-stat-info">
+            <span className="p-stat-label">This Month</span>
+            <div className="p-stat-value">{(productionStats?.month || 0).toLocaleString()}</div>
+            <div className="p-stat-breakdown">
+              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+                <span key={size} className="breakdown-tag">
+                  {size.split('-')[0]}: {productionStats?.monthBySize?.[size] || 0}
+                </span>
+              ))}
             </div>
           </div>
-        )}
+        </div>
+
+        <div className="premium-stat-card stock">
+          <div className="p-stat-info">
+            <span className="p-stat-label">Total Produced</span>
+            <div className="p-stat-value">{(productionStats?.stock || 0).toLocaleString()}</div>
+            <div className="p-stat-breakdown">
+              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+                <span key={size} className="breakdown-tag">
+                  {size.split('-')[0]}: {productionStats?.stockBySize?.[size] || 0}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* POPUPS */}
-      {showStockPopup && (
-        <div className="fixed-popup sales-popup" style={{ top: stockPopupPosition.top, left: stockPopupPosition.left, width: stockPopupPosition.width }}>
-          <div className="popup-header"><h4>RECENT SALES - {salesHistory.length} ENTRIES</h4></div>
-          <div className="popup-content">
-            {salesHistory.slice(0, 5).map((sale, index) => {
-              const saleItemsStr = sale.saleItems?.map(item => `${item.size} (${item.qty})`).join(', ') || sale.product || "Product";
-              return (
-                <div key={index} className="popup-item" style={{ alignItems: 'flex-start' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span className="popup-size" style={{ color: '#0f172a', fontSize: '13px' }}>{sale.customer || sale.company || "Walk-in Customer"}</span>
-                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '800' }}>{saleItemsStr}</span>
-                  </div>
-                  <span className="popup-value" style={{ fontSize: '13px', fontWeight: '800', color: '#10b981' }}>₹{(sale.totalAmount || sale.amount || 0).toLocaleString()}</span>
-                </div>
-              );
-            })}
-            <div className="popup-footer"><span>Grand Total: {currentData.metrics.salesValue}</span></div>
-          </div>
-        </div>
-      )}
-
-      {showProductionPopup && (
-        <div className="fixed-popup production-popup" style={{ top: productionPopupPosition.top, left: productionPopupPosition.left, width: productionPopupPosition.width }}>
-          <div className="popup-header"><h4>TODAY'S PRODUCTION</h4></div>
-          <div className="popup-content">
-            {currentData.productionDetails.map((prod, index) => (
-              <div key={index} className="popup-item">
-                <span className="popup-size">{prod.size}</span>
-                <span className="popup-value">{prod.today.toLocaleString()} units</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {showExpensesPopup && (
-        <div className="fixed-popup expenses-popup" style={{ top: expensesPopupPosition.top, left: expensesPopupPosition.left, width: expensesPopupPosition.width }}>
-          <div className="popup-header"><h4>EXPENSE BREAKDOWN</h4></div>
-          <div className="popup-content">
-            {currentData.expenses.categories.map((expense, index) => (
-              <div key={index} className="popup-item">
-                <span className="popup-size">{expense.name}</span>
-                <span className="popup-value">{expense.amount}</span>
-              </div>
-            ))}
-            <div className="popup-footer"><span>Total: {currentData.metrics.expenses}</span></div>
-          </div>
-        </div>
-      )}
 
       {/* CHARTS SECTION */}
       <div className="charts-row">
