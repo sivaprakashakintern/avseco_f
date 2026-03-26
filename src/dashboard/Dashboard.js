@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../context/AppContext.js';
 import { useAuth } from '../context/AuthContext.js';
 import logo from '../assets/logo.png';
-import { formatCurrency, getDynamicFontSize } from '../utils/formatUtils.js';
+import { formatCurrency } from '../utils/formatUtils.js';
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -209,42 +209,10 @@ const Dashboard = () => {
   };
 
   // Navigation handlers
-  const handleSalesClick = () => navigate("/sales");
   const handleStockClick = () => navigate("/stock");
-  const handleProductionClick = () => navigate("/production/daily");
-  const handleExpensesClick = () => navigate("/expenses");
   const handleAttendanceClick = () => navigate("/attendance");
 
   // Popup handlers with position calculation
-  const handleSalesHover = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setStockPopupPosition({
-      top: rect.bottom + 8,
-      left: rect.left,
-      width: rect.width
-    });
-    setShowStockPopup(true);
-  };
-
-  const handleProductionHover = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setProductionPopupPosition({
-      top: rect.bottom + 8,
-      left: rect.left,
-      width: rect.width
-    });
-    setShowProductionPopup(true);
-  };
-
-  const handleExpensesHover = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setExpensesPopupPosition({
-      top: rect.bottom + 8,
-      left: rect.left,
-      width: rect.width
-    });
-    setShowExpensesPopup(true);
-  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();

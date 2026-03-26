@@ -31,7 +31,7 @@ const Production = () => {
   );
 
   // Mobile card expand state
-  const [showHistoryOnly, setShowHistoryOnly] = useState(false);
+  const [showHistoryOnly] = useState(false);
 
   // ========== STATE MANAGEMENT ==========
   const [historySearch, setHistorySearch] = useState('');
@@ -72,7 +72,6 @@ const Production = () => {
     productionTargets,
     fetchTargets
   } = useAppContext();
-  const { isAdmin } = useAuth();
 
   // Production Entry Form State
   const isToday = productionDate.isSame(dayjs(), 'day');
@@ -128,45 +127,6 @@ const Production = () => {
     if (fetchTargets) fetchTargets();
   }, [fetchTargets]);
 
-  const targetInfo = React.useMemo(() => {
-    if (!productionTargets || !formData.size || !formData.product) return null;
-    let target = productionTargets.find(t => 
-      (t.operator === formData.operator) && 
-      (t.productName === formData.product || t.product === formData.product) &&
-      (t.productSize === formData.size || t.size === formData.size)
-    );
-    if (!target) {
-      target = productionTargets.find(t => 
-        (t.productName === formData.product || t.product === formData.product) &&
-        (t.productSize === formData.size || t.size === formData.size)
-      );
-    }
-    if (!target) return null;
-    
-    const quantityTyped = Number(formData.quantity || 0);
-    const totalProduced = (target.producedQty || 0) + quantityTyped;
-    const remaining = Math.max(0, target.targetQty - totalProduced);
-    
-    return {
-      targetQty: target.targetQty,
-      producedQty: totalProduced,
-      remaining: remaining,
-      currentRemaining: Math.max(0, target.targetQty - (target.producedQty || 0)),
-      isCompleted: totalProduced >= target.targetQty,
-      operator: target.operator
-    };
-  }, [productionTargets, formData.operator, formData.size, formData.quantity]);
-
-  const targetsBySize = React.useMemo(() => {
-    const map = {};
-    (productionTargets || []).forEach(t => {
-      const s = (t.productSize || t.size || "").toLowerCase().trim();
-      if (!map[s]) map[s] = { target: 0, produced: 0 };
-      map[s].target += (t.targetQty || 0);
-      map[s].produced += (t.producedQty || 0);
-    });
-    return map;
-  }, [productionTargets]);
 
   useEffect(() => {
     if (operators.length > 0 && !formData.operator) {

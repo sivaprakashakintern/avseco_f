@@ -75,8 +75,6 @@ const ProductList = () => {
       return;
     }
 
-    const namePart = formData.name.split(' ')[0].substring(0, 3).toUpperCase();
-    const ts = Date.now().toString().slice(-4);
 
     try {
       for (const v of activeVariants) {
@@ -131,9 +129,6 @@ const ProductList = () => {
   };
 
   const confirmEditProduct = async () => {
-    const activeVariants = variants.filter(v => v.checked && v.size.trim());
-    const namePart = formData.name.split(' ')[0].substring(0, 3).toUpperCase();
-    const ts = Date.now().toString().slice(-4);
 
     try {
       for (const v of variants) {

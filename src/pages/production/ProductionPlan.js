@@ -17,9 +17,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     productionTargets, 
     fetchTargets, 
     saveProductionTarget,
-    deleteProductionTarget,
-    productionStats,
-    employees
+    deleteProductionTarget
   } = useAppContext();
 
   
@@ -141,11 +139,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     setTargetQty(''); // Reset target quantity
   };
 
-  // ===== HANDLE SIZE SELECTION =====
-  const handleSizeChange = (e) => {
-    const size = e.target.value;
-    setSelectedSize(size);
-  };
 
 
 

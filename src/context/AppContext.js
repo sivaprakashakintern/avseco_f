@@ -312,7 +312,6 @@ export const AppProvider = ({ children }) => {
     const updateProduction = useCallback(async (id, updates) => {
         setIsUpdating(true);
         try {
-            const oldRecord = productionHistory.find(p => p.id === id);
             const data = await productionApi.update(id, updates);
             
             // 1. Update history
@@ -329,7 +328,6 @@ export const AppProvider = ({ children }) => {
     const deleteProduction = useCallback(async (id) => {
         setIsUpdating(true);
         try {
-            const record = productionHistory.find(p => p.id === id);
             await productionApi.delete(id);
             setProductionHistory(prev => prev.filter(p => p.id !== id));
 
