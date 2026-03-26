@@ -258,6 +258,33 @@ export const AppProvider = ({ children }) => {
         }
     }, []);
 
+    const saveProductionTarget = useCallback(async (target) => {
+        setIsUpdating(true);
+        try {
+            const data = await productionTargetApi.save(target);
+            setProductionTargets(prev => {
+                const exists = prev.find(t => t.id === data._id || (t.productName === data.productName && t.productSize === data.productSize));
+                if (exists) {
+                    return prev.map(t => (t.id === exists.id) ? { ...data, id: data._id } : t);
+                }
+                return [{ ...data, id: data._id }, ...prev];
+            });
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
+    }, []);
+
+    const deleteProductionTarget = useCallback(async (id) => {
+        setIsUpdating(true);
+        try {
+            await productionTargetApi.delete(id);
+            setProductionTargets(prev => prev.filter(t => t.id !== id));
+        } finally {
+            setIsUpdating(false);
+        }
+    }, []);
+
     const addProduction = useCallback(async (prod) => {
         setIsUpdating(true);
         try {
@@ -732,6 +759,8 @@ export const AppProvider = ({ children }) => {
             deleteProduction,
             clearAllProduction,
             fetchTargets,
+            saveProductionTarget,
+            deleteProductionTarget,
             fetchAttendanceForDate,
             initAttendanceForDate,
             updateAttendanceRecord,

@@ -7,20 +7,13 @@ import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
 import './Daily.css';
 
-
-// Colour mapping for sizes
-const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
+// Sizes will be derived dynamically below
 
 const Production = () => {
   // ========== HELPER FUNCTIONS ==========
   const formatDate = (date) => {
     if (!date) return '';
     return date.format('DD-MM-YYYY');
-  };
-
-  const parseDate = (dateStr) => {
-    if (!dateStr) return null;
-    return dayjs(dateStr, 'DD-MM-YYYY');
   };
 
   const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
@@ -38,23 +31,25 @@ const Production = () => {
   );
 
   // Mobile card expand state
-  const [expandedProdId, setExpandedProdId] = useState(null);
-  const toggleProdCard = (id) => setExpandedProdId(prev => prev === id ? null : id);
-
-  // ========== STATE MANAGEMENT ==========
-  // Notification State
-  const [historySearch, setHistorySearch] = useState('');
-  const [historySizeFilter, setHistorySizeFilter] = useState('all');
   const [showHistoryOnly, setShowHistoryOnly] = useState(false);
 
-  // Summary view state
-  const [summaryView, setSummaryView] = useState('daily'); // 'daily', 'weekly', 'monthly'
-  const [summaryDate, setSummaryDate] = useState(dayjs());
-  const [showSummaryDatePicker, setShowSummaryDatePicker] = useState(false);
+  // ========== STATE MANAGEMENT ==========
+  const [historySearch, setHistorySearch] = useState('');
+  const [historySizeFilter, setHistorySizeFilter] = useState('all');
+
+  // Master Date State
+  const [productionDate, setProductionDate] = useState(dayjs());
+  const [showProductionDatePicker, setShowProductionDatePicker] = useState(false);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
 
   // Delete/Notification State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [productionToDelete, setProductionToDelete] = useState(null);
+  const [dateToClear, setDateToClear] = useState('');
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
@@ -65,7 +60,6 @@ const Production = () => {
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
   };
-
 
   const {
     productionHistory,
@@ -80,11 +74,8 @@ const Production = () => {
   } = useAppContext();
   const { isAdmin } = useAuth();
 
-
-
   // Production Entry Form State
-  const [productionDate, setProductionDate] = useState(dayjs());
-  const [showProductionDatePicker, setShowProductionDatePicker] = useState(false);
+  const isToday = productionDate.isSame(dayjs(), 'day');
   const [formData, setFormData] = useState({
     product: "",
     size: "",
@@ -119,26 +110,37 @@ const Production = () => {
     }));
   }, [dbProducts]);
 
+  // DERIVE DYNAMIC SIZES FOR SUMMARY & FILTERS
+  const availableSizes = React.useMemo(() => {
+    if (!dbProducts || dbProducts.length === 0) return ['6-inch', '8-inch', '10-inch', '12-inch'];
+    const sizesSet = new Set();
+    dbProducts.forEach(p => {
+      if (p.size) sizesSet.add(p.size);
+    });
+    return Array.from(sizesSet).sort((a, b) => {
+      const numA = parseInt(a) || 0;
+      const numB = parseInt(b) || 0;
+      return numA - numB;
+    });
+  }, [dbProducts]);
+
   useEffect(() => {
     if (fetchTargets) fetchTargets();
   }, [fetchTargets]);
 
   const targetInfo = React.useMemo(() => {
-    if (!productionTargets || !formData.size) return null;
-    
-    // 1. Find target for this specific operator and size
+    if (!productionTargets || !formData.size || !formData.product) return null;
     let target = productionTargets.find(t => 
       (t.operator === formData.operator) && 
+      (t.productName === formData.product || t.product === formData.product) &&
       (t.productSize === formData.size || t.size === formData.size)
     );
-    
-    // 2. Fallback to any target for this size if no operator match
     if (!target) {
       target = productionTargets.find(t => 
+        (t.productName === formData.product || t.product === formData.product) &&
         (t.productSize === formData.size || t.size === formData.size)
       );
     }
-    
     if (!target) return null;
     
     const quantityTyped = Number(formData.quantity || 0);
@@ -149,12 +151,12 @@ const Production = () => {
       targetQty: target.targetQty,
       producedQty: totalProduced,
       remaining: remaining,
+      currentRemaining: Math.max(0, target.targetQty - (target.producedQty || 0)),
       isCompleted: totalProduced >= target.targetQty,
       operator: target.operator
     };
   }, [productionTargets, formData.operator, formData.size, formData.quantity]);
 
-  // Global targets for analytics cards
   const targetsBySize = React.useMemo(() => {
     const map = {};
     (productionTargets || []).forEach(t => {
@@ -166,7 +168,6 @@ const Production = () => {
     return map;
   }, [productionTargets]);
 
-  // Initial form defaults
   useEffect(() => {
     if (operators.length > 0 && !formData.operator) {
       setFormData(prev => ({ ...prev, operator: operators[0] }));
@@ -184,58 +185,22 @@ const Production = () => {
     }
   }, [productOptions, formData.product]);
 
-  // ========== GET SUMMARY DATA BY SIZE FOR SELECTED VIEW ==========
   const getSummaryData = () => {
-    
-    let filteredData = [];
-
-    switch (summaryView) {
-      case 'daily':
-        filteredData = productionHistory.filter(item => item.date === formatDate(summaryDate));
-        break;
-
-      case 'weekly':
-        const weekStart = summaryDate.startOf('week');
-        const weekEnd = summaryDate.endOf('week');
-        filteredData = productionHistory.filter(item => {
-          const itemDate = parseDate(item.date);
-          return itemDate && itemDate >= weekStart && itemDate <= weekEnd;
-        });
-        break;
-
-      case 'monthly':
-        const monthNum = summaryDate.month() + 1;
-        const yearNum = summaryDate.year();
-        filteredData = productionHistory.filter(item => {
-          const parts = item.date.split('-');
-          return parseInt(parts[1]) === monthNum && parseInt(parts[2]) === yearNum;
-        });
-        break;
-      default:
-        break;
-    }
-
+    const dailyRecords = (productionHistory || []).filter(item => item.date === formatDate(productionDate));
     const bySize = {};
-    let total = 0;
     availableSizes.forEach(size => {
-      const sizeTotal = filteredData
-        .filter(item => {
-          const itemSize = (item.size || "").toLowerCase().trim();
-          const targetSize = size.toLowerCase().trim();
-          return itemSize === targetSize;
-        })
-        .reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-      bySize[size] = sizeTotal;
-      total += sizeTotal;
+      bySize[size] = dailyRecords
+        .filter(item => (item.size || "").toLowerCase().trim() === size.toLowerCase().trim())
+        .reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
     });
 
-    return { total, bySize };
+    return {
+      total: dailyRecords.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
+      bySize: bySize
+    };
   };
 
-  const handleSummaryDateSelect = (date) => {
-    setSummaryDate(date);
-    setShowSummaryDatePicker(false);
-  };
+  const summaryData = getSummaryData();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -264,7 +229,17 @@ const Production = () => {
 
     try {
       await addProduction(newProduction);
-      setFormData(prev => ({ ...prev, quantity: "" }));
+      
+      // Auto-update form for next entry: reset quantity and move to next size if current is complete
+      setFormData(prev => {
+        const remainingSizes = getSizesForProduct();
+        const stillInList = remainingSizes.includes(prev.size);
+        return { 
+          ...prev, 
+          quantity: "", 
+          size: stillInList ? prev.size : (remainingSizes[0] || "") 
+        };
+      });
       showNotificationMessage(`✅ Production added! 📦 +${quantity} plates`, 'success');
     } catch (err) {
       showNotificationMessage("Failed to add production", "error");
@@ -279,19 +254,23 @@ const Production = () => {
   };
 
   const getSizeTargetInfo = (size) => {
-    if (!productionTargets || !formData.operator || !size) return null;
+    if (!productionTargets || !formData.product || !size) return null;
     let target = productionTargets.find(t => 
       (t.operator === formData.operator) && 
+      (t.productName === formData.product || t.product === formData.product) &&
       (t.productSize === size || t.size === size)
     );
     if (!target) {
-      target = productionTargets.find(t => (t.productSize === size || t.size === size));
+      target = productionTargets.find(t => 
+        (t.productName === formData.product || t.product === formData.product) &&
+        (t.productSize === size || t.size === size)
+      );
     }
     if (!target) return null;
-    
     const remaining = Math.max(0, target.targetQty - (target.producedQty || 0));
     return {
       targetQty: target.targetQty,
+      producedQty: target.producedQty || 0,
       remaining: remaining,
       isCompleted: (target.producedQty || 0) >= target.targetQty
     };
@@ -301,40 +280,36 @@ const Production = () => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.date-picker-container')) {
         setShowProductionDatePicker(false);
-        setShowSummaryDatePicker(false);
       }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const summaryData = getSummaryData();
-
-
-
-
-
-
-  // ========== FILTER FUNCTIONS FOR PRODUCTION HISTORY ==========
   const getFilteredHistory = () => {
-    let hist = productionHistory || [];
-
-    hist = hist.filter(item => {
+    let list = (productionHistory || []).filter(item => {
+      if (item.date !== formatDate(productionDate)) return false;
       const matchesSearch = !historySearch.trim() ||
         (item.product?.toLowerCase() || "").includes(historySearch.toLowerCase()) ||
         (item.operator?.toLowerCase() || "").includes(historySearch.toLowerCase());
-
       const matchesSize = historySizeFilter === 'all' || item.size === historySizeFilter;
-
       return matchesSearch && matchesSize;
     });
 
-    return [...hist].sort((a, b) => {
+    return list.sort((a, b) => {
        const dtA = dayjs(`${a.date} ${a.time}`, 'DD-MM-YYYY hh:mm A').unix();
        const dtB = dayjs(`${b.date} ${b.time}`, 'DD-MM-YYYY hh:mm A').unix();
        return dtB - dtA;
     });
   };
+
+  const allFilteredItems = getFilteredHistory();
+  const totalPages = Math.ceil(allFilteredItems.length / itemsPerPage);
+  const paginatedHistory = allFilteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [productionDate, historySearch, historySizeFilter]);
 
   const [editingProduction, setEditingProduction] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -349,9 +324,6 @@ const Production = () => {
     setShowDeleteConfirm(true);
   };
 
-
-
-
   const confirmDeleteProduction = async () => {
     if (productionToDelete && productionToDelete.length > 0) {
       for (const id of productionToDelete) {
@@ -363,32 +335,20 @@ const Production = () => {
     }
   };
 
-
-
-  const filteredHistory = getFilteredHistory();
-
-
   return (
     <div className={`daily-production-page ${showHistoryOnly ? 'mobile-history-active' : ''}`}>
       {showNotification && (
-        <div className={`notification-popup ${notificationType}`}>
+        <div className="notification-popup success">
           <div className="notification-content">
             <div className="notification-icon">
               {notificationType === 'success' && <span className="material-symbols-outlined">check_circle</span>}
               {notificationType === 'error' && <span className="material-symbols-outlined">error</span>}
-              {notificationType === 'warning' && <span className="material-symbols-outlined">warning</span>}
-              {notificationType === 'info' && <span className="material-symbols-outlined">info</span>}
             </div>
             <div className="notification-message">{notificationMessage}</div>
-            <button className="notification-close" onClick={() => setShowNotification(false)}>
-              <span className="material-symbols-outlined">close</span>
-            </button>
           </div>
           <div className="notification-progress"></div>
         </div>
       )}
-
-
 
       <div className="page-header premium-header">
         <div className="header-left">
@@ -396,54 +356,35 @@ const Production = () => {
         </div>
         <div className="header-actions">
           <button 
-            className="clear-all-btn-premium" 
-            onClick={async () => {
-              if (window.confirm("Are you sure you want to clear ALL production history records from the database? This cannot be undone.")) {
-                try {
-                  await clearAllProduction(formData.date);
-                  showNotificationMessage("✅ All production history has been cleared.");
-                } catch (err) {
-                  showNotificationMessage("❌ Failed to clear history.", "error");
-                }
-              }
+            className={`clear-all-btn-premium ${!isToday ? 'disabled-btn' : ''}`}
+            disabled={!isToday}
+            onClick={() => {
+              setDateToClear(formatDate(productionDate));
+              setShowClearConfirm(true);
             }}
           >
-            <span className="material-symbols-outlined">delete_sweep</span>
-            Clear All History
+            <span className="material-symbols-outlined">{isToday ? 'delete_sweep' : 'lock'}</span>
+            {isToday ? "Clear Today's Records" : "Records Locked"}
           </button>
         </div>
       </div>
 
-      {/* --- DASHBOARD SECTION --- */}
       <div className="dashboard-content-main" style={{ display: showHistoryOnly ? 'none' : 'block' }}>
-        
-
-
         <div className="production-main-grid">
-          
-          {/* New Production Entry Form - Premium Version */}
           <div className="production-form-section">
             <div className="premium-entry-card">
               <div className="card-header entry-header">
-                <h3>
-                  <span className="material-symbols-outlined">add_circle</span>
-                  New Production Entry
-                </h3>
+                <h3><span className="material-symbols-outlined">add_circle</span> New Entry</h3>
               </div>
               <div className="card-body">
                 <div className="entry-form-premium">
-                  <div className="form-group-premium">
+                  <div className="form-group-premium" style={{ opacity: isToday ? 1 : 0.6, pointerEvents: isToday ? 'auto' : 'none' }}>
                     <label>Production Date</label>
                     <div className="date-picker-container">
-                      <button className="premium-input-btn" onClick={(e) => { e.stopPropagation(); setShowProductionDatePicker(!showProductionDatePicker); }}>
+                      <button className="premium-input-btn" disabled={!isToday}>
                         <span className="material-symbols-outlined">event</span>
                         {formatDate(productionDate)}
                       </button>
-                      {showProductionDatePicker && (
-                        <div className="date-dropdown mui-calendar-dropdown">
-                          <CalendarPicker selectedDate={productionDate} onDateChange={(date) => { setProductionDate(date); setShowProductionDatePicker(false); }} onClose={() => setShowProductionDatePicker(false)} />
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -451,68 +392,31 @@ const Production = () => {
                     <div className="form-group-premium">
                       <label>Product</label>
                       <select name="product" value={formData.product} onChange={handleInputChange} className="premium-select">
-                        {productOptions.length === 0 ? (
-                          <option value="">Please add a product first</option>
-                        ) : (
-                          productOptions.map(p => <option key={p.name} value={p.name}>{p.name}</option>)
-                        )}
+                        {productOptions.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                       </select>
                     </div>
                     <div className="form-group-premium">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <label>Size</label>
-                      {targetInfo && (
-                        <span className={`target-badge-premium ${targetInfo.isCompleted ? 'completed' : 'pending'}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
-                          Target: {targetInfo.targetQty}
-                        </span>
-                      )}
-                    </div>
-                    <select name="size" value={formData.size} onChange={handleInputChange} className="premium-select">
-                      {getSizesForProduct().map(size => {
-                        const t = getSizeTargetInfo(size);
-                        let label = size;
-                        if (t) {
-                          label += t.isCompleted ? " (Complete)" : ` (Target: ${t.remaining})`;
-                        }
-                        return (
-                          <option 
-                            key={size} 
-                            value={size} 
-                            style={{ color: t?.isCompleted ? '#059669' : '#1e293b', fontWeight: t?.isCompleted ? 'bold' : 'normal' }}
-                          >
-                            {label}
-                          </option>
-                        );
-                      })}
-                    </select>
+                      <select name="size" value={formData.size} onChange={handleInputChange} className="premium-select">
+                        {getSizesForProduct().map(s => {
+                          const info = getSizeTargetInfo(s);
+                          let text = s;
+                          if (info) {
+                            text = info.remaining <= 0 
+                              ? `${s} (Complete)` 
+                              : `${s} (Rem: ${info.remaining.toLocaleString()})`;
+                          }
+                          return <option key={s} value={s}>{text}</option>;
+                        })}
+                      </select>
                     </div>
                   </div>
 
-                  <div className="form-group-premium">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="form-row-premium">
+                    <div className="form-group-premium">
                       <label>Quantity (pcs)</label>
-                      {targetInfo && (
-                        <span className={`target-badge-premium ${targetInfo.isCompleted ? 'completed' : 'pending'}`}>
-                          {targetInfo.isCompleted ? (
-                             <><span className="material-symbols-outlined">check_circle</span> Target Complete</>
-                          ) : (
-                             <><span className="material-symbols-outlined">track_changes</span> Balance: {targetInfo.remaining}</>
-                          ) || `Balance: ${targetInfo.remaining}`}
-                        </span>
-                      )}
+                      <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} className="premium-input" placeholder="0" />
                     </div>
-                    <input 
-                      type="number" 
-                      name="quantity" 
-                      value={formData.quantity} 
-                      onChange={handleInputChange} 
-                      onWheel={(e) => e.target.blur()}
-                      onFocus={(e) => e.target.select()}
-                      placeholder="Enter quantity..." 
-                      className="premium-input" 
-                      min="1"
-                      step="1"
-                    />
                   </div>
 
                   <div className="form-row-premium">
@@ -521,7 +425,6 @@ const Production = () => {
                       <select name="grade" value={formData.grade} onChange={handleInputChange} className="premium-select">
                         <option value="A">Grade A</option>
                         <option value="B">Grade B</option>
-                        <option value="C">Grade C</option>
                       </select>
                     </div>
                     <div className="form-group-premium">
@@ -532,76 +435,46 @@ const Production = () => {
                     </div>
                   </div>
 
-                  <button className="btn-premium-submit" onClick={handleAddProduction}>
-                    <span className="material-symbols-outlined">rocket_launch</span>
-                    SUBMIT PRODUCTION
+
+                  <button 
+                    className={`btn-premium-submit ${!isToday ? 'disabled-btn' : ''}`} 
+                    onClick={isToday ? handleAddProduction : null}
+                    disabled={!isToday}
+                  >
+                    <span className="material-symbols-outlined">{isToday ? 'rocket_launch' : 'lock'}</span>
+                    {isToday ? 'SUBMIT' : 'LOCKED'}
                   </button>
                 </div>
               </div>
             </div>
-            
-            <button className="mobile-view-history-btn mobile-only-flex" onClick={() => setShowHistoryOnly(true)}>
-              <span className="material-symbols-outlined">history</span>
-              View Production History
-            </button>
           </div>
 
           <div className="production-summary-section">
             <div className="premium-card">
               <div className="card-header summary-header">
-                <h3>
-                  <span className="material-symbols-outlined">analytics</span>
-                  Production Analytics
-                </h3>
-                <div className="summary-controls">
-                  <select value={summaryView} onChange={(e) => setSummaryView(e.target.value)}>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                  <div className="date-picker-container">
-                    <button className="date-summary-btn" onClick={(e) => { e.stopPropagation(); setShowSummaryDatePicker(!showSummaryDatePicker); }}>
-                      <span className="material-symbols-outlined">calendar_month</span>
-                      {summaryView === 'daily' ? formatDate(summaryDate) :
-                        summaryView === 'weekly' ? `Week of ${summaryDate.startOf('week').format('DD MMM')}` :
-                          summaryDate.format('MMMM YYYY')}
-                    </button>
-                    {showSummaryDatePicker && (
-                      <div className="date-dropdown mui-calendar-dropdown right">
-                        <CalendarPicker selectedDate={summaryDate} onDateChange={(date) => handleSummaryDateSelect(date)} onClose={() => setShowSummaryDatePicker(false)} />
-                      </div>
-                    )}
-                  </div>
+                <h3><span className="material-symbols-outlined">analytics</span> Daily Summary</h3>
+                <div className="date-picker-container">
+                  <button className="date-summary-btn master-date-btn" onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}>
+                    <span className="material-symbols-outlined">calendar_month</span> {formatDate(productionDate)}
+                  </button>
+                  {showProductionDatePicker && (
+                    <div className="date-dropdown mui-calendar-dropdown right">
+                      <CalendarPicker selectedDate={productionDate} onDateChange={(date) => { setProductionDate(date); setShowProductionDatePicker(false); }} onClose={() => setShowProductionDatePicker(false)} />
+                    </div>
+                  )}
                 </div>
               </div>
-
               <div className="card-body">
                 <div className="summary-total-banner">
-                  <span className="label">PERIOD TOTAL</span>
-                  <span className="value">{(summaryData.total || 0).toLocaleString()} pcs</span>
+                  <span>TOTAL: {(summaryData.total || 0).toLocaleString()} pcs</span>
                 </div>
-
                 <div className="summary-grid">
                   {availableSizes.map(size => (
-                    <div key={size} className="summary-item">
-                      <div className="item-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>{size}</span>
-                      </div>
-                      <div className="item-value">{summaryData.bySize[size] || 0}</div>
+                    <div key={size} className="size-card">
+                      <div className="size-name"><span>{size}</span></div>
+                      <div className="size-quantity">{summaryData.bySize[size] || 0}</div>
                       <div className="item-progress">
-                        {(() => {
-                          const tData = targetsBySize[size.toLowerCase().trim()];
-                          const progress = tData && tData.target > 0 ? (tData.produced / tData.target * 100) : 0;
-                          return (
-                            <div
-                              className="progress-fill"
-                              style={{ 
-                                width: `${Math.min(100, progress)}%`,
-                                backgroundColor: progress >= 100 ? '#10b981' : '#3b82f6'
-                              }}
-                            ></div>
-                          );
-                        })()}
+                        <div className="progress-fill" style={{ width: `${Math.min(100, (summaryData.bySize[size] || 0) / 500)}%` }}></div>
                       </div>
                     </div>
                   ))}
@@ -612,33 +485,18 @@ const Production = () => {
         </div>
       </div>
 
-      
-
-      {/* --- HISTORY SECTION --- */}
       <div className={`history-full-view ${showHistoryOnly ? 'show' : ''}`}>
-        <div className="history-view-header mobile-only-flex">
-          <button className="btn-back-to-dashboard" onClick={() => setShowHistoryOnly(false)}>
-            <span className="material-symbols-outlined">arrow_back</span>
-            Back to Dashboard
-          </button>
-          <h2>Today Production</h2>
-        </div>
-
         <div className="history-section">
           <div className="premium-card">
             <div className="card-header table-header">
-              <h3>
-                <span className="material-symbols-outlined">history</span>
-                Today Production
-              </h3>
+              <h3><span className="material-symbols-outlined">history</span> {isToday ? "Today" : formatDate(productionDate)} Production</h3>
               <div className="table-actions">
                 <select value={historySizeFilter} onChange={(e) => setHistorySizeFilter(e.target.value)}>
                   <option value="all">All Sizes</option>
                   {availableSizes.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <div className="search-box">
-                  <span className="material-symbols-outlined search-icon">search</span>
-                  <input type="text" placeholder="Search operator..." value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} />
+                  <input type="text" placeholder="Search..." value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} />
                 </div>
               </div>
             </div>
@@ -646,150 +504,115 @@ const Production = () => {
               <table className="premium-table">
                 <thead>
                   <tr>
-                    <th style={{ textAlign: 'center' }}>S.NO</th>
-                    <th style={{ textAlign: 'center' }}>TIME</th>
-                    <th style={{ textAlign: 'center' }}>OPERATOR</th>
-                    <th style={{ textAlign: 'center' }}>PRODUCT NAME</th>
-                    <th style={{ textAlign: 'center', width: '350px' }}>SIZES (QTY)</th>
-                    <th style={{ textAlign: 'center' }}>GRADE</th>
-                    {isAdmin && <th style={{ textAlign: 'center' }}>RECORDED BY</th>}
-                    <th style={{ textAlign: 'center' }}>ACTION</th>
+                    <th>S.NO</th>
+                    <th>TIME</th>
+                    <th>OPERATOR</th>
+                    <th>PRODUCT</th>
+                    <th>SIZE (QTY)</th>
+                    <th>GRADE</th>
+                    <th>ACTION</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredHistory.length > 0 ? (
-                    filteredHistory.map((record, idx) => (
-                      <tr key={record.id || record._id || idx} style={{ textAlign: 'center' }}>
-                        <td className="bold" style={{ textAlign: 'center' }}>{idx + 1}</td>
-                        <td style={{ textAlign: 'center' }}>
-                          <span className={`time-badge`}>
-                            {record.time}
-                          </span>
-                        </td>
-                        <td style={{ textAlign: 'center' }}>{record.operator}</td>
-                        <td style={{ textAlign: 'center' }}><span className="bold">{record.product}</span></td>
-                        <td style={{ textAlign: 'center' }}>
-                           <span className="size-badge">
-                              {record.size}: <span style={{ color: '#059669' }}>{Number(record.quantity).toLocaleString()}</span>
-                           </span>
-                        </td>
-                        <td style={{ textAlign: 'center' }}><span className={`grade-badge grade-${record.grade?.toLowerCase()}`}>{record.grade}</span></td>
-                        {isAdmin && (
-                          <td style={{ textAlign: 'center' }}>
-                            <span className="recorded-by-tag">{record.recordedBy || 'System'}</span>
-                          </td>
-                        )}
-                        <td style={{ textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                             <button className="btn-edit-premium" onClick={() => handleEditProduction(record)}>
-                               <span className="material-symbols-outlined">edit</span>
-                             </button>
-                             <button className="btn-delete" onClick={() => handleDeleteProduction(record)}>
-                               <span className="material-symbols-outlined">delete</span>
-                             </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr><td colSpan={isAdmin ? "8" : "7"} className="empty">No records found</td></tr>
-                  )}
+                  {paginatedHistory.map((record, idx) => (
+                    <tr key={record.id || record._id || idx}>
+                      <td>{((currentPage - 1) * itemsPerPage) + idx + 1}</td>
+                      <td>{record.time}</td>
+                      <td>{record.operator}</td>
+                      <td>{record.product}</td>
+                      <td>{record.size}: {record.quantity}</td>
+                      <td>{record.grade}</td>
+                      <td>
+                        <div style={{ opacity: isToday ? 1 : 0.4, display: 'flex', gap: '8px' }}>
+                          <button onClick={isToday ? () => handleEditProduction(record) : null} disabled={!isToday} className="btn-edit-premium">
+                            <span className="material-symbols-outlined">{isToday ? 'edit' : 'lock'}</span>
+                          </button>
+                          <button onClick={isToday ? () => handleDeleteProduction(record) : null} disabled={!isToday} className="btn-delete">
+                            <span className="material-symbols-outlined">{isToday ? 'delete' : 'lock'}</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
 
-            {/* ── Mobile Cards ── */}
-            <div className="mobile-production-cards">
-              {filteredHistory.length > 0 ? (
-                filteredHistory.map((record, index) => (
-                  <div
-                    key={record.id || record._id || index}
-                    className={`mobile-prod-card-item ${expandedProdId === (record.id || record._id) ? 'expanded' : ''}`}
-                  >
-                    <div className="prod-card-main" onClick={() => toggleProdCard(record.id || record._id)}>
-                      <span className="prod-card-sno">#{index + 1}</span>
-                      <div className="prod-card-size-wrap" style={{ flex: 1 }}>
-                        <span className="prod-card-size-label" style={{ fontWeight: '800', color: '#0f172a' }}>{record.operator}</span>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{record.product}</div>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: '10px' }}>
-                        <span className={`grade-badge grade-${record.grade?.toLowerCase()}`} style={{ scale: '0.8', transformOrigin: 'right' }}>{record.grade}</span>
-                      </div>
-                      <span className="material-symbols-outlined prod-card-expand-icon">
-                        {expandedProdId === (record.id || record._id) ? 'expand_less' : 'expand_more'}
-                      </span>
-                    </div>
-
-                    {expandedProdId === (record.id || record._id) && (
-                      <div className="prod-card-details">
-                        <div className="prod-card-info-grid">
-                          <div className="prod-info-row">
-                            <span className="prod-info-label">Time</span>
-                            <span className="prod-info-value">{record.time}</span>
-                          </div>
-                          
-                          {isAdmin && (
-                            <div className="prod-info-row">
-                              <span className="prod-info-label">Recorded By</span>
-                              <span className="prod-info-value">{record.recordedBy || 'System'}</span>
-                            </div>
-                          )}
-                          
-                          <div className="prod-info-row" style={{ gridColumn: '1 / -1', borderTop: '1px solid #e2e8f0', paddingTop: '12px', marginTop: '4px' }}>
-                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-                                <span className="prod-info-label">Produced Size & Quantity:</span>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                   <span style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '14px', fontWeight: 'bold' }}>
-                                      {record.size}: <span style={{ color: '#059669' }}>{Number(record.quantity).toLocaleString()}</span>
-                                   </span>
-                                </div>
-                             </div>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                           <button
-                             className="prod-card-edit-btn"
-                             onClick={() => handleEditProduction(record)}
-                             style={{ flex: 1 }}
-                           >
-                             <span className="material-symbols-outlined">edit</span>
-                             Edit
-                           </button>
-                           <button
-                             className="prod-card-delete-btn"
-                             onClick={() => handleDeleteProduction(record)}
-                             style={{ flex: 1 }}
-                           >
-                             <span className="material-symbols-outlined">delete</span>
-                             Delete
-                           </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="no-prod-mobile">
-                  <span className="material-symbols-outlined">inventory_2</span>
-                  <p>No production records found</p>
+            {totalPages > 1 && (
+              <div className="table-pagination-premium">
+                <button className="page-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>
+                   <span className="material-symbols-outlined">navigate_before</span>
+                   Prev
+                </button>
+                <div className="page-info">
+                  <span>Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong></span>
                 </div>
-              )}
-            </div>
+                <button className="page-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>
+                   Next
+                   <span className="material-symbols-outlined">navigate_next</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {showDeleteConfirm && (
-        <div className="modal-overlay">
-          <div className="export-modal" style={{ maxWidth: '400px', textAlign: 'center', padding: '32px' }}>
-            <div className="modal-icon warning" style={{ background: '#fff9e6', color: '#f59e0b', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '36px' }}>warning</span>
+      {showDeleteConfirm && productionToDelete && (
+        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Confirm Deletion</h3>
+              <button className="modal-close" onClick={() => setShowDeleteConfirm(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
             </div>
-            <h2 style={{ marginBottom: '16px', color: '#1e293b' }}>Confirm Deletion</h2>
-            <p style={{ color: '#64748b', marginBottom: '32px' }}>Are you sure you want to delete this production record? This will also update your stock levels and production plan.</p>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button className="btn-outline" style={{ flex: 1 }} onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
-              <button className="btn-primary" style={{ flex: 1, backgroundColor: '#f44336' }} onClick={confirmDeleteProduction}>Delete</button>
+            <div className="modal-body">
+              <div className="modal-icon warning">
+                <span className="material-symbols-outlined">warning</span>
+              </div>
+              <p className="modal-title">Delete this record?</p>
+              <p className="modal-desc">
+                You are about to delete the entry for <strong>{productionToDelete.size} {productionToDelete.product}</strong>. This cannot be undone.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
+              <button className="modal-confirm delete" onClick={confirmDeleteProduction}>Delete Record</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showClearConfirm && (
+        <div className="modal-overlay" onClick={() => setShowClearConfirm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Clear Daily Records</h3>
+              <button className="modal-close" onClick={() => setShowClearConfirm(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-icon warning">
+                <span className="material-symbols-outlined">delete_sweep</span>
+              </div>
+              <p className="modal-title">Clear All Records?</p>
+              <p className="modal-desc">
+                Are you sure you want to clear <strong>ALL</strong> production records for <strong>{dateToClear}</strong>? 
+                This will permanently delete today's progress.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel" onClick={() => setShowClearConfirm(false)}>Cancel</button>
+              <button className="modal-confirm delete" onClick={async () => {
+                try {
+                  await clearAllProduction(dateToClear);
+                  showNotificationMessage(`✅ Production cleared for ${dateToClear}.`);
+                  setShowClearConfirm(false);
+                } catch (err) {
+                  showNotificationMessage("❌ Failed to clear.", "error");
+                }
+              }}>Clear All</button>
             </div>
           </div>
         </div>
@@ -797,65 +620,21 @@ const Production = () => {
 
       {isEditModalOpen && editingProduction && (
         <div className="modal-overlay">
-          <div className="export-modal" style={{ maxWidth: '500px', padding: '24px' }}>
-            <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '20px', color: '#1e293b' }}>Edit Production Record</h2>
-              <button onClick={() => setIsEditModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            
-            <div className="edit-form" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div className="form-group-premium">
-                <label>Quantity (pcs)</label>
-                <input 
-                  type="number" 
-                  value={editingProduction.quantity} 
-                  onChange={(e) => setEditingProduction(prev => ({...prev, quantity: e.target.value}))}
-                  onWheel={(e) => e.target.blur()}
-                  onFocus={(e) => e.target.select()}
-                  className="premium-input"
-                  min="1"
-                  step="1"
-                />
-              </div>
-
-              <div className="form-row-premium">
-                 <div className="form-group-premium">
-                   <label>Grade</label>
-                   <select 
-                      value={editingProduction.grade} 
-                      onChange={(e) => setEditingProduction({...editingProduction, grade: e.target.value})}
-                      className="premium-select"
-                   >
-                     <option value="A">Grade A</option>
-                     <option value="B">Grade B</option>
-                     <option value="C">Grade C</option>
-                   </select>
-                 </div>
-                 <div className="form-group-premium">
-                    <label>Operator</label>
-                    <select 
-                       value={editingProduction.operator} 
-                       onChange={(e) => setEditingProduction({...editingProduction, operator: e.target.value})}
-                       className="premium-select"
-                    >
-                      {operators.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                 </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-                <button className="btn-outline" style={{ flex: 1 }} onClick={() => setIsEditModalOpen(false)}>Cancel</button>
-                <button className="btn-premium-submit" style={{ flex: 1, margin: 0 }} onClick={async () => {
+          <div className="export-modal" style={{ padding: '24px' }}>
+            <h2>Edit Record</h2>
+            <div className="edit-form" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
+              <input type="number" value={editingProduction.quantity} onChange={(e) => setEditingProduction({...editingProduction, quantity: e.target.value})} />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+                <button onClick={async () => {
                   try {
                     await updateProduction(editingProduction.id || editingProduction._id, editingProduction);
-                    showNotificationMessage("✅ Record updated successfully");
+                    showNotificationMessage("Updated!");
                     setIsEditModalOpen(false);
                   } catch (err) {
-                    showNotificationMessage("❌ Failed to update record", "error");
+                    showNotificationMessage("Error!", "error");
                   }
-                }}>Update Record</button>
+                }}>Save</button>
               </div>
             </div>
           </div>

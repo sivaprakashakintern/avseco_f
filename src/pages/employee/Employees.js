@@ -196,12 +196,12 @@ const Employees = () => {
     }
 
     // Uniqueness check (UI side before server call)
-    const normPhone = formData.phone.replace(/\s+/g, "");
-    const normAadhar = formData.aadhar.replace(/\s+/g, "");
+    var normPhone = formData.phone.replace(/\s+/g, "");
+    var normAadhar = formData.aadhar.replace(/\s+/g, "");
 
-    const isDuplicate = employees.some(emp => {
-      const dbPhone = (emp.phone || "").replace(/\s+/g, "");
-      const dbAadhar = (emp.aadhar || "").replace(/\s+/g, "");
+    var isDuplicate = employees.some(emp => {
+      var dbPhone = (emp.phone || "").replace(/\s+/g, "");
+      var dbAadhar = (emp.aadhar || "").replace(/\s+/g, "");
       return dbPhone === normPhone || dbAadhar === normAadhar;
     });
 
@@ -373,7 +373,7 @@ const Employees = () => {
 
   // Form input change handler
   const handleInputChange = (e) => {
-    const { name, value, files } = e.target;
+    let { name, value, files } = e.target;
     if (name === "avatar") {
       setFormData({
         ...formData,
@@ -392,7 +392,7 @@ const Employees = () => {
         if (!value.startsWith("+91 ")) {
           value = "+91 " + value.replace(/^\+91\s*/, "");
         }
-        const digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
+        let digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
         value = "+91 " + digits;
         setFormData({ ...formData, phone: value });
     } else if (name === "pan") {

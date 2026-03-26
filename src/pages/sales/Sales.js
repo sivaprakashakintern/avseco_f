@@ -1127,17 +1127,27 @@ const Sales = () => {
                                 <span className="quick-entry-label">Total Pieces:</span>
                                 <div style={{ width: '100%', position: 'relative' }}>
                                     {selectedBaseProduct && selectedSize && (
-                                        <div style={{ position: 'absolute', top: '-18px', right: '4px', zIndex: 1 }}>
-                                            <span className="available-badge">
-                                                {(() => {
-                                                    const product = products.find(p => 
-                                                        (p.baseName || "").toLowerCase().trim() === (selectedBaseProduct || "").toLowerCase().trim() && 
-                                                        (p.size || "").toLowerCase().trim() === (selectedSize || "").toLowerCase().trim());
-                                                    const stock = product?.stock || 0;
-                                                    const inBill = billItems.find(item => item.productId === product?.id)?.qty || 0;
-                                                    return `Available: ${stock - inBill}`;
-                                                })()}
-                                            </span>
+                                        <div style={{ position: 'absolute', top: '-14px', right: '10px', zIndex: 10 }}>
+                                            {(() => {
+                                                const product = products.find(p => 
+                                                    (p.baseName || "").toLowerCase().trim() === (selectedBaseProduct || "").toLowerCase().trim() && 
+                                                    (p.size || "").toLowerCase().trim() === (selectedSize || "").toLowerCase().trim());
+                                                const stock = product?.stock || 0;
+                                                const inBill = billItems.find(item => item.productId === product?.id)?.qty || 0;
+                                                const available = stock - inBill;
+                                                const isLow = available < 100;
+                                                
+                                                return (
+                                                    <div className={`stock-badge-premium ${isLow ? 'low' : 'ok'}`}>
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+                                                            {isLow ? 'warning' : 'inventory'}
+                                                        </span>
+                                                        <span className="stock-badge-text">
+                                                            Available: <strong>{available.toLocaleString()}</strong>
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     )}
                                     <input

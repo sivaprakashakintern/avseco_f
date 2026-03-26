@@ -16,6 +16,8 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     products: dbProducts, 
     productionTargets, 
     fetchTargets, 
+    saveProductionTarget,
+    deleteProductionTarget,
     productionStats,
     employees
   } = useAppContext();
@@ -25,19 +27,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [targetQty, setTargetQty] = useState('');
-  const [selectedOperator, setSelectedOperator] = useState('');
-
-  const operators = React.useMemo(() => {
-    return (employees || [])
-      .filter(e => e.department === "Operator" || e.department === "Machine operator" || e.department === "Others")
-      .map(e => e.name);
-  }, [employees]);
-
-  useEffect(() => {
-    if (operators.length > 0 && !selectedOperator) {
-      setSelectedOperator(operators[0]);
-    }
-  }, [operators, selectedOperator]);
 
 
   
@@ -93,14 +82,13 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   // ===== AUTO-FETCH EXISTING TARGET FROM DB =====
   useEffect(() => {
-    if (selectedProduct && selectedSize && selectedOperator && productionTargets) {
+    if (selectedProduct && selectedSize && productionTargets) {
       const productObj = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
       const productName = productObj ? productObj.name : '';
       
       const existingTarget = productionTargets.find(t => 
         t.productName === productName && 
-        t.productSize === selectedSize && 
-        t.operator === selectedOperator
+        t.productSize === selectedSize
       );
       
       if (existingTarget) {
@@ -109,7 +97,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
         setTargetQty('');
       }
     }
-  }, [selectedProduct, selectedSize, selectedOperator, productionTargets, uniqueProducts]);
+  }, [selectedProduct, selectedSize, productionTargets, uniqueProducts]);
 
 
 
@@ -119,6 +107,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   // Custom Modals State
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const showToast = (message, type = 'success') => {
@@ -193,21 +182,23 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
     const targetPayload = {
       productName: product.name,
-      sku: product.sku,
+      sku: product.hsn || product.sku, // Match backend field 'sku'
       productSize: product.size,
       targetQty: targetQuantity,
       remainingQty: targetQuantity, // Initially same as target
       status: 'pending',
       unit: 'Pieces',
       size: product.size,
-      operator: selectedOperator,
       date: formatDate(new Date()) // Always use formatted string for matching
     };
 
     try {
-      await productionTargetApi.save(targetPayload);
-      await fetchTargets();
+      // Use localized save function for instant UI update
+      await saveProductionTarget(targetPayload);
       showToast(`Target saved for ${selectedSize} Areca Plate`, 'success');
+      
+      // Clear form for next entry while keeping product selected
+      setSelectedSize('');
       setTargetQty('');
     } catch (err) {
       console.error("Error saving target:", err);
@@ -219,18 +210,21 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   // ===== HANDLE CLEAR ALL DATA =====
   const handleClearAllData = async () => {
-    if (window.confirm('Are you sure you want to clear all production targets? This cannot be undone.')) {
-      try {
-        setLoading(true);
-        await productionTargetApi.clearAll();
-        await fetchTargets();
-        showToast('All production targets cleared successfully', 'success');
-      } catch (err) {
-        console.error("Error clearing data:", err);
-        showToast("Failed to clear data from server", 'error');
-      } finally {
-        setLoading(false);
-      }
+    setShowClearModal(true);
+  };
+
+  const confirmClearAll = async () => {
+    try {
+      setLoading(true);
+      await productionTargetApi.clearAll();
+      await fetchTargets();
+      showToast('All production targets cleared successfully', 'success');
+      setShowClearModal(false);
+    } catch (err) {
+      console.error("Error clearing data:", err);
+      showToast("Failed to clear data from server", 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -244,8 +238,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     if (!itemToDelete) return;
     try {
       setLoading(true);
-      await productionTargetApi.delete(itemToDelete);
-      await fetchTargets();
+      await deleteProductionTarget(itemToDelete);
       showToast('Target deleted successfully', 'success');
     } catch (err) {
       console.error("Error deleting target:", err);
@@ -332,7 +325,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       const exportData = filteredData.map(item => ({
         'Product': item.productName,
         'Size': item.productSize,
-        'SKU': item.sku,
         'Target': item.targetQty,
         'Produced': item.producedQty,
         'Balance': item.remainingQty,
@@ -344,7 +336,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       exportData.push({
         'Product': 'TOTAL',
         'Size': '',
-        'SKU': '',
         'Target': totalTarget,
         'Produced': totalProduced,
         'Balance': totalRemaining,
@@ -366,10 +357,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
         doc.setTextColor(100, 100, 100);
         doc.text(`Generated: ${today}`, 14, 28);
 
-        const tableColumn = ['Size', 'SKU', 'Target', 'Produced', 'Balance', 'Progress', 'Status'];
+        const tableColumn = ['Size', 'Target', 'Produced', 'Balance', 'Progress', 'Status'];
         const tableRows = filteredData.map(item => [
           item.productSize,
-          item.sku,
           item.targetQty,
           item.producedQty,
           item.remainingQty,
@@ -509,64 +499,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
 
 
-        {/* Global Production Stats - New Section from Image */}
-        <div className="premium-stats-grid">
-          <div className="premium-stat-card today">
-            <div className="p-stat-info">
-              <span className="p-stat-label">Today's Production</span>
-              <div className="p-stat-value">{(productionStats?.today || 0).toLocaleString()}</div>
-              <div className="p-stat-breakdown">
-                {(productionStats?.availableSizes || []).map(size => (
-                  <span key={size} className="breakdown-tag">
-                    {size.split('-')[0]}: {productionStats?.todayBySize?.[size] || 0}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="premium-stat-card week">
-            <div className="p-stat-info">
-              <span className="p-stat-label">Last 7 Days</span>
-              <div className="p-stat-value">{(productionStats?.week || 0).toLocaleString()}</div>
-              <div className="p-stat-breakdown">
-                {(productionStats?.availableSizes || []).map(size => (
-                  <span key={size} className="breakdown-tag">
-                    {size.split('-')[0]}: {productionStats?.weekBySize?.[size] || 0}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="premium-stat-card month">
-            <div className="p-stat-info">
-              <span className="p-stat-label">This Month</span>
-              <div className="p-stat-value">{(productionStats?.month || 0).toLocaleString()}</div>
-              <div className="p-stat-breakdown">
-                {(productionStats?.availableSizes || []).map(size => (
-                  <span key={size} className="breakdown-tag">
-                    {size.split('-')[0]}: {productionStats?.monthBySize?.[size] || 0}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="premium-stat-card stock">
-            <div className="p-stat-info">
-              <span className="p-stat-label">Total Produced</span>
-              <div className="p-stat-value">{(productionStats?.stock || 0).toLocaleString()}</div>
-              <div className="p-stat-breakdown">
-                {(productionStats?.availableSizes || []).map(size => (
-                  <span key={size} className="breakdown-tag">
-                    {size.split('-')[0]}: {productionStats?.stockBySize?.[size] || 0}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
 
 
         {/* Central Entry Form */}
@@ -617,16 +549,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
               />
             </div>
 
-            <div className="form-group-horizontal">
-               <label className="horizontal-label">OPERATOR</label>
-               <select 
-                  value={selectedOperator} 
-                  onChange={(e) => setSelectedOperator(e.target.value)}
-                  className="form-select"
-               >
-                  {operators.map(o => <option key={o} value={o}>{o}</option>)}
-               </select>
-            </div>
 
             <button
               onClick={handleAddTarget}
@@ -702,8 +624,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                 <tr>
                   <th className="hide-mobile">Product</th>
                   <th>Size</th>
-                  <th>Operator</th>
-                  <th className="hide-mobile">SKU</th>
                   <th className="text-right">Target</th>
                   <th className="text-right">Produced</th>
                   <th className="text-right">Balance</th>
@@ -725,9 +645,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                           </div>
                         </td>
                         <td><strong>{item.productSize}</strong></td>
-                        <td>{item.operator || 'Unknown'}</td>
-
-                        <td className="hide-mobile"><span className="prod-sku">{item.sku}</span></td>
                         <td className="text-right">{item.targetQty.toLocaleString()}</td>
                         <td className="text-right">
                           <span
@@ -771,7 +688,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="10" className="no-data">
+                    <td colSpan="9" className="no-data">
                       No production targets set. Please add targets using the form above.
                     </td>
                   </tr>
@@ -919,21 +836,42 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           </div>
         )}
 
-        {/* Modals */}
+        {/* Delete Confirmation Modal */}
         {showDeleteModal && (
-          <div className="report-modal-overlay">
-            <div className="report-modal confirm-delete-modal">
-              <div className="modal-icon danger">
+          <div className="report-modal-overlay" onClick={() => setShowDeleteModal(false)}>
+            <div className="report-modal confirm-delete-modal-premium" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-icon warning-orange">
                 <span className="material-symbols-outlined">warning</span>
               </div>
               <h3 className="report-modal-title">Delete Production Target?</h3>
               <p className="report-modal-desc">This will remove the target and all tracking data for this item. This action cannot be undone.</p>
-              <div className="report-modal-actions">
-                <button className="modal-btn cancel-btn" onClick={() => setShowDeleteModal(false)}>
+              <div className="report-modal-actions-premium">
+                <button className="modal-btn-premium cancel" onClick={() => setShowDeleteModal(false)}>
                   Cancel
                 </button>
-                <button className="modal-btn delete-btn-premium" onClick={confirmDelete}>
+                <button className="modal-btn-premium delete" onClick={confirmDelete}>
                   Yes, Delete Target
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Clear All Confirmation Modal */}
+        {showClearModal && (
+          <div className="report-modal-overlay" onClick={() => setShowClearModal(false)}>
+            <div className="report-modal confirm-delete-modal-premium" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-icon danger-red">
+                <span className="material-symbols-outlined">delete_forever</span>
+              </div>
+              <h3 className="report-modal-title">Clear All Targets?</h3>
+              <p className="report-modal-desc">Are you sure you want to clear <strong>ALL</strong> production targets? This cannot be undone and will reset all planning data.</p>
+              <div className="report-modal-actions-premium">
+                <button className="modal-btn-premium cancel" onClick={() => setShowClearModal(false)}>
+                  Cancel
+                </button>
+                <button className="modal-btn-premium clear-all" onClick={confirmClearAll}>
+                  Clear All Data
                 </button>
               </div>
             </div>

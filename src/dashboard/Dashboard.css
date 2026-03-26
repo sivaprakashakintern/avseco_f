@@ -1582,4 +1582,86 @@
   color: #1e293b;
   line-height: 1.1;
 }
+/* ===== PREMIUM PRODUCTION STATS CARDS (Transferred) ===== */
+.dashboard-top-stats {
+  margin-top: -20px;
+  position: relative;
+  z-index: 5;
+  padding: 0 10px;
+}
+
+.premium-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.premium-stat-card {
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 30px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-stat-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 40px -10px rgba(0, 106, 78, 0.12);
+  border-color: #006A4E;
+}
+
+.premium-stat-card.today { border-left: 8px solid #10b981; }
+.premium-stat-card.week { border-left: 8px solid #3b82f6; }
+.premium-stat-card.month { border-left: 8px solid #f59e0b; }
+.premium-stat-card.stock { border-left: 8px solid #8b5cf6; }
+
+.p-stat-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.p-stat-value {
+  font-size: 38px;
+  font-weight: 850;
+  color: #0f172a;
+  margin: 4px 0 16px 0;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.p-stat-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.breakdown-tag {
+  background: #f8fafc;
+  color: #475569;
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.breakdown-tag:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: scale(1.05);
+  color: #0f172a;
+}
 

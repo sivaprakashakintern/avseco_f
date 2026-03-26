@@ -2305,3 +2305,9 @@
     display: none !important;
   }
 }
+/* --- STOCK BADGE OVERRIDES --- */
+.stock-badge-premium { padding: 4px 12px; border-radius: 20px; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.stock-badge-premium.ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.stock-badge-premium.low { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+.stock-badge-premium strong { font-weight: 800; font-size: 11px; }
+.stock-badge-text { white-space: nowrap; }

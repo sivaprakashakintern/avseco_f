@@ -280,44 +280,63 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* KEY METRICS ROW */}
-      <div className="metrics-row">
-        {hasAccess('sales') && (
-          <div className="metric-card clickable" onClick={handleSalesClick} onMouseEnter={handleSalesHover} onMouseLeave={() => setShowStockPopup(false)}>
-            <div className="metric-icon sales-bg"><span className="material-symbols-outlined">payments</span></div>
-            <div className="metric-content">
-              <span className="metric-label">TOTAL SALES</span>
-              <span className="metric-value" style={getDynamicFontSize(totalSalesAmount)}>
-                {currentData.metrics.salesValue}
-              </span>
-              <span className="metric-trend" style={{ color: currentData.metrics.salesColor }}>{currentData.metrics.salesGrowth}</span>
+      {/* PREMIUM ANALYTICS GRID (Production Stats) */}
+      <div className="premium-stats-grid dashboard-top-stats">
+        <div className="premium-stat-card today">
+          <div className="p-stat-info">
+            <span className="p-stat-label">Today's Production</span>
+            <div className="p-stat-value">{(productionStats?.today || 0).toLocaleString()}</div>
+            <div className="p-stat-breakdown">
+              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+                <span key={size} className="breakdown-tag">
+                  {size.split('-')[0]}: {productionStats?.todayBySize?.[size] || 0}
+                </span>
+              ))}
             </div>
           </div>
-        )}
+        </div>
 
-        {hasAccess('production') && (
-          <div className="metric-card clickable" onClick={handleProductionClick} onMouseEnter={handleProductionHover} onMouseLeave={() => setShowProductionPopup(false)}>
-            <div className="metric-icon production-bg"><span className="material-symbols-outlined">manufacturing</span></div>
-            <div className="metric-content">
-              <span className="metric-label">PRODUCTION</span>
-              <span className="metric-value">{currentData.metrics.production}</span>
-              <span className="metric-trend positive">{currentData.metrics.prodGrowth}</span>
+        <div className="premium-stat-card week">
+          <div className="p-stat-info">
+            <span className="p-stat-label">Last 7 Days</span>
+            <div className="p-stat-value">{(productionStats?.week || 0).toLocaleString()}</div>
+            <div className="p-stat-breakdown">
+              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+                <span key={size} className="breakdown-tag">
+                  {size.split('-')[0]}: {productionStats?.weekBySize?.[size] || 0}
+                </span>
+              ))}
             </div>
           </div>
-        )}
+        </div>
 
-        {hasAccess('expenses') && (
-          <div className="metric-card clickable" onClick={handleExpensesClick} onMouseEnter={handleExpensesHover} onMouseLeave={() => setShowExpensesPopup(false)}>
-            <div className="metric-icon expenses-bg"><span className="material-symbols-outlined">payments</span></div>
-            <div className="metric-content">
-              <span className="metric-label">EXPENSES</span>
-              <span className="metric-value" style={getDynamicFontSize(totalExpenseAmount)}>
-                {currentData.metrics.expenses}
-              </span>
-              <span className="metric-status" style={{ color: currentData.metrics.expColor }}>{currentData.metrics.expStatus}</span>
+        <div className="premium-stat-card month">
+          <div className="p-stat-info">
+            <span className="p-stat-label">This Month</span>
+            <div className="p-stat-value">{(productionStats?.month || 0).toLocaleString()}</div>
+            <div className="p-stat-breakdown">
+              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+                <span key={size} className="breakdown-tag">
+                  {size.split('-')[0]}: {productionStats?.monthBySize?.[size] || 0}
+                </span>
+              ))}
             </div>
           </div>
-        )}
+        </div>
+
+        <div className="premium-stat-card stock">
+          <div className="p-stat-info">
+            <span className="p-stat-label">Total Produced</span>
+            <div className="p-stat-value">{(productionStats?.stock || 0).toLocaleString()}</div>
+            <div className="p-stat-breakdown">
+              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+                <span key={size} className="breakdown-tag">
+                  {size.split('-')[0]}: {productionStats?.stockBySize?.[size] || 0}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* POPUPS */}
