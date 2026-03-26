@@ -144,13 +144,12 @@ const Sales = () => {
         }
     }, [selectedBaseProduct, products, selectedSize]);
 
-    // Initialize unit price when product is selected
+    // Initialize unit price when product variant (name + size) is selected
     useEffect(() => {
-        const product = products.find(p => p.name === selectedProduct);
-        if (product) {
-            setUnitPrice(product.price.toString());
+        if (selectedProductObj) {
+            setUnitPrice(selectedProductObj.price.toString());
         }
-    }, [selectedProduct, products]);
+    }, [selectedProductObj]);
 
     // Auto-calculate Total Amount when Quantity or Unit Price change
     useEffect(() => {
@@ -267,7 +266,7 @@ const Sales = () => {
                 product: selectedProduct,
                 qty: parseFloat(quantity),
                 amount: (parseFloat(unitPrice) * parseFloat(quantity)) || 0,
-                unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
+                unit: selectedProductObj?.unit || "pcs"
             });
         }
 
@@ -1027,6 +1026,9 @@ const Sales = () => {
                                                         <span style={{ fontSize: '11px', color: '#059669', background: '#f0fdf4', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
                                                             {product.stock || 0} in stock
                                                         </span>
+                                                        <span style={{ fontSize: '11px', color: '#1a6b3c', background: '#ecfdf5', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                                            ₹{product.price}
+                                                        </span>
                                                         <span className="product-sku-category">{product.sku}</span>
                                                     </div>
                                                 </button>
@@ -1095,6 +1097,19 @@ const Sales = () => {
                                 </div>
                             </div>
 
+                            <div className="quick-entry-item" style={{ flex: 1, display: 'flex', alignItems: 'flex-end' }}>
+                                <button
+                                    className="btn-primary"
+                                    onClick={handleAddItem}
+                                    style={{ width: '100%', height: '42px', background: '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add_circle</span>
+                                    ADD ITEM
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="quick-entry-row">
                             <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Overall Bill Amount:</span>
                                 <div className="amount-input-wrapper" style={{ background: '#f8fafc' }}>
@@ -1108,6 +1123,7 @@ const Sales = () => {
                                     />
                                 </div>
                             </div>
+                            <div className="quick-entry-item" style={{ flex: 1 }}></div>
                         </div>
 
                         <div className="quick-entry-row" style={{ marginBottom: '16px' }}>
@@ -1323,38 +1339,27 @@ const Sales = () => {
                                     )}
                                 </div>
                             </div>
-
-                            <div className="quick-entry-item two-col-item">
-                                {(paidStatus === 'Pending' || paidStatus === 'Advance') ? (
-                                    <>
-                                        <span className="quick-entry-label">Amount Paid:</span>
-                                        <div className="amount-input-wrapper">
-                                            <span className="currency-prefix">₹</span>
-                                            <input
-                                                type="number"
-                                                placeholder="0.00"
-                                                className="quick-entry-input amount-input"
-                                                value={amountPaid}
-                                                onChange={(e) => setAmountPaid(e.target.value)}
-                                            />
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div style={{ visibility: 'hidden' }}></div>
-                                )}
-                            </div>
-
-                            <div className="quick-entry-item" style={{ flex: 1.5, display: 'flex', alignItems: 'flex-end' }}>
-                                <button
-                                    className="btn-primary"
-                                    onClick={handleAddItem}
-                                    style={{ width: '100%', height: '50px', background: '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                                >
-                                    <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>add_circle</span>
-                                    ADD ITEM
-                                </button>
-                            </div>
+                            <div className="quick-entry-item two-col-item" style={{ visibility: 'hidden' }}></div>
                         </div>
+
+                        {(paidStatus === 'Pending' || paidStatus === 'Advance') && (
+                            <div className="quick-entry-row">
+                                <div className="quick-entry-item two-col-item">
+                                    <span className="quick-entry-label">Amount Paid:</span>
+                                    <div className="amount-input-wrapper">
+                                        <span className="currency-prefix">₹</span>
+                                        <input
+                                            type="number"
+                                            placeholder="0.00"
+                                            className="quick-entry-input amount-input"
+                                            value={amountPaid}
+                                            onChange={(e) => setAmountPaid(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="quick-entry-item two-col-item" style={{ visibility: 'hidden' }}></div>
+                            </div>
+                        )}
                     </div>
 
                     {billItems.length > 0 && (
@@ -1363,6 +1368,7 @@ const Sales = () => {
                                 <span style={{ fontWeight: 600, color: '#334155' }}>Items in Current Bill ({billItems.length})</span>
                                 <button className="clear-bill" onClick={() => setBillItems([])} style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Clear All</button>
                             </div>
+
                             <div className="preview-table-container" style={{ overflowX: 'auto' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
                                     <thead>
