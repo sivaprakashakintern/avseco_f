@@ -323,7 +323,7 @@ export const AppProvider = ({ children }) => {
         } finally {
             setIsUpdating(false);
         }
-    }, [productionHistory, fetchTargets]);
+    }, [fetchTargets]);
 
     const deleteProduction = useCallback(async (id) => {
         setIsUpdating(true);
@@ -336,7 +336,7 @@ export const AppProvider = ({ children }) => {
         } finally {
             setIsUpdating(false);
         }
-    }, [productionHistory, fetchTargets]);
+    }, [fetchTargets]);
 
     const clearAllProduction = useCallback(async (date) => {
         setIsUpdating(true);

@@ -21,14 +21,8 @@ const Dashboard = () => {
     productionStats
   } = useAppContext();
   const [timeFilter, setTimeFilter] = useState("Monthly");
-  const [showStockPopup, setShowStockPopup] = useState(false);
-  const [showProductionPopup, setShowProductionPopup] = useState(false);
-  const [showExpensesPopup, setShowExpensesPopup] = useState(false);
   const [hoveredBar, setHoveredBar] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [stockPopupPosition, setStockPopupPosition] = useState({ top: 0, left: 0, width: 0 });
-  const [productionPopupPosition, setProductionPopupPosition] = useState({ top: 0, left: 0, width: 0 });
-  const [expensesPopupPosition, setExpensesPopupPosition] = useState({ top: 0, left: 0, width: 0 });
 
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
@@ -307,56 +301,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* POPUPS */}
-      {showStockPopup && (
-        <div className="fixed-popup sales-popup" style={{ top: stockPopupPosition.top, left: stockPopupPosition.left, width: stockPopupPosition.width }}>
-          <div className="popup-header"><h4>RECENT SALES - {salesHistory.length} ENTRIES</h4></div>
-          <div className="popup-content">
-            {salesHistory.slice(0, 5).map((sale, index) => {
-              const saleItemsStr = sale.saleItems?.map(item => `${item.size} (${item.qty})`).join(', ') || sale.product || "Product";
-              return (
-                <div key={index} className="popup-item" style={{ alignItems: 'flex-start' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span className="popup-size" style={{ color: '#0f172a', fontSize: '13px' }}>{sale.customer || sale.company || "Walk-in Customer"}</span>
-                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '800' }}>{saleItemsStr}</span>
-                  </div>
-                  <span className="popup-value" style={{ fontSize: '13px', fontWeight: '800', color: '#10b981' }}>₹{(sale.totalAmount || sale.amount || 0).toLocaleString()}</span>
-                </div>
-              );
-            })}
-            <div className="popup-footer"><span>Grand Total: {currentData.metrics.salesValue}</span></div>
-          </div>
-        </div>
-      )}
-
-      {showProductionPopup && (
-        <div className="fixed-popup production-popup" style={{ top: productionPopupPosition.top, left: productionPopupPosition.left, width: productionPopupPosition.width }}>
-          <div className="popup-header"><h4>TODAY'S PRODUCTION</h4></div>
-          <div className="popup-content">
-            {currentData.productionDetails.map((prod, index) => (
-              <div key={index} className="popup-item">
-                <span className="popup-size">{prod.size}</span>
-                <span className="popup-value">{prod.today.toLocaleString()} units</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {showExpensesPopup && (
-        <div className="fixed-popup expenses-popup" style={{ top: expensesPopupPosition.top, left: expensesPopupPosition.left, width: expensesPopupPosition.width }}>
-          <div className="popup-header"><h4>EXPENSE BREAKDOWN</h4></div>
-          <div className="popup-content">
-            {currentData.expenses.categories.map((expense, index) => (
-              <div key={index} className="popup-item">
-                <span className="popup-size">{expense.name}</span>
-                <span className="popup-value">{expense.amount}</span>
-              </div>
-            ))}
-            <div className="popup-footer"><span>Total: {currentData.metrics.expenses}</span></div>
-          </div>
-        </div>
-      )}
 
       {/* CHARTS SECTION */}
       <div className="charts-row">
