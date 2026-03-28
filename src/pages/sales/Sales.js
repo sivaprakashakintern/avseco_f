@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
 import { useAuth } from '../../context/AuthContext.js';
 import './Sales.css';
-import logo from '../../assets/logo.png';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -10,7 +9,6 @@ import html2canvas from "html2canvas";
 
 const Sales = () => {
     const {
-        clients, addClient, employees, products: dbProducts, stockData,
         salesHistory, addSale, updateSale
     } = useAppContext();
     const { user, isAdmin } = useAuth();
@@ -68,7 +66,7 @@ const Sales = () => {
     const [exportFormat, setExportFormat] = useState('excel');
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
 
-    const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
+    const [viewMode] = useState('entry'); // 'entry' or 'history'
     const [editingTransactionId, setEditingTransactionId] = useState(null);
     const [selectedBaseProduct, setSelectedBaseProduct] = useState("");
 
@@ -85,7 +83,7 @@ const Sales = () => {
 
     const [quantity, setQuantity] = useState("");
     const [unitPrice, setUnitPrice] = useState("");
-    const [totalAmount, setTotalAmount] = useState("");
+    const [, setTotalAmount] = useState("");
     const [paymentMode, setPaymentMode] = useState("Cash");
     const [companyName, setCompanyName] = useState("");
     const [customerName, setCustomerName] = useState("");
@@ -376,123 +374,7 @@ const Sales = () => {
     };
 
     // ─── Shared: Capture HTML preview & Send to WhatsApp ──────────────────
-    const sendInvoiceToWhatsApp = async (bill) => {
-        const invoiceElement = document.getElementById('printable-bill');
-        if (!invoiceElement) {
-            alert('Invoice preview not found.');
-            return;
-        }
 
-        // 1. Ultra-Smart Phone Normalization (Ensures it goes straight to the contact)
-        let phoneNum = (bill.phone && bill.phone !== 'N/A' && bill.phone.trim() !== "") ? bill.phone : "";
-
-        if (!phoneNum || phoneNum === "") {
-            const savedClient = clients.find(c =>
-                (bill.company && bill.company !== 'N/A' && c.companyName === bill.company) ||
-                (bill.customer && bill.customer !== 'N/A' && c.contactPerson === bill.customer)
-            );
-            phoneNum = savedClient?.phone || customerPhone || "";
-        }
-
-        // Clean & Normalize for India (+91)
-        let cleaned = phoneNum.replace(/\D/g, '');
-        if (cleaned.startsWith('910')) {
-            cleaned = '91' + cleaned.substring(3);
-        } else if (cleaned.startsWith('0')) {
-            cleaned = cleaned.substring(1);
-        }
-
-        if (cleaned.length === 10) {
-            cleaned = '91' + cleaned;
-        }
-
-        const phone = cleaned;
-        if (!phone || phone.length < 10) {
-            alert('Please enter a valid WhatsApp number in Customer Details.');
-            return;
-        }
-
-        // Visual Feedback for "Straight" transition
-        setFeedbackMessage(`🚀 Generating High-Res Bill & Connecting to WhatsApp...`);
-
-        try {
-            // 2. Capture the invoice with optimized high-res settings (2.5x is faster than 3x)
-            const fullHeight = invoiceElement.scrollHeight;
-            const canvas = await html2canvas(invoiceElement, {
-                scale: 2.5,           // Slightly reduced for speed, still look great
-                useCORS: true,
-                backgroundColor: '#ffffff',
-                width: 850,
-                windowWidth: 850,
-                height: fullHeight,
-                scrollY: -window.scrollY,
-                onclone: (clonedDoc) => {
-                    const el = clonedDoc.getElementById('printable-bill');
-                    if (el) {
-                        el.style.zoom = '1';
-                        el.style.transform = 'none';
-                        el.style.margin = '0 auto';  // Center horizontally in the capture
-                        el.style.boxShadow = 'none';
-                        el.style.position = 'relative';
-                        el.style.top = '0';
-                        el.style.left = '0';
-                        el.style.width = '850px';
-                        el.style.height = `${fullHeight}px`;
-                        el.style.overflow = 'visible';
-                    }
-                    // Hide action buttons (Close, Send, Print) from the capture
-                    const actionButtons = clonedDoc.querySelector('.no-print');
-                    if (actionButtons) {
-                        actionButtons.style.display = 'none';
-                    }
-                }
-            });
-
-            const imgData = canvas.toDataURL('image/jpeg', 1.0); // Maximum quality
-            const imgWidth = canvas.width;
-            const imgHeight = canvas.height;
-
-            // 3. Generate PDF matching the exact aspect ratio of the bill
-            const pdfWidth = (imgWidth / (3 * 96)) * 25.4;
-            const pdfHeight = (imgHeight / (3 * 96)) * 25.4;
-
-            const doc = new jsPDF({
-                orientation: pdfWidth > pdfHeight ? 'l' : 'p',
-                unit: 'mm',
-                format: [pdfWidth, pdfHeight],
-                compress: false // Disable compression for best quality
-            });
-
-            doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'SLOW');
-            const pdfBlob = doc.output('blob');
-            const pdfFile = new File([pdfBlob], `Invoice_${bill.invoiceNo}.pdf`, { type: 'application/pdf' });
-
-            // 4. WhatsApp message
-            const message = `*INVOICE: ${bill.invoiceNo}*%0A%0ADear *${bill.customer}*,%0A%0AThank you for your business with *AVSECO INDUSTRIES*! 🌿%0A%0APlease find your invoice attached below.`;
-            const finalPhone = phone.startsWith('91') ? phone : '91' + phone;
-            const waUrl = `https://wa.me/${finalPhone}?text=${message}`;
-
-            // 5. Share logic
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                await navigator.share({
-                    files: [pdfFile],
-                    title: `Invoice ${bill.invoiceNo}`,
-                    text: `Dear ${bill.customer}, Please find your invoice from AVSECO INDUSTRIES.`
-                }).catch(() => {
-                    doc.save(`Invoice_${bill.invoiceNo}.pdf`);
-                    window.open(waUrl, '_blank');
-                });
-            } else {
-                doc.save(`Invoice_${bill.invoiceNo}.pdf`);
-                window.open(waUrl, '_blank');
-            }
-        } catch (err) {
-            console.error('WhatsApp capture failed:', err);
-            alert('Could not generate full invoice. Please try again.');
-        } finally {
-            setFeedbackMessage("");
-        }
-    };
 
     // Export Handler
     const handleExport = () => {

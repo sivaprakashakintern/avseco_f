@@ -6,9 +6,8 @@ import "./Stock.css";
 import plate8 from "../../assets/plate8.png";
 
 const StockOverview = () => {
-    const { stockData, productionTargets, resetAllStockData } = useAppContext();
+    const { stockData, productionTargets } = useAppContext();
     const navigate = useNavigate();
-  const [, setResetLoading] = useState(false);
   const [filterType, setFilterType] = useState("All"); // All, Low Stock, Out of Stock
   const [confirmModal, setConfirmModal] = useState({
       isOpen: false,
