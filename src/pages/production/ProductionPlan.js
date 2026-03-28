@@ -154,7 +154,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     }
 
     setTargetQty('');
-  }, [selectedProduct, selectedSize, productionTargets, uniqueProducts, targetType, selectedMonth, today, productionHistory]);
+  }, [selectedProduct, selectedSize, productionTargets, uniqueProducts, targetType, selectedMonth, productionHistory]);
 
 
 

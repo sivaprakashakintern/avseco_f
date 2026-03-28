@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
 import './NotificationsPage.css';
 
 const NotificationsPage = () => {
-    const { notifications, markNotificationAsRead, markAllNotificationsAsRead, setToast } = useAppContext();
+    const { notifications, markNotificationAsRead, setToast } = useAppContext();
     const [filter, setFilter] = useState('all'); // 'all', 'unread'
-    const [respondingTo, setRespondingTo] = useState(null); // id of notification being responded to
-    const [responseStatus, setResponseStatus] = useState(null); // 'ok' or 'problem'
     const [reason, setReason] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [respondedIds, setRespondedIds] = useState(new Set()); // Track local responses

@@ -4,12 +4,11 @@ import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../components/ConfirmModal.js";
 import "./Stock.css";
 import plate8 from "../../assets/plate8.png";
-import plate12 from "../../assets/plate12.png";
 
 const StockOverview = () => {
     const { stockData, productionTargets, resetAllStockData } = useAppContext();
     const navigate = useNavigate();
-  const [resetLoading, setResetLoading] = useState(false);
+  const [, setResetLoading] = useState(false);
   const [filterType, setFilterType] = useState("All"); // All, Low Stock, Out of Stock
   const [confirmModal, setConfirmModal] = useState({
       isOpen: false,
@@ -67,7 +66,7 @@ const StockOverview = () => {
           return s1 - s2;
         })
       }));
-  }, [stockData]);
+  }, [stockData, productionTargets]);
 
   const groupedItems = groupedProducts;
 
@@ -112,34 +111,9 @@ const StockOverview = () => {
   const [exportFormat, setExportFormat] = useState('excel');
   const [exportType, setExportType] = useState('All'); // All, Low Stock, Out of Stock
 
-  // ========== HANDLERS ==========
-  const handleExport = () => {
-    setExportType(filterType);
-    setShowExportModal(true);
-  };
+  // Handlers
   
-  const handleAddStock = () => navigate("/products"); 
-  
-  const handleResetAll = () => {
-    setConfirmModal({
-        isOpen: true,
-        title: "Reset Database Stock",
-        message: "CRITICAL: This will PERMANENTLY delete all Production history, Sales history, and reset stocks to zero. This cannot be undone.",
-        onConfirm: async () => {
-            setConfirmModal(prev => ({ ...prev, isOpen: false }));
-            setResetLoading(true);
-            try {
-                await resetAllStockData();
-                setFeedbackMessage("Stock zeroed successfully.");
-                setTimeout(() => setFeedbackMessage(""), 4000);
-            } catch (error) {
-                setFeedbackMessage("Err: Connection issues.");
-            } finally {
-                setResetLoading(false);
-            }
-        }
-    });
-  };
+
   
   const confirmExport = () => {
     setExportLoading(true);

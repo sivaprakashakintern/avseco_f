@@ -11,7 +11,7 @@ import html2canvas from "html2canvas";
 const Sales = () => {
     const {
         clients, addClient, employees, products: dbProducts, stockData,
-        salesHistory, addSale, updateSale, deleteSale
+        salesHistory, addSale, updateSale
     } = useAppContext();
     const { user, isAdmin } = useAuth();
 
@@ -61,14 +61,13 @@ const Sales = () => {
         address: "",
         gst: ""
     });
-    const [exportLoading, setExportLoading] = useState(false);
+    const [, setExportLoading] = useState(false);
     const [exportSuccess, setExportSuccess] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState("");
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportFormat, setExportFormat] = useState('excel');
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
 
-    const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
     const [editingTransactionId, setEditingTransactionId] = useState(null);
     const [selectedBaseProduct, setSelectedBaseProduct] = useState("");
 
@@ -85,7 +84,6 @@ const Sales = () => {
 
     const [quantity, setQuantity] = useState("");
     const [unitPrice, setUnitPrice] = useState("");
-    const [totalAmount, setTotalAmount] = useState("");
     const [paymentMode, setPaymentMode] = useState("Cash");
     const [companyName, setCompanyName] = useState("");
     const [customerName, setCustomerName] = useState("");
@@ -115,9 +113,7 @@ const Sales = () => {
     const [deliveryMode, setDeliveryMode] = useState("Door Delivery");
     const [isDeliveryModeDropdownOpen, setIsDeliveryModeDropdownOpen] = useState(false);
     const [isLogging, setIsLogging] = useState(false);
-    const [showBillModal, setShowBillModal] = useState(false);
-    const [selectedBill, setSelectedBill] = useState(null);
-    const [billItems, setBillItems] = useState([]);
+
 
 
 
@@ -1483,305 +1479,6 @@ const Sales = () => {
                     </div>
                 )}
 
-            {showBillModal && selectedBill && (
-                <div
-                    className="bill-modal-overlay"
-                    onClick={() => setShowBillModal(false)}
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        padding: '20px',
-                        zIndex: 3000,
-                        overflow: 'auto',
-                        backdropFilter: 'blur(6px)',
-                        cursor: 'pointer',
-                        opacity: 1,
-                        pointerEvents: 'auto'
-                    }}
-                >
-                    <div
-                        className="bill-modal-content"
-                        id="printable-bill"
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                            padding: '0',
-                            background: '#ffffff',
-                            maxWidth: '850px',
-                            width: '850px',
-                            zoom: window.innerWidth < 850 ? (window.innerWidth - 40) / 850 : 1,
-                            margin: 'auto',
-                            boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
-                            border: 'none',
-                            borderRadius: '4px',
-                            position: 'relative',
-                            cursor: 'default'
-                        }}
-                    >
-                        {/* Google Fonts */}
-                        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-                        <style>{`
-                            @media print {
-                                @page { size: portrait; margin: 0; }
-                                .no-print, .sidebar, .topbar, .navbar, .top-nav, .bill-modal-overlay > *:not(#printable-bill) { display: none !important; }
-                                body, html { 
-                                    margin: 0 !important; 
-                                    padding: 0 !important; 
-                                    background: #fff !important; 
-                                    width: 850px !important; /* Force exact preview width */
-                                    height: auto !important; 
-                                    -webkit-print-color-adjust: exact !important; 
-                                    print-color-adjust: exact !important; 
-                                }
-                                .bill-modal-overlay {
-                                    position: absolute !important;
-                                    top: 0 !important;
-                                    left: 0 !important;
-                                    background: #fff !important;
-                                    padding: 0 !important;
-                                    display: block !important;
-                                    backdrop-filter: none !important;
-                                    width: 850px !important;
-                                }
-                                #printable-bill { 
-                                    position: relative !important;
-                                    width: 850px !important; 
-                                    min-width: 850px !important;
-                                    max-width: 850px !important;
-                                    margin: 0 !important; 
-                                    padding: 0 !important;
-                                    box-shadow: none !important;
-                                    visibility: visible !important;
-                                    border: none !important;
-                                    zoom: 1 !important;
-                                    transform: none !important;
-                                }
-                                body * { visibility: hidden; }
-                                #printable-bill, #printable-bill * { visibility: visible; }
-                                .ci-tbl-head tr { background-color: #1a6b3c !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                                .ci-tbl-head th { color: #ffffff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                                .ci-total-row { background-color: #1a6b3c !important; color: #ffffff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                                .ci-footer { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                                .ci-company-name, .ci-invoice-title, .ci-billto-title, .ci-section-title { color: #1a6b3c !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                            }
-                            #printable-bill { font-family: 'Inter', sans-serif; background: #fff; color: #1a1a1a; margin-bottom: 20px; min-width: 850px; }
-                            #printable-bill * { box-sizing: border-box; }
-
-                            /* ── Header ── */
-                            .ci-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 32px 40px 20px; border-bottom: 2px solid #1a6b3c; }
-                            .ci-logo-area { display: flex; align-items: flex-start; gap: 14px; }
-                            .ci-logo-img { width: 72px; height: 72px; object-fit: contain; }
-                            .ci-company-name { font-size: 22px; font-weight: 900; color: #1a6b3c; letter-spacing: 0.02em; margin-bottom: 4px; }
-                            .ci-company-addr { font-size: 11px; color: #333; line-height: 1.6; font-weight: 500; }
-                            .ci-invoice-block { text-align: right; }
-                            .ci-invoice-title { font-size: 40px; font-weight: 900; color: #1a6b3c; line-height: 1; }
-                            .ci-invoice-meta { font-size: 12px; color: #333; margin-top: 8px; line-height: 1.8; font-weight: 600; }
-                            .ci-invoice-meta span { color: #111; font-weight: 700; }
-
-                            /* ── Bill To ── */
-                            .ci-billto { padding: 18px 40px; border-bottom: 2px solid #1a6b3c; display: flex; gap: 60px; align-items: flex-start; }
-                            .ci-billto-title { font-size: 16px; font-weight: 800; color: #1a6b3c; margin-bottom: 10px; }
-                            .ci-billto-row { font-size: 12px; color: #333; line-height: 1.9; font-weight: 600; }
-                            .ci-billto-row b { min-width: 130px; display: inline-block; }
-                            .ci-addr-block { font-size: 12px; color: #333; font-weight: 600; line-height: 1.7; }
-
-                            /* ── Billing Details ── */
-                            .ci-section-title { font-size: 22px; font-weight: 800; color: #1a6b3c; padding: 18px 40px 10px; }
-
-                            /* ── Table ── */
-                            .ci-table-wrap { padding: 0 40px; }
-                            .ci-table { width: 100%; border-collapse: collapse; border: 1.5px solid #1a6b3c; }
-                            .ci-tbl-head tr { background: #1a6b3c; }
-                            .ci-tbl-head th { padding: 11px 12px; font-size: 10.5px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.1em; text-align: left; border-right: 1px solid rgba(255,255,255,0.2); }
-                            .ci-tbl-head th:last-child { border-right: none; }
-                            .ci-tbody td { padding: 10px 12px; font-size: 12.5px; color: #333; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; }
-                            .ci-tbody td:last-child { border-right: none; }
-                            .ci-tbody tr:last-child td { border-bottom: none; }
-
-                            /* ── Summary ── */
-                            .ci-summary { display: flex; justify-content: flex-end; padding: 0 40px; margin-top: 0; }
-                            .ci-summary-box { width: 280px; border: 1.5px solid #1a6b3c; border-top: none; }
-                            .ci-sum-row { display: flex; justify-content: space-between; padding: 8px 14px; font-size: 12.5px; border-bottom: 1px solid #e2e8f0; }
-                            .ci-total-row { background: #1a6b3c; color: #fff; display: flex; justify-content: space-between; padding: 11px 14px; font-size: 14px; font-weight: 900; }
-
-                            /* ── Payment Info ── */
-                            .ci-payment { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 20px 40px 10px; border-top: 2px solid #1a6b3c; margin-top: 24px; }
-                            .ci-pay-title { font-size: 13px; font-weight: 800; color: #1a6b3c; margin-bottom: 8px; }
-                            .ci-pay-row { font-size: 12px; font-weight: 700; color: #333; margin-bottom: 5px; }
-
-                            /* ── Footer ── */
-                            .ci-footer { border-top: 2px solid #1a6b3c; margin-top: 20px; padding: 14px 40px; text-align: center; font-size: 12px; color: #333; font-weight: 500; font-style: italic; }
-                        `}</style>
-
-                        {/* ══════════════════════════════════════════
-                             EXACT CANVA INVOICE DESIGN
-                        ══════════════════════════════════════════ */}
-
-                        {/* ── TOP HEADER: Logo + Company | INVOICE ── */}
-                        <div className="ci-header">
-                            <div className="ci-logo-area">
-                                <img src={logo} alt="AVS ECO Logo" className="ci-logo-img" />
-                                <div>
-                                    <div className="ci-company-name">AVSECO INDUSTRIES</div>
-                                    <div className="ci-company-addr">
-                                        No.3/44, Middle Street,<br />
-                                        Veeraragavapuram Village &amp; Post<br />
-                                        Thiruvalangadu, Tiruttani (Tk),<br />
-                                        Thiruvallur (Dt) - 631210
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="ci-invoice-block">
-                                <div className="ci-invoice-title">INVOICE</div>
-                                <div className="ci-invoice-meta">
-                                    <div><b>Invoice Number :</b> <span>AVS-{selectedBill.invoiceNo}</span></div>
-                                    <div><b>Date :</b> <span>{selectedBill.date}</span></div>
-                                    <div><b>Time :</b> <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</span></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ── BILL TO ── */}
-                        <div className="ci-billto">
-                            <div style={{ flex: 1 }}>
-                                <div className="ci-billto-title">BILL TO:</div>
-                                <div className="ci-billto-row"><b>Company Name :</b> {selectedBill.company || 'N/A'}</div>
-                                <div className="ci-billto-row"><b>Contact Person :</b> {selectedBill.customer || 'N/A'}</div>
-                                <div className="ci-billto-row"><b>Email Address &nbsp; :</b> {selectedBill.email || 'N/A'}</div>
-                                <div className="ci-billto-row"><b>Phone Number :</b> {selectedBill.phone || 'N/A'}</div>
-                                <div className="ci-billto-row"><b>GSTIN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</b> {selectedBill.gstin || 'N/A'}</div>
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ height: '28px' }}></div>
-                                <div className="ci-addr-block">
-                                    <b>Address :</b> {selectedBill.address || 'N/A'}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ── BILLING DETAILS ── */}
-                        <div className="ci-section-title">Billing Details</div>
-
-                        {/* ── TABLE ── */}
-                        <div className="ci-table-wrap">
-                            <table className="ci-table">
-                                <thead className="ci-tbl-head">
-                                    <tr>
-                                        <th style={{ width: '6%' }}>Item</th>
-                                        <th style={{ width: '30%' }}>Product Name</th>
-                                        <th style={{ width: '12%' }}>Size</th>
-                                        <th style={{ width: '14%' }}>HSN Code</th>
-                                        <th style={{ width: '10%' }}>Pieces</th>
-                                        <th style={{ width: '13%' }}>Rate</th>
-                                        <th style={{ width: '15%' }}>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="ci-tbody">
-                                    {selectedBill.items.map((item, idx) => {
-                                        const amt = parseFloat(item.amount) || 0;
-                                        const qty = parseFloat(item.qty) || 1;
-                                        const rate = qty > 0 ? amt / qty : amt;
-                                        return (
-                                            <tr key={idx}>
-                                                <td style={{ fontWeight: '600', color: '#555' }}>{idx + 1}.</td>
-                                                <td style={{ fontWeight: '600' }}>{item.baseName || item.product}</td>
-                                                <td>{item.size || '—'}</td>
-                                                <td style={{ fontWeight: '500' }}>{item.hsn || '-'}</td>
-                                                <td>{item.qty}</td>
-                                                <td>₹{rate.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-                                                <td style={{ fontWeight: '700' }}>₹{amt.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* ── SUMMARY ── */}
-                        {(() => {
-                            const subtotal = selectedBill.items.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
-                            const tax = 0;
-                            const total = subtotal + tax;
-                            return (
-                                <div className="ci-summary">
-                                    <div className="ci-summary-box">
-                                        <div className="ci-sum-row">
-                                            <span style={{ color: '#555' }}>Sub Total:</span>
-                                            <span style={{ fontWeight: '700' }}>₹{subtotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                                        </div>
-                                        <div className="ci-sum-row">
-                                            <span style={{ color: '#555' }}>Sales Tax:</span>
-                                            <span style={{ fontWeight: '700' }}>₹{tax.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                                        </div>
-                                        <div className="ci-total-row">
-                                            <span>TOTAL:</span>
-                                            <span>₹{total.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-
-                        {/* ── PAYMENT INFORMATION ── */}
-                        <div className="ci-payment">
-                            <div>
-                                <div className="ci-pay-title">PAYMENT INFORMATION:</div>
-                                <div className="ci-pay-row">Payment Status: <span style={{ color: selectedBill.paidStatus === 'Paid' ? '#15803d' : '#dc2626', fontWeight: '800' }}>{selectedBill.paidStatus}</span></div>
-                                <div className="ci-pay-row">Payment Mode: <span>{selectedBill.paymentMode || 'N/A'}</span></div>
-                            </div>
-                            <div>
-                                <div className="ci-pay-title">DELIVERY INFORMATION:</div>
-                                <div className="ci-pay-row">Delivery Mode: <span>{selectedBill.deliveryMode || 'N/A'}</span></div>
-                                <div className="ci-pay-row">Delivered By: <span>{selectedBill.deliveredBy || 'N/A'}</span></div>
-                            </div>
-                        </div>
-
-                        {/* ── FOOTER ── */}
-                        <div className="ci-footer">
-                            Thank you for joining the green revolution with AVS ECO INDUSTRIES—together, let's sustain nature, one plate at a time
-                        </div>
-
-                        {/* ── ACTION BUTTONS (screen only) ── */}
-                        <div className="no-print" style={{
-                            padding: '16px 40px', background: '#f8fafc',
-                            borderTop: '1px solid #e2e8f0', display: 'flex',
-                            justifyContent: 'flex-end', gap: '12px'
-                        }}>
-                            <button onClick={() => setShowBillModal(false)} style={{
-                                padding: '9px 24px', border: '1px solid #cbd5e1', background: 'white',
-                                color: '#475569', fontWeight: '600', fontSize: '13px', cursor: 'pointer',
-                                borderRadius: '6px', fontFamily: 'Inter, sans-serif'
-                            }}>Close</button>
-
-                            <button
-                                onClick={() => sendInvoiceToWhatsApp(selectedBill)}
-                                style={{
-                                    padding: '9px 24px', border: 'none', background: '#25D366',
-                                    color: 'white', fontWeight: '700', fontSize: '13px', cursor: 'pointer',
-                                    borderRadius: '6px', boxShadow: '0 4px 12px rgba(37,211,102,0.3)',
-                                    fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '8px'
-                                }}
-                            >
-                                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>share</span>
-                                Send to WhatsApp
-                            </button>
-
-                            <button onClick={() => window.print()} style={{
-                                padding: '9px 28px', border: 'none', background: '#1a6b3c',
-                                color: 'white', fontWeight: '700', fontSize: '13px', cursor: 'pointer',
-                                borderRadius: '6px', boxShadow: '0 4px 12px rgba(26,107,60,0.3)',
-                                fontFamily: 'Inter, sans-serif'
-                            }}>🖨️ Print Invoice</button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
 
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from '../../utils/axiosConfig.js';
-import { useAuth } from '../../context/AuthContext.js';
 import { useAppContext } from '../../context/AppContext.js';
 import './Sales.css';
 import logo from '../../assets/logo.png';
@@ -24,7 +23,7 @@ const SalesHistory = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showExportModal, setShowExportModal] = useState(false);
-    const [exportLoading, setExportLoading] = useState(false);
+    const [, setExportLoading] = useState(false);
     const [showBillModal, setShowBillModal] = useState(false);
     const [selectedBill, setSelectedBill] = useState(null);
     const [feedbackMessage, setFeedbackMessage] = useState("");
