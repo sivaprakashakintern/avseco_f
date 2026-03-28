@@ -9,12 +9,12 @@ import html2canvas from "html2canvas";
 
 
 const Sales = () => {
-    const { 
+    const {
         clients, addClient, employees, products: dbProducts, stockData,
-        salesHistory, addSale, updateSale, deleteSale 
+        salesHistory, addSale, updateSale, deleteSale
     } = useAppContext();
     const { user, isAdmin } = useAuth();
-    
+
     // Helper: Format date for display (Moved up to avoid initialization error)
     // Helper: Format date for display (Standardized to avoid split conflicts)
     const formatDate = (date) => {
@@ -36,8 +36,8 @@ const Sales = () => {
     // Process products into unique base names and their variants
     const products = React.useMemo(() => {
         const processed = (dbProducts || []).map(p => {
-            const stockItem = stockData?.find(s => 
-                (s.name || "").toLowerCase().trim() === (p.name || "").toLowerCase().trim() && 
+            const stockItem = stockData?.find(s =>
+                (s.name || "").toLowerCase().trim() === (p.name || "").toLowerCase().trim() &&
                 (s.size || "").toLowerCase().trim() === (p.size || "").toLowerCase().trim()
             );
             return {
@@ -47,7 +47,7 @@ const Sales = () => {
                 stock: stockItem ? stockItem.quantity : 0
             };
         });
-        
+
         // Return only products that have stock (as requested by user previously)
         return processed.filter(p => p.stock > 0);
     }, [dbProducts, stockData]);
@@ -78,7 +78,7 @@ const Sales = () => {
             setSelectedBaseProduct(products[0].baseName);
         }
     }, [products, selectedBaseProduct, editingTransactionId]);
-    
+
     const [isBaseProductDropdownOpen, setIsBaseProductDropdownOpen] = useState(false);
     const [selectedSize, setSelectedSize] = useState("");
     const [isSizeDropdownOpen, setIsSizeDropdownOpen] = useState(false);
@@ -98,7 +98,8 @@ const Sales = () => {
     const [deliveryEmployee, setDeliveryEmployee] = useState("");
     const [isEmployeeDropdownOpen, setIsEmployeeDropdownOpen] = useState(false);
     const [soldBy, setSoldBy] = useState("");
-    
+    const [clientType, setClientType] = useState("Company"); // Company or Individual
+
     // Auto-fill Sold By for non-admin employees
     useEffect(() => {
         if (!isAdmin && user && !soldBy && !editingTransactionId) {
@@ -119,21 +120,20 @@ const Sales = () => {
     const [billItems, setBillItems] = useState([]);
 
 
-    const [summaryType] = useState("all");
     const [isAutoSharing, setIsAutoSharing] = useState(false);
 
     // Filtered employees for delivery
     const deliveryEmployees = React.useMemo(() => {
-        return (employees || []).filter(emp => 
-            emp.department?.toLowerCase().includes("delivery") || 
+        return (employees || []).filter(emp =>
+            emp.department?.toLowerCase().includes("delivery") ||
             emp.department?.toLowerCase().includes("driver")
         );
     }, [employees]);
 
     // Filtered employees for sales
     const salesEmployees = React.useMemo(() => {
-        return (employees || []).filter(emp => 
-            emp.department?.toLowerCase().includes("sales") || 
+        return (employees || []).filter(emp =>
+            emp.department?.toLowerCase().includes("sales") ||
             emp.department?.toLowerCase().includes("admin") ||
             emp.department?.toLowerCase().includes("office") ||
             emp.department?.toLowerCase().includes("ceo") ||
@@ -154,13 +154,12 @@ const Sales = () => {
         }
     }, [selectedBaseProduct, products, selectedSize]);
 
-    // Initialize unit price when product is selected
+    // Initialize unit price when product variant (name + size) is selected
     useEffect(() => {
-        const product = products.find(p => p.name === selectedProduct);
-        if (product) {
-            setUnitPrice(product.price.toString());
+        if (selectedProductObj) {
+            setUnitPrice(selectedProductObj.price.toString());
         }
-    }, [selectedProduct, products]);
+    }, [selectedProductObj]);
 
     // Auto-calculate Total Amount when Quantity or Unit Price change
     useEffect(() => {
@@ -174,27 +173,6 @@ const Sales = () => {
 
     // Using salesHistory from AppContext
     const allTransactions = salesHistory;
-
-    // ========== PERSISTENCE ==========
-
-    // Filtered transactions based on today's date only (Robust across format changes)
-    const getFilteredTransactions = () => {
-        const now = new Date();
-        const todayNew = formatDate(now); // 23-03-2026
-        const todayOld = now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); // Mar 23, 2026
-        
-        let filtered = allTransactions.filter(t => {
-            const saleDate = t.date || "";
-            return saleDate.includes(todayNew) || saleDate.includes(todayOld);
-        });
-
-        if (summaryType && summaryType !== 'all') {
-            filtered = filtered.filter(t => t.paymentStatus?.toLowerCase() === summaryType.toLowerCase());
-        }
-        return filtered;
-    };
-
-    const filteredTransactions = getFilteredTransactions();
 
     // Get filtered data for export based on type
     const getFilteredDataForExport = (type) => {
@@ -210,14 +188,14 @@ const Sales = () => {
 
         const qtyToAdd = parseFloat(quantity);
         const pricePerUnit = parseFloat(unitPrice) || 0;
-        
+
         // Find available stock
-        const stockItem = stockData?.find(s => 
-            (s.name || "").toLowerCase().trim() === (selectedBaseProduct || "").toLowerCase().trim() && 
+        const stockItem = stockData?.find(s =>
+            (s.name || "").toLowerCase().trim() === (selectedBaseProduct || "").toLowerCase().trim() &&
             (s.size || "").toLowerCase().trim() === (selectedSize || "").toLowerCase().trim()
         );
         const currentStock = stockItem ? stockItem.quantity : 0;
-        
+
         // Find existing qty in bill for THIS SPECIFIC variant to ensure sum doesn't exceed stock
         const existingItemIndex = billItems.findIndex(item => item.productId === selectedProductId);
         const currentQtyInBill = existingItemIndex !== -1 ? billItems[existingItemIndex].qty : 0;
@@ -277,7 +255,7 @@ const Sales = () => {
                 product: selectedProduct,
                 qty: parseFloat(quantity),
                 amount: (parseFloat(unitPrice) * parseFloat(quantity)) || 0,
-                unit: products.find(p => p.name === selectedProduct)?.unit || "pcs"
+                unit: selectedProductObj?.unit || "pcs"
             });
         }
 
@@ -342,13 +320,13 @@ const Sales = () => {
                 // Create new transaction
                 await addSale(payload);
                 setFeedbackMessage("✅ Sales record added successfully");
-            }   
+            }
         } catch (error) {
             console.error("Sales logging error:", error);
             setFeedbackMessage("❌ Failed to save sale. Please check all fields.");
         } finally {
             setIsLogging(false);
-        }   
+        }
 
         // Reset form
         setBillItems([]);
@@ -760,14 +738,14 @@ const Sales = () => {
         // Robust handling for older DD-MM-YYYY vs newer strings (Always pull the last comma part for time)
         const parts = transaction.date?.split(', ') || [];
         const rawTime = parts.length > 1 ? parts[parts.length - 1] : (transaction.time || "-");
-        
+
         if (rawTime === "-") return "-";
-        
+
         if (rawTime.includes('AM') || rawTime.includes('PM')) return rawTime;
-        
+
         const [h, m] = rawTime.split(':').map(Number);
         if (isNaN(h) || isNaN(m)) return rawTime;
-        
+
         const ampm = h >= 12 ? 'PM' : 'AM';
         const h12 = h % 12 || 12;
         return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
@@ -811,25 +789,47 @@ const Sales = () => {
             {/* Quick Sales Entry Card */}
             <div className={`desktop-view-section ${viewMode !== 'entry' ? 'mobile-hidden' : ''}`}>
                 <div className="stock-table-container quick-entry-card">
-                    <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h3 className="section-title">{editingTransactionId ? "Edit Sales Record" : "Customer Details"}</h3>
+                    <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 32px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                            <h3 className="section-title">{editingTransactionId ? "Edit Sales Record" : "Customer Details"}</h3>
+                            <div className="client-type-toggle-mini">
+                                <button 
+                                    className={`mini-toggle-btn ${clientType === 'Company' ? 'active' : ''}`}
+                                    onClick={() => setClientType('Company')}
+                                >
+                                    <span className="material-symbols-outlined">business</span>
+                                    COMPANY
+                                </button>
+                                <button 
+                                    className={`mini-toggle-btn ${clientType === 'Individual' ? 'active' : ''}`}
+                                    onClick={() => setClientType('Individual')}
+                                >
+                                    <span className="material-symbols-outlined">person</span>
+                                    INDIVIDUAL
+                                </button>
+                            </div>
+                        </div>
                         {editingTransactionId && (
                             <button className="btn-outline" onClick={handleCancelEdit} style={{ padding: '6px 12px', fontSize: '12px', borderColor: '#ef4444', color: '#ef4444' }}>
                                 Cancel Edit
                             </button>
                         )}
                     </div>
-                    <div className="quick-entry-grid">
+                    <div className="quick-entry-grid" style={{ paddingBottom: '8px' }}>
                         <div className="quick-entry-row">
-                            <div className="quick-entry-item two-col-item">
-                                <span className="quick-entry-label">Company (Optional):</span>
-                                <div className="product-dropdown client-dropdown">
+                            <div className="quick-entry-item two-col-item" style={clientType === 'Individual' ? { opacity: 0.6 } : {}}>
+                                <span className="quick-entry-label">Company Name:</span>
+                                <div className={`product-dropdown client-dropdown ${clientType === 'Individual' ? 'disabled-dropdown' : ''}`}>
                                     <div className="dropdown-input-wrapper">
                                         <button
-                                            onClick={() => setIsClientDropdownOpen(!isClientDropdownOpen)}
+                                            onClick={() => clientType === 'Company' && setIsClientDropdownOpen(!isClientDropdownOpen)}
                                             className="product-dropdown-toggle client-dropdown-toggle"
+                                            disabled={clientType === 'Individual'}
+                                            style={clientType === 'Individual' ? { cursor: 'not-allowed' } : {}}
                                         >
-                                            <span className="product-dropdown-text">{companyName || "Select Company"}</span>
+                                            <span className="product-dropdown-text">
+                                                {clientType === 'Individual' ? "N/A (Individual)" : (companyName || "Select Company")}
+                                            </span>
                                             <span className="material-symbols-outlined product-dropdown-arrow">
                                                 {isClientDropdownOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
                                             </span>
@@ -856,6 +856,7 @@ const Sales = () => {
                                                     placeholder="Search companies..."
                                                     className="dropdown-search-input"
                                                     autoFocus
+                                                    disabled={clientType === 'Individual'}
                                                     onChange={(e) => setCompanyName(e.target.value)}
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
@@ -866,6 +867,7 @@ const Sales = () => {
                                             ).length > 0 ? (
                                                 <>
                                                     {clients
+                                                        .filter(c => (clientType === 'Company' ? (c.companyName && (c.clientType?.toLowerCase() !== 'personal')) : (!c.companyName || c.clientType?.toLowerCase() === 'personal')))
                                                         .filter(c => (c.companyName?.toLowerCase() || "").includes(companyName?.toLowerCase() || ""))
                                                         .map((client) => (
                                                             <button
@@ -920,12 +922,12 @@ const Sales = () => {
                             </div>
 
                             <div className="quick-entry-item two-col-item">
-                                <span className="quick-entry-label">Customer Name:</span>
+                                <span className="quick-entry-label">{clientType === 'Individual' ? 'Person Name' : 'Customer Name'}:</span>
                                 <div className="product-dropdown customer-dropdown">
                                     <div className="dropdown-input-wrapper">
                                         <input
                                             type="text"
-                                            placeholder="Enter or select customer"
+                                            placeholder={clientType === 'Individual' ? "Enter or search person name..." : "Enter or search customer name..."}
                                             className="quick-entry-input dropdown-search-input"
                                             style={{ width: '100%' }}
                                             value={customerName}
@@ -942,13 +944,24 @@ const Sales = () => {
                                     </div>
                                     {isCustomerDropdownOpen && (
                                         <div className="product-dropdown-menu">
-                                            {clients.filter(c => 
-                                                (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) || 
+                                            {clients
+                                            .filter(c => {
+                                                const isCompany = !!(c.companyName && c.companyName.trim() !== "");
+                                                const isPersonal = !isCompany || c.clientType?.toLowerCase() === 'personal';
+                                                return clientType === 'Company' ? isCompany : isPersonal;
+                                            })
+                                            .filter(c =>
+                                                (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) ||
                                                  c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
                                             ).length > 0 ? (
                                                 clients
-                                                    .filter(c => 
-                                                        (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) || 
+                                                    .filter(c => {
+                                                        const isCompany = !!(c.companyName && c.companyName.trim() !== "");
+                                                        const isPersonal = !isCompany || c.clientType?.toLowerCase() === 'personal';
+                                                        return clientType === 'Company' ? isCompany : isPersonal;
+                                                    })
+                                                    .filter(c =>
+                                                        (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) ||
                                                          c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
                                                     )
                                                     .map((client) => (
@@ -1014,15 +1027,18 @@ const Sales = () => {
                         </div>
 
                         <div className="quick-entry-row">
-                            <div className="quick-entry-item two-col-item">
-                                <span className="quick-entry-label">GSTIN:</span>
-                                <div style={{ width: '100%' }}>
+                            <div className="quick-entry-item two-col-item" style={clientType === 'Individual' ? { opacity: 0.6 } : {}}>
+                                <span className="quick-entry-label">GSTIN No:</span>
+                                <div className="input-with-icon">
+                                    <span className="material-symbols-outlined input-icon">receipt</span>
                                     <input
                                         type="text"
-                                        placeholder="Enter GSTIN Number"
                                         className="quick-entry-input"
-                                        value={customerGstin}
-                                        onChange={(e) => setCustomerGstin(e.target.value)}
+                                        placeholder={clientType === 'Individual' ? "N/A" : "Enter GSTIN"}
+                                        value={clientType === 'Individual' ? "" : customerGstin}
+                                        disabled={clientType === 'Individual'}
+                                        onChange={(e) => setCustomerGstin(e.target.value.toUpperCase())}
+                                        style={clientType === 'Individual' ? { cursor: 'not-allowed' } : {}}
                                     />
                                 </div>
                             </div>
@@ -1043,10 +1059,12 @@ const Sales = () => {
                         </div>
                     </div>
 
-                    <div className="table-header" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e2e8f0' }}>
+                    <div className="section-divider"></div>
+
+                    <div className="table-header" style={{ padding: '14px 32px' }}>
                         <h3 className="section-title">Billing Details</h3>
                     </div>
-                    <div className="quick-entry-grid">
+                    <div className="quick-entry-grid" style={{ paddingTop: 0 }}>
                         <div className="quick-entry-row">
                             <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Product Name:</span>
@@ -1115,6 +1133,9 @@ const Sales = () => {
                                                         <span style={{ fontSize: '11px', color: '#059669', background: '#f0fdf4', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
                                                             {product.stock || 0} in stock
                                                         </span>
+                                                        <span style={{ fontSize: '11px', color: '#1a6b3c', background: '#ecfdf5', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                                            ₹{product.price}
+                                                        </span>
                                                         <span className="product-sku-category">{product.sku}</span>
                                                     </div>
                                                 </button>
@@ -1132,14 +1153,14 @@ const Sales = () => {
                                     {selectedBaseProduct && selectedSize && (
                                         <div style={{ position: 'absolute', top: '-14px', right: '10px', zIndex: 10 }}>
                                             {(() => {
-                                                const product = products.find(p => 
-                                                    (p.baseName || "").toLowerCase().trim() === (selectedBaseProduct || "").toLowerCase().trim() && 
+                                                const product = products.find(p =>
+                                                    (p.baseName || "").toLowerCase().trim() === (selectedBaseProduct || "").toLowerCase().trim() &&
                                                     (p.size || "").toLowerCase().trim() === (selectedSize || "").toLowerCase().trim());
                                                 const stock = product?.stock || 0;
                                                 const inBill = billItems.find(item => item.productId === product?.id)?.qty || 0;
                                                 const available = stock - inBill;
                                                 const isLow = available < 100;
-                                                
+
                                                 return (
                                                     <div className={`stock-badge-premium ${isLow ? 'low' : 'ok'}`}>
                                                         <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
@@ -1181,7 +1202,7 @@ const Sales = () => {
                         <div className="quick-entry-row">
                             <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Total Plate Amount:</span>
-                                <div className="amount-input-wrapper" style={{ background: '#f8fafc' }}>
+                                <div className="amount-input-wrapper" style={{ background: '#ffffff' }}>
                                     <span className="currency-prefix">₹</span>
                                     <input
                                         type="text"
@@ -1193,20 +1214,38 @@ const Sales = () => {
                                 </div>
                             </div>
 
-                            <div className="quick-entry-item two-col-item">
-                                <span className="quick-entry-label">Overall Bill Amount:</span>
-                                <div className="amount-input-wrapper" style={{ background: '#f8fafc' }}>
-                                    <span className="currency-prefix">₹</span>
-                                    <input
-                                        type="text"
-                                        className="quick-entry-input amount-input"
-                                        style={{ fontWeight: 600, color: '#1a6b3c' }}
-                                        value={billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                        readOnly
-                                    />
-                                </div>
+                            <div className="quick-entry-item two-col-item" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                                <span className="quick-entry-label" style={{ visibility: 'hidden' }}>Action:</span>
+                                <button
+                                    className="btn-primary"
+                                    onClick={handleAddItem}
+                                    style={{ width: '100%', height: '44px', background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add_circle</span>
+                                    ADD ITEM
+                                </button>
                             </div>
                         </div>
+
+                        <div className="overall-bill-summary-fixed" style={{ marginTop: '28px', marginBottom: '42px', padding: '12px 32px', background: '#ffffff', borderRadius: '12px', border: '2px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ background: '#334155', color: '#ffffff', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>receipt_long</span>
+                                </div>
+                                <div>
+                                    <h4 style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Summary</h4>
+                                    <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>Total Bill</span>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                <span style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A' }}>₹</span>
+                                <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.01em', lineHeight: 1 }}>
+                                    {billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="section-divider" style={{ margin: '0 -32px 32px -32px' }}></div>
 
                         <div className="quick-entry-row" style={{ marginBottom: '16px' }}>
                             <div className="quick-entry-item two-col-item">
@@ -1421,7 +1460,6 @@ const Sales = () => {
                                     )}
                                 </div>
                             </div>
-
                             <div className="quick-entry-item two-col-item">
                                 {(paidStatus === 'Pending' || paidStatus === 'Advance') ? (
                                     <>
@@ -1441,18 +1479,26 @@ const Sales = () => {
                                     <div style={{ visibility: 'hidden' }}></div>
                                 )}
                             </div>
-
-                            <div className="quick-entry-item" style={{ flex: 1.5, display: 'flex', alignItems: 'flex-end' }}>
-                                <button
-                                    className="btn-primary"
-                                    onClick={handleAddItem}
-                                    style={{ width: '100%', height: '50px', background: '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                                >
-                                    <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>add_circle</span>
-                                    ADD ITEM
-                                </button>
-                            </div>
                         </div>
+
+                        {(paidStatus === 'Pending' || paidStatus === 'Advance') && (
+                            <div className="quick-entry-row">
+                                <div className="quick-entry-item two-col-item">
+                                    <span className="quick-entry-label">Balance Amount:</span>
+                                    <div className="amount-input-wrapper" style={{ background: '#fff1f2' }}>
+                                        <span className="currency-prefix">₹</span>
+                                        <input
+                                            type="text"
+                                            className="quick-entry-input amount-input"
+                                            style={{ fontWeight: 600, color: '#e11d48' }}
+                                            value={(billItems.reduce((sum, item) => sum + item.amount, 0) - (parseFloat(amountPaid) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            readOnly
+                                        />
+                                    </div>
+                                </div>
+                                <div className="quick-entry-item two-col-item" style={{ visibility: 'hidden' }}></div>
+                            </div>
+                        )}
                     </div>
 
                     {billItems.length > 0 && (
@@ -1461,6 +1507,7 @@ const Sales = () => {
                                 <span style={{ fontWeight: 600, color: '#334155' }}>Items in Current Bill ({billItems.length})</span>
                                 <button className="clear-bill" onClick={() => setBillItems([])} style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Clear All</button>
                             </div>
+
                             <div className="preview-table-container" style={{ overflowX: 'auto' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
                                     <thead>
@@ -1512,16 +1559,9 @@ const Sales = () => {
                     <div className="quick-entry-footer">
                         <div className="quick-entry-action-group">
                             <button
-                                className="btn-outline quick-entry-btn bill-btn-colored"
-                                onClick={handleGenerateBill}
-                            >
-                                <span className="material-symbols-outlined">receipt_long</span>
-                                GENERATE BILL
-                            </button>
-
-                            <button
                                 className="btn-primary quick-entry-btn log-btn-colored"
                                 onClick={handleLogTransaction}
+                                style={{ width: '100%', height: '52px', fontSize: '1rem', fontWeight: 800 }}
                                 disabled={isLogging || (billItems.length === 0 && !quantity)}
                             >
                                 <span className="material-symbols-outlined">
@@ -1529,237 +1569,6 @@ const Sales = () => {
                                 </span>
                                 {editingTransactionId ? (isLogging ? "UPDATING..." : "UPDATE ENTRY") : (isLogging ? "SAVING..." : "SAVE ENTRY")}
                             </button>
-                        </div>
-                        <div className="history-view-trigger">
-                            <button className="view-history-btn" onClick={() => setViewMode('history')}>
-                                <span className="material-symbols-outlined">history</span>
-                                View Recent Sales History
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className={`desktop-view-section ${viewMode !== 'history' ? 'mobile-hidden' : ''}`}>
-                <div className="history-section-wrapper">
-                    <div className="history-header-actions">
-                        <button className="back-to-entry-btn" onClick={() => setViewMode('entry')}>
-                            <span className="material-symbols-outlined">arrow_back</span>
-                            Back to Sales Entry
-                        </button>
-                    </div>
-
-                    <div className="history-filters-header" style={{ textAlign: 'center', marginBottom: '20px' }}>
-                        <h3 className="section-title">Today's Sales History</h3>
-                    </div>
-
-                    <div className="stock-table-container">
-                        <div className="table-responsive desktop-only-table">
-                            <table className="stock-table">
-                                <thead>
-                                    <tr>
-                                        <th style={{ textAlign: 'center' }}>S.NO</th>
-                                        <th style={{ textAlign: 'center' }}>TIME</th>
-                                        <th style={{ textAlign: 'center' }}>COMPANY</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>PRODUCT</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>SIZE</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>PIECES</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>AMOUNT</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>PAYMENT</th>
-                                        <th className="hide-mobile" style={{ textAlign: 'center' }}>SOLD BY</th>
-                                        <th className="text-center" style={{ textAlign: 'center' }}>ACTION</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredTransactions.length > 0 ? (
-                                        filteredTransactions.slice(0, 10).map((transaction, index) => {
-                                            const baseNames = [...new Set(transaction.saleItems?.map(item => item.baseName))].filter(Boolean);
-                                            const baseProducts = baseNames.length > 0 ? baseNames.join(', ') : (transaction.product || "-");
-                                            
-                                            const sizeValues = [...new Set(transaction.saleItems?.map(item => item.size))].filter(Boolean);
-                                            const sizes = sizeValues.length > 0 ? sizeValues.join(', ') : (transaction.size || "-");
-                                            
-                                            const totalPieces = transaction.saleItems?.reduce((sum, item) => sum + (Number(item.qty) || 0), 0) || Math.abs(transaction.quantity || 0);
-                                            const displayAmount = transaction.totalAmount || transaction.amount || 0;
-                                            const formattedTime = getFormattedTime(transaction);
-
-                                            return (
-                                                <tr key={transaction.id || transaction._id}>
-                                                    <td style={{ textAlign: 'center' }}>{index + 1}</td>
-                                                    <td style={{ textAlign: 'center', fontSize: '13px', whiteSpace: 'nowrap' }}>{formattedTime}</td>
-                                                    <td style={{ textAlign: 'center' }} onClick={() => handleViewBill(transaction)}>
-                                                        <span className="company-text clickable-company">{transaction.company || '-'}</span>
-                                                    </td>
-                                                    <td className="hide-mobile" style={{ textAlign: 'center' }}>
-                                                        <div className="product-info" style={{ justifyContent: 'center' }}>
-                                                            <span className="product-name">{baseProducts}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="hide-mobile" style={{ textAlign: 'center' }}>{sizes}</td>
-                                                    <td className="quantity-cell hide-mobile" style={{ textAlign: 'center' }}>
-                                                        {totalPieces}
-                                                    </td>
-                                                    <td className="amount-cell hide-mobile" style={{ textAlign: 'center' }}>
-                                                        ₹{displayAmount?.toLocaleString() || '0'}
-                                                    </td>
-                                                    <td className="hide-mobile" style={{ textAlign: 'center' }}>
-                                                        <span className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}>
-                                                            {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="hide-mobile" style={{ textAlign: 'center' }}>
-                                                        <span className="sold-by-badge">{transaction.soldBy || "-"}</span>
-                                                    </td>
-                                                    <td className="text-center" style={{ textAlign: 'center' }}>
-                                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                                            <button
-                                                                className="icon-action-btn"
-                                                                onClick={async () => {
-                                                                    const billData = handleViewBill(transaction, true);
-                                                                    setSelectedBill(billData);
-                                                                    setIsAutoSharing(true);
-                                                                    setFeedbackMessage("🚀 Generating High-Res Bill & Connecting...");
-                                                                    
-                                                                    // Wait for DOM to render the hidden bill
-                                                                    setTimeout(async () => {
-                                                                        try {
-                                                                            await sendInvoiceToWhatsApp(billData);
-                                                                        } finally {
-                                                                            setIsAutoSharing(false);
-                                                                        }
-                                                                    }, 600);
-                                                                }}
-                                                                title="Send to WhatsApp"
-                                                                style={{ color: '#25D366', background: 'rgba(37, 211, 102, 0.1)' }}
-                                                            >
-                                                                <span className="material-symbols-outlined">share</span>
-                                                            </button>
-                                                            <button
-                                                                className="icon-action-btn edit"
-                                                                onClick={() => handleEditTransaction(transaction)}
-                                                                title="Edit Record"
-                                                                style={{ color: '#0ea5e9' }}
-                                                            >
-                                                                <span className="material-symbols-outlined">edit</span>
-                                                            </button>
-                                                            <button
-                                                                className="icon-action-btn delete"
-                                                                onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}
-                                                                title="Delete Record"
-                                                            >
-                                                                <span className="material-symbols-outlined">delete</span>
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="9" className="no-data" style={{ textAlign: 'center', padding: '40px' }}>
-                                                <h4>No sales records found for today</h4>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Mobile History Cards */}
-                        <div className="mobile-history-cards">
-                            {filteredTransactions.length > 0 ? (
-                                filteredTransactions.slice(0, 10).map((transaction) => {
-                                        const formattedTime = getFormattedTime(transaction);
-                                        return (
-                                            <div key={transaction.id || transaction._id} className="mobile-sale-card" onClick={() => handleViewBill(transaction)}>
-                                        <div className="sale-card-header">
-                                            <div className="sale-date">
-                                                <span className="material-symbols-outlined">calendar_today</span>
-                                                <span style={{ fontWeight: '500' }}>{transaction.date?.split(', ')[0]}</span>
-                                                <span style={{ marginLeft: '8px', opacity: 0.8, fontSize: '12px' }}>{formattedTime}</span>
-                                            </div>
-                                            <span className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}>
-                                                {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
-                                            </span>
-                                        </div>
-                                        <div className="sale-card-body">
-                                            <div className="company-info">
-                                                <h4 className="sale-company">{transaction.company || 'Direct Sale'}</h4>
-                                                <p className="sale-customer">{transaction.customer || 'No Customer'}</p>
-                                            </div>
-                                            <div className="sale-details-grid">
-                                                <div className="detail-item">
-                                                    <span className="detail-label">AMOUNT</span>
-                                                    <span className="detail-value amount">₹{(transaction.totalAmount || transaction.amount || 0).toLocaleString()}</span>
-                                                </div>
-                                                <div className="detail-item">
-                                                    <span className="detail-label">PIECES</span>
-                                                    <span className="detail-value">
-                                                        {transaction.saleItems?.reduce((sum, item) => sum + (Number(item.qty) || 0), 0) || Math.abs(transaction.quantity || 0)} Pcs
-                                                    </span>
-                                                </div>
-                                                <div className="detail-item">
-                                                    <span className="detail-label">SOLD BY</span>
-                                                    <span className="detail-value">{transaction.soldBy || "-"}</span>
-                                                </div>
-                                            </div>
-                                            <div className="sale-product-line">
-                                                <span className="material-symbols-outlined">inventory_2</span>
-                                                {transaction.saleItems?.map(item => item.baseName).join(', ') || transaction.product}
-                                            </div>
-                                        </div>
-                                        <div className="sale-card-actions" onClick={(e) => e.stopPropagation()}>
-                                            <button
-                                                className="sale-action-btn"
-                                                onClick={async () => {
-                                                    const billData = handleViewBill(transaction, true);
-                                                    setSelectedBill(billData);
-                                                    setIsAutoSharing(true);
-                                                    setFeedbackMessage("🚀 Generating Bill...");
-                                                    
-                                                    setTimeout(async () => {
-                                                        try {
-                                                            await sendInvoiceToWhatsApp(billData);
-                                                        } finally {
-                                                            setIsAutoSharing(false);
-                                                        }
-                                                    }, 600);
-                                                }}
-                                                style={{ color: '#25D366', background: 'rgba(37, 211, 102, 0.1)' }}
-                                            >
-                                                <span className="material-symbols-outlined">share</span>
-                                                WhatsApp
-                                            </button>
-                                            <button className="sale-action-btn edit" onClick={() => handleEditTransaction(transaction)} style={{ color: '#0ea5e9' }}>
-                                                <span className="material-symbols-outlined">edit</span>
-                                                Edit
-                                            </button>
-                                            <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}>
-                                                <span className="material-symbols-outlined">delete</span>
-                                                Delete
-                                            </button>
-                                            <button className="sale-action-btn view" onClick={() => handleViewBill(transaction)}>
-                                                <span className="material-symbols-outlined">receipt_long</span>
-                                                Bill
-                                            </button>
-                                            </div>
-                                        </div>
-                                        );
-                                    })
-                                ) : (
-                                <div className="no-data-mobile">
-                                    <span className="material-symbols-outlined">search_off</span>
-                                    <p>No sales records found for today</p>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="table-footer">
-                            <div className="pagination-info">
-                                {filteredTransactions.length > 10 
-                                    ? `Showing 10 Most Recent of ${filteredTransactions.length} Today's Sales` 
-                                    : `Showing ${filteredTransactions.length} Sales Records`}
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -2228,7 +2037,7 @@ const Sales = () => {
                                             setCustomerGstin(newClientData.gst || "");
                                             setCustomerAddress(newClientData.address || "");
                                             setShowAddClientModal(false);
-                                            
+
                                             setFeedbackMessage("✅ New client added to database");
                                             setTimeout(() => setFeedbackMessage(""), 3000);
 

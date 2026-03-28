@@ -44,6 +44,7 @@ import CheckPage from "./pages/CheckPage.js";
 import Clients from "./pages/clients/Clients.js";
 
 import Sales from "./pages/sales/Sales.js";
+import SalesHistory from "./pages/sales/SalesHistory.js";
 import Help from "./pages/Help.js";
 import ChangePasswordModal from "./components/ChangePasswordModal.jsx";
 
@@ -198,6 +199,11 @@ const App = () => {
             <Route path="/sales" element={
               <ProtectedRoute module="sales">
                 <AppLayout><Sales /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/sales/history" element={
+              <ProtectedRoute module="sales">
+                <AppLayout><SalesHistory /></AppLayout>
               </ProtectedRoute>
             } />
 

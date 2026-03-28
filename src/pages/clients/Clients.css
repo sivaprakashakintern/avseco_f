@@ -366,6 +366,18 @@
   transform: scale(1.05);
 }
 
+.action-btn.delete-btn {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.action-btn.delete-btn:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #dc2626;
+  transform: scale(1.05);
+}
+
 /* ===== MOBILE ADAPTATION ===== */
 .mobile-client-cards {
   display: none;
