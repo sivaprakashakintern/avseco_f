@@ -3,9 +3,11 @@ import { useAppContext } from "../../context/AppContext.js";
 import "./Clients.css";
 
 const Clients = () => {
-  const { clients, addClient, updateClient, salesHistory } = useAppContext();
+  const { clients, addClient, updateClient, deleteClient, salesHistory } = useAppContext();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClient, setSelectedClient] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -131,9 +133,22 @@ const Clients = () => {
       setShowEditModal(false);
       setSelectedClient(null);
       resetForm();
-      setFeedbackMessage("Harsath - Client Updated Successfully!");
+      setFeedbackMessage("✅ Client Updated Successfully!");
     } catch (err) {
       setFeedbackMessage("Error updating client");
+    }
+    setTimeout(() => setFeedbackMessage(""), 2500);
+  };
+
+  const handleDeleteClient = async () => {
+    if (!clientToDelete) return;
+    try {
+      await deleteClient(clientToDelete.id);
+      setShowDeleteModal(false);
+      setClientToDelete(null);
+      setFeedbackMessage("🗑️ Client deleted successfully");
+    } catch (err) {
+      setFeedbackMessage("❌ Error deleting client");
     }
     setTimeout(() => setFeedbackMessage(""), 2500);
   };
@@ -272,6 +287,12 @@ const Clients = () => {
                         });
                         setShowEditModal(true);
                        }}><span className="material-symbols-outlined">edit</span></button>
+                      <button
+                        className="action-btn delete-btn"
+                        onClick={() => { setClientToDelete(client); setShowDeleteModal(true); }}
+                      >
+                        <span className="material-symbols-outlined">delete</span>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -308,6 +329,12 @@ const Clients = () => {
                    setFormData({...client}); 
                    setShowEditModal(true); 
                 }}><span className="material-symbols-outlined">edit</span></button>
+                <button
+                  className="action-btn delete-btn"
+                  onClick={(e) => { e.stopPropagation(); setClientToDelete(client); setShowDeleteModal(true); }}
+                >
+                  <span className="material-symbols-outlined">delete</span>
+                </button>
               </div>
             </div>
           ))}
@@ -402,6 +429,41 @@ const Clients = () => {
                 <button type="submit" className="modal-confirm">Save Record</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRM MODAL */}
+      {showDeleteModal && clientToDelete && (
+        <div className="modal-overlay" onClick={() => { setShowDeleteModal(false); setClientToDelete(null); }}>
+          <div className="modal-content" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 style={{ color: '#dc2626' }}>Delete Client</h2>
+              <button className="modal-close" onClick={() => { setShowDeleteModal(false); setClientToDelete(null); }}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body" style={{ textAlign: 'center', padding: '24px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '48px', color: '#dc2626', display: 'block', marginBottom: '12px' }}>warning</span>
+              <p style={{ fontSize: '15px', color: '#374151', marginBottom: '6px' }}>
+                Are you sure you want to delete
+              </p>
+              <p style={{ fontSize: '18px', fontWeight: '700', color: '#111827', marginBottom: '20px' }}>
+                {clientToDelete.companyName || clientToDelete.contactPerson}?
+              </p>
+              <p style={{ fontSize: '13px', color: '#6b7280' }}>This action cannot be undone.</p>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel" onClick={() => { setShowDeleteModal(false); setClientToDelete(null); }}>Cancel</button>
+              <button
+                className="modal-confirm"
+                style={{ background: '#dc2626' }}
+                onClick={handleDeleteClient}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', verticalAlign: 'middle', marginRight: '6px' }}>delete</span>
+                Delete Client
+              </button>
+            </div>
           </div>
         </div>
       )}

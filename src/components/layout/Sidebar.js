@@ -95,7 +95,16 @@ const Sidebar = () => {
       ]
     },
 
-    { icon: "sell", label: "Sales", path: "/sales", module: "sales" },
+    {
+      icon: "sell",
+      label: "Sales",
+      path: "/sales",
+      module: "sales",
+      children: [
+        { label: "Create Sale", path: "/sales" },
+        { label: "Transaction History", path: "/sales/history" }
+      ]
+    },
     {
       icon: "payments",
       label: "Expenses",
