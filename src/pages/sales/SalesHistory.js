@@ -19,18 +19,13 @@ const getFormattedTime = (transaction) => {
 };
 
 const SalesHistory = () => {
-    const { user, isAdmin } = useAuth();
-    const { clients, deleteSale, salesHistory } = useAppContext();
+    const { clients } = useAppContext();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showExportModal, setShowExportModal] = useState(false);
-    const [exportFormat, setExportFormat] = useState('excel');
-    const [exportType, setExportType] = useState('all');
-    const [exportLoading, setExportLoading] = useState(false);
     const [showBillModal, setShowBillModal] = useState(false);
     const [selectedBill, setSelectedBill] = useState(null);
-    const [isAutoSharing, setIsAutoSharing] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState("");
 
     const fetchSales = useCallback(async () => {
@@ -379,18 +374,18 @@ const SalesHistory = () => {
             </div>
 
             {/* Bill Modal */}
-            {(showBillModal || isAutoSharing) && selectedBill && (
+            {showBillModal && selectedBill && (
                 <div
                     className="bill-modal-overlay"
                     onClick={() => setShowBillModal(false)}
                     style={{
                         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: isAutoSharing ? 'transparent' : 'rgba(0, 0, 0, 0.85)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
                         display: 'flex', justifyContent: 'center', alignItems: 'center',
-                        padding: '20px', zIndex: isAutoSharing ? -1000 : 3000,
-                        overflow: 'auto', backdropFilter: isAutoSharing ? 'none' : 'blur(6px)',
-                        cursor: 'pointer', opacity: isAutoSharing ? 0.01 : 1,
-                        pointerEvents: isAutoSharing ? 'none' : 'auto'
+                        padding: '20px', zIndex: 3000,
+                        overflow: 'auto', backdropFilter: 'blur(6px)',
+                        cursor: 'pointer', opacity: 1,
+                        pointerEvents: 'auto'
                     }}
                 >
                     <div

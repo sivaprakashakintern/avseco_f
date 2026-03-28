@@ -120,7 +120,6 @@ const Sales = () => {
     const [billItems, setBillItems] = useState([]);
 
 
-    const [isAutoSharing, setIsAutoSharing] = useState(false);
 
     // Filtered employees for delivery
     const deliveryEmployees = React.useMemo(() => {
@@ -347,174 +346,17 @@ const Sales = () => {
         setTimeout(() => setFeedbackMessage(""), 3000);
     };
 
-    const handleEditTransaction = (transaction) => {
-        setEditingTransactionId(transaction.id);
-        setCompanyName(transaction.company || "");
-        setCustomerName(transaction.customer || "");
-        setCustomerEmail(transaction.customerEmail || "");
-        setCustomerPhone(transaction.customerPhone || "");
-        setCustomerGstin(transaction.customerGstin || "");
-        setCustomerAddress(transaction.customerAddress || "");
-        setDeliveryEmployee(transaction.deliveredBy || "");
-        setSoldBy(transaction.soldBy || "");
-        setDeliveryMode(transaction.deliveryMode || "Door Delivery");
-        setPaymentMode(transaction.paymentStatus || "Cash");
-        setPaidStatus(transaction.paidStatus || (transaction.paymentStatus === 'Unpaid' ? 'Unpaid' : 'Paid'));
-
-        // Populate bill items from saleItems
-        if (transaction.saleItems) {
-            setBillItems(transaction.saleItems.map((item, idx) => ({
-                id: idx,
-                product: item.productName || item.product,
-                baseName: item.baseName || item.productName || item.product,
-                size: item.size || "-",
-                qty: item.qty,
-                amount: item.amount,
-                unit: "pcs"
-            })));
-        } else {
-            // Fallback for old records
-            setBillItems([{
-                id: Date.now(),
-                product: transaction.product,
-                baseName: transaction.product,
-                size: "-",
-                qty: Math.abs(transaction.quantity),
-                amount: transaction.amount,
-                unit: "pcs"
-            }]);
-        }
-
-        setViewMode('entry');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const handleCancelEdit = () => {
-        setEditingTransactionId(null);
-        setBillItems([]);
-        setQuantity("");
-        setTotalAmount("");
-        setCompanyName("");
-        setCustomerName("");
-        setCustomerEmail("");
-        setCustomerPhone("+91 ");
-        setCustomerGstin("");
-        setCustomerAddress("");
-        setDeliveryEmployee("");
-        setSoldBy("");
-        setDeliveryMode("Door Delivery");
-        setPaymentMode("Cash");
-        setPaidStatus("Paid");
-        setAmountPaid("");
-    };
-
-    const handleGenerateBill = () => {
-        if (!customerPhone || !customerAddress) {
-            setFeedbackMessage("Please enter Customer Phone and Address");
-            setTimeout(() => setFeedbackMessage(""), 3000);
-            return;
-        }
-
-        let itemsForBill = [...billItems];
-        if (quantity && parseFloat(quantity) > 0) {
-            itemsForBill.push({
-                product: selectedProduct,
-                baseName: selectedBaseProduct,
-                size: selectedSize,
-                qty: parseFloat(quantity),
-                amount: parseFloat(totalAmount) || 0,
-                productId: selectedProductId,
-                hsn: products.find(p => p.id === selectedProductId)?.hsnCode || "-"
-            });
-        }
-
-        if (itemsForBill.length === 0) {
-            setFeedbackMessage("No items to generate bill");
-            setTimeout(() => setFeedbackMessage(""), 3000);
-            return;
-        }
-
-        const clientInfo = clients.find(c => c.companyName === companyName);
-
-        const billData = {
-            invoiceNo: `INV-${Date.now().toString().slice(-6)}`,
-            company: companyName,
-            customer: customerName || clientInfo?.contactPerson || 'N/A',
-            email: customerEmail || clientInfo?.email || 'N/A',
-            phone: customerPhone || clientInfo?.phone || 'N/A',
-            address: customerAddress || clientInfo?.address || 'N/A',
-            gstin: customerGstin || clientInfo?.gst || 'N/A',
-            date: formatDate(new Date()),
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            items: itemsForBill.map(item => ({
-                product: item.product,
-                baseName: item.baseName || item.product,
-                size: item.size || "-",
-                qty: item.qty,
-                amount: item.amount,
-                hsn: item.hsn || products.find(p => p.id === item.productId)?.hsnCode || "-",
-                rate: item.rate || (item.qty ? (item.amount / item.qty).toFixed(2) : 0)
-            })),
-            deliveredBy: deliveryEmployee,
-            soldBy: soldBy,
-            paymentMode: paymentMode,
-            paidStatus: paidStatus,
-            deliveryMode: deliveryMode
-        };
-
-        setSelectedBill(billData);
-        setShowBillModal(true);
-    };
 
 
 
-    // View a transaction's bill details
-    const handleViewBill = (transaction, returnOnly = false) => {
-        const clientInfo = clients.find(c => c.companyName === transaction.company);
 
-        const billData = {
-            invoiceNo: transaction.invoiceNo || `INV-${transaction.id.toString().slice(-6)}`,
-            company: transaction.company,
-            customer: transaction.customer || clientInfo?.contactPerson || 'N/A',
-            email: transaction.customerEmail || clientInfo?.email || 'N/A',
-            phone: transaction.customerPhone || transaction.phone || clientInfo?.phone || 'N/A',
-            address: transaction.customerAddress || clientInfo?.address || 'N/A',
-            gstin: transaction.customerGstin || clientInfo?.gst || 'N/A',
-            date: transaction.date.includes(',') ? transaction.date.split(',')[0] : transaction.date,
-            time: transaction.date.includes(',') ? transaction.date.split(',').slice(1).join(',') : "",
-            items: transaction.saleItems?.map(item => ({
-                product: item.productName || item.product,
-                baseName: item.baseName || item.productName || item.product,
-                size: item.size || "-",
-                qty: item.qty,
-                amount: item.amount || transaction.amount,
-                rate: item.qty ? ((item.amount || transaction.amount) / item.qty).toFixed(2) : 0
-            })) || [{
-                product: transaction.product,
-                baseName: transaction.product,
-                size: transaction.product.includes('"') ? (transaction.product.match(/\d+".*/) || ["—"])[0] : "—",
-                qty: Math.abs(transaction.quantity),
-                amount: transaction.amount,
-                hsn: products.find(p => (p.name || "").toLowerCase().trim() === (transaction.product || "").toLowerCase().trim())?.hsnCode || "-",
-                rate: transaction.quantity ? (transaction.amount / Math.abs(transaction.quantity)).toFixed(2) : 0
-            }],
-            totalAmount: transaction.totalAmount || transaction.amount,
-            paymentMode: transaction.paymentStatus,
-            paidStatus: transaction.paidStatus || (transaction.paymentStatus === 'Unpaid' ? 'Unpaid' : 'Paid'),
-            deliveredBy: transaction.deliveredBy,
-            soldBy: transaction.soldBy
-        };
 
-        if (returnOnly) return billData;
-        setSelectedBill(billData);
-        setShowBillModal(true);
-    };
 
-    // Delete a transaction from history
-    const handleDeleteTransaction = (id) => {
-        // This should call deleteSale from useAppContext
-        deleteSale(id);
-    };
+
+
+
+
+
 
     // ─── Shared: Capture HTML preview & Send to WhatsApp ──────────────────
     const sendInvoiceToWhatsApp = async (bill) => {
@@ -734,22 +576,7 @@ const Sales = () => {
     }, []);
 
     // Helper to extract and format time consistently (12h AM/PM)
-    const getFormattedTime = (transaction) => {
-        // Robust handling for older DD-MM-YYYY vs newer strings (Always pull the last comma part for time)
-        const parts = transaction.date?.split(', ') || [];
-        const rawTime = parts.length > 1 ? parts[parts.length - 1] : (transaction.time || "-");
 
-        if (rawTime === "-") return "-";
-
-        if (rawTime.includes('AM') || rawTime.includes('PM')) return rawTime;
-
-        const [h, m] = rawTime.split(':').map(Number);
-        if (isNaN(h) || isNaN(m)) return rawTime;
-
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        const h12 = h % 12 || 12;
-        return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
-    };
 
     return (
         <div className="stock-page">
