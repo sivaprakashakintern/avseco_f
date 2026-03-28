@@ -44,7 +44,6 @@ const NotificationsPage = () => {
             await notificationApi.respond(id, { status, reason: status === 'problem' ? reason : 'Acknowledge OK' });
             
             setRespondedIds(prev => new Set([...prev, id]));
-            setRespondingTo(null);
             setReason('');
             setToast({ 
                 message: "Response sent successfully", 

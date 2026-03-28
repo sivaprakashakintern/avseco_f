@@ -61,13 +61,14 @@ const Sales = () => {
         address: "",
         gst: ""
     });
-    const [, setExportLoading] = useState(false);
+
     const [exportSuccess, setExportSuccess] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState("");
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportFormat, setExportFormat] = useState('excel');
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
 
+    const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
     const [editingTransactionId, setEditingTransactionId] = useState(null);
     const [selectedBaseProduct, setSelectedBaseProduct] = useState("");
 
@@ -84,6 +85,7 @@ const Sales = () => {
 
     const [quantity, setQuantity] = useState("");
     const [unitPrice, setUnitPrice] = useState("");
+    const [totalAmount, setTotalAmount] = useState("");
     const [paymentMode, setPaymentMode] = useState("Cash");
     const [companyName, setCompanyName] = useState("");
     const [customerName, setCustomerName] = useState("");
@@ -113,8 +115,8 @@ const Sales = () => {
     const [deliveryMode, setDeliveryMode] = useState("Door Delivery");
     const [isDeliveryModeDropdownOpen, setIsDeliveryModeDropdownOpen] = useState(false);
     const [isLogging, setIsLogging] = useState(false);
-
-
+    const [billItems, setBillItems] = useState([]);
+    const [exportLoading, setExportLoading] = useState(false);
 
 
     // Filtered employees for delivery
