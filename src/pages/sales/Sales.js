@@ -9,6 +9,7 @@ import html2canvas from "html2canvas";
 
 const Sales = () => {
     const {
+        clients, addClient, employees, products: dbProducts, stockData,
         salesHistory, addSale, updateSale
     } = useAppContext();
     const { user, isAdmin } = useAuth();
