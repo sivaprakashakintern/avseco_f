@@ -214,6 +214,19 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     return dbProducts.find(p => p.name === productName && p.size === size);
   };
 
+  const handleSendReminder = async (item, produced, remaining) => {
+    try {
+      await notificationApi.sendPush({
+        title: "Production Nudge",
+        message: `Status for ${item.productSize}: ${produced.toLocaleString()} / ${(produced + remaining).toLocaleString()} pieces produced. Please focus on completing this target.`,
+        targetAudience: "All Employees"
+      });
+      showToast("Operators nudged successfully!");
+    } catch (err) {
+      showToast("Failed to send nudge", "error");
+    }
+  };
+
   // ===== HANDLE ADD TARGET =====
   const handleAddTarget = async () => {
     if (!selectedProduct) {

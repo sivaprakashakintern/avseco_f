@@ -358,6 +358,25 @@ const Sales = () => {
 
 
 
+    const handleCancelEdit = () => {
+        setEditingTransactionId(null);
+        setBillItems([]);
+        setQuantity("");
+        setTotalAmount("");
+        setCompanyName("");
+        setCustomerName("");
+        setCustomerEmail("");
+        setCustomerPhone("+91 ");
+        setCustomerGstin("");
+        setCustomerAddress("");
+        setDeliveryEmployee("");
+        setSoldBy("");
+        setDeliveryMode("Door Delivery");
+        setPaymentMode("Cash");
+        setPaidStatus("Paid");
+        setAmountPaid("");
+    };
+
     // ─── Shared: Capture HTML preview & Send to WhatsApp ──────────────────
     const sendInvoiceToWhatsApp = async (bill) => {
         const invoiceElement = document.getElementById('printable-bill');
@@ -1464,7 +1483,7 @@ const Sales = () => {
                     </div>
                 )}
 
-            {(showBillModal || isAutoSharing) && selectedBill && (
+            {showBillModal && selectedBill && (
                 <div
                     className="bill-modal-overlay"
                     onClick={() => setShowBillModal(false)}
@@ -1474,17 +1493,17 @@ const Sales = () => {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        backgroundColor: isAutoSharing ? 'transparent' : 'rgba(0, 0, 0, 0.85)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
                         padding: '20px',
-                        zIndex: isAutoSharing ? -1000 : 3000,
+                        zIndex: 3000,
                         overflow: 'auto',
-                        backdropFilter: isAutoSharing ? 'none' : 'blur(6px)',
+                        backdropFilter: 'blur(6px)',
                         cursor: 'pointer',
-                        opacity: isAutoSharing ? 0.01 : 1, // Keep it slightly visible so DOM rendering engine counts it
-                        pointerEvents: isAutoSharing ? 'none' : 'auto'
+                        opacity: 1,
+                        pointerEvents: 'auto'
                     }}
                 >
                     <div

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useAppContext } from '../../context/AppContext.js';
 import { useAuth } from '../../context/AuthContext.js';
 import { formatDate } from '../../utils/dateUtils.js';
+import { notificationApi } from '../../utils/api.js';
 import './AttendanceLog.css';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // ✅ Use local date (not UTC) to avoid IST → UTC date shift bug
@@ -200,6 +201,19 @@ const AttendanceLog = () => {
     setSearchTerm("");
     setSelectedDept("All Departments");
     setStatusFilter("all");
+  };
+
+  const handleSendReminder = async (emp) => {
+    try {
+      await notificationApi.sendPush({
+        title: "Attendance Notification",
+        message: `Hi ${emp.name}, please update your attendance status for today (${dateKey}).`,
+        targetAudience: emp.id
+      });
+      showToast(`Reminder sent to ${emp.name}`);
+    } catch (err) {
+      showToast("Failed to send reminder", "error");
+    }
   };
 
   const [saveLoading, setSaveLoading] = useState(false);

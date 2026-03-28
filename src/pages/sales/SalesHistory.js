@@ -24,6 +24,7 @@ const SalesHistory = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showExportModal, setShowExportModal] = useState(false);
+    const [exportLoading, setExportLoading] = useState(false);
     const [showBillModal, setShowBillModal] = useState(false);
     const [selectedBill, setSelectedBill] = useState(null);
     const [feedbackMessage, setFeedbackMessage] = useState("");
