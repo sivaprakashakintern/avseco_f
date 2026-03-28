@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
 import { useAuth } from '../../context/AuthContext.js';
 import './Sales.css';
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+
 
 
 
