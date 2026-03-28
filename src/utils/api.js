@@ -187,3 +187,26 @@ export const healthApi = {
     return data;
   }
 };
+
+export const notificationApi = {
+  getAll: async () => {
+    const { data } = await axios.get('/notifications');
+    return data;
+  },
+  markRead: async (id) => {
+    const { data } = await axios.put(`/notifications/${id}/read`);
+    return data;
+  },
+  markAllRead: async () => {
+    const { data } = await axios.put('/notifications/read-all');
+    return data;
+  },
+  sendPush: async (payload) => {
+    const { data } = await axios.post('/notifications/send', payload);
+    return data;
+  },
+  respond: async (id, payload) => {
+    const { data } = await axios.post(`/notifications/${id}/respond`, payload);
+    return data;
+  }
+};

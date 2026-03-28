@@ -1,0 +1,267 @@
+.admin-push-container {
+    padding: 28px 32px;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+/* Push Banner - Matches Notifications Page Theme */
+.push-banner {
+    position: relative;
+    background: linear-gradient(135deg, #006A4E 0%, #004d39 100%);
+    border-radius: 20px;
+    padding: 2.25rem 3.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 20px 50px rgba(0, 106, 78, 0.15);
+    color: white;
+    overflow: hidden;
+}
+
+/* Subtle Banner Pattern Overlay */
+.push-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.3;
+}
+
+.push-banner-info {
+    position: relative;
+    z-index: 1;
+}
+
+.push-banner-title {
+    font-size: 2.1rem;
+    font-weight: 900;
+    margin: 0;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    color: white;
+}
+
+.push-banner-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-top: 0.75rem;
+    font-weight: 500;
+}
+
+.push-form-row {
+    display: flex;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.push-form-row .form-group {
+    flex: 1;
+}
+
+.push-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    border: 1px solid #f1f5f9;
+    margin-bottom: 2rem;
+}
+
+.push-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.push-card-header .material-symbols-outlined {
+    font-size: 2.5rem;
+    color: #006A4E;
+}
+
+.push-card-header h2 {
+    font-size: 1.5rem;
+    font-weight: 850;
+    color: #0f172a;
+    margin: 0;
+}
+
+.push-subtitle {
+    font-size: 0.95rem;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 2.5rem;
+}
+
+.push-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-size: 0.85rem !important;
+    font-weight: 900 !important;
+    color: #000000 !important;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.push-select,
+.push-input,
+.push-textarea {
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    border: 1.5px solid #e2e8f0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    transition: all 0.2s;
+    background: #f8fafc;
+}
+
+.push-select:focus,
+.push-input:focus,
+.push-textarea:focus {
+    outline: none;
+    border-color: #006A4E;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(0, 106, 78, 0.1);
+}
+
+.push-textarea {
+    resize: vertical;
+}
+
+.btn-send-push {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #006A4E;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 20px rgba(0, 106, 78, 0.15);
+}
+
+.btn-send-push:hover:not(:disabled) {
+    background: #004d39;
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px rgba(0, 106, 78, 0.2);
+}
+
+.btn-send-push:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.push-form-msg-row-unified {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    width: 100%;
+    margin-top: 1rem;
+    background: #fdfdfd;
+    padding: 0.5rem 0;
+}
+
+.msg-label-inline {
+    font-size: 0.85rem !important;
+    font-weight: 1000 !important;
+    color: #000000 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    min-width: 80px;
+}
+
+.push-textarea-compact {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    border: 1.5px solid #e2e8f0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    background: #f8fafc;
+    height: 52px;
+    resize: none;
+    line-height: 1.4;
+    transition: all 0.2s;
+}
+
+.btn-send-push-inline {
+    height: 52px;
+    padding: 0 2rem;
+    background: #006A4E;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 850;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0, 106, 78, 0.15);
+}
+
+.btn-send-push-inline:hover {
+    background: #004d39;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 106, 78, 0.25);
+}
+
+/* Status colors */
+.push-status.success {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.push-status.error {
+    background: #fff1f2;
+    color: #9f1239;
+    border: 1px solid #fecdd3;
+}
+
+@keyframes spinning {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spinning {
+    animation: spinning 1s linear infinite;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .admin-push-container { padding: 1rem; }
+    .push-banner { padding: 2rem; }
+    .push-banner-title { font-size: 2rem; }
+    .push-card { padding: 1.5rem; }
+    .push-form-row { flex-direction: column; gap: 1.5rem; }
+}

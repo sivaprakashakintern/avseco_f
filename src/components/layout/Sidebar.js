@@ -121,6 +121,7 @@ const Sidebar = () => {
         { label: "Attendance Report", path: "/attendance-report" }
       ]
     },
+    { icon: "notifications", label: "Notifications", path: "/notifications", module: "notifications" },
   ];
 
   // Filter items based on access and administrative exposure
@@ -132,12 +133,20 @@ const Sidebar = () => {
   // Add Admin-specific Manage Access if admin
   if (isAdmin) {
     filteredNavItems.push({
+      icon: "campaign",
+      label: "Push Alerts",
+      path: "/admin/push-notifications",
+      module: "admin"
+    });
+    filteredNavItems.push({
       icon: "admin_panel_settings",
       label: "Manage Access",
       path: "/admin/manage-access",
       module: "admin"
     });
   }
+
+  // navItems already includes Notifications now
 
   // Add Check Status for all (it's a system utility)
   filteredNavItems.push({

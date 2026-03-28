@@ -39,13 +39,13 @@ const Toast = ({ message, type, onClose }) => (
 // ─── Main Component ───────────────────────────────────────────────────────────
 const AttendanceLog = () => {
   const { 
-    employees: globalEmployees, 
     attendanceRecords, 
     saveAttendanceForDate,
     initAttendanceForDate,
-    updateAttendanceRecord
+    updateAttendanceRecord,
+    employees: globalEmployees
   } = useAppContext();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   // ── Date State ──────────────────────────────────────────────────────────────
   const [currentDate, setCurrentDate] = useState(today());
@@ -443,10 +443,21 @@ const AttendanceLog = () => {
                       </td>
 
                       <td className="text-center">
-                        <div className="att-toggle-group">
-                          <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "present")} title="Present">P</button>
-                          <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "half")} title="Half Day">H</button>
-                          <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "absent")} title="Absent">A</button>
+                        <div className="att-actions-cell">
+                          <div className="att-toggle-group">
+                            <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "present")} title="Present">P</button>
+                            <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "half")} title="Half Day">H</button>
+                            <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "absent")} title="Absent">A</button>
+                          </div>
+                          {isAdmin && (
+                            <button 
+                              className="att-remind-btn" 
+                              onClick={() => handleSendReminder(emp)}
+                              title="Send Reminder"
+                            >
+                              <span className="material-symbols-outlined">campaign</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -494,10 +505,20 @@ const AttendanceLog = () => {
                   </div>
 
                   {/* P / H / A */}
-                  <div className="att-toggle-group att-mobile-toggle">
-                    <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "present")}>P</button>
-                    <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "half")}>H</button>
-                    <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "absent")}>A</button>
+                  <div className="att-mobile-right">
+                    <div className="att-toggle-group att-mobile-toggle">
+                      <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "present")}>P</button>
+                      <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "half")}>H</button>
+                      <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "absent")}>A</button>
+                    </div>
+                    {isAdmin && (
+                      <button 
+                        className="att-remind-btn mobile" 
+                        onClick={() => handleSendReminder(emp)}
+                      >
+                        <span className="material-symbols-outlined">campaign</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               ))

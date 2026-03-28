@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
+import { useAuth } from '../../context/AuthContext.js';
+import { notificationApi } from '../../utils/api.js';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
@@ -71,9 +73,12 @@ const Production = () => {
     productionTargets,
     fetchTargets
   } = useAppContext();
+  const { isAdmin } = useAuth();
 
   // Production Entry Form State
   const isToday = productionDate.isSame(dayjs(), 'day');
+  const isYesterday = productionDate.isSame(dayjs().subtract(1, 'day'), 'day');
+  const canModify = isToday || isYesterday;
   const [formData, setFormData] = useState({
     product: "",
     size: "",
@@ -315,15 +320,15 @@ const Production = () => {
         </div>
         <div className="header-actions">
           <button 
-            className={`clear-all-btn-premium ${!isToday ? 'disabled-btn' : ''}`}
-            disabled={!isToday}
+            className={`clear-all-btn-premium ${!canModify ? 'disabled-btn' : ''}`}
+            disabled={!canModify}
             onClick={() => {
               setDateToClear(formatDate(productionDate));
               setShowClearConfirm(true);
             }}
           >
-            <span className="material-symbols-outlined">{isToday ? 'delete_sweep' : 'lock'}</span>
-            {isToday ? "Clear Today's Records" : "Records Locked"}
+            <span className="material-symbols-outlined">{canModify ? 'delete_sweep' : 'lock'}</span>
+            {canModify ? `Clear ${isToday ? "Today's" : "Yesterday's"} Records` : "Records Locked"}
           </button>
         </div>
       </div>
@@ -337,72 +342,137 @@ const Production = () => {
               </div>
               <div className="card-body">
                 <div className="entry-form-premium">
-                  <div className="form-group-premium" style={{ opacity: isToday ? 1 : 0.6, pointerEvents: isToday ? 'auto' : 'none' }}>
-                    <label>Production Date</label>
-                    <div className="date-picker-container">
-                      <button className="premium-input-btn" disabled={!isToday}>
-                        <span className="material-symbols-outlined">event</span>
-                        {formatDate(productionDate)}
+                  <div className="premium-form-row four-cols">
+                    <div className="premium-form-group">
+                      <label className="premium-label-new">Production Date</label>
+                      <div className="date-picker-wrapper-new">
+                        <span className="material-symbols-outlined input-icon-new">calendar_month</span>
+                        <button className="premium-date-btn-new" disabled={!canModify}>
+                          {formatDate(productionDate)}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="premium-form-group">
+                      <label className="premium-label-new">Product Type</label>
+                      <div className="select-wrapper-new">
+                        <span className="material-symbols-outlined input-icon-new">category</span>
+                        <select name="product" value={formData.product} onChange={handleInputChange} className="premium-select-new">
+                          {productOptions.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="premium-form-group">
+                      <label className="premium-label-new">Size / Dimensions</label>
+                      <div className={`select-wrapper-new ${
+                        getSizeTargetInfo(formData.size)?.remaining <= 0 ? 'status-green' : 
+                        getSizeTargetInfo(formData.size)?.producedQty > 0 ? 'status-orange' : 
+                        'status-red'
+                      }`}>
+                        <span className="material-symbols-outlined input-icon-new">straighten</span>
+                        <select 
+                          name="size" 
+                          value={formData.size} 
+                          onChange={handleInputChange} 
+                          className="premium-select-new"
+                        >
+                          {getSizesForProduct()
+                            .sort((a, b) => {
+                              const infoA = getSizeTargetInfo(a);
+                              const infoB = getSizeTargetInfo(b);
+                              const isAComplete = infoA && infoA.remaining <= 0;
+                              const isBComplete = infoB && infoB.remaining <= 0;
+                              
+                              if (isAComplete && !isBComplete) return 1;
+                              if (!isAComplete && isBComplete) return -1;
+                              
+                              // If both same status, use numeric sort
+                              return (parseInt(a) || 0) - (parseInt(b) || 0);
+                            })
+                            .map(s => {
+                              const info = getSizeTargetInfo(s);
+                              let text = s;
+                              let optionStyle = { fontWeight: '600' };
+                              
+                              if (info) {
+                                if (info.remaining <= 0) {
+                                  text = `${s} (Completed)`;
+                                  optionStyle.color = '#10b981'; // Green
+                                } else if (info.producedQty > 0) {
+                                  text = `${s} (${info.remaining.toLocaleString()} Left)`;
+                                  optionStyle.color = '#f59e0b'; // Orange
+                                } else {
+                                  text = `${s} (${info.remaining.toLocaleString()} Left)`;
+                                  optionStyle.color = '#ef4444'; // Red
+                                }
+                              }
+                              
+                              return <option key={s} value={s} style={optionStyle}>{text}</option>;
+                            })
+                          }
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="premium-form-group">
+                      <label className="premium-label-new">Quantity (PCS)</label>
+                      <div className="input-wrapper-new">
+                        <span className="material-symbols-outlined input-icon-new">production_quantity_limits</span>
+                        <input 
+                          type="number" 
+                          name="quantity" 
+                          value={formData.quantity} 
+                          onChange={handleInputChange} 
+                          className="premium-input-new" 
+                          placeholder="0" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="super-action-row-new">
+                    <div className="premium-form-group grade-group-new">
+                      <label className="premium-label-new">Quality Grade Selection (A/B/C)</label>
+                      <div className="grade-selector-new three-options">
+                        <label className={`grade-option-new ${formData.grade === 'A' ? 'active' : ''}`}>
+                          <input type="radio" name="grade" value="A" checked={formData.grade === 'A'} onChange={handleInputChange} />
+                          <span>Grade A</span>
+                        </label>
+                        <label className={`grade-option-new ${formData.grade === 'B' ? 'active' : ''}`}>
+                          <input type="radio" name="grade" value="B" checked={formData.grade === 'B'} onChange={handleInputChange} />
+                          <span>Grade B</span>
+                        </label>
+                        <label className={`grade-option-new ${formData.grade === 'C' ? 'active' : ''}`}>
+                          <input type="radio" name="grade" value="C" checked={formData.grade === 'C'} onChange={handleInputChange} />
+                          <span>Grade C</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="premium-form-group operator-group-new">
+                      <label className="premium-label-new">Machine Operator</label>
+                      <div className="select-wrapper-new">
+                        <span className="material-symbols-outlined input-icon-new">person</span>
+                        <select name="operator" value={formData.operator} onChange={handleInputChange} className="premium-select-new">
+                          {operators.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="submit-action-group-new">
+                      <label className="premium-label-new">&nbsp;</label>
+                      <button 
+                        className={`premium-submit-btn-new super-action-btn ${!canModify ? 'locked' : ''}`} 
+                        onClick={canModify ? handleAddProduction : null}
+                        disabled={!canModify}
+                      >
+                        <div className="btn-content-new">
+                          <span>{canModify ? 'SUBMIT' : 'LOCKED'}</span>
+                        </div>
                       </button>
                     </div>
                   </div>
-
-                  <div className="form-row-premium">
-                    <div className="form-group-premium">
-                      <label>Product</label>
-                      <select name="product" value={formData.product} onChange={handleInputChange} className="premium-select">
-                        {productOptions.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                      </select>
-                    </div>
-                    <div className="form-group-premium">
-                      <label>Size</label>
-                      <select name="size" value={formData.size} onChange={handleInputChange} className="premium-select">
-                        {getSizesForProduct().map(s => {
-                          const info = getSizeTargetInfo(s);
-                          let text = s;
-                          if (info) {
-                            text = info.remaining <= 0 
-                              ? `${s} (Complete)` 
-                              : `${s} (Rem: ${info.remaining.toLocaleString()})`;
-                          }
-                          return <option key={s} value={s}>{text}</option>;
-                        })}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-row-premium">
-                    <div className="form-group-premium">
-                      <label>Quantity (pcs)</label>
-                      <input type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} className="premium-input" placeholder="0" />
-                    </div>
-                  </div>
-
-                  <div className="form-row-premium">
-                    <div className="form-group-premium">
-                      <label>Grade</label>
-                      <select name="grade" value={formData.grade} onChange={handleInputChange} className="premium-select">
-                        <option value="A">Grade A</option>
-                        <option value="B">Grade B</option>
-                      </select>
-                    </div>
-                    <div className="form-group-premium">
-                      <label>Operator</label>
-                      <select name="operator" value={formData.operator} onChange={handleInputChange} className="premium-select">
-                        {operators.map(o => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-
-                  <button 
-                    className={`btn-premium-submit ${!isToday ? 'disabled-btn' : ''}`} 
-                    onClick={isToday ? handleAddProduction : null}
-                    disabled={!isToday}
-                  >
-                    <span className="material-symbols-outlined">{isToday ? 'rocket_launch' : 'lock'}</span>
-                    {isToday ? 'SUBMIT' : 'LOCKED'}
-                  </button>
                 </div>
               </div>
             </div>
@@ -411,7 +481,17 @@ const Production = () => {
           <div className="production-summary-section">
             <div className="premium-card">
               <div className="card-header summary-header">
-                <h3><span className="material-symbols-outlined">analytics</span> Daily Summary</h3>
+                <div className="header-left-title">
+                  <h3><span className="material-symbols-outlined">analytics</span> Daily Summary</h3>
+                </div>
+                
+                <div className="summary-total-banner-premium header-total-mini">
+                   <div className="banner-content">
+                      <span className="banner-label">DAILY TOTAL</span>
+                      <span className="banner-value">{(summaryData.total || 0).toLocaleString()}</span>
+                   </div>
+                </div>
+
                 <div className="date-picker-container">
                   <button className="date-summary-btn master-date-btn" onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}>
                     <span className="material-symbols-outlined">calendar_month</span> {formatDate(productionDate)}
@@ -424,19 +504,56 @@ const Production = () => {
                 </div>
               </div>
               <div className="card-body">
-                <div className="summary-total-banner">
-                  <span>TOTAL: {(summaryData.total || 0).toLocaleString()} pcs</span>
-                </div>
-                <div className="summary-grid">
-                  {availableSizes.map(size => (
-                    <div key={size} className="size-card">
-                      <div className="size-name"><span>{size}</span></div>
-                      <div className="size-quantity">{summaryData.bySize[size] || 0}</div>
-                      <div className="item-progress">
-                        <div className="progress-fill" style={{ width: `${Math.min(100, (summaryData.bySize[size] || 0) / 500)}%` }}></div>
+                <div className="dashboard-grid-mini-new">
+                  {availableSizes.map(size => {
+                    const quantity = summaryData.bySize[size] || 0;
+                    
+                    // Find combined target for this size on the current date
+                    const relevantTargets = (productionTargets || []).filter(t => 
+                      (t.date === formatDate(productionDate)) && 
+                      (t.productName === formData.product || t.product === formData.product) &&
+                      (t.productSize === size || t.size === size)
+                    );
+                    
+                    const totalTgt = relevantTargets.reduce((sum, t) => sum + (Number(t.targetQty) || 0), 0);
+                    const totalProducedTillNow = relevantTargets.reduce((sum, t) => sum + (Number(t.producedQty) || 0), 0);
+                    const progress = totalTgt > 0 ? Math.min(100, (totalProducedTillNow / totalTgt) * 100) : 0;
+
+                    return (
+                      <div key={size} className="summary-stat-card-new">
+                        <div className="stat-header-new">
+                          <span className="size-pill">{size}</span>
+                        </div>
+                        
+                        <div className="stat-value-badge-new">
+                          {quantity.toLocaleString()} <span className="qty-unit">plates</span>
+                          {isAdmin && totalTgt > 0 && progress < 100 && (
+                            <button 
+                              className="nudge-btn-mini" 
+                              onClick={() => handleSendReminder(size, totalProducedTillNow, totalTgt)}
+                              title="Nudge Operators"
+                            >
+                              <span className="material-symbols-outlined">campaign</span>
+                            </button>
+                          )}
+                        </div>
+                        
+                        {totalTgt > 0 && (
+                          <>
+                            <div className="stat-progress-bar-new">
+                              <div 
+                                className="progress-bar-fill" 
+                                style={{ width: `${progress}%` }}
+                              ></div>
+                            </div>
+                            <div className="stat-target-info-new">
+                              Target: {totalProducedTillNow.toLocaleString()} / {totalTgt.toLocaleString()}
+                            </div>
+                          </>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -448,7 +565,10 @@ const Production = () => {
         <div className="history-section">
           <div className="premium-card">
             <div className="card-header table-header">
-              <h3><span className="material-symbols-outlined">history</span> {isToday ? "Today" : formatDate(productionDate)} Production</h3>
+              <h3>
+                <span className="material-symbols-outlined">history</span> 
+                {isToday ? "Today" : (isYesterday ? "Yesterday" : formatDate(productionDate))} Production
+              </h3>
               <div className="table-actions">
                 <select value={historySizeFilter} onChange={(e) => setHistorySizeFilter(e.target.value)}>
                   <option value="all">All Sizes</option>
@@ -482,12 +602,12 @@ const Production = () => {
                       <td>{record.size}: {record.quantity}</td>
                       <td>{record.grade}</td>
                       <td>
-                        <div style={{ opacity: isToday ? 1 : 0.4, display: 'flex', gap: '8px' }}>
-                          <button onClick={isToday ? () => handleEditProduction(record) : null} disabled={!isToday} className="btn-edit-premium">
-                            <span className="material-symbols-outlined">{isToday ? 'edit' : 'lock'}</span>
+                        <div style={{ opacity: canModify ? 1 : 0.4, display: 'flex', gap: '8px' }}>
+                          <button onClick={canModify ? () => handleEditProduction(record) : null} disabled={!canModify} className="btn-edit-premium">
+                            <span className="material-symbols-outlined">{canModify ? 'edit' : 'lock'}</span>
                           </button>
-                          <button onClick={isToday ? () => handleDeleteProduction(record) : null} disabled={!isToday} className="btn-delete">
-                            <span className="material-symbols-outlined">{isToday ? 'delete' : 'lock'}</span>
+                          <button onClick={canModify ? () => handleDeleteProduction(record) : null} disabled={!canModify} className="btn-delete">
+                            <span className="material-symbols-outlined">{canModify ? 'delete' : 'lock'}</span>
                           </button>
                         </div>
                       </td>

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate } from '../../utils/dateUtils.js';
 import { useAppContext } from '../../context/AppContext.js';
-import { productionTargetApi } from '../../utils/api.js';
+import { productionTargetApi, notificationApi } from '../../utils/api.js';
+import { useAuth } from '../../context/AuthContext.js';
+import dayjs from 'dayjs';
 import './ProductionPlan.css';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -10,21 +12,27 @@ import 'jspdf-autotable';
 
 
 
+const today = formatDate(new Date());
+
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   const { 
     products: dbProducts, 
     productionTargets, 
+    productionHistory,
     fetchTargets, 
     saveProductionTarget,
     deleteProductionTarget
   } = useAppContext();
+  const { isAdmin } = useAuth();
 
   
   // ===== TARGET ENTRY FORM STATE =====
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [targetQty, setTargetQty] = useState('');
+  const [targetType, setTargetType] = useState('daily'); // 'daily' or 'monthly'
+  const [selectedMonth, setSelectedMonth] = useState(dayjs().format('YYYY-MM'));
 
 
   
@@ -75,27 +83,78 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     
     // Find the product object that matches the selectedProduct ID or name
     const product = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
-    return product ? product.sizes : [];
-  }, [selectedProduct, uniqueProducts]);
+    const productSizes = product ? product.sizes : [];
 
-  // ===== AUTO-FETCH EXISTING TARGET FROM DB =====
+    if (targetType === 'monthly') {
+      return ['All Sizes', ...productSizes];
+    }
+    return productSizes;
+  }, [selectedProduct, uniqueProducts, targetType]);
+
   useEffect(() => {
-    if (selectedProduct && selectedSize && productionTargets) {
-      const productObj = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
-      const productName = productObj ? productObj.name : '';
-      
-      const existingTarget = productionTargets.find(t => 
+    if (targetType === 'monthly') {
+      setSelectedSize('All Sizes');
+    } else {
+      setSelectedSize('');
+    }
+  }, [targetType]);
+
+  // ===== AUTO-FETCH / CARRY OVER TARGET LOGIC =====
+  useEffect(() => {
+    if (!selectedProduct || !selectedSize || !productionTargets) {
+      setTargetQty('');
+      return;
+    }
+
+    const productObj = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
+    const productName = productObj ? productObj.name : '';
+    const targetDateStr = targetType === 'daily' ? today : selectedMonth;
+
+    // 1. Check if a target already exists for THIS date
+    const existingTargetNow = productionTargets.find(t => 
+      t.productName === productName && 
+      t.productSize === selectedSize &&
+      t.date === targetDateStr
+    );
+
+    // POINT 1: If it already exists, clear input so user can add extra quantity (additive logic)
+    if (existingTargetNow) {
+      setTargetQty('');
+      return;
+    }
+
+    // POINT 2: For daily targets, if no target exists yet, carry over balance from yesterday
+    if (targetType === 'daily') {
+      const yesterday = dayjs().subtract(1, 'day').format('DD-MM-YYYY');
+      const yesterdayTarget = (productionTargets || []).find(t => 
         t.productName === productName && 
-        t.productSize === selectedSize
+        t.productSize === selectedSize &&
+        t.date === yesterday
       );
-      
-      if (existingTarget) {
-        setTargetQty(String(existingTarget.targetQty));
-      } else {
-        setTargetQty('');
+
+      if (yesterdayTarget) {
+        // Calculate what was actually produced yesterday
+        const relevantHistory = (productionHistory || []).filter(h => {
+          if (h.product !== productName) return false;
+          if (h.size !== selectedSize) return false;
+          if (!h.date) return false;
+          const parts = h.date.split('-');
+          const hDate = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : h.date;
+          return hDate === yesterday;
+        });
+
+        const producedYesterday = relevantHistory.reduce((sum, h) => sum + (h.quantity || 0), 0);
+        const balance = Math.max(0, (Number(yesterdayTarget.targetQty) || 0) - producedYesterday);
+
+        if (balance > 0) {
+          setTargetQty(String(balance));
+          return;
+        }
       }
     }
-  }, [selectedProduct, selectedSize, productionTargets, uniqueProducts]);
+
+    setTargetQty('');
+  }, [selectedProduct, selectedSize, productionTargets, uniqueProducts, targetType, selectedMonth, today, productionHistory]);
 
 
 
@@ -149,6 +208,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const getProductDetailsForSize = (size) => {
     const productObj = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
     const productName = productObj ? productObj.name : '';
+    if (size === 'All Sizes') {
+      return dbProducts.find(p => p.name === productName);
+    }
     return dbProducts.find(p => p.name === productName && p.size === size);
   };
 
@@ -165,24 +227,58 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     }
 
     const product = getProductDetailsForSize(selectedSize);
-
     if (!product) {
-      showToast('Product details not found', 'error');
+        showToast('Product definition not found. Please try again.', 'error');
+        return;
+    }
+
+    const isMonthly = targetType === 'monthly';
+    const targetQuantity = parseInt(targetQty);
+    
+    // ADDITIVE LOGIC: If target already exists, add to it
+    const existingTarget = (productionTargets || []).find(t => 
+      t.productName === product.name && 
+      t.productSize === (isMonthly ? 'All Sizes' : product.size) && 
+      t.date === (isMonthly ? selectedMonth : today)
+    );
+
+    const finalTargetQty = existingTarget ? (Number(existingTarget.targetQty) + targetQuantity) : targetQuantity;
+
+    // VALIDATION: New target cannot be less than already produced quantity
+    const targetDate = isMonthly ? selectedMonth : today;
+    const prodHistory = (productionHistory || []).filter(h => {
+        if (h.product !== product.name) return false;
+        if (!isMonthly && h.size !== product.size) return false;
+        
+        const hDate = h.date;
+        if (!hDate) return false;
+        const parts = hDate.split('-');
+        if (isMonthly) {
+            const hMonth = parts[0].length === 4 ? `${parts[0]}-${parts[1]}` : `${parts[2]}-${parts[1]}`;
+            return hMonth === targetDate;
+        } else {
+            const formattedHDate = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : hDate;
+            return formattedHDate === targetDate;
+        }
+    });
+    const alreadyProduced = prodHistory.reduce((sum, h) => sum + (h.quantity || 0), 0);
+
+    if (finalTargetQty < alreadyProduced) {
+      showToast(`Already produced ${alreadyProduced} pcs. Give a target higher than this!`, 'error');
       return;
     }
 
-    const targetQuantity = parseInt(targetQty);
-
     const targetPayload = {
       productName: product.name,
-      sku: product.hsn || product.sku, // Match backend field 'sku'
-      productSize: product.size,
-      targetQty: targetQuantity,
-      remainingQty: targetQuantity, // Initially same as target
-      status: 'pending',
+      sku: product.hsn || product.sku,
+      productSize: isMonthly ? 'All Sizes' : product.size,
+      targetQty: finalTargetQty,
+      remainingQty: Math.max(0, finalTargetQty - alreadyProduced),
+      status: finalTargetQty <= alreadyProduced ? 'completed' : 'pending',
       unit: 'Pieces',
-      size: product.size,
-      date: formatDate(new Date()) // Always use formatted string for matching
+      size: isMonthly ? 'All Sizes' : product.size,
+      date: isMonthly ? selectedMonth : today,
+      targetType: targetType
     };
 
     try {
@@ -247,7 +343,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
 
 
-  // ===== FILTERED DATA =====
+  // ===== FILTERED & SORTED DATA =====
   const filteredData = (productionTargets || []).filter(item => {
     const productName = item.productName || '';
     const productSize = item.productSize || '';
@@ -258,6 +354,20 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       (sku?.toLowerCase() || "").includes(searchTerm?.toLowerCase() || "");
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    // 1. "All Sizes" targets always go to the bottom
+    const aIsAll = a.productSize === 'All Sizes';
+    const bIsAll = b.productSize === 'All Sizes';
+    if (aIsAll && !bIsAll) return 1;
+    if (!aIsAll && bIsAll) return -1;
+    
+    // 2. Otherwise sort by numeric size ascending
+    const aSize = parseInt(a.productSize) || 0;
+    const bSize = parseInt(b.productSize) || 0;
+    if (aSize !== bSize) return aSize - bSize;
+    
+    // 3. Last fallback: product name
+    return (a.productName || '').localeCompare(b.productName || '');
   });
 
   // Calculate totals
@@ -270,7 +380,6 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     // Return Toast UI inside the render
   }
 
-  const today = formatDate(new Date());
 
   // ===== EXPORT FUNCTIONS =====
   const handleExportClick = () => {
@@ -455,164 +564,175 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
 
   return (
-    <div className="production-page-wrapper">
-      {/* Loading Overlay */}
-      {loading && (
-        <div className="glass-loading-overlay">
-          <div className="premium-spinner"></div>
-          <span>Syncing with database...</span>
-        </div>
-      )}
-
-      {/* Toast Notification Overlay */}
-      {toast.show && (
-        <div className={`toast-notification ${toast.type}`}>
-          <span className="material-symbols-outlined">
-            {toast.type === 'success' ? 'check_circle' : 'error'}
-          </span>
-          <span className="toast-message">{toast.message}</span>
-        </div>
-      )}
-
-      <div className="production-container">
-        {/* ===== PREMIUM ANALYTICS HEADER ===== */}
-        <div className="page-header premium-header">
-          <div>
-            <h1 className="page-title">Production Plan</h1>
+    <div className="premium-dashboard-main-new">
+      <div className="premium-dashboard-container-new">
+        
+        {/* PREMIUM HEADER SECTION */}
+        <div className="premium-header-new">
+          <div className="header-left-new">
+            <h1 className="header-title-mini">Production Plan</h1>
           </div>
-          <div className="header-actions">
-            {/* Date Badge */}
-            <div className="btn-export-premium" style={{ cursor: 'default', background: 'rgba(255, 255, 255, 0.1)' }}>
-              <span className="material-symbols-outlined">calendar_today</span>
-              {today}
-            </div>
-          </div>
-        </div>
 
-
-
-
-
-
-        {/* Central Entry Form */}
-        <div className="target-entry-section">
-          <h3>Set Production Target by Size</h3>
-          <div className="target-form-horizontal">
-            <div className="form-group-horizontal">
-              <label className="horizontal-label">PRODUCT NAME</label>
-              <select
-                value={selectedProduct}
-                onChange={handleProductChange}
-                className="form-select"
+          <div className="header-actions-new">
+            {/* Unified Daily/Monthly Toggle moved to Action side */}
+            <div className="header-toggle-group-new">
+              <button 
+                className={`header-toggle-btn-new ${targetType === 'daily' ? 'active' : ''}`}
+                onClick={() => setTargetType('daily')}
               >
-                <option value="">- Select Product -</option>
-                {uniqueProducts.map(product => (
-                  <option key={product.id} value={product.id}>{product.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group-horizontal">
-              <label className="horizontal-label">SIZE</label>
-              <select
-                value={selectedSize}
-                onChange={(e) => setSelectedSize(e.target.value)}
-                className="form-select"
-                disabled={!selectedProduct}
+                Daily
+              </button>
+              <button 
+                className={`header-toggle-btn-new ${targetType === 'monthly' ? 'active' : ''}`}
+                onClick={() => setTargetType('monthly')}
               >
-                <option value="">- Select Size -</option>
-                {availableSizes.map(size => (
-                  <option key={size} value={size}>{size}</option>
-                ))}
-              </select>
+                Monthly
+              </button>
             </div>
 
-            <div className="form-group-horizontal">
-              <label className="horizontal-label">TARGET QUANTITY (PCS)</label>
-              <input
-                type="number"
-                value={targetQty}
-                onChange={(e) => setTargetQty(e.target.value)}
-                onWheel={(e) => e.target.blur()}
-                onFocus={(e) => e.target.select()}
-                placeholder="Target qty..."
-                className="form-input"
-                min="1"
-                step="1"
-              />
-            </div>
-
-
-            <button
-              onClick={handleAddTarget}
-              className="btn-add-target-horizontal"
-            >
-              <span className="material-symbols-outlined">add_task</span>
-              Add / Update Target
-            </button>
+            {targetType === 'daily' ? (
+              <div className="premium-date-display-new">
+                <span className="material-symbols-outlined">calendar_today</span>
+                <span>{today}</span>
+              </div>
+            ) : (
+              <div className="month-picker-wrapper-new">
+                <input 
+                  type="month" 
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="premium-month-select-new"
+                />
+              </div>
+            )}
           </div>
         </div>
 
-
-
-        {/* Search & Filter Section */}
-        <div className="search-filter-section">
-          <div className="search-box">
-            <span className="material-symbols-outlined search-icon">search</span>
-            <input
-              type="text"
-              placeholder="Search by size or SKU..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
+        {/* LOADING OVERLAY */}
+        {loading && (
+          <div className="premium-loading-overlay-new">
+            <div className="premium-spinner-new"></div>
+            <span>Syncing with database...</span>
           </div>
+        )}
 
+        {/* TARGET ENTRY FORM - ONE LINE PREMIUM CARD */}
+        <div className="premium-card-new target-entry-card-new">
+          <div className="premium-form-row-new">
+            {/* Product Selection */}
+            <div className="form-group-new">
+              <label className="premium-label-new">Product Name</label>
+              <div className="select-wrapper-new">
+                <span className="material-symbols-outlined input-icon-new">inventory_2</span>
+                <select 
+                  className="premium-select-new"
+                  value={selectedProduct}
+                  onChange={handleProductChange}
+                >
+                  {uniqueProducts.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
+            {/* Size Selection */}
+            <div className="form-group-new">
+              <label className="premium-label-new">Size / Dimensions</label>
+              <div className="select-wrapper-new">
+                <span className="material-symbols-outlined input-icon-new">straighten</span>
+                <select 
+                  className="premium-select-new"
+                  value={selectedSize}
+                  onChange={(e) => setSelectedSize(e.target.value)}
+                >
+                  <option value="" disabled>Select Size...</option>
+                  {availableSizes.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-          <div className="filter-box">
-            <span className="material-symbols-outlined filter-icon">info</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">All Status</option>
-              <option value="completed">Completed</option>
-              <option value="in-progress">In Progress</option>
-              <option value="pending">Pending</option>
-            </select>
-          </div>
+            {/* Target Quantity */}
+            <div className="form-group-new">
+              <label className="premium-label-new">Target Quantity (Pcs)</label>
+              <div className="select-wrapper-new">
+                <span className="material-symbols-outlined input-icon-new">track_changes</span>
+                <input 
+                  type="number"
+                  className="premium-input-new"
+                  placeholder="Enter target..."
+                  value={targetQty}
+                  onChange={(e) => setTargetQty(e.target.value)}
+                />
+              </div>
+            </div>
 
-          {productionTargets.length > 0 && (
-            <button
-              className="clear-all-btn"
-              onClick={handleClearAllData}
-              title="Clear all data"
-            >
-              <span className="material-symbols-outlined">delete_sweep</span>
-              Clear All
-            </button>
-          )}
-        </div>
-
-        {/* Production Table */}
-        <div className="production-table-container">
-          <div className="production-table-header">
-            <h3>
-              <span className="material-symbols-outlined">format_list_bulleted</span>
-              Production Items by Size ({filteredData.length})
-            </h3>
-            <div className="table-actions">
-              <button className="icon-btn export-btn" onClick={handleExportClick} title="Export Data">
-                <span className="material-symbols-outlined">download</span>
-                Export
+            {/* Add Button */}
+            <div className="form-group-new btn-container-new">
+              <button 
+                className="premium-submit-btn-new"
+                onClick={handleAddTarget}
+              >
+                <span className="material-symbols-outlined">add_task</span>
+                Add / Update Target
               </button>
             </div>
           </div>
+        </div>
 
-          <div className="table-responsive">
-            <table className="prod-table">
+        {/* SEARCH & GLOBAL ACTIONS */}
+        <div className="table-controls-row-new">
+          <div className="search-group-new">
+            <span className="material-symbols-outlined search-icon-new">search</span>
+            <input 
+              type="text" 
+              className="premium-search-input-new"
+              placeholder="Search by size or product..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="global-actions-new">
+            <div className="status-filter-wrapper-new">
+              <select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="premium-filter-select-new"
+              >
+                <option value="all">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="in-progress">In Progress</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+
+            {productionTargets.length > 0 && (
+              <button className="premium-clear-btn-new" onClick={handleClearAllData}>
+                <span className="material-symbols-outlined">delete_sweep</span>
+                Clear All
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* PRODUCTION ITEMS TABLE CARD */}
+        <div className="premium-card-new table-card-new">
+          <div className="premium-table-header-new">
+            <div className="header-left">
+              <span className="material-symbols-outlined header-icon">format_list_bulleted</span>
+              <h3>Production Items by Size ({filteredData.length})</h3>
+            </div>
+            <button className="premium-export-btn-new" onClick={handleExportClick}>
+              <span className="material-symbols-outlined">download</span>
+              Export Report
+            </button>
+          </div>
+
+          <div className="premium-table-wrapper-new">
+            <table className="premium-data-table-new">
               <thead>
                 <tr>
                   <th className="hide-mobile">Product</th>
@@ -622,56 +742,81 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                   <th className="text-right">Balance</th>
                   <th className="hide-mobile">Progress</th>
                   <th className="hide-mobile">Status</th>
-                  <th>Del</th>
+                  <th className="text-center">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredData.length > 0 ? (
                   filteredData.map(item => {
-                    const rawProgress = (item.producedQty / item.targetQty) * 100;
-                    const progress = Math.min(100, rawProgress).toFixed(1);
+                    // Recalculate producedQty locally
+                    let displayProduced = 0;
+                    let displayTarget = item.targetQty || 0;
+                    const targetDate = item.date;
+                    
+                    const relevantHistory = (productionHistory || []).filter(h => {
+                       if (h.product !== item.productName) return false;
+                       const isAllSizes = item.productSize === 'All Sizes';
+                       if (!isAllSizes && h.size !== item.productSize) return false;
+                       
+                       const hDate = h.date;
+                       if (!hDate) return false;
+                       const parts = hDate.split('-');
+                       if (targetDate.length === 7) { 
+                         const hMonth = parts[0].length === 4 ? `${parts[0]}-${parts[1]}` : `${parts[2]}-${parts[1]}`;
+                         return hMonth === targetDate;
+                       } else {
+                         const formattedHDate = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : hDate;
+                         return formattedHDate === targetDate;
+                       }
+                    });
+
+                    displayProduced = relevantHistory.reduce((sum, h) => sum + (h.quantity || 0), 0);
+                    const displayRemaining = Math.max(0, displayTarget - displayProduced);
+                    const progress = displayTarget > 0 ? Math.min(100, (displayProduced / displayTarget) * 100).toFixed(1) : "0";
+                    const statusClass = progress >= 100 ? 'status-completed' : (progress > 0 ? 'status-progress' : 'status-pending');
+                    const isMasterRow = item.productSize === 'All Sizes';
+
                     return (
-                      <tr key={item.id}>
+                      <tr key={item.id} className={isMasterRow ? 'master-row-new' : ''}>
                         <td className="hide-mobile">
-                          <div className="prod-product-cell">
-                            <span className="prod-name">{item.productName}</span>
-                          </div>
-                        </td>
-                        <td><strong>{item.productSize}</strong></td>
-                        <td className="text-right">{item.targetQty.toLocaleString()}</td>
-                        <td className="text-right">
-                          <span
-                            className="produced-value-cell"
-                            style={{ color: '#155724', fontWeight: '600' }}
-                          >
-                            {item.producedQty.toLocaleString()}
-                          </span>
-                        </td>
-                        <td className="text-right" style={{ color: item.remainingQty > 0 ? '#856404' : '#7f8c8d' }}>
-                          {item.remainingQty.toLocaleString()}
-                        </td>
-                        <td className="hide-mobile">
-                          <div className="prod-progress">
-                            <div className="prod-progress-bar">
-                              <div className="prod-progress-fill" style={{ width: `${progress}%` }}></div>
-                            </div>
-                            <span className="prod-progress-text">{progress}%</span>
-                          </div>
-                        </td>
-                        <td className="hide-mobile">
-                          <span className={`prod-status ${item.status}`}>
-                            <span className="prod-status-dot"></span>
-                            {item.status === 'completed' ? 'Completed' :
-                              item.status === 'in-progress' ? 'In Progress' : 'Pending'}
-                          </span>
+                          <span className="product-text-new">{isMasterRow ? 'MASTER TOTAL' : item.productName}</span>
                         </td>
                         <td>
-                          <div className="action-buttons">
-                            <button
-                              className="icon-btn-small delete-btn"
-                              onClick={() => handleDeleteTarget(item.id)}
-                              title="Delete Target"
-                            >
+                          <div className="size-badge-new">
+                            {isMasterRow && <span className="material-symbols-outlined master-star">stars</span>}
+                            {item.productSize}
+                          </div>
+                        </td>
+                        <td className="text-right font-bold">{displayTarget.toLocaleString()}</td>
+                        <td className="text-right text-success-new font-bold">{displayProduced.toLocaleString()}</td>
+                        <td className="text-right text-warning-new font-bold">{displayRemaining.toLocaleString()}</td>
+                        <td className="hide-mobile">
+                          <div className="progress-container-new">
+                            <div className="progress-bar-new">
+                              <div className="progress-fill-new" style={{ width: `${progress}%` }}></div>
+                            </div>
+                            <span className="progress-text-new">{progress}%</span>
+                          </div>
+                        </td>
+                        <td className="hide-mobile">
+                          <div className={`status-tag-new ${statusClass}`}>
+                            <span className="status-dot-new"></span>
+                            {statusClass === 'status-completed' ? 'Completed' : 
+                             statusClass === 'status-progress' ? 'In Progress' : 'Pending'}
+                          </div>
+                        </td>
+                        <td className="text-center">
+                          <div className="action-btns-new">
+                            {isAdmin && displayRemaining > 0 && (
+                              <button 
+                                className="remind-btn-new" 
+                                title="Send Reminder"
+                                onClick={() => handleSendReminder(item, displayProduced, displayRemaining)}
+                              >
+                                <span className="material-symbols-outlined">campaign</span>
+                              </button>
+                            )}
+                            <button className="delete-btn-new" onClick={() => handleDeleteTarget(item.id)}>
                               <span className="material-symbols-outlined">delete</span>
                             </button>
                           </div>
@@ -681,196 +826,167 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="9" className="no-data">
-                      No production targets set. Please add targets using the form above.
-                    </td>
+                    <td colSpan="8" className="empty-table-new">No production items scheduled for this period.</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
 
-          {/* ===== MOBILE CARD LAYOUT (shown on ≤1024px, hidden on desktop) ===== */}
-          <div className="mobile-prod-card">
-            {filteredData.length > 0 ? (
-              <div className="mobile-table-container">
-                <table className="mobile-quick-table">
-                  <thead>
-                    <tr>
-                      <th>Size</th>
-                      <th className="text-center">Target</th>
-                      <th className="text-center">Prod</th>
-                      <th className="text-center">Bal</th>
-                      <th className="text-center">Del</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredData.map(item => (
-                      <tr key={`mob-${item.id}`}>
-                        <td className="mobile-size-cell">
-                          <strong>{item.productSize}</strong>
-                        </td>
-                        <td className="text-center">{item.targetQty.toLocaleString()}</td>
-                        <td className="text-center" style={{ color: '#2e8b66', fontWeight: '700' }}>
-                          {item.producedQty.toLocaleString()}
-                        </td>
-                        <td className="text-center" style={{ color: item.remainingQty > 0 ? '#b45b0b' : '#6b7a73' }}>
-                          {item.remainingQty.toLocaleString()}
-                        </td>
-                        <td className="text-center">
-                          <div className="mobile-actions">
-                            <button
-                              className="mobile-row-delete-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteTarget(item.id);
-                              }}
-                            >
-                              <span className="material-symbols-outlined">delete</span>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="no-data" style={{ padding: '32px 16px', textAlign: 'center', color: '#8a9e94', fontSize: '13px', fontStyle: 'italic' }}>
-                No production targets set. Please add targets using the form above.
-              </div>
-            )}
+          {/* MOBILE CARD VIEW (Responsive Replacement) */}
+          <div className="mobile-cards-container-new">
+            {filteredData.map(item => {
+               // Reuse history logic for mobile
+               let displayProduced = 0;
+               const targetDate = item.date;
+               const relevantHistory = (productionHistory || []).filter(h => {
+                  if (h.product !== item.productName) return false;
+                  const isAllSizes = item.productSize === 'All Sizes';
+                  if (!isAllSizes && h.size !== item.productSize) return false;
+                  const hDate = h.date;
+                  if (!hDate) return false;
+                  const parts = hDate.split('-');
+                  if (targetDate.length === 7) { 
+                    const hMonth = parts[0].length === 4 ? `${parts[0]}-${parts[1]}` : `${parts[2]}-${parts[1]}`;
+                    return hMonth === targetDate;
+                  } else {
+                    const formattedHDate = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : hDate;
+                    return formattedHDate === targetDate;
+                  }
+               });
+               displayProduced = relevantHistory.reduce((sum, h) => sum + (h.quantity || 0), 0);
+               const displayRemaining = Math.max(0, item.targetQty - displayProduced);
+               const isMaster = item.productSize === 'All Sizes';
 
-          </div>
-
-          <div className="prod-table-footer">
-            <div className="prod-total-info">
-              <span>Item: <strong>{filteredData.length}</strong></span>
-              <span className="total-target">Tgt: <strong>{totalTarget.toLocaleString()}</strong></span>
-              <span className="total-produced">Prod: <strong>{totalProduced.toLocaleString()}</strong></span>
-              <span className="total-balance">Bal: <strong>{totalRemaining.toLocaleString()}</strong></span>
-            </div>
+               return (
+                 <div key={`m-${item.id}`} className={`mobile-row-card-new ${isMaster ? 'master' : ''}`}>
+                    <div className="card-header-mob">
+                      <span className="mob-size">{item.productSize}</span>
+                      <button className="mob-delete" onClick={() => handleDeleteTarget(item.id)}>
+                        <span className="material-symbols-outlined">delete</span>
+                      </button>
+                    </div>
+                    <div className="card-stats-grid-mob">
+                      <div className="stat-item">
+                        <span className="stat-label">Target</span>
+                        <span className="stat-value">{item.targetQty.toLocaleString()}</span>
+                      </div>
+                      <div className="stat-item">
+                        <span className="stat-label">Prod</span>
+                        <span className="stat-value text-success">{displayProduced.toLocaleString()}</span>
+                      </div>
+                      <div className="stat-item">
+                        <span className="stat-label">Balance</span>
+                        <span className="stat-value text-warning">{displayRemaining.toLocaleString()}</span>
+                      </div>
+                    </div>
+                 </div>
+               );
+            })}
           </div>
         </div>
 
-        {/* Export Options Modal */}
+        {/* MODAL SYSTEM */}
         {showExportOptions && (
-          <div className="report-modal-overlay">
-            <div className="report-modal">
-              <h3 className="report-modal-title">Export Data</h3>
-
-              <div className="export-options">
-                {/* Report Type Radio Buttons */}
-                <div className="export-section">
-                  <label className="export-option-header">Select Report Type</label>
-                  <div className="radio-group">
-                    <label className="radio-label">
-                      <input
-                        type="radio"
-                        name="reportType"
-                        value="size-wise"
-                        checked={selectedReportType === 'size-wise'}
-                        onChange={(e) => setSelectedReportType(e.target.value)}
-                      />
-                      <span>Size Wise Report</span>
+          <div className="modal-overlay">
+            <div className="modal-content export-modal">
+              <div className="modal-header">
+                <h3>Export Planning Report</h3>
+                <button className="modal-close" onClick={closeExportOptions}>×</button>
+              </div>
+              <div className="modal-body export-body-premium">
+                <div className="export-section-new">
+                  <label className="section-label-new">REPORT TYPE</label>
+                  <div className="premium-radio-group-new">
+                    <label className={`radio-card-new ${selectedReportType === 'size-wise' ? 'active' : ''}`}>
+                      <input type="radio" value="size-wise" checked={selectedReportType === 'size-wise'} onChange={(e) => setSelectedReportType(e.target.value)} />
+                      <span className="material-symbols-outlined">analytics</span>
+                      <div className="radio-info">
+                        <strong>Size-Wise</strong>
+                        <span>Detailed breakdown</span>
+                      </div>
                     </label>
-                    <label className="radio-label">
-                      <input
-                        type="radio"
-                        name="reportType"
-                        value="overall"
-                        checked={selectedReportType === 'overall'}
-                        onChange={(e) => setSelectedReportType(e.target.value)}
-                      />
-                      <span>Overall Summary</span>
+                    <label className={`radio-card-new ${selectedReportType === 'overall' ? 'active' : ''}`}>
+                      <input type="radio" value="overall" checked={selectedReportType === 'overall'} onChange={(e) => setSelectedReportType(e.target.value)} />
+                      <span className="material-symbols-outlined">summarize</span>
+                      <div className="radio-info">
+                        <strong>Overall</strong>
+                        <span>Consolidated summary</span>
+                      </div>
                     </label>
                   </div>
                 </div>
 
-                {/* Format Selection */}
-                <div className="export-section">
-                  <label className="export-option-header">Select Format</label>
-                  <div className="format-buttons">
-                    <button
-                      className={`format-btn ${selectedFormat === 'excel' ? 'active' : ''}`}
-                      onClick={() => setSelectedFormat('excel')}
-                    >
-                      <span className="material-symbols-outlined">table_chart</span>
-                      Excel
-                    </button>
-                    <button
-                      className={`format-btn ${selectedFormat === 'pdf' ? 'active' : ''}`}
-                      onClick={() => setSelectedFormat('pdf')}
-                    >
-                      <span className="material-symbols-outlined">picture_as_pdf</span>
-                      PDF
-                    </button>
-                    <button
-                      className={`format-btn ${selectedFormat === 'csv' ? 'active' : ''}`}
-                      onClick={() => setSelectedFormat('csv')}
-                    >
-                      <span className="material-symbols-outlined">data_table</span>
-                      CSV
-                    </button>
+                <div className="export-section-new">
+                  <label className="section-label-new">SELECT FORMAT</label>
+                  <div className="format-grid-new">
+                    {['excel', 'pdf', 'csv'].map(fmt => (
+                      <button 
+                        key={fmt} 
+                        className={`format-tile-new ${selectedFormat === fmt ? 'active' : ''}`}
+                        onClick={() => setSelectedFormat(fmt)}
+                      >
+                        <span className="material-symbols-outlined">
+                          {fmt === 'excel' ? 'table_chart' : fmt === 'pdf' ? 'picture_as_pdf' : 'data_table'}
+                        </span>
+                        <span>{fmt.toUpperCase()}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
-
-              <div className="report-modal-actions">
-                <button className="modal-btn cancel-btn" onClick={closeExportOptions}>
-                  Cancel
-                </button>
-                <button className="modal-btn generate-btn" onClick={handleGenerateExport}>
-                  <span className="material-symbols-outlined">download</span>
-                  Generate {selectedReportType === 'size-wise' ? 'Size Wise' : 'Overall'} {selectedFormat.toUpperCase()}
-                </button>
+              <div className="modal-footer">
+                <button className="modal-cancel" onClick={closeExportOptions}>Cancel</button>
+                <button className="modal-confirm" onClick={handleGenerateExport}>Generate Report</button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Delete Confirmation Modal */}
         {showDeleteModal && (
-          <div className="report-modal-overlay" onClick={() => setShowDeleteModal(false)}>
-            <div className="report-modal confirm-delete-modal-premium" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-icon warning-orange">
-                <span className="material-symbols-outlined">warning</span>
+          <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-body">
+                <div className="modal-icon warning">
+                  <span className="material-symbols-outlined">delete_forever</span>
+                </div>
+                <h3 className="modal-title">Delete Target?</h3>
+                <p className="modal-desc">Are you sure you want to remove this target? This action cannot be undone.</p>
               </div>
-              <h3 className="report-modal-title">Delete Production Target?</h3>
-              <p className="report-modal-desc">This will remove the target and all tracking data for this item. This action cannot be undone.</p>
-              <div className="report-modal-actions-premium">
-                <button className="modal-btn-premium cancel" onClick={() => setShowDeleteModal(false)}>
-                  Cancel
-                </button>
-                <button className="modal-btn-premium delete" onClick={confirmDelete}>
-                  Yes, Delete Target
-                </button>
+              <div className="modal-footer">
+                <button className="modal-cancel" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+                <button className="modal-confirm delete" onClick={confirmDelete}>Yes, Delete</button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Clear All Confirmation Modal */}
         {showClearModal && (
-          <div className="report-modal-overlay" onClick={() => setShowClearModal(false)}>
-            <div className="report-modal confirm-delete-modal-premium" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-icon danger-red">
-                <span className="material-symbols-outlined">delete_forever</span>
+          <div className="modal-overlay" onClick={() => setShowClearModal(false)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-body">
+                <div className="modal-icon warning">
+                  <span className="material-symbols-outlined">notification_important</span>
+                </div>
+                <h3 className="modal-title">Clear All Targets?</h3>
+                <p className="modal-desc">This will reset <strong>ALL</strong> production targets. This action cannot be undone.</p>
               </div>
-              <h3 className="report-modal-title">Clear All Targets?</h3>
-              <p className="report-modal-desc">Are you sure you want to clear <strong>ALL</strong> production targets? This cannot be undone and will reset all planning data.</p>
-              <div className="report-modal-actions-premium">
-                <button className="modal-btn-premium cancel" onClick={() => setShowClearModal(false)}>
-                  Cancel
-                </button>
-                <button className="modal-btn-premium clear-all" onClick={confirmClearAll}>
-                  Clear All Data
-                </button>
+              <div className="modal-footer">
+                <button className="modal-cancel" onClick={() => setShowClearModal(false)}>Cancel</button>
+                <button className="modal-confirm delete" onClick={confirmClearAll}>Clear All Now</button>
               </div>
             </div>
           </div>
         )}
 
+        {toast.show && (
+          <div className={`premium-toast-new ${toast.type}`}>
+            <span className="material-symbols-outlined">
+              {toast.type === 'success' ? 'check_circle' : 'error'}
+            </span>
+            <span className="toast-message">{toast.message}</span>
+          </div>
+        )}
 
       </div>
     </div>

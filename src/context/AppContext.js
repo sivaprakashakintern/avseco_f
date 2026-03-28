@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
-import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi, productsApi, productionTargetApi, salesApi } from "../utils/api.js";
+import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi, productsApi, productionTargetApi, salesApi, notificationApi } from "../utils/api.js";
 import { useAuth } from "./AuthContext.js";
 
-const DEPARTMENTS = ["All Departments", "CEO", "HR", "IT Admin", "Operator", "Maintenance", "Machine Operator", "Cleaning", "Driver", "Others"];
+const DEPARTMENTS = ["All Departments", "CEO", "HR", "Sales Team", "IT Admin", "Operator", "Maintenance", "Machine Operator", "Cleaning", "Driver", "Others"];
 
 const AppContext = createContext(null);
 
@@ -15,6 +15,7 @@ export const AppProvider = ({ children }) => {
     const [products, setProducts] = useState([]);
     const [salesHistory, setSalesHistory] = useState([]);
     const [attendanceRecords, setAttendanceRecords] = useState({});
+    const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [fetchStatus, setFetchStatus] = useState({
         employees: 'pending',
@@ -23,9 +24,11 @@ export const AppProvider = ({ children }) => {
         production: 'pending',
         products: 'pending',
         sales: 'pending',
-        attendance: 'pending'
+        attendance: 'pending',
+        notifications: 'pending'
     });
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [toast, setToast] = useState(null); // { message, type }
     const [isUpdating, setIsUpdating] = useState(false);
     const [hasFetched, setHasFetched] = useState(false);
     const { user, refreshUser, hasAccess } = useAuth();
@@ -113,6 +116,13 @@ export const AppProvider = ({ children }) => {
                     setFetchStatus(prev => ({ ...prev, [key]: 'error' }));
                 }
             });
+
+            // Fetch Notifications separately (more frequent)
+            if (user) {
+                const notifs = await notificationApi.getAll();
+                setNotifications(notifs);
+                setFetchStatus(prev => ({ ...prev, notifications: 'success' }));
+            }
         } catch (error) {
             console.error("Error fetching app data:", error);
         } finally {
@@ -143,7 +153,35 @@ export const AppProvider = ({ children }) => {
 
         // Periodic background sync (5 mins) - Always run for everyone
         const interval = setInterval(() => fetchData(false, true), 300000);
-        return () => clearInterval(interval);
+        
+        // Faster polling for notifications (10 seconds)
+        const notificationInterval = setInterval(async () => {
+            if (user) {
+                try {
+                    const notifs = await notificationApi.getAll();
+                    // Auto-toast for new incoming notifications
+                    setNotifications(prev => {
+                        const prevUnread = prev.filter(n => !n.isRead).length;
+                        const newUnread = notifs.filter(n => !n.isRead).length;
+                        if (newUnread > prevUnread) {
+                            const latest = notifs[0]; // Assuming sorted by newest
+                            setToast({ 
+                                message: latest.title || "New Notification Received", 
+                                type: "info",
+                                icon: "notifications_active"
+                            });
+                            setTimeout(() => setToast(null), 4000);
+                        }
+                        return notifs;
+                    });
+                } catch (e) { console.error("Notif Poll Error", e); }
+            }
+        }, 10000);
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(notificationInterval);
+        };
     }, [user, fetchData, employees.length, products.length, hasFetched]);
 
     // EMPLOYEES
@@ -503,6 +541,10 @@ export const AppProvider = ({ children }) => {
                 productionTargetApi.clearAll()
             ]);
             await fetchData(true);
+            
+            // Clear notifications too? Maybe just systemic ones
+            setNotifications([]);
+            
             return true;
         } catch (error) {
             console.error("Reset Error:", error);
@@ -511,6 +553,34 @@ export const AppProvider = ({ children }) => {
             setLoading(false);
         }
     };
+
+    // NOTIFICATIONS
+    const markNotificationAsRead = useCallback(async (id) => {
+        try {
+            await notificationApi.markRead(id);
+            setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+        } catch (error) {
+            console.error("Error marking notification read:", error);
+        }
+    }, []);
+
+    const markAllNotificationsAsRead = useCallback(async () => {
+        try {
+            await notificationApi.markAllRead();
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        } catch (error) {
+            console.error("Error marking all read:", error);
+        }
+    }, []);
+
+    const fetchNotifications = useCallback(async () => {
+        try {
+            const data = await notificationApi.getAll();
+            setNotifications(data);
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+        }
+    }, []);
 
     // ── DERIVED METRICS ─────────────────────────────────────────────────────────
     
@@ -788,9 +858,22 @@ export const AppProvider = ({ children }) => {
             addProduct,
             updateProduct,
             deleteProduct,
-            resetAllStockData
+            resetAllStockData,
+            notifications,
+            unreadCount: notifications.filter(n => !n.isRead).length,
+            markNotificationAsRead,
+            markAllNotificationsAsRead,
+            fetchNotifications,
+            toast,
+            setToast
         }}>
             {children}
+            {toast && (
+                <div className="feedback-toast">
+                    <span className="material-symbols-outlined">{toast.icon || "info"}</span>
+                    <span>{toast.message}</span>
+                </div>
+            )}
         </AppContext.Provider>
     );
 };

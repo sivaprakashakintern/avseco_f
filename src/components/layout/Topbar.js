@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import logo from "../../assets/avs.png";
 import AppContext, { useAppContext } from "../../context/AppContext.js";
 import { useAuth } from "../../context/AuthContext.js";
+import NotificationBell from "./NotificationBell.js";
 import "./Topbar.css";
 
 const Topbar = () => {
@@ -134,10 +135,7 @@ const Topbar = () => {
           </button>
 
           {/* Notification Button */}
-          <button className="icon-circle" aria-label="Notifications">
-            <span className="material-symbols-outlined">notifications</span>
-            <span className="notification-dot"></span>
-          </button>
+          <NotificationBell />
 
           {!isMobile && <div className="v-divider"></div>}
 

@@ -83,7 +83,8 @@ const ProductList = () => {
 
         await addProduct({
           name: formData.name.trim(),
-          sku: formData.hsn.trim(), // Use manually entered HSN as SKU
+          sku: v.hsn ? `${v.hsn.trim()}-${v.size.replace(/\s+/g, '-')}` : `${formData.hsn.trim()}-${v.size.replace(/\s+/g, '-')}`,
+          hsnCode: v.hsn ? v.hsn.trim() : formData.hsn.trim(),
           size: v.size,
           category: "Plates",
           costPrice: cost,
@@ -116,8 +117,8 @@ const ProductList = () => {
     const variantsFromDefault = DEFAULT_SIZES.map(s => {
       const match = group.find(v => v.size === s);
       return match ? 
-        { ...match, checked: true, cost: match.costPrice, sell: match.sellPrice, hsn: match.sku, isExisting: true } : 
-        { size: s, cost: "", sell: "", hsn: group[0]?.sku || "", checked: false, isNew: true };
+        { ...match, checked: true, cost: match.costPrice, sell: match.sellPrice, hsn: match.hsnCode || match.sku, isExisting: true } : 
+        { size: s, cost: "", sell: "", hsn: group[0]?.hsnCode || group[0]?.sku || "", checked: false, isNew: true };
     });
 
     const customVariants = group
@@ -138,7 +139,8 @@ const ProductList = () => {
           const sell = parseFloat(v.sell) || 0;
           await updateProduct(v._id || v.id, {
             ...v,
-            sku: v.hsn ? v.hsn.trim() : formData.hsn.trim(), // Use row-level HSN if present, else master
+            sku: v.hsn ? v.hsn.trim() : formData.hsn.trim(), 
+            hsnCode: v.hsn ? v.hsn.trim() : formData.hsn.trim(),
             costPrice: cost,
             sellPrice: sell,
             margin: sell > 0 ? ((sell - cost) / sell * 100).toFixed(1) + "%" : "0.0%",
@@ -149,7 +151,8 @@ const ProductList = () => {
 
           await addProduct({
             name: formData.name.trim(),
-            sku: v.hsn ? v.hsn.trim() : formData.hsn.trim(), 
+            sku: v.hsn ? `${v.hsn.trim()}-${v.size.replace(/\s+/g, '-')}` : `${formData.hsn.trim()}-${v.size.replace(/\s+/g, '-')}`, 
+            hsnCode: v.hsn ? v.hsn.trim() : formData.hsn.trim(),
             size: v.size,
             category: "Plates",
             costPrice: cost,

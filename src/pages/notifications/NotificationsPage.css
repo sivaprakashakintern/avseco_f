@@ -1,0 +1,361 @@
+:root {
+    --ntp-primary: #006A4E;
+    --ntp-primary-dark: #004d39;
+    --ntp-primary-glass: rgba(0, 106, 78, 0.05);
+    --ntp-text: #0f172a;
+    --ntp-text-muted: #64748b;
+    --ntp-border: #f1f5f9;
+    --ntp-bg: #f8fafc;
+    --ntp-white: #ffffff;
+    --ntp-radius: 20px;
+    --ntp-card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
+}
+
+.ntp-container {
+    padding: 28px 32px;
+    background: var(--ntp-bg);
+    min-height: 100vh;
+}
+
+/* Banner Header - Premium Canva/Apple Style */
+.ntp-banner {
+    position: relative;
+    background: linear-gradient(135deg, var(--ntp-primary) 0%, var(--ntp-primary-dark) 100%);
+    border-radius: var(--ntp-radius);
+    padding: 2.25rem 3.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 20px 50px rgba(0, 106, 78, 0.15);
+    color: white;
+    overflow: hidden;
+}
+
+/* Subtle Banner Pattern Overlay */
+.ntp-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.3;
+}
+
+.ntp-banner-info {
+    position: relative;
+    z-index: 1;
+}
+
+.ntp-banner-title {
+    font-size: 2.1rem;
+    font-weight: 900;
+    margin: 0;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    color: white;
+}
+
+.ntp-banner-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-top: 0.75rem;
+    font-weight: 500;
+}
+
+/* Filter Bar - Segmented Control Style */
+.ntp-filter-bar {
+    margin-bottom: 2.5rem;
+}
+
+.ntp-tabs {
+    display: flex;
+    gap: 0.5rem;
+    background: #f1f5f9;
+    padding: 0.4rem;
+    border-radius: 12px;
+    width: fit-content;
+}
+
+.ntp-tab {
+    padding: 0.6rem 1.25rem;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ntp-tab.active {
+    background: white;
+    color: var(--ntp-primary);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.ntp-count {
+    font-size: 0.7rem;
+    background: #e2e8f0;
+    color: #475569;
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-weight: 900;
+}
+
+.ntp-tab.active .ntp-count {
+    background: var(--ntp-primary-glass);
+    color: var(--ntp-primary);
+}
+
+.ntp-count.unread {
+    background: #ef4444;
+    color: white;
+}
+
+/* Notification List */
+.ntp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Premium Card Design */
+.ntp-card {
+    background: white;
+    border-radius: var(--ntp-radius);
+    padding: 1.5rem 2rem;
+    display: flex;
+    gap: 1.75rem;
+    border: 1px solid #f1f5f9;
+    box-shadow: var(--ntp-card-shadow);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    cursor: pointer;
+}
+
+.ntp-card:hover {
+    transform: translateX(8px);
+    box-shadow: 0 15px 45px -10px rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 106, 78, 0.1);
+}
+
+.ntp-card.is-unread {
+    background: linear-gradient(135deg, #ffffff 0%, #fcfdfd 100%);
+    border-left: 6px solid var(--ntp-primary);
+}
+
+.ntp-unread-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 0px 50%, rgba(0, 106, 78, 0.03) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+/* Icon Boxes with Modern Gradients */
+.ntp-icon-box {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.ntp-card:hover .ntp-icon-box {
+    transform: scale(1.05) rotate(-5deg);
+}
+
+.ntp-icon-box .material-symbols-outlined {
+    font-size: 30px;
+}
+
+/* Soft Modern Pellete */
+.ntp-icon-box.attendance { background: #ecfdf5; color: #059669; }
+.ntp-icon-box.sale { background: #eff6ff; color: #2563eb; }
+.ntp-icon-box.production { background: #fffbeb; color: #d97706; }
+.ntp-icon-box.admin_push { background: #faf5ff; color: #9333ea; }
+.ntp-icon-box.feedback { background: #fff1f2; color: #e11d48; }
+.ntp-icon-box.response { background: #f0f9ff; color: #0ea5e9; }
+
+.ntp-content {
+    flex: 1;
+}
+
+.ntp-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+.ntp-type-tag {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 900;
+    color: var(--ntp-text-muted);
+}
+
+.ntp-time {
+    font-size: 0.75rem;
+    color: var(--ntp-text-muted);
+    font-weight: 700;
+}
+
+.ntp-title {
+    font-size: 1.35rem;
+    font-weight: 850;
+    color: var(--ntp-text) !important;
+    margin: 0 0 0.4rem 0;
+    letter-spacing: -0.5px;
+    line-height: 1.25;
+}
+
+.ntp-msg {
+    color: #475569 !important;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.ntp-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f8fafc;
+    padding-top: 1.25rem;
+}
+
+.ntp-sender-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.ntp-avatar {
+    width: 32px;
+    height: 32px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    color: #1e293b;
+    font-size: 0.85rem;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.ntp-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Sleek Buttons */
+.ntp-btn-ok, .ntp-btn-refresh {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.4rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+}
+
+.ntp-btn-ok {
+    background: #006A4E;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 106, 78, 0.2);
+}
+
+.ntp-btn-ok:hover {
+    background: #008f6b;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 106, 78, 0.25);
+}
+
+.ntp-btn-refresh {
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.ntp-btn-refresh:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #1e293b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* Empty State - High End Illustration Feeling */
+.ntp-empty {
+    text-align: center;
+    padding: 6rem 2rem;
+    background: white;
+    border-radius: var(--ntp-radius);
+    border: 1px solid var(--ntp-border);
+    box-shadow: var(--ntp-card-shadow);
+}
+
+.ntp-empty-icon {
+    width: 100px;
+    height: 100px;
+    background: var(--ntp-primary-glass);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+}
+
+.ntp-empty-icon span {
+    font-size: 48px;
+    color: var(--ntp-primary);
+}
+
+.ntp-empty h3 {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: var(--ntp-text);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.5px;
+}
+
+.ntp-empty p {
+    color: var(--ntp-text-muted);
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .ntp-container { padding: 1rem; }
+    .ntp-banner { padding: 2rem; flex-direction: column; text-align: center; gap: 1.5rem; }
+    .ntp-banner-title { font-size: 2rem; }
+    .ntp-card { flex-direction: column; padding: 1.5rem; gap: 1rem; }
+    .ntp-icon-box { width: 48px; height: 48px; }
+    .ntp-footer { flex-direction: column; gap: 1.25rem; align-items: flex-start; }
+    .ntp-actions { width: 100%; gap: 0.5rem; }
+    .ntp-actions button { flex: 1; justify-content: center; padding: 0.75rem; }
+}

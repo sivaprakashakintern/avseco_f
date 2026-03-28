@@ -158,7 +158,9 @@ const ManageAccess = () => {
       attendance: 'event_available',
       clients: 'group',
       sales: 'sell',
-      reports: 'analytics'
+      reports: 'analytics',
+      expenses: 'payments',
+      notifications: 'notifications'
     };
     return icons[module] || 'extension';
   };

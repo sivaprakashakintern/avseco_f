@@ -15,6 +15,8 @@ import AttendanceLog from "./pages/attendance/AttendanceLog.js";
 import AttendanceReport from "./pages/attendance/AttendanceReport.js";
 import ProfilePage from "./pages/profile/ProfilePage.js";
 import LoadingScreen from "./components/LoadingScreen.js";
+import NotificationsPage from "./pages/notifications/NotificationsPage.js";
+import AdminPushPanel from "./pages/admin/AdminPushPanel.js";
 
 // Stock Pages
 import StockOverview from "./pages/stock/StockOverview.js";
@@ -179,6 +181,11 @@ const App = () => {
                 <AppLayout><ManageAccess /></AppLayout>
               </ProtectedRoute>
             } />
+            <Route path="/admin/push-notifications" element={
+              <ProtectedRoute adminOnly={true}>
+                <AppLayout><AdminPushPanel /></AppLayout>
+              </ProtectedRoute>
+            } />
 
             {/* Clients */}
             <Route path="/clients" element={
@@ -223,6 +230,9 @@ const App = () => {
 
             {/* Help */}
             <Route path="/help" element={<ProtectedRoute><AppLayout><Help /></AppLayout></ProtectedRoute>} />
+
+            {/* Notifications */}
+            <Route path="/notifications" element={<ProtectedRoute><AppLayout><NotificationsPage /></AppLayout></ProtectedRoute>} />
 
             {/* 404 */}
             <Route path="*" element={<ProtectedRoute><AppLayout><div>404 - Page Not Found</div></AppLayout></ProtectedRoute>} />

@@ -250,7 +250,7 @@ const Sales = () => {
                     qty: qtyToAdd,
                     amount: (pricePerUnit * qtyToAdd) || 0,
                     unit: products.find(p => p.id === selectedProductId)?.unit || "pcs",
-                    hsn: products.find(p => p.id === selectedProductId)?.hsn || "-"
+                    hsn: products.find(p => p.id === selectedProductId)?.hsnCode || "-"
                 };
                 return [...prevItems, newItem];
             }
@@ -305,7 +305,8 @@ const Sales = () => {
                 size: item.size || "-",
                 qty: item.qty,
                 amount: item.amount,
-                unit: item.unit || "pcs"
+                unit: item.unit || "pcs",
+                hsn: item.hsn
             }))
         };
 
@@ -443,7 +444,9 @@ const Sales = () => {
                 baseName: selectedBaseProduct,
                 size: selectedSize,
                 qty: parseFloat(quantity),
-                amount: parseFloat(totalAmount) || 0
+                amount: parseFloat(totalAmount) || 0,
+                productId: selectedProductId,
+                hsn: products.find(p => p.id === selectedProductId)?.hsnCode || "-"
             });
         }
 
@@ -471,7 +474,7 @@ const Sales = () => {
                 size: item.size || "-",
                 qty: item.qty,
                 amount: item.amount,
-                hsn: item.hsn || products.find(p => p.name === item.product)?.hsn || "-",
+                hsn: item.hsn || products.find(p => p.id === item.productId)?.hsnCode || "-",
                 rate: item.rate || (item.qty ? (item.amount / item.qty).toFixed(2) : 0)
             })),
             deliveredBy: deliveryEmployee,
@@ -514,7 +517,7 @@ const Sales = () => {
                 size: transaction.product.includes('"') ? (transaction.product.match(/\d+".*/) || ["—"])[0] : "—",
                 qty: Math.abs(transaction.quantity),
                 amount: transaction.amount,
-                hsn: products.find(p => p.name === transaction.product)?.hsn || "-",
+                hsn: products.find(p => (p.name || "").toLowerCase().trim() === (transaction.product || "").toLowerCase().trim())?.hsnCode || "-",
                 rate: transaction.quantity ? (transaction.amount / Math.abs(transaction.quantity)).toFixed(2) : 0
             }],
             totalAmount: transaction.totalAmount || transaction.amount,
@@ -1464,7 +1467,7 @@ const Sales = () => {
                                         <tr style={{ background: '#fefefe', borderBottom: '1px solid #e2e8f0' }}>
                                             <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '25%' }}>PRODUCT NAME</th>
                                             <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '15%' }}>SIZE</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '15%' }}>HSN</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '15%' }}>HSN CODE</th>
                                             <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '15%' }}>QTY</th>
                                             <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '15%' }}>TOTAL</th>
                                             <th style={{ padding: '12px 16px', width: '10%', textAlign: 'center' }}>ACTION</th>

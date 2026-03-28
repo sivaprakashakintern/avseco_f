@@ -2154,10 +2154,13 @@ body,
 
   /* ── Modals: bottom sheet style ── */
   .emp-modal-overlay {
-    top: 70px !important;
-    padding: 20px 10px 10px !important;
-    align-items: flex-end !important;
-    height: calc(100vh - 70px) !important;
+    top: 0 !important;
+    padding: 70px 10px 20px !important;
+    align-items: center !important;
+    height: 100vh !important;
+    z-index: 2000 !important;
+    background: rgba(0, 55, 41, 0.4) !important;
+    backdrop-filter: blur(8px) !important;
   }
 
   .emp-modal-frame {
@@ -2218,14 +2221,18 @@ body,
 
   .modal-body {
     padding: 24px 20px !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   .modal-footer {
-    padding: 16px 20px 34px !important;
+    padding: 16px 20px 24px !important;
     background: white !important;
-    border-top: 1px solid #ffffff !important;
+    border-top: 1px solid #f1f5f9 !important;
     gap: 12px !important;
     display: flex !important;
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.03) !important;
   }
 
   .modal-cancel,

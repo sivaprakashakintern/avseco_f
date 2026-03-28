@@ -1,11 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useAppContext } from "../../context/AppContext.js";
+import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../components/ConfirmModal.js";
 import "./Stock.css";
+import plate8 from "../../assets/plate8.png";
+import plate12 from "../../assets/plate12.png";
 
 const StockOverview = () => {
-  const { stockData, resetAllStockData } = useAppContext();
+    const { stockData, productionTargets, resetAllStockData } = useAppContext();
+    const navigate = useNavigate();
   const [resetLoading, setResetLoading] = useState(false);
+  const [filterType, setFilterType] = useState("All"); // All, Low Stock, Out of Stock
   const [confirmModal, setConfirmModal] = useState({
       isOpen: false,
       title: '',
@@ -13,45 +18,107 @@ const StockOverview = () => {
       onConfirm: null
   });
 
-  // Group stock data by name and sort by size numerically
-  const groupedProducts = stockData.reduce((acc, item) => {
-    if (!acc[item.name]) {
-      acc[item.name] = {
-        name: item.name,
-        variants: [],
-        totalQuantity: 0,
-        totalValue: 0
+  // ========== CALCULATIONS ==========
+  
+  // Group and sort stock data alphabetically by name and numerically by size
+  const groupedProducts = useMemo(() => {
+    const grouped = stockData.reduce((acc, item) => {
+      const name = item.name || "Unknown";
+      if (!acc[name]) {
+        acc[name] = {
+          name: name,
+          category: item.category || "General",
+          variants: [],
+          totalQuantity: 0
+        };
+      }
+      
+      // Sum up ALL targets for this specific product + size combination
+      const relevantTargets = (productionTargets || []).filter(t => 
+        (t.productName === name || t.product === name) && 
+        (t.productSize === item.size || t.size === item.size)
+      );
+      
+      const totalTgt = relevantTargets.reduce((sum, t) => sum + (Number(t.targetQty) || 0), 0);
+      const totalDone = relevantTargets.reduce((sum, t) => sum + (Number(t.producedQty) || 0), 0);
+      
+      const variant = {
+        ...item,
+        status: item.quantity <= 0 ? "Out of Stock" : (item.quantity < 2000 ? "Low Stock" : "In Stock"),
+        productionProgress: totalTgt > 0 ? Math.min(100, (totalDone / totalTgt) * 100) : 0,
+        targetQty: totalTgt,
+        producedQty: totalDone
       };
-    }
-    // calculate value for this variant
-    const calcValue = (item.quantity * item.perPlateRate) || item.totalValue || 0;
-    
-    acc[item.name].variants.push({
-      ...item,
-      calculatedValue: calcValue
-    });
-    
-    // Sort variants by size numerically (e.g., 6-inch, 8-inch, 10-inch, 12-inch)
-    acc[item.name].variants.sort((a, b) => {
-      const sizeA = parseInt(a.size) || 0;
-      const sizeB = parseInt(b.size) || 0;
-      return sizeA - sizeB;
-    });
+      
+      acc[name].variants.push(variant);
+      acc[name].totalQuantity += (item.quantity || 0);
+      
+      return acc;
+    }, {});
 
-    acc[item.name].totalQuantity += (item.quantity || 0);
-    acc[item.name].totalValue += calcValue;
-    return acc;
-  }, {});
+    // Sort products by name and their variants by size
+    return Object.values(grouped)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(group => ({
+        ...group,
+        variants: group.variants.sort((v1, v2) => {
+          const s1 = parseInt(v1.size) || 0;
+          const s2 = parseInt(v2.size) || 0;
+          return s1 - s2;
+        })
+      }));
+  }, [stockData]);
 
-  const groupedItems = Object.values(groupedProducts);
+  const groupedItems = groupedProducts;
+
+  // Stats calculation
+  const stats = useMemo(() => {
+    const total = stockData.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const lowStockCount = stockData.filter(item => item.quantity > 0 && item.quantity < 2000).length;
+    const outOfStockCount = stockData.filter(item => item.quantity <= 0).length;
+    
+    return {
+      totalStock: total,
+      lowStock: lowStockCount,
+      outOfStock: outOfStockCount
+    };
+  }, [stockData]);
+
+  // Filtering logic
+  const filteredGroups = useMemo(() => {
+    if (filterType === "All") return groupedItems;
+    
+    return groupedItems.map(group => {
+      const filteredVariants = group.variants.filter(v => {
+        if (filterType === "Low Stock") return v.quantity > 0 && v.quantity < 2000;
+        if (filterType === "Out of Stock") return v.quantity <= 0;
+        return true;
+      });
+      
+      if (filteredVariants.length === 0) return null;
+      
+      return {
+        ...group,
+        variants: filteredVariants
+      };
+    }).filter(Boolean);
+  }, [groupedItems, filterType]);
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
+  const [exportFormat, setExportFormat] = useState('excel');
+  const [exportType, setExportType] = useState('All'); // All, Low Stock, Out of Stock
+
   // ========== HANDLERS ==========
-  const handleExport = () => setShowExportModal(true);
+  const handleExport = () => {
+    setExportType(filterType);
+    setShowExportModal(true);
+  };
+  
+  const handleAddStock = () => navigate("/products"); 
   
   const handleResetAll = () => {
     setConfirmModal({
@@ -74,34 +141,59 @@ const StockOverview = () => {
     });
   };
   
-  
-  const confirmExport = (format) => {
+  const confirmExport = () => {
     setExportLoading(true);
+    setShowExportModal(false);
+
     setTimeout(() => {
       setExportLoading(false);
-      setShowExportModal(false);
       setExportSuccess(true);
-      setFeedbackMessage(`Stock report exported as ${format}`);
+      setFeedbackMessage(`✅ Stock report exported as ${exportFormat.toUpperCase()}`);
 
-      if (format === "CSV") {
-        const headers = ["Product Name", "Size", "Per Plate Rate", "SKU", "Category", "Quantity", "Unit Price", "Total Value", "Status"];
-        const csvData = stockData.map((item) => [
+      // Filter data based on exportType
+      let dataToExport = stockData;
+      if (exportType === "Low Stock") {
+        dataToExport = stockData.filter(item => item.quantity > 0 && item.quantity < 2000);
+      } else if (exportType === "Out of Stock") {
+        dataToExport = stockData.filter(item => item.quantity <= 0);
+      }
+
+      const fileName = `Stock_Report_${exportType}_${new Date().toISOString().split("T")[0]}`;
+
+      if (exportFormat === "csv" || exportFormat === "excel") {
+        const headers = ["Product Name", "Size", "SKU", "Category", "Quantity", "Status"];
+        const csvData = dataToExport.map((item) => [
           item.name,
           item.size || "-",
-          item.perPlateRate ? `₹${item.perPlateRate}` : "-",
           item.sku,
           item.category,
-          `${item.quantity} ${item.unit}`,
-          `₹${item.price}`,
-          `₹${item.totalValue}`,
-          item.status,
+          `${item.quantity} pcs`,
+          item.quantity <= 0 ? "Out of Stock" : (item.quantity < 2000 ? "Low Stock" : "In Stock")
         ]);
         const csvContent = [headers, ...csvData].map((e) => e.join(",")).join("\n");
         const blob = new Blob([csvContent], { type: "text/csv" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `stock-report-${new Date().toISOString().split("T")[0]}.csv`;
+        a.download = `${fileName}.${exportFormat === 'excel' ? 'xlsx' : 'csv'}`; 
+        a.click();
+        URL.revokeObjectURL(url);
+      } else if (exportFormat === "pdf") {
+        const headers = ["Product Name", "Size", "SKU", "Category", "Quantity", "Status"];
+        const csvData = dataToExport.map((item) => [
+          item.name,
+          item.size || "-",
+          item.sku,
+          item.category,
+          item.quantity,
+          item.quantity <= 0 ? "Out of Stock" : (item.quantity < 2000 ? "Low Stock" : "In Stock")
+        ]);
+        const csvContent = [headers, ...csvData].map((e) => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${fileName}.csv`; 
         a.click();
       }
 
@@ -109,230 +201,217 @@ const StockOverview = () => {
         setExportSuccess(false);
         setFeedbackMessage("");
       }, 3000);
-    }, 1500);
+    }, 1200);
   };
 
-  // Replaced unused formatCurrency
-
   return (
-    <div className="stock-page">
+    <div className="stock-overview-new">
 
       {/* Feedback Toast */}
       {feedbackMessage && (
-        <div className="feedback-toast">
+        <div className={`feedback-toast-new ${exportSuccess ? 'success' : ''}`}>
           <span className="material-symbols-outlined">
-            {feedbackMessage.includes("deleted") ? "delete" : feedbackMessage.includes("updated") ? "edit" : "check_circle"}
+            {exportSuccess ? "download_done" : "info"}
           </span>
           <span>{feedbackMessage}</span>
         </div>
       )}
 
-      {exportSuccess && (
-        <div className="feedback-toast success">
-          <span className="material-symbols-outlined">download_done</span>
-          <span>Export completed successfully</span>
-        </div>
-      )}
-
       {/* ===== HEADER ===== */}
       <div className="page-header premium-header">
-        <div>
-          <h1 className="page-title">Stock Overview</h1>
-        </div>
-        <div className="header-actions">
-          <button 
-            className="btn-export-premium" 
-            onClick={handleResetAll} 
-            disabled={resetLoading}
-            style={{ 
-              background: '#fee2e2', 
-              color: '#dc2626', 
-              borderColor: '#fecaca',
-              marginRight: '12px'
-            }}
-          >
-            <span className="material-symbols-outlined">
-              {resetLoading ? "hourglass_empty" : "restart_alt"}
-            </span>
-            {resetLoading ? "Resetting..." : "Reset All Data"}
-          </button>
+        <h1 className="page-title">Stock Overview</h1>
+      </div>
 
-          <button className="btn-export-premium" onClick={handleExport}>
-            <span className="material-symbols-outlined">
-              {exportLoading ? "hourglass_empty" : "file_download"}
-            </span>
-            {exportLoading ? "Exporting..." : "Export"}
-          </button>
+      {/* ===== UNIFIED HERO STATUS BAR ===== */}
+      <div className="stock-unified-hero-row">
+        {/* TOTAL STOCK */}
+        <div className="hero-stat-item main-total">
+          <div className="hero-icon-box">
+            <span className="material-symbols-outlined">inventory_2</span>
+          </div>
+          <div className="hero-details">
+            <span className="hero-label">TOTAL STOCK</span>
+            <span className="hero-value">{stats.totalStock.toLocaleString("en-IN")} <small>pcs</small></span>
+          </div>
+        </div>
+
+        {/* LOW STOCK */}
+        <div className="hero-stat-item secondary-alert yellow-alert">
+          <div className="hero-icon-box">
+            <span className="material-symbols-outlined">report_problem</span>
+          </div>
+          <div className="hero-details">
+            <span className="hero-label">LOW STOCK</span>
+            <span className="hero-value">{stats.lowStock} <small>items</small></span>
+          </div>
+        </div>
+
+        {/* OUT OF STOCK */}
+        <div className="hero-stat-item secondary-alert red-alert">
+          <div className="hero-icon-box">
+            <span className="material-symbols-outlined">dangerous</span>
+          </div>
+          <div className="hero-details">
+            <span className="hero-label">OUT OF STOCK</span>
+            <span className="hero-value">{stats.outOfStock} <small>items</small></span>
+          </div>
         </div>
       </div>
 
-      {/* Stats Cards removed as per user request */}
+      {/* ===== FILTER TABS ===== */}
+      <div className="filter-tabs-new">
+        <button 
+          className={`tab-new ${filterType === "All" ? "active" : ""}`}
+          onClick={() => setFilterType("All")}
+        >
+          <span className="dot-new"></span>
+          All
+        </button>
+        <button 
+          className={`tab-new ${filterType === "Low Stock" ? "active" : ""}`}
+          onClick={() => setFilterType("Low Stock")}
+        >
+          Low Stock
+        </button>
+        <button 
+          className={`tab-new ${filterType === "Out of Stock" ? "active" : ""}`}
+          onClick={() => setFilterType("Out of Stock")}
+        >
+          Out of Stock
+        </button>
+      </div>
 
-      {/* ===== STOCK DETAILS ===== */}
-      <div className="stock-table-container">
-        <div className="table-header centered-header">
-          <h2 className="section-title">Stock Details</h2>
-        </div>
-
-        {/* DESKTOP TABLE */}
-        <div className="table-responsive desktop-table-view">
-          <table className="stock-table grouped-table">
-            <thead>
-              <tr>
-                <th style={{ textAlign: 'center' }}>Product Name</th>
-                <th style={{ textAlign: 'center' }}>Size</th>
-                <th style={{ textAlign: 'center' }}>Stock</th>
-                <th style={{ textAlign: 'center' }}>Total Stock</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedItems.length > 0 ? (
-                groupedItems.map((group) => (
-                  <React.Fragment key={group.name}>
-                    {group.variants.map((v, idx) => (
-                      <tr key={v.id || v.sku || idx} className="product-variant-row" style={{ borderBottom: idx === group.variants.length - 1 ? '2px solid #e2e8f0' : '1px solid #f1f5f9' }}>
-                        
-                        {idx === 0 && (
-                          <td className="group-name-cell" rowSpan={group.variants.length} style={{ textAlign: 'center' }}>
-                            <div className="product-info-cell" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                              <span className="product-name">{group.name}</span>
-                              <span className="variant-label-badge">
-                                {group.variants.length} Sizes
-                              </span>
-                            </div>
-                          </td>
-                        )}
-
-                        <td className="size-cell" style={{ textAlign: 'center' }}>
-                          <span className="size-badge-premium">{v.size || "-"}</span>
-                        </td>
-                        
-                        <td className="quantity-cell" style={{ textAlign: 'center' }}>
-                          <span className={`stock-level ${v.quantity < 0 ? 'negative' : ''}`}>
-                            {v.quantity.toLocaleString("en-IN")} pcs
-                          </span>
-                        </td>
-
-                        {idx === 0 && (
-                          <td className="total-stock-group-cell" rowSpan={group.variants.length} style={{ textAlign: 'center' }}>
-                            {group.totalQuantity.toLocaleString("en-IN")} pcs
-                          </td>
-                        )}
-
-
-
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="4">
-                    <div className="empty-state">
-                      <span className="material-symbols-outlined empty-icon">inventory</span>
-                      <h4>No items found</h4>
+      {/* ===== PRODUCT SECTIONS ===== */}
+      <div className="products-container-new">
+        {filteredGroups.length > 0 ? (
+          filteredGroups.map(group => (
+            <div key={group.name} className="category-section-new">
+              <h2 className="category-title-new">{group.name}</h2>
+              <div className="product-grid-new">
+                {group.variants.map((v, idx) => (
+                  <div key={v._id || idx} className="product-card-new">
+                    <div className="card-header-new">
+                      <div className="plate-icon-new">
+                        <img src={plate8} alt="Plate" />
+                      </div>
+                      <span className="card-product-name-new">{v.size}</span>
                     </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
 
-        {/* MOBILE CARDS */}
-        <div className="mobile-cards-view">
-          {groupedItems.length > 0 ? (
-            groupedItems.map((group) => (
-              <div key={group.name} className="stock-mobile-card premium-mobile-card" style={{ padding: '0', overflow: 'hidden', marginBottom: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                {/* Card Header */}
-                <div className="smc-header" style={{ padding: '20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span className="smc-name" style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{group.name}</span>
-                    <span className="smc-sku" style={{ 
-                      marginTop: '10px', 
-                      display: 'inline-block', 
-                      background: '#ecfdf5', 
-                      padding: '6px 12px', 
-                      borderRadius: '30px', 
-                      fontWeight: '800', 
-                      color: '#059669',
-                      border: '1px solid #a7f3d0',
-                      fontSize: '11px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                      boxShadow: '0 2px 5px rgba(16, 185, 129, 0.1)'
-                    }}>
-                      {group.variants.length} Sizes
-                    </span>
-                  </div>
-                </div>
-                {/* Card Rows */}
-                <div className="smc-body" style={{ padding: '0' }}>
-                  {group.variants.map((v, idx) => (
-                    <div key={v.sku || idx} style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9' }}>
-                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span className="size-badge">{v.size || "-"}</span>
-                          <span style={{ fontWeight: '700', fontSize: '15px', color: '#334155' }}>{v.quantity.toLocaleString("en-IN")} pcs</span>
-                       </div>
+                    <div className={`status-badge-inline-new ${v.quantity <= 0 ? 'red pulse' : (v.quantity < 2000 ? 'yellow' : 'green')}`}>
+                      {v.size} 
+                      <span className="status-badge-text-new">
+                        {v.quantity <= 0 ? 'OUT OF STOCK' : (v.quantity < 2000 ? 'LOW STOCK' : 'IN STOCK')}
+                      </span>
                     </div>
-                  ))}
-                  <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0fdf4' }}>
-                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '0.05em' }}>Total Stock</span>
-                        <span style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b' }}>{group.totalQuantity.toLocaleString("en-IN")} pcs</span>
-                     </div>
+
+                    <div className="main-quantity-new">
+                      {v.quantity.toLocaleString("en-IN")} <span className="unit-small-new">plates</span>
+                    </div>
+
+                    {/* PRODUCTION PROGRESS BAR */}
+                    <div className="production-progress-container-new">
+                      <div className="progress-track-new">
+                        <div 
+                          className="progress-fill-new" 
+                          style={{ width: `${v.productionProgress}%` }}
+                        ></div>
+                      </div>
+                      {v.targetQty > 0 && (
+                        <div className="progress-info-new">
+                          Target: {v.producedQty.toLocaleString()} / {v.targetQty.toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+
+                    <div 
+                      className={`footer-status-btn-new ${v.quantity < 2000 ? (v.quantity <= 0 ? 'red' : 'yellow') : 'green disabled'}`}
+                      style={{ cursor: v.quantity < 2000 ? 'pointer' : 'not-allowed', opacity: v.quantity < 2000 ? 1 : 0.6 }}
+                      onClick={() => {
+                        if (v.quantity < 2000) {
+                          navigate("/production/daily");
+                        }
+                      }}
+                    >
+                       <span className="material-symbols-outlined icon-small-new">
+                         {v.quantity <= 0 ? 'close' : (v.quantity < 2000 ? 'warning' : 'check_circle')}
+                       </span>
+                       {v.quantity < 2000 ? 'Manage Item' : 'Stock Full'}
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))
-          ) : (
-            <div className="empty-state">
-              <span className="material-symbols-outlined empty-icon">inventory</span>
-              <h4>No items found</h4>
             </div>
-          )}
-        </div>
+          ))
+        ) : (
+          <div className="empty-state-new">
+            <span className="material-symbols-outlined">inventory_2</span>
+            <p>No products match the current filter.</p>
+          </div>
+        )}
       </div>
 
-      {/* ===== EXPORT MODAL ===== */}
+      {/* ===== PREMIUM EXPORT MODAL ===== */}
       {showExportModal && (
         <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content export-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Export Stock Report</h3>
+              <h3>Export Stock Inventory</h3>
               <button className="modal-close" onClick={() => setShowExportModal(false)}>
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
+            
             <div className="modal-body">
-              <div className="modal-icon info">
-                <span className="material-symbols-outlined">download</span>
+              <div className="export-section">
+                <h4>Export Format</h4>
+                <div className="export-format-options">
+                  <label className={`format-option ${exportFormat === 'excel' ? 'active' : ''}`}>
+                    <input type="radio" value="excel" checked={exportFormat === 'excel'} onChange={(e) => setExportFormat(e.target.value)} />
+                    <span className="material-symbols-outlined">grid_on</span>
+                    <span className="format-name">Excel (.xlsx)</span>
+                  </label>
+                  <label className={`format-option ${exportFormat === 'csv' ? 'active' : ''}`}>
+                    <input type="radio" value="csv" checked={exportFormat === 'csv'} onChange={(e) => setExportFormat(e.target.value)} />
+                    <span className="material-symbols-outlined">description</span>
+                    <span className="format-name">CSV (.csv)</span>
+                  </label>
+                  <label className={`format-option ${exportFormat === 'pdf' ? 'active' : ''}`}>
+                    <input type="radio" value="pdf" checked={exportFormat === 'pdf'} onChange={(e) => setExportFormat(e.target.value)} />
+                    <span className="material-symbols-outlined">picture_as_pdf</span>
+                    <span className="format-name">PDF (.pdf)</span>
+                  </label>
+                </div>
               </div>
-              <p className="modal-title">Choose Export Format</p>
-              <p className="modal-desc">Export all stock items with current quantities and values</p>
-              <div className="export-options">
-                <button className="export-option-btn" onClick={() => confirmExport("CSV")}>
-                  <span className="material-symbols-outlined">description</span>
-                  <span>CSV File</span>
-                </button>
-                <button className="export-option-btn" onClick={() => confirmExport("PDF")}>
-                  <span className="material-symbols-outlined">picture_as_pdf</span>
-                  <span>PDF Report</span>
-                </button>
-                <button className="export-option-btn" onClick={() => confirmExport("Excel")}>
-                  <span className="material-symbols-outlined">grid_on</span>
-                  <span>Excel File</span>
-                </button>
+
+              <div className="export-section">
+                <h4>Stock Filter</h4>
+                <div className="export-type-options">
+                  <label className={`type-option ${exportType === 'All' ? 'active' : ''}`}>
+                    <input type="radio" value="All" checked={exportType === 'All'} onChange={(e) => setExportType(e.target.value)} />
+                    <span>All Products</span>
+                  </label>
+                  <label className={`type-option ${exportType === 'Low Stock' ? 'active' : ''}`}>
+                    <input type="radio" value="Low Stock" checked={exportType === 'Low Stock'} onChange={(e) => setExportType(e.target.value)} />
+                    <span>Low Stock Only</span>
+                  </label>
+                  <label className={`type-option ${exportType === 'Out of Stock' ? 'active' : ''}`}>
+                    <input type="radio" value="Out of Stock" checked={exportType === 'Out of Stock'} onChange={(e) => setExportType(e.target.value)} />
+                    <span>Out of Stock Only</span>
+                  </label>
+                </div>
               </div>
             </div>
+
             <div className="modal-footer">
-              <button className="modal-cancel" onClick={() => setShowExportModal(false)}>
-                Cancel
+              <button className="modal-cancel" onClick={() => setShowExportModal(false)}>Cancel</button>
+              <button className="modal-confirm" onClick={confirmExport} disabled={exportLoading}>
+                {exportLoading ? 'Processing...' : 'Export Now'}
               </button>
             </div>
           </div>
         </div>
       )}
+
       {/* ===== CONFIRMATION MODAL ===== */}
       <ConfirmModal 
         isOpen={confirmModal.isOpen}

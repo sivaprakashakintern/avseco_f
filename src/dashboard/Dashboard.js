@@ -4,6 +4,7 @@ import { useAppContext } from '../context/AppContext.js';
 import { useAuth } from '../context/AuthContext.js';
 import logo from '../assets/logo.png';
 import { formatCurrency } from '../utils/formatUtils.js';
+import dayjs from 'dayjs';
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -18,7 +19,8 @@ const Dashboard = () => {
     totalSalesAmount,
     salesHistory,
     stockData,
-    productionStats
+    productionStats,
+    productionTargets = []
   } = useAppContext();
   const [timeFilter, setTimeFilter] = useState("Monthly");
   const [hoveredBar, setHoveredBar] = useState(null);
@@ -454,27 +456,74 @@ const Dashboard = () => {
         <div className="stock-overview-section">
           <h3>ALL STOCK ITEMS ({stockData.length})</h3>
           <div className="stock-grid">
-            {stockData.map((item, index) => (
-              <div
-                key={index}
-                className="stock-item-card"
-                onClick={handleStockClick}
-                style={{
-                  cursor: 'pointer'
-                }}
-              >
-                <div className="stock-item-header">
-                  <div>
-                    <span className="stock-name" style={{ fontSize: '13px', fontWeight: '800', display: 'block', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>{item.name}</span>
-                    <span className="stock-size" style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b' }}>{item.size}</span>
+            {stockData.map((item, index) => {
+              const currentMonthStr = dayjs().format('YYYY-MM');
+              
+              // 1. Try specifically for this size or find the "All Sizes" master target
+              const monthlyTargets = (productionTargets || []).filter(t => 
+                (t.productName === item.name || t.product === item.name) && t.date === currentMonthStr
+              );
+
+              const masterTarget = monthlyTargets.find(t => t.productSize === 'All Sizes');
+              const specificTarget = monthlyTargets.find(t => t.productSize === item.size || t.size === item.size);
+              
+              const monthlyTarget = masterTarget || specificTarget;
+
+              // 2. If it's a master target, calculate progress based on TOTAL production of ALL sizes
+              const targetQty = monthlyTarget ? Number(monthlyTarget.targetQty) : 0;
+              let producedThisMonth = 0;
+              
+              if (monthlyTarget?.productSize === 'All Sizes') {
+                // Sum production of ALL sizes for this product this month
+                producedThisMonth = Object.values(productionStats.monthBySize || {}).reduce((a, b) => a + b, 0);
+              } else {
+                producedThisMonth = productionStats.monthBySize?.[item.size] || 0;
+              }
+              
+              const progress = targetQty > 0 ? Math.min(100, (producedThisMonth / targetQty) * 100) : 0;
+
+              return (
+                <div
+                  key={index}
+                  className="stock-item-card"
+                  onClick={handleStockClick}
+                  style={{
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div className="stock-item-header">
+                    <div>
+                      <span className="stock-name" style={{ fontSize: '11px', fontWeight: '800', display: 'block', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>{item.name}</span>
+                      <span className="stock-size" style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b' }}>{item.size}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                      <span className="stock-value" style={{ fontSize: '15px', fontWeight: '800', color: '#2563eb' }}>{item.quantity.toLocaleString()} pcs</span>
+                      <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>Value: ₹{item.totalValue.toLocaleString()}</span>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                    <span className="stock-value" style={{ fontSize: '15px', fontWeight: '800', color: '#2563eb' }}>{item.quantity.toLocaleString()} pcs</span>
-                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Value: ₹{item.totalValue.toLocaleString()}</span>
-                  </div>
+
+                  {targetQty > 0 && (
+                    <div className="stock-target-progress" style={{ marginTop: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>
+                        <span>MONTHLY TARGET</span>
+                        <span>{progress.toFixed(1)}%</span>
+                      </div>
+                      <div style={{ height: '4px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ 
+                          height: '100%', 
+                          width: `${progress}%`, 
+                          background: progress >= 100 ? '#10b981' : '#3b82f6',
+                          borderRadius: '4px'
+                        }}></div>
+                      </div>
+                      <div style={{ marginTop: '4px', fontSize: '10px', fontWeight: '600', color: '#94a3b8', textAlign: 'right' }}>
+                        {producedThisMonth.toLocaleString()} / {targetQty.toLocaleString()}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
