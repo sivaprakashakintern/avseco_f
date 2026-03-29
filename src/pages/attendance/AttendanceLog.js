@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useAppContext } from '../../context/AppContext.js';
 import { useAuth } from '../../context/AuthContext.js';
 import { formatDate } from '../../utils/dateUtils.js';
-import { notificationApi } from '../../utils/api.js';
 import './AttendanceLog.css';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // ✅ Use local date (not UTC) to avoid IST → UTC date shift bug
