@@ -1,329 +1,370 @@
-import React, { useState, useMemo, useCallback } from "react";
-import { useAppContext } from '../../context/AppContext.js';
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useAppContext } from "../../context/AppContext.js";
+import { attendanceApi } from "../../utils/api.js";
 import "./AttendanceReport.css";
 
+const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+];
+
 const AttendanceReport = () => {
-    const { employees, attendanceRecords, fetchAttendanceForDate } = useAppContext();
-
-    // State for dates
+    const { employees: allEmployees, attendanceRecords, fetchAttendanceForDate } = useAppContext();
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth()); // 0-11
-    const [exportRange, setExportRange] = useState("month"); // 'month' or 'year'
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+    const [showYearDropdown, setShowYearDropdown] = useState(false);
+    const [showMonthDropdown, setShowMonthDropdown] = useState(false);
+    const [showExportDropdown, setShowExportDropdown] = useState(false);
 
-    // Helper to get days in a specific month
-    const getDaysInMonth = (year, month) => {
-        const days = new Date(year, month + 1, 0).getDate();
-        return Array.from({ length: days }, (_, i) => {
-            const d = new Date(year, month, i + 1);
-            return {
-                date: i + 1,
-                dayName: d.toLocaleDateString("en-US", { weekday: 'short' }),
-                isSunday: d.getDay() === 0,
-                fullDate: d
-            };
-        });
-    };
+    const employees = useMemo(() => {
+        return allEmployees.filter(emp => emp.isActive !== false);
+    }, [allEmployees]);
 
-    // Cache to track fetched month-year data to avoid redundant calls
-    const [fetchedMonths, setFetchedMonths] = useState(new Set());
-    
-    // Effect to fetch any missing attendance data for the month
-    React.useEffect(() => {
-        const monthKey = `${selectedYear}-${selectedMonth}`;
-        if (fetchedMonths.has(monthKey)) return;
+    const daysInCurrentMonthCount = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    const daysInCurrentView = useMemo(() => {
+        const days = [];
+        for (let i = 1; i <= daysInCurrentMonthCount; i++) {
+            const date = new Date(selectedYear, selectedMonth, i);
+            days.push({
+                date: i,
+                isSunday: date.getDay() === 0,
+                isoDate: `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`
+            });
+        }
+        return days;
+    }, [selectedYear, selectedMonth, daysInCurrentMonthCount]);
 
-        const fetchMonthData = async () => {
-            const days = getDaysInMonth(selectedYear, selectedMonth);
-            // Fetch all days sequentially but don't re-trigger on record changes
-            for (const day of days) {
-                const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`;
-                if (!attendanceRecords[dateKey]) {
-                    await fetchAttendanceForDate(dateKey);
-                }
-            }
-            setFetchedMonths(prev => new Set(prev).add(monthKey));
+    // Force sync of current month data in parallel
+    useEffect(() => {
+        const syncMonthData = async () => {
+             const promises = daysInCurrentView.map(day => fetchAttendanceForDate(day.isoDate));
+             await Promise.all(promises);
         };
-        fetchMonthData();
-    }, [selectedYear, selectedMonth, fetchAttendanceForDate, fetchedMonths, attendanceRecords]);
+        syncMonthData();
+    }, [daysInCurrentView, fetchAttendanceForDate]);
 
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-    React.useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth <= 768);
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
-
-    // Current View Data
-    const daysInCurrentView = useMemo(() => getDaysInMonth(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
-
-    // Data Generation Logic (reusable)
-    const generateMonthData = useCallback((year, month) => {
-        const days = getDaysInMonth(year, month);
-        const data = {};
-
+    const currentMonthData = useMemo(() => {
+        const dataMap = {};
         employees.forEach(emp => {
-            const empData = [];
-            let totalPresent = 0;
-            let totalAbsent = 0;
-            let totalHalf = 0;
-            const recorders = new Set(); // Initialize recorders here
+            const empData = {
+                daily: [],
+                stats: { present: 0, absent: 0, half: 0, sundayWork: 0 }
+            };
 
-            days.forEach(day => {
-                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`;
-                const records = attendanceRecords[dateKey] || [];
-                const record = records.find(r => r.empId === emp.id);
+            daysInCurrentView.forEach(day => {
+                const dayRecords = attendanceRecords[day.isoDate] || [];
+                const record = dayRecords.find(r => r.empId === emp.id);
+                
+                let displayStatus = '-';
 
+                // PRIORITY: If it's Sunday, ALWAYS show 'Sunday' and ignore any records
                 if (day.isSunday) {
-                    empData.push("Sunday");
-                } else {
-                    let status = record ? record.status : "-";
-                    // Map status to abbreviations used in report
-                    let abbr = "-";
-                    if (status === "present") abbr = "P";
-                    else if (status === "absent") abbr = "A";
-                    else if (status === "half") abbr = "HD";
-                    else if (status === "stoppage") abbr = "WS";
-
-                    if (abbr === "P") totalPresent += 1;
-                    if (abbr === "HD") totalHalf += 1;
-                    if (abbr === "A" || abbr === "WS") totalAbsent += 1;
-
-                    empData.push(abbr);
+                    displayStatus = 'Sunday';
+                } else if (record) {
+                    // Only process status if it's NOT a Sunday
+                    if (record.status === 'present') {
+                        displayStatus = 'P';
+                        empData.stats.present += 1;
+                    } else if (record.status === 'absent') {
+                        displayStatus = 'A';
+                        empData.stats.absent += 1;
+                    } else if (record.status === 'half') {
+                        displayStatus = 'HD';
+                        empData.stats.present += 0.5;
+                        empData.stats.half += 1;
+                    } else if (record.status === 'stoppage') {
+                        displayStatus = 'WS';
+                    }
                 }
+                empData.daily.push(displayStatus);
+            });
+            dataMap[emp.id] = empData;
+        });
+        return dataMap;
+    }, [employees, daysInCurrentView, attendanceRecords]);
 
-                if (record && record.recordedBy) {
-                    recorders.add(record.recordedBy);
+    const handleExportExcel = async () => {
+        try {
+            const ExcelJS = (await import('exceljs')).default;
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet(`${months[selectedMonth]} ${selectedYear}`);
+
+            const totalCols = daysInCurrentView.length + 5; // S.No + Name + days + PRES + ABS + HALF
+
+            // Helper: column letter from number
+            const colLetter = (n) => {
+                let s = '';
+                while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
+                return s;
+            };
+
+            const thinBorder = {
+                top: { style: 'thin', color: { argb: 'FF000000' } },
+                left: { style: 'thin', color: { argb: 'FF000000' } },
+                bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                right: { style: 'thin', color: { argb: 'FF000000' } }
+            };
+
+            // ROW 1: "AVSECO - ATTENDANCE REPORT 2026" — center aligned, green bold
+            worksheet.mergeCells(`A1:${colLetter(totalCols)}1`);
+            const r1 = worksheet.getRow(1);
+            r1.getCell(1).value = `AVSECO - ATTENDANCE REPORT ${selectedYear}`;
+            r1.getCell(1).font = { name: 'Arial', bold: true, size: 14, color: { argb: 'FF006A4E' } };
+            r1.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+            r1.height = 24;
+
+            // ROW 2: "AVSECO ECO INDUSTRIES - ATTENDANCE REPORT" — center aligned, green bold
+            worksheet.mergeCells(`A2:${colLetter(totalCols)}2`);
+            const r2 = worksheet.getRow(2);
+            r2.getCell(1).value = 'AVSECO ECO INDUSTRIES - ATTENDANCE REPORT';
+            r2.getCell(1).font = { name: 'Arial', bold: true, size: 11, color: { argb: 'FF006A4E' } };
+            r2.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+            r2.height = 20;
+
+            // ROW 3: "Mar-26" — center aligned, green text, white background
+            worksheet.mergeCells(`A3:${colLetter(totalCols)}3`);
+            const r3 = worksheet.getRow(3);
+            r3.getCell(1).value = `${months[selectedMonth].substring(0, 3)}-${selectedYear.toString().substring(2)}`;
+            r3.getCell(1).font = { name: 'Arial', bold: true, size: 11, color: { argb: 'FF006A4E' } };
+            r3.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+            r3.height = 18;
+
+            // ROW 4: Empty spacer
+            worksheet.addRow([]);
+
+            // ROW 5: COLUMN HEADERS
+            const headerValues = ['S.No', 'Employee Name', ...daysInCurrentView.map(d => d.date), 'PRESE\nNT', 'ABSE\nNT', 'HALF'];
+            const headerRow = worksheet.addRow(headerValues);
+            headerRow.height = 30;
+
+            headerRow.eachCell({ includeEmpty: true }, (cell, colNum) => {
+                cell.border = thinBorder;
+                cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+
+                if (colNum <= 2) {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF006A4E' } };
+                    cell.font = { bold: true, size: 9, color: { argb: 'FFFFFFFF' }, name: 'Arial' };
+                } else if (colNum <= daysInCurrentView.length + 2) {
+                    const dayIdx = colNum - 3;
+                    const isSun = daysInCurrentView[dayIdx]?.isSunday;
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCD34D' } };
+                    cell.font = { bold: true, size: 9, color: { argb: isSun ? 'FFFF0000' : 'FF000000' }, name: 'Arial' };
+                } else {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } };
+                    cell.font = { bold: true, size: 8, color: { argb: 'FF0F766E' }, name: 'Arial' };
                 }
             });
 
-            data[emp.id] = {
-                daily: empData,
-                stats: { present: totalPresent, absent: totalAbsent, half: totalHalf },
-                recorders: Array.from(recorders).filter(Boolean).join(", ")
-            };
-        });
-        return data;
-    }, [employees, attendanceRecords]);
+            // ROWS 6+: DATA
+            employees.forEach((emp, index) => {
+                const data = currentMonthData[emp.id];
+                const rowValues = [
+                    index + 1,
+                    emp.name,
+                    ...data.daily.map(s => s === 'Sunday' ? 'SUN' : (s === '-' ? '' : s)),
+                    data.stats.present,
+                    data.stats.absent,
+                    data.stats.half
+                ];
+                const row = worksheet.addRow(rowValues);
+                row.height = 18;
 
-    const currentMonthData = useMemo(() => generateMonthData(selectedYear, selectedMonth), [selectedYear, selectedMonth, generateMonthData]);
+                row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+                    cell.border = thinBorder;
+                    cell.font = { size: 9, name: 'Arial' };
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
 
-    const months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ];
+                    if (colNum === 2) {
+                        cell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+                        cell.font = { size: 9, name: 'Arial', bold: true };
+                    }
 
-    // Generate years (e.g., last 5 years)
-    const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
+                    if (colNum > 2 && colNum <= daysInCurrentView.length + 2) {
+                        const dayIdx = colNum - 3;
+                        if (daysInCurrentView[dayIdx]?.isSunday) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF1F2' } };
+                            cell.font = { bold: true, size: 8, color: { argb: 'FFDC2626' }, name: 'Arial' };
+                        }
+                    }
 
-    const [showRangeDropdown, setShowRangeDropdown] = useState(false);
-    const [showYearDropdown, setShowYearDropdown] = useState(false);
-    const [showMonthDropdown, setShowMonthDropdown] = useState(false);
+                    if (colNum > daysInCurrentView.length + 2) {
+                        cell.font = { bold: true, size: 9, name: 'Arial' };
+                    }
+                });
+            });
 
-    // Close dropdowns on click outside
-    React.useEffect(() => {
-        const handleClickOutside = () => {
-            setShowRangeDropdown(false);
-            setShowYearDropdown(false);
-            setShowMonthDropdown(false);
-        };
-        document.addEventListener("click", handleClickOutside);
-        return () => document.removeEventListener("click", handleClickOutside);
-    }, []);
-
-    // --- EXCEL EXPORT LOGIC ---
-    const generateTableHTML = (year, month, data, days) => {
-        const monthName = months[month];
-        const totalColumns = 31; // Fixed columns for days to ensure final stats align in Excel
-
-        return `
-            <tr>
-                <td colspan="${totalColumns + 6}" style="height: 50px; font-size: 24px; font-weight: bold; text-align: center; vertical-align: middle; border: none; color: #006A4E;">
-                    AVSECO ECO INDUSTRIES - ATTENDANCE REPORT
-                </td>
-            </tr>
-            <tr>
-                <td colspan="${totalColumns + 6}" style="height: 50px; font-size: 24px; font-weight: bold; text-align: center; vertical-align: middle; border: none; color: #006A4E;">
-                    ${monthName.toUpperCase()} ${year}
-                </td>
-            </tr>
-            <tr>
-                <th style="background-color: #006A4E; color: white; border: 1px solid #000; font-weight: bold; width: 50px;">S.No</th>
-                <th style="background-color: #006A4E; color: white; border: 1px solid #000; font-weight: bold; width: 200px;">Employee Name</th>
-                ${Array.from({ length: totalColumns }).map((_, i) => {
-            const day = days[i];
-            const isSun = day?.isSunday;
-            return `
-                        <th style="background-color: #FFD700; border: 1px solid #000; color: ${isSun ? 'red' : 'black'}; font-weight: bold; width: 40px; text-align: center;">
-                            ${day ? day.date : ''}
-                        </th>
-                    `;
-        }).join('')}
-                <th style="background-color: #dcfce7; border: 1px solid #000; font-weight: bold; width: 60px; text-align: center; color: #166534;">PRESENT</th>
-                <th style="background-color: #fee2e2; border: 1px solid #000; font-weight: bold; width: 60px; text-align: center; color: #991b1b;">ABSENT</th>
-                <th style="background-color: #ffedd5; border: 1px solid #000; font-weight: bold; width: 60px; text-align: center; color: #9a3412;">HALF</th>
-                <th style="background-color: #f1f5f9; border: 1px solid #000; font-weight: bold; width: 120px; text-align: center; color: #475569;">RECORDED BY</th>
-            </tr>
-            ${employees.map((emp, index) => {
-            const empData = data[emp.id];
-            return `
-                    <tr>
-                        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${index + 1}</td>
-                        <td style="border: 1px solid #000; padding: 5px; font-weight: 600;">${emp.name}</td>
-                        ${Array.from({ length: totalColumns }).map((_, i) => {
-                const status = empData.daily[i];
-                const isSun = days[i]?.isSunday;
-
-                let bg = "#ffffff";
-                let color = "#000000";
-                let text = status || "";
-
-                if (isSun) {
-                    bg = "#fee2e2"; color = "red"; text = "SUN";
-                } else if (status === "P") {
-                    bg = "#dcfce7"; color = "#166534";
-                } else if (status === "A") {
-                    bg = "#fee2e2"; color = "#991b1b";
-                } else if (status === "HD") {
-                    bg = "#ffedd5"; color = "#9a3412";
-                } else if (status === "WS") {
-                    bg = "#fef9c3"; color = "#854d0e"; text = "WS";
-                }
-
-                return `<td style="border: 1px solid #000; background-color: ${bg}; color: ${color}; text-align: center; font-size: 10px;">${text}</td>`;
-            }).join('')}
-                        <td style="border: 1px solid #000; background-color: #f0fdf4; font-weight: bold; text-align: center;">${empData.stats.present}</td>
-                        <td style="border: 1px solid #000; background-color: #fef2f2; font-weight: bold; text-align: center;">${empData.stats.absent}</td>
-                        <td style="border: 1px solid #000; background-color: #fff7ed; font-weight: bold; text-align: center;">${empData.stats.half}</td>
-                        <td style="border: 1px solid #000; background-color: #f8fafc; text-align: center; font-size: 10px;">${empData.recorders || "-"}</td>
-                    </tr>
-                `;
-        }).join('')}
-            <tr><td colspan="${totalColumns + 6}" style="border: none; height: 30px;"></td></tr> 
-        `;
-    };
-
-    const handleExport = () => {
-        let tableContent = "";
-        let filename = "";
-        let exportTitle = `AVSECO - ATTENDANCE REPORT ${selectedYear}`;
-
-        if (exportRange === "month") {
-            tableContent = generateTableHTML(selectedYear, selectedMonth, currentMonthData, daysInCurrentView);
-            filename = `Attendance_Report_${months[selectedMonth].toUpperCase()}_${selectedYear}`;
-        } else {
-            for (let m = 0; m < 12; m++) {
-                const mDays = getDaysInMonth(selectedYear, m);
-                const mData = generateMonthData(selectedYear, m);
-                tableContent += generateTableHTML(selectedYear, m, mData, mDays);
+            // COLUMN WIDTHS
+            worksheet.getColumn(1).width = 5;
+            worksheet.getColumn(2).width = 22;
+            for (let i = 3; i <= daysInCurrentView.length + 2; i++) {
+                worksheet.getColumn(i).width = 3.5;
             }
-            filename = `Attendance_Report_ANNUAL_${selectedYear}`;
+            worksheet.getColumn(daysInCurrentView.length + 3).width = 9;
+            worksheet.getColumn(daysInCurrentView.length + 4).width = 9;
+            worksheet.getColumn(daysInCurrentView.length + 5).width = 6;
+
+            // FREEZE: S.No + Name + header rows
+            worksheet.views = [{ state: 'frozen', xSplit: 2, ySplit: 5 }];
+
+            // DOWNLOAD
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = `Attendance_${months[selectedMonth]}_${selectedYear}.xlsx`;
+            anchor.click();
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error("Export Error:", error);
+            alert("Failed to export Excel. Please try again.");
         }
-
-        const fullHTML = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head>
-                <meta charset="utf-8">
-                <!--[if gte mso 9]>
-                <xml>
-                    <x:ExcelWorkbook>
-                        <x:ExcelWorksheets>
-                            <x:ExcelWorksheet>
-                                <x:Name>Attendance Report</x:Name>
-                                <x:WorksheetOptions>
-                                    <x:DisplayGridlines/>
-                                </x:WorksheetOptions>
-                            </x:ExcelWorksheet>
-                        </x:ExcelWorksheets>
-                    </x:ExcelWorkbook>
-                </xml>
-                <![endif]-->
-            </head>
-            <body>
-                <table>
-                    <thead>
-                        <tr>
-                            <th colspan="38" style="height: 60px; font-size: 28px; font-weight: bold; text-align: center; vertical-align: middle; border: none; background-color: #ffffff; color: #006A4E;">
-                                ${exportTitle}
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>${tableContent}</tbody>
-                </table>
-            </body>
-            </html>
-        `;
-
-        const blob = new Blob([fullHTML], { type: 'application/vnd.ms-excel' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${filename}.xls`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     };
+    const handleExportYearlyExcel = async () => {
+        try {
+            const ExcelJS = (await import('exceljs')).default;
+            const workbook = new ExcelJS.Workbook();
+            
+            // 1. Fetch entire year's data in ONE call
+            const yearlyData = await attendanceApi.getByYear(selectedYear);
+            
+            // 2. Map data by date for easy access
+            const yearMap = {};
+            yearlyData.forEach(r => {
+                if (!yearMap[r.date]) yearMap[r.date] = [];
+                const empId = r.employee?._id ? String(r.employee._id) : String(r.employee);
+                yearMap[r.date].push({ ...r, empId });
+            });
+
+            // Loop through each month
+            for (let m = 0; m < 12; m++) {
+                const monthName = months[m];
+                const daysInMonth = new Date(selectedYear, m + 1, 0).getDate();
+                const worksheet = workbook.addWorksheet(monthName);
+                
+                const days = [];
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dateObj = new Date(selectedYear, m, i);
+                    const iso = `${selectedYear}-${String(m + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
+                    days.push({ date: i, isSunday: dateObj.getDay() === 0, isoDate: iso });
+                }
+                
+                const totalCols = days.length + 5;
+                const colLetter = (n) => {
+                    let s = '';
+                    while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
+                    return s;
+                };
+                const thinBorder = {
+                    top: { style: 'thin', color: { argb: 'FF000000' } },
+                    left: { style: 'thin', color: { argb: 'FF000000' } },
+                    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                    right: { style: 'thin', color: { argb: 'FF000000' } }
+                };
+
+                // Title row
+                worksheet.mergeCells(`A1:${colLetter(totalCols)}1`);
+                worksheet.getRow(1).getCell(1).value = `AVSECO - ATTENDANCE REPORT ${monthName} ${selectedYear}`;
+                worksheet.getRow(1).getCell(1).font = { bold: true, size: 14, color: { argb: 'FF006A4E' } };
+                worksheet.getRow(1).getCell(1).alignment = { horizontal: 'center' };
+
+                // Header row
+                const headerValues = ['S.No', 'Employee Name', ...days.map(d => d.date), 'PRESE NT', 'ABSE NT', 'HALF'];
+                const headerRow = worksheet.addRow(headerValues);
+                headerRow.eachCell((cell, colNum) => {
+                    cell.border = thinBorder;
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                    if (colNum <= 2) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF006A4E' } };
+                        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                    } else if (colNum <= days.length + 2) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCD34D' } };
+                    }
+                });
+
+                // Data rows
+                employees.forEach((emp, index) => {
+                    const empStats = { present: 0, absent: 0, half: 0 };
+                    const dailyStatus = days.map(day => {
+                        if (day.isSunday) return 'SUN';
+                        const record = (yearMap[day.isoDate] || []).find(r => r.empId === emp.id);
+                        if (!record) return '';
+                        if (record.status === 'present') { empStats.present++; return 'P'; }
+                        if (record.status === 'absent') { empStats.absent++; return 'A'; }
+                        if (record.status === 'half') { empStats.present += 0.5; empStats.half++; return 'HD'; }
+                        return '';
+                    });
+
+                    const row = worksheet.addRow([index + 1, emp.name, ...dailyStatus, empStats.present, empStats.absent, empStats.half]);
+                    row.eachCell((cell) => { cell.border = thinBorder; cell.alignment = { horizontal: 'center' }; });
+                });
+
+                // Auto width
+                worksheet.getColumn(1).width = 5;
+                worksheet.getColumn(2).width = 20;
+                for (let i = 3; i <= days.length + 5; i++) worksheet.getColumn(i).width = 4;
+            }
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = `Attendance_Yearly_${selectedYear}.xlsx`;
+            anchor.click();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Yearly Export Error:", error);
+            alert("Failed to export yearly report.");
+        }
+    };
+
 
     return (
-        <div className="attendance-report-page">
+        <div className="attendance-report-page" onClick={() => { setShowYearDropdown(false); setShowMonthDropdown(false); setShowExportDropdown(false); }}>
             <div className="ar-banner-header">
                 <div className="ar-banner-left">
-                    <h1 className="ar-banner-title">Attendance Reports</h1>
+                    <h1 className="ar-banner-title">Monthly Attendance</h1>
                 </div>
-                {!isMobile && (
-                    <div className="ar-banner-actions">
-                        <div className="custom-dropdown range-selector" onClick={(e) => e.stopPropagation()}>
-                            <button
-                                className="ar-banner-btn"
-                                onClick={() => setShowRangeDropdown(!showRangeDropdown)}
-                            >
-                                {exportRange === "month" ? "Current Month" : `Full Year ${selectedYear}`}
-                                <span className="material-symbols-outlined">expand_more</span>
-                            </button>
-                            {showRangeDropdown && (
-                                <div className="dropdown-menu">
-                                    <div
-                                        className={`dropdown-item ${exportRange === "month" ? "active" : ""}`}
-                                        onClick={() => { setExportRange("month"); setShowRangeDropdown(false); }}
-                                    >
-                                        Current Month
-                                    </div>
-                                    <div
-                                        className={`dropdown-item ${exportRange === "year" ? "active" : ""}`}
-                                        onClick={() => { setExportRange("year"); setShowRangeDropdown(false); }}
-                                    >
-                                        Full Year {selectedYear}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <button className="ar-banner-btn ar-banner-btn-solid" onClick={handleExport}>
+
+                <div className="ar-banner-right">
+                    <div className="custom-dropdown" onClick={(e) => e.stopPropagation()}>
+                        <button className="ar-export-btn" onClick={() => setShowExportDropdown(!showExportDropdown)}>
                             <span className="material-symbols-outlined">download</span>
-                            Export Data
+                            Export Report
+                            <span className="material-symbols-outlined" style={{ marginLeft: '4px' }}>
+                                {showExportDropdown ? 'arrow_drop_up' : 'arrow_drop_down'}
+                            </span>
                         </button>
+                        {showExportDropdown && (
+                            <div className="dropdown-menu export-dropdown">
+                                <div className="dropdown-item" onClick={() => { handleExportExcel(); setShowExportDropdown(false); }}>
+                                    <span className="material-symbols-outlined">description</span>
+                                    <span>Current Month ({months[selectedMonth]})</span>
+                                </div>
+                                <div className="dropdown-item" onClick={() => { handleExportYearlyExcel(); setShowExportDropdown(false); }}>
+                                    <span className="material-symbols-outlined">calendar_today</span>
+                                    <span>Full Year ({selectedYear})</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
 
-            {/* Filters Card */}
-            <div className="filters-card">
+            <div className="report-filters-row">
                 <div className="filter-item">
-                    <label className="filter-label">Year:</label>
+                    <label className="filter-label">YEAR:</label>
                     <div className="custom-dropdown" onClick={(e) => e.stopPropagation()}>
-                        <button
-                            className="report-select"
-                            onClick={() => setShowYearDropdown(!showYearDropdown)}
-                        >
+                        <button className="ar-filter-btn" onClick={() => setShowYearDropdown(!showYearDropdown)}>
                             {selectedYear}
-                            <span className="material-symbols-outlined select-arrow">expand_more</span>
+                            <span className="material-symbols-outlined dropdown-arrow">expand_more</span>
                         </button>
                         {showYearDropdown && (
                             <div className="dropdown-menu">
-                                {years.map(y => (
-                                    <div
-                                        key={y}
-                                        className={`dropdown-item ${selectedYear === y ? "active" : ""}`}
-                                        onClick={() => { setSelectedYear(y); setShowYearDropdown(false); }}
-                                    >
+                                {[2024, 2025, 2026].map(y => (
+                                    <div key={y} className={`dropdown-item ${selectedYear === y ? "active" : ""}`} onClick={() => { setSelectedYear(y); setShowYearDropdown(false); }}>
                                         {y}
                                     </div>
                                 ))}
@@ -333,35 +374,26 @@ const AttendanceReport = () => {
                 </div>
 
                 <div className="filter-item">
-                    <label className="filter-label">Month:</label>
-                    <div className="month-nav-group">
+                    <label className="filter-label">MONTH:</label>
+                    <div className="ar-month-nav">
                         <button onClick={() => setSelectedMonth(prev => prev === 0 ? 11 : prev - 1)} className="nav-arrow-btn">
                             <span className="material-symbols-outlined">chevron_left</span>
                         </button>
-
                         <div className="custom-dropdown" onClick={(e) => e.stopPropagation()}>
-                            <button
-                                className="month-display-select"
-                                onClick={() => setShowMonthDropdown(!showMonthDropdown)}
-                            >
+                            <button className="month-display-select" onClick={() => setShowMonthDropdown(!showMonthDropdown)}>
                                 {months[selectedMonth]}
                                 <span className="material-symbols-outlined month-arrow">expand_more</span>
                             </button>
                             {showMonthDropdown && (
                                 <div className="dropdown-menu scrollable">
                                     {months.map((m, idx) => (
-                                        <div
-                                            key={idx}
-                                            className={`dropdown-item ${selectedMonth === idx ? "active" : ""}`}
-                                            onClick={() => { setSelectedMonth(idx); setShowMonthDropdown(false); }}
-                                        >
+                                        <div key={idx} className={`dropdown-item ${selectedMonth === idx ? "active" : ""}`} onClick={() => { setSelectedMonth(idx); setShowMonthDropdown(false); }}>
                                             {m}
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </div>
-
                         <button onClick={() => setSelectedMonth(prev => prev === 11 ? 0 : prev + 1)} className="nav-arrow-btn">
                             <span className="material-symbols-outlined">chevron_right</span>
                         </button>
@@ -369,7 +401,6 @@ const AttendanceReport = () => {
                 </div>
             </div>
 
-            {/* Status Legend */}
             <div className="status-legend">
                 <div className="legend-item"><span className="legend-box present">P</span> Present</div>
                 <div className="legend-item"><span className="legend-box absent">A</span> Absent</div>
@@ -377,21 +408,21 @@ const AttendanceReport = () => {
                 <div className="legend-item"><span className="legend-box stoppage">WS</span> Work Stoppage</div>
             </div>
 
-            {/* Matrix Table Card */}
-            <div className="report-table-card">
-                <div className="table-scroll-container">
-                    <table className="matrix-table">
+            <div className="attendance-report-main-card">
+                <div className="matrix-scroll-wrapper">
+                    <table className="attendance-data-matrix">
                         <thead>
                             <tr>
-                                <th className="sticky-col-no">#</th>
-                                <th className="sticky-col">Employee</th>
+                                <th className="excel-header-green sticky-col-no" rowSpan="1">S.No</th>
+                                <th className="excel-header-green sticky-col" rowSpan="1">Employee Name</th>
                                 {daysInCurrentView.map(day => (
-                                    <th key={day.date} style={{ color: day.isSunday ? '#ef4444' : 'inherit' }}>
-                                        <div>{day.date}</div>
+                                    <th key={day.date} className={`excel-header-yellow ${day.isSunday ? 'sunday-header' : ''}`}>
+                                        {day.date}
                                     </th>
                                 ))}
-                                <th>Pres</th>
-                                <th>Abs</th>
+                                <th className="excel-header-summary">PRESE NT</th>
+                                <th className="excel-header-summary">ABSE NT</th>
+                                <th className="excel-header-summary">HALF</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -399,34 +430,34 @@ const AttendanceReport = () => {
                                 const data = currentMonthData[emp.id];
                                 return (
                                     <tr key={emp.id}>
-                                        <td className="sticky-col-no">
-                                            {index + 1}
+                                        <td className="sticky-col-no excel-cell-sno">{index + 1}</td>
+                                        <td className="sticky-col excel-cell-name">
+                                            <span className="emp-name-excel">{emp.name}</span>
                                         </td>
-                                        <td className="sticky-col">
-                                            <div className="emp-cell-info">
-                                                <span className="emp-name">{emp.name}</span>
-                                            </div>
-                                        </td>
-
                                         {data.daily.map((status, idx) => {
                                             const isSun = daysInCurrentView[idx]?.isSunday;
-                                            let statusClass = "status-cell";
-                                            if (isSun) statusClass += " sunday";
-                                            else if (status === 'P') statusClass += " present";
-                                            else if (status === 'A') statusClass += " absent";
-                                            else if (status === 'HD') statusClass += " half";
-                                            else if (status === 'WS') statusClass += " stoppage";
+                                            let cellClass = "excel-data-cell";
+                                            if (isSun) cellClass += " sunday-col";
+                                            
+                                            let displayStatus = status === '-' ? '' : status;
+                                            if (status === 'Sunday') displayStatus = 'SUN';
+
+                                            let statusClass = "";
+                                            if (displayStatus === 'P') statusClass = "status-p";
+                                            else if (displayStatus === 'A') statusClass = "status-a";
+                                            else if (displayStatus === 'HD') statusClass = "status-hd";
+                                            else if (displayStatus === 'WS') statusClass = "status-ws";
+                                            else if (displayStatus === 'SUN') statusClass = "status-sun";
 
                                             return (
-                                                <td key={idx} className={statusClass}>
-                                                    <div className="status-indicator">
-                                                        {status === 'Sunday' ? 'S' : (status === '-' ? ' ' : status)}
-                                                    </div>
+                                                <td key={idx} className={`${cellClass} ${statusClass}`}>
+                                                    {displayStatus}
                                                 </td>
                                             );
                                         })}
-                                        <td className="stat-cell-val pres">{data.stats.present}</td>
-                                        <td className="stat-cell-val abs">{data.stats.absent}</td>
+                                        <td className="excel-stat-cell">{data.stats.present}</td>
+                                        <td className="excel-stat-cell">{data.stats.absent}</td>
+                                        <td className="excel-stat-cell">{data.stats.half}</td>
                                     </tr>
                                 );
                             })}

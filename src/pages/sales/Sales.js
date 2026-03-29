@@ -500,7 +500,7 @@ const Sales = () => {
             {/* ===== PREMIUM ANALYTICS HEADER ===== */}
             <div className="page-header premium-header">
                 <div>
-                    <h1 className="page-title">Sales Management</h1>
+                    <h1 className="page-title">Sale</h1>
                 </div>
                 <div className="header-actions">
                     <button className="btn-export-premium" onClick={handleExport} disabled={exportLoading}>

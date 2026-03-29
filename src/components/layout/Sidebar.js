@@ -101,7 +101,7 @@ const Sidebar = () => {
       path: "/sales",
       module: "sales",
       children: [
-        { label: "Create Sale", path: "/sales" },
+        { label: "Sale", path: "/sales" },
         { label: "Transaction History", path: "/sales/history" }
       ]
     },

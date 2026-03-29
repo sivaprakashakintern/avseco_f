@@ -227,16 +227,11 @@ const SalesHistory = () => {
             <div className="page-header premium-header">
                 <div className="header-content">
                     <h1 className="page-title">Transaction History</h1>
-                    <p className="page-subtitle">View and manage all your past sales records</p>
                 </div>
-                <div className="header-actions">
+                <div className="history-actions">
                     <button className="btn-export-premium" onClick={() => setShowExportModal(true)}>
                         <span className="material-symbols-outlined">download</span>
                         Export History
-                    </button>
-                    <button className="btn-transfer-premium" onClick={fetchSales}>
-                        <span className="material-symbols-outlined">refresh</span>
-                        Refresh
                     </button>
                 </div>
             </div>
@@ -501,10 +496,19 @@ const SalesHistory = () => {
                                 <div>By: {selectedBill.deliveredBy}</div>
                             </div>
                         </div>
-                        <div className="no-print" style={{ padding: '20px', textAlign: 'right', background: '#f8fafc' }}>
-                            <button onClick={() => setShowBillModal(false)} style={{ marginRight: '10px' }}>Close</button>
-                            <button onClick={() => window.print()} style={{ background: '#1a6b3c', color: '#fff' }}>Print</button>
-                            <button onClick={() => sendInvoiceToWhatsApp(selectedBill)} style={{ background: '#25D366', color: '#fff', marginLeft: '10px' }}>WhatsApp</button>
+                        <div className="bill-modal-footer no-print">
+                            <button className="bill-btn bill-btn-close" onClick={() => setShowBillModal(false)}>
+                                <span className="material-symbols-outlined">close</span>
+                                Close
+                            </button>
+                            <button className="bill-btn bill-btn-print" onClick={() => window.print()}>
+                                <span className="material-symbols-outlined">print</span>
+                                Print
+                            </button>
+                            <button className="bill-btn bill-btn-whatsapp" onClick={() => sendInvoiceToWhatsApp(selectedBill)}>
+                                <span className="material-symbols-outlined">Chat</span>
+                                WhatsApp
+                            </button>
                         </div>
                     </div>
                 </div>

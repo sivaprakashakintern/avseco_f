@@ -52,6 +52,7 @@ const AttendanceLog = () => {
   const [currentDate, setCurrentDate] = useState(today());
   const dateKey = toDateKey(currentDate);
   const isToday = toDateKey(currentDate) === toDateKey(today());
+  const isSunday = currentDate.getDay() === 0;
 
   const goToPreviousDay = () => setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() - 1); return nd; });
   const goToNextDay = () => { if (!isToday) setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() + 1); return nd; }); };
@@ -258,9 +259,6 @@ const AttendanceLog = () => {
       <div className="att-banner-header">
         <div className="att-banner-left">
           <h1 className="att-banner-title">Attendance Management</h1>
-          <p className="att-banner-subtitle">
-            {formatDate(currentDate)}
-          </p>
         </div>
       </div>
 
@@ -280,12 +278,20 @@ const AttendanceLog = () => {
           </button>
         </div>
         <div className="att-date-actions">
-          <button className="att-btn att-btn-outline" onClick={() => setShowStoppageModal(true)}>
+          <button 
+            className="att-btn att-btn-outline" 
+            onClick={() => setShowStoppageModal(true)}
+            disabled={isSunday || !isToday}
+          >
             <span className="material-symbols-outlined">warning</span>
             Work Stoppage
           </button>
           {!isMobile && (
-            <button className="att-btn att-btn-primary" onClick={handleSaveAttendance} disabled={saveLoading}>
+            <button 
+              className="att-btn att-btn-primary" 
+              onClick={handleSaveAttendance} 
+              disabled={saveLoading || isSunday || !isToday}
+            >
               <span className="material-symbols-outlined">{saveLoading ? "hourglass_top" : "save"}</span>
               {saveLoading ? "Saving…" : "Save Attendance"}
             </button>
@@ -367,7 +373,11 @@ const AttendanceLog = () => {
 
         <div className="att-filter-spacer" />
 
-        <button className="att-btn att-btn-success-outline" onClick={handleMarkAllPresent}>
+        <button 
+          className="att-btn att-btn-success-outline" 
+          onClick={handleMarkAllPresent}
+          disabled={isSunday || !isToday}
+        >
           <span className="material-symbols-outlined">done_all</span>
           Mark All Present
         </button>
@@ -379,7 +389,7 @@ const AttendanceLog = () => {
             className="att-btn att-btn-primary" 
             style={{ width: '100%', justifyContent: 'center', height: '50px', borderRadius: '14px' }}
             onClick={handleSaveAttendance} 
-            disabled={saveLoading}
+            disabled={saveLoading || isSunday || !isToday}
           >
             <span className="material-symbols-outlined">{saveLoading ? "hourglass_top" : "save"}</span>
             {saveLoading ? "Saving…" : "Save Attendance"}
@@ -406,8 +416,7 @@ const AttendanceLog = () => {
                   <th className="text-center" style={{ width: '50px' }}>S.NO</th>
                   <th>Employee</th>
                   <th>Department</th>
-                  <th>Details</th>
-                  <th className="text-center">Mark Attendance</th>
+                  <th className="text-center" style={{ width: '180px' }}>Mark Attendance</th>
                 </tr>
               </thead>
               <tbody>
@@ -430,48 +439,13 @@ const AttendanceLog = () => {
                       </td>
                       <td><span className="att-dept-badge">{emp.department}</span></td>
 
-                      {/* ── DETAILS COLUMN ── */}
-                      <td className="att-td-details">
-                        {emp.status === "half" && emp.halfDayTime ? (
-                          <div className="att-detail-box att-detail-half">
-                            <span className="att-detail-icon material-symbols-outlined">schedule</span>
-                            <div className="att-detail-content">
-                              <span className="att-detail-time">
-                                {emp.halfDayTime.from} – {emp.halfDayTime.to}
-                              </span>
-                              {emp.note && (
-                                <span className="att-detail-note">{emp.note}</span>
-                              )}
-                            </div>
-                          </div>
-                        ) : emp.status === "absent" && emp.note ? (
-                          <div className="att-detail-box att-detail-absent">
-                            <span className="att-detail-icon material-symbols-outlined">info</span>
-                            <span className="att-detail-note">{emp.note}</span>
-                          </div>
-                        ) : emp.status === "present" ? (
-                          <span className="att-detail-present">—</span>
-                        ) : (
-                          <span className="att-detail-present">—</span>
-                        )}
-                      </td>
-
                       <td className="text-center">
                         <div className="att-actions-cell">
                           <div className="att-toggle-group">
-                            <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "present")} title="Present">P</button>
-                            <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "half")} title="Half Day">H</button>
-                            <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "absent")} title="Absent">A</button>
+                            <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => !isSunday && isToday && handleStatusChange(emp.id, "present")} disabled={isSunday || !isToday} title={isSunday ? "Sunday Restricted" : !isToday ? "View Only" : "Present"}>P</button>
+                            <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => !isSunday && isToday && handleStatusChange(emp.id, "half")} disabled={isSunday || !isToday} title={isSunday ? "Sunday Restricted" : !isToday ? "View Only" : "Half Day"}>H</button>
+                            <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => !isSunday && isToday && handleStatusChange(emp.id, "absent")} disabled={isSunday || !isToday} title={isSunday ? "Sunday Restricted" : !isToday ? "View Only" : "Absent"}>A</button>
                           </div>
-                          {isAdmin && (
-                            <button 
-                              className="att-remind-btn" 
-                              onClick={() => handleSendReminder(emp)}
-                              title="Send Reminder"
-                            >
-                              <span className="material-symbols-outlined">campaign</span>
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -510,29 +484,15 @@ const AttendanceLog = () => {
                   <div className="att-mobile-info">
                     <span className="att-mobile-name">{emp.name}</span>
                     <span className="att-mobile-dept">{emp.department}</span>
-                    {emp.status === "half" && emp.halfDayTime && (
-                      <span className="att-mobile-extra">{emp.halfDayTime.from}–{emp.halfDayTime.to}</span>
-                    )}
-                    {emp.status === "absent" && emp.note && (
-                      <span className="att-mobile-extra">{emp.note.slice(0, 18)}{emp.note.length > 18 ? "…" : ""}</span>
-                    )}
                   </div>
 
                   {/* P / H / A */}
                   <div className="att-mobile-right">
                     <div className="att-toggle-group att-mobile-toggle">
-                      <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "present")}>P</button>
-                      <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "half")}>H</button>
-                      <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => handleStatusChange(emp.id, "absent")}>A</button>
+                      <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => !isSunday && isToday && handleStatusChange(emp.id, "present")} disabled={isSunday || !isToday}>P</button>
+                      <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => !isSunday && isToday && handleStatusChange(emp.id, "half")} disabled={isSunday || !isToday}>H</button>
+                      <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => !isSunday && isToday && handleStatusChange(emp.id, "absent")} disabled={isSunday || !isToday}>A</button>
                     </div>
-                    {isAdmin && (
-                      <button 
-                        className="att-remind-btn mobile" 
-                        onClick={() => handleSendReminder(emp)}
-                      >
-                        <span className="material-symbols-outlined">campaign</span>
-                      </button>
-                    )}
                   </div>
                 </div>
               ))

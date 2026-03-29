@@ -2484,4 +2484,70 @@
   transform: translateY(-1px) !important;
 }
 
+/* ===== BILL MODAL PREMIUM BUTTONS ===== */
+.bill-modal-footer {
+  padding: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.bill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.bill-btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.bill-btn-close {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.bill-btn-close:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.bill-btn-print {
+  background: #006A4E;
+  color: white;
+  box-shadow: 0 4px 10px rgba(0, 106, 78, 0.2);
+}
+
+.bill-btn-print:hover {
+  background: #004d39;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0, 106, 78, 0.3);
+}
+
+.bill-btn-whatsapp {
+  background: #25D366;
+  color: white;
+  box-shadow: 0 4px 10px rgba(37, 211, 102, 0.2);
+}
+
+.bill-btn-whatsapp:hover {
+  background: #128C7E;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(18, 140, 126, 0.3);
+}
+
+
 

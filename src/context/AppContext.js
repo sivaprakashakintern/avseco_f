@@ -31,7 +31,7 @@ export const AppProvider = ({ children }) => {
     const [toast, setToast] = useState(null); // { message, type }
     const [isUpdating, setIsUpdating] = useState(false);
     const [hasFetched, setHasFetched] = useState(false);
-    const { user, refreshUser, hasAccess } = useAuth();
+    const { user, refreshUser, hasAccess, isAdmin } = useAuth();
     
     // ✅ Helper to avoid UTC timezone shift (IST+5:30 bug)
     const toLocalDateKey = useCallback((date) => {
@@ -134,6 +134,97 @@ export const AppProvider = ({ children }) => {
             }
         }
     }, [todayStr, user, refreshUser, hasAccess]);
+
+    // ── DERIVED METRICS ─────────────────────────────────────────────────────────
+    
+    // Group production by size/product
+    const stockData = useMemo(() => {
+        return products.map(product => {
+            const rawPName = (product.name || "").toLowerCase().trim();
+            const rawPSize = (product.size || "").toLowerCase().trim();
+
+            const produced = productionHistory.reduce((sum, h) => {
+                const hProduct = (h.product || "").toLowerCase().trim();
+                const hSize = (h.size || "").toLowerCase().trim();
+                
+                const matchesSize = hSize === rawPSize;
+                const matchesName = hProduct === rawPName || hProduct.includes(rawPName) || rawPName.includes(hProduct) || hProduct === "";
+                
+                if (matchesSize && matchesName) {
+                    return sum + (h.quantity || h.qty || 0);
+                }
+                return sum;
+            }, 0);
+            
+            const sold = salesHistory.reduce((sum, sale) => {
+                if (sale.status && (sale.status.toLowerCase().includes('cancel') || sale.status.toLowerCase().includes('reject'))) return sum;
+                
+                const salesQty = (sale.saleItems || []).reduce((itemSum, item) => {
+                    const sName = (item.productName || item.baseName || "").toLowerCase().trim();
+                    const sSize = (item.size || "").toLowerCase().trim();
+                    
+                    const matchesSize = sSize === rawPSize;
+                    const matchesName = sName === rawPName || sName.includes(rawPName) || rawPName.includes(sName);
+                    
+                    if (matchesSize && matchesName) {
+                        return itemSum + (item.qty || item.quantity || 0);
+                    }
+                    return itemSum;
+                }, 0);
+                
+                return sum + salesQty;
+            }, 0);
+
+            const quantity = (product.stock || 0) + produced - sold;
+            const totalValue = quantity * Number(product.sellPrice || 0);
+            
+            return {
+                ...product,
+                quantity,
+                perPlateRate: Number(product.sellPrice || 0),
+                totalValue
+            };
+        });
+    }, [products, productionHistory, salesHistory]);
+
+    // ── Low Stock Notifications ──────────────────────────────────────────────────
+    const [lastNotifiedProducts, setLastNotifiedProducts] = useState(new Set());
+
+    useEffect(() => {
+        if (!user || !isAdmin) return;
+        if (stockData.length === 0) return;
+
+        const checkLowStock = async () => {
+            const lowStockItems = stockData.filter(item => item.quantity < 2000);
+            
+            for (const item of lowStockItems) {
+                const productKey = `${item.name}-${item.size}`;
+                
+                // Only notify if we haven't notified for this product in this session AND it's not already in notifications
+                const alreadyNotifiedInSession = lastNotifiedProducts.has(productKey);
+                const alreadyInNotifications = notifications.some(n => 
+                    !n.isRead && n.type === 'admin_push' && n.title.includes('LOW STOCK') && n.title.includes(item.name) && n.title.includes(item.size)
+                );
+
+                if (!alreadyNotifiedInSession && !alreadyInNotifications) {
+                    try {
+                        await notificationApi.sendPush({
+                            title: `⚠️ LOW STOCK ALERT: ${item.name} (${item.size})`,
+                            message: `Stock level for ${item.name} (${item.size}) has fallen below 2,000 units. Current stock: ${item.quantity.toLocaleString()} units. Please plan production soon.`,
+                            link: '/stock'
+                        });
+                        setLastNotifiedProducts(prev => new Set([...prev, productKey]));
+                    } catch (e) {
+                        console.error("Failed to send low stock alert:", e);
+                    }
+                }
+            }
+        };
+
+        // Delay check slightly to ensure data is settled
+        const timer = setTimeout(checkLowStock, 5000);
+        return () => clearTimeout(timer);
+    }, [stockData, notifications, user, lastNotifiedProducts]);
 
     useEffect(() => {
         if (!user) return;
@@ -582,55 +673,7 @@ export const AppProvider = ({ children }) => {
         }
     }, []);
 
-    // ── DERIVED METRICS ─────────────────────────────────────────────────────────
-    
-    // Group production by size/product
-    const stockData = products.map(product => {
-        const rawPName = (product.name || "").toLowerCase().trim();
-        const rawPSize = (product.size || "").toLowerCase().trim();
 
-        const produced = productionHistory.reduce((sum, h) => {
-            const hProduct = (h.product || "").toLowerCase().trim();
-            const hSize = (h.size || "").toLowerCase().trim();
-            
-            const matchesSize = hSize === rawPSize;
-            const matchesName = hProduct === rawPName || hProduct.includes(rawPName) || rawPName.includes(hProduct) || hProduct === "";
-            
-            if (matchesSize && matchesName) {
-                return sum + (h.quantity || h.qty || 0);
-            }
-            return sum;
-        }, 0);
-        
-        const sold = salesHistory.reduce((sum, sale) => {
-            if (sale.status && (sale.status.toLowerCase().includes('cancel') || sale.status.toLowerCase().includes('reject'))) return sum;
-            
-            const salesQty = (sale.saleItems || []).reduce((itemSum, item) => {
-                const sName = (item.productName || item.baseName || "").toLowerCase().trim();
-                const sSize = (item.size || "").toLowerCase().trim();
-                
-                const matchesSize = sSize === rawPSize;
-                const matchesName = sName === rawPName || sName.includes(rawPName) || rawPName.includes(sName);
-                
-                if (matchesSize && matchesName) {
-                    return itemSum + (item.qty || item.quantity || 0);
-                }
-                return itemSum;
-            }, 0);
-            
-            return sum + salesQty;
-        }, 0);
-
-        const quantity = (product.stock || 0) + produced - sold;
-        const totalValue = quantity * Number(product.sellPrice || 0);
-        
-        return {
-            ...product,
-            quantity,
-            perPlateRate: Number(product.sellPrice || 0),
-            totalValue
-        };
-    });
 
     const totalStockUnits = stockData.reduce((sum, s) => sum + s.quantity, 0);
     const totalStockValue = stockData.reduce((sum, s) => sum + s.totalValue, 0);

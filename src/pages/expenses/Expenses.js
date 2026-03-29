@@ -204,8 +204,8 @@ const Expenses = () => {
             <div className="stock-table-container">
                 <div className="table-header">
                     <h3>
-                        <span className="material-symbols-outlined" style={{ color: '#006A4E' }}>history</span>
-                        Recent Expenses
+                        <span className="material-symbols-outlined" style={{ color: '#006A4E' }}>today</span>
+                        Today's Expenses
                     </h3>
                 </div>
 
@@ -222,7 +222,7 @@ const Expenses = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {expenses.slice(0, 10).map((expense, index) => (
+                            {expenses.filter(ex => formatDate(ex.date) === formatDate(new Date())).map((expense, index) => (
                                 <tr key={expense.id}>
                                     <td style={{ fontWeight: '700', color: '#94a3b8' }}>{index + 1}</td>
                                     <td style={{ fontWeight: '500' }}>{formatDate(expense.date)}</td>
@@ -280,8 +280,8 @@ const Expenses = () => {
 
                 {/* Mobile Cards View */}
                 <div className="mobile-history-cards">
-                    {expenses.length > 0 ? (
-                        expenses.slice(0, 10).map((ex, index) => {
+                    {expenses.filter(ex => formatDate(ex.date) === formatDate(new Date())).length > 0 ? (
+                        expenses.filter(ex => formatDate(ex.date) === formatDate(new Date())).map((ex, index) => {
                             const cfg = CATEGORY_CONFIG[ex.category] || { icon: "payments", color: "#006A4E" };
                             const isExpanded = expandedExpenseId === ex.id;
 
@@ -341,7 +341,7 @@ const Expenses = () => {
                     ) : (
                         <div className="no-data-mobile">
                             <span className="material-symbols-outlined">search_off</span>
-                            <p>No expense records found</p>
+                            <p>No expenses recorded today</p>
                         </div>
                     )}
                 </div>

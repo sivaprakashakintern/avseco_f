@@ -21,11 +21,12 @@
 
 /* ── Container ────────────────────────────────────────────── */
 .att-container {
-  padding: 28px 36px;
-  background: var(--att-bg);
+  padding: 40px 60px; /* Aligned with Monthly Attendance for luxury spacing */
+  background-color: #f8faf9;
   min-height: 100vh;
-  font-family: 'Inter', 'Manrope', sans-serif;
-  position: relative;
+  font-family: 'Manrope', -apple-system, sans-serif;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 /* ── Page Banner Header ───────────────────────────────────── */
@@ -35,11 +36,11 @@
   align-items: center;
   background: var(--att-primary);
   border-radius: 20px;
-  padding: 28px 36px;
+  padding: 24px 40px;
   margin-bottom: 24px;
-  gap: 16px;
+  gap: 24px;
   flex-wrap: wrap;
-  box-shadow: 0 8px 24px rgba(0, 106, 78, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 106, 78, 0.15);
 }
 
 .att-banner-title {
@@ -47,7 +48,7 @@
   font-weight: 800;
   color: #ffffff;
   margin: 0 0 4px 0;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.01em;
 }
 
 .att-banner-subtitle {
@@ -67,13 +68,13 @@
 .att-banner-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 40px;
+  gap: 10px;
+  padding: 12px 28px;
+  border-radius: 50px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.15);
   color: #ffffff;
   transition: var(--att-transition);
@@ -969,6 +970,12 @@ td.text-center {
   color: var(--att-text);
 }
 
+.att-toggle-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .att-p.active {
   background: #22c55e;
   color: white;
@@ -1078,6 +1085,53 @@ td.text-center {
   font-size: 14px;
   display: flex;
   align-items: center;
+}
+
+.att-view-only-alert {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #f0f9ff;
+  border-left: 4px solid #0284c7;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  color: #0369a1;
+}
+
+.att-view-only-alert .material-symbols-outlined {
+  font-size: 32px;
+  color: #0284c7;
+}
+
+/* ── Sunday Holiday Alert ────────────────────────────────── */
+.att-sunday-holiday-alert {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff1f2;
+  border-left: 4px solid #e11d48;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  color: #9f1239;
+}
+
+.att-sunday-holiday-alert .material-symbols-outlined {
+  font-size: 32px;
+  color: #e11d48;
+}
+
+.ash-text strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+.ash-text p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
 }
 
 /* ── Toast ────────────────────────────────────────────────── */

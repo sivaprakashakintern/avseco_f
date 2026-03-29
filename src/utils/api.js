@@ -119,6 +119,10 @@ export const attendanceApi = {
     const { data } = await axios.get(`/attendance/${date}`);
     return data;
   },
+  getByYear: async (year) => {
+    const { data } = await axios.get(`/attendance/year/report/${year}`);
+    return data;
+  },
   saveBulk: async (date, records) => {
     const { data } = await axios.post('/attendance/bulk', { date, records });
     return data;
