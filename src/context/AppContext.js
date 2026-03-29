@@ -224,7 +224,7 @@ export const AppProvider = ({ children }) => {
         // Delay check slightly to ensure data is settled
         const timer = setTimeout(checkLowStock, 5000);
         return () => clearTimeout(timer);
-    }, [stockData, notifications, user, lastNotifiedProducts]);
+    }, [stockData, notifications, user, lastNotifiedProducts, isAdmin]);
 
     useEffect(() => {
         if (!user) return;

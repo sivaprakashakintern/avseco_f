@@ -46,7 +46,7 @@ const AttendanceLog = () => {
     updateAttendanceRecord,
     employees: globalEmployees
   } = useAppContext();
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
 
   // ── Date State ──────────────────────────────────────────────────────────────
   const [currentDate, setCurrentDate] = useState(today());
@@ -204,18 +204,7 @@ const AttendanceLog = () => {
     setStatusFilter("all");
   };
 
-  const handleSendReminder = async (emp) => {
-    try {
-      await notificationApi.sendPush({
-        title: "Attendance Notification",
-        message: `Hi ${emp.name}, please update your attendance status for today (${dateKey}).`,
-        targetAudience: emp.id
-      });
-      showToast(`Reminder sent to ${emp.name}`);
-    } catch (err) {
-      showToast("Failed to send reminder", "error");
-    }
-  };
+
 
   const [saveLoading, setSaveLoading] = useState(false);
   const handleSaveAttendance = async () => {

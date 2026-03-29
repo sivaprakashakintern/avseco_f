@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAppContext } from "../../context/AppContext.js";
 import { attendanceApi } from "../../utils/api.js";
 import "./AttendanceReport.css";
@@ -10,6 +10,7 @@ const months = [
 
 const AttendanceReport = () => {
     const { employees: allEmployees, attendanceRecords, fetchAttendanceForDate } = useAppContext();
+
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [showYearDropdown, setShowYearDropdown] = useState(false);
