@@ -14,6 +14,32 @@ import 'jspdf-autotable';
 
 const today = formatDate(new Date());
 
+const getWorkingDaysInMonth = (monthStr) => {
+  const d = dayjs(monthStr, 'YYYY-MM');
+  const daysInMonth = d.daysInMonth();
+  let count = 0;
+  for (let i = 1; i <= daysInMonth; i++) {
+    if (d.date(i).day() !== 0) count++;
+  }
+  return count;
+};
+
+const getWorkingDaysLeftInMonth = (monthStr) => {
+  const now = dayjs();
+  const targetMonth = dayjs(monthStr, 'YYYY-MM');
+  const isCurrentMonth = now.format('YYYY-MM') === monthStr;
+  
+  if (now.isAfter(targetMonth.endOf('month'))) return 0;
+  
+  const startDay = isCurrentMonth ? now.date() : 1;
+  const daysInMonth = targetMonth.daysInMonth();
+  let count = 0;
+  for (let i = startDay; i <= daysInMonth; i++) {
+    if (targetMonth.date(i).day() !== 0) count++;
+  }
+  return count;
+};
+
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
   const { 
@@ -85,18 +111,11 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     const product = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
     const productSizes = product ? product.sizes : [];
 
-    if (targetType === 'monthly') {
-      return ['All Sizes', ...productSizes];
-    }
-    return productSizes;
-  }, [selectedProduct, uniqueProducts, targetType]);
+    return ['All Sizes', ...productSizes];
+  }, [selectedProduct, uniqueProducts]);
 
   useEffect(() => {
-    if (targetType === 'monthly') {
-      setSelectedSize('All Sizes');
-    } else {
-      setSelectedSize('');
-    }
+    setSelectedSize('All Sizes');
   }, [targetType]);
 
   // ===== AUTO-FETCH / CARRY OVER TARGET LOGIC =====
@@ -248,21 +267,14 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     const isMonthly = targetType === 'monthly';
     const targetQuantity = parseInt(targetQty);
     
-    // ADDITIVE LOGIC: If target already exists, add to it
-    const existingTarget = (productionTargets || []).find(t => 
-      t.productName === product.name && 
-      t.productSize === (isMonthly ? 'All Sizes' : product.size) && 
-      t.date === (isMonthly ? selectedMonth : today)
-    );
-
-    const finalTargetQty = existingTarget ? (Number(existingTarget.targetQty) + targetQuantity) : targetQuantity;
+    const finalTargetQty = targetQuantity;
 
     // VALIDATION: New target cannot be less than already produced quantity
     const targetDate = isMonthly ? selectedMonth : today;
     const prodHistory = (productionHistory || []).filter(h => {
         if (h.product !== product.name) return false;
-        if (!isMonthly && h.size !== product.size) return false;
-        
+        if (selectedSize !== 'All Sizes' && h.size !== selectedSize) return false;
+
         const hDate = h.date;
         if (!hDate) return false;
         const parts = hDate.split('-');
@@ -284,12 +296,12 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     const targetPayload = {
       productName: product.name,
       sku: product.hsn || product.sku,
-      productSize: isMonthly ? 'All Sizes' : product.size,
+      productSize: selectedSize,
       targetQty: finalTargetQty,
       remainingQty: Math.max(0, finalTargetQty - alreadyProduced),
       status: finalTargetQty <= alreadyProduced ? 'completed' : 'pending',
       unit: 'Pieces',
-      size: isMonthly ? 'All Sizes' : product.size,
+      size: selectedSize,
       date: isMonthly ? selectedMonth : today,
       targetType: targetType
     };
@@ -356,17 +368,25 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
 
 
-  // ===== FILTERED & SORTED DATA =====
   const filteredData = (productionTargets || []).filter(item => {
     const productName = item.productName || '';
     const productSize = item.productSize || '';
     const sku = item.sku || '';
 
+    // Only show targets for products that still exist in our active catalog
+    const productExists = (dbProducts || []).some(p => p.name === productName);
+    if (!productExists) return false;
+
     const matchesSearch = (productName?.toLowerCase() || "").includes(searchTerm?.toLowerCase() || "") ||
       (productSize?.toLowerCase() || "").includes(searchTerm?.toLowerCase() || "") ||
       (sku?.toLowerCase() || "").includes(searchTerm?.toLowerCase() || "");
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    // Filter by active view mode (Daily or Monthly)
+    const matchesType = (item.date && item.date.length === 7) ? (targetType === 'monthly') : (targetType === 'daily');
+    const matchesDate = targetType === 'monthly' ? (item.date === selectedMonth) : (item.date === today);
+
+    return productExists && matchesSearch && matchesStatus && matchesType && matchesDate;
   }).sort((a, b) => {
     // 1. "All Sizes" targets always go to the bottom
     const aIsAll = a.productSize === 'All Sizes';
@@ -750,8 +770,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                 <tr>
                   <th className="hide-mobile">Product</th>
                   <th>Size</th>
-                  <th className="text-right">Target</th>
+                  <th className="text-right">Total Target</th>
                   <th className="text-right">Produced</th>
+                  <th className="text-right">Daily Target</th>
                   <th className="text-right">Balance</th>
                   <th className="hide-mobile">Progress</th>
                   <th className="hide-mobile">Status</th>
@@ -802,6 +823,16 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                         </td>
                         <td className="text-right font-bold">{displayTarget.toLocaleString()}</td>
                         <td className="text-right text-success-new font-bold">{displayProduced.toLocaleString()}</td>
+                        <td className="text-right">
+                          {item.date.length === 7 ? (
+                            <div className="recalc-target-box">
+                               <span className="recalc-value">
+                                 {Math.ceil(displayRemaining / Math.max(1, getWorkingDaysLeftInMonth(item.date))).toLocaleString()}
+                               </span>
+                               <span className="recalc-unit">/ day</span>
+                            </div>
+                          ) : '-'}
+                        </td>
                         <td className="text-right text-warning-new font-bold">{displayRemaining.toLocaleString()}</td>
                         <td className="hide-mobile">
                           <div className="progress-container-new">

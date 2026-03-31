@@ -274,7 +274,7 @@ const ProductList = () => {
 
   const stats = {
     totalProducts: uniqueProductNames.length,
-    totalVariants: products.length
+    totalVariants: new Set(products.map(p => p.size)).size
   };
 
   return (
@@ -383,16 +383,16 @@ const ProductList = () => {
               </button>
             </div>
             <div className="modal-body">
-              <div className="modal-row">
-                <div className="modal-form-group" style={{ flex: 1 }}>
-                  <label>Product Name *</label>
+              <div className="modal-row centered-row">
+                <div className="modal-form-group inline-group" style={{ flex: 1 }}>
+                  <label className="inline-label">Product Name *</label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
                     placeholder="Enter product name"
-                    className="modal-input"
+                    className="modal-input inline-input"
                   />
                 </div>
               </div>
@@ -544,14 +544,14 @@ const ProductList = () => {
               </button>
             </div>
             <div className="modal-body">
-              <div className="modal-row">
-                <div className="modal-form-group" style={{ flex: 1 }}>
-                  <label>Product Name (Read Only)</label>
+              <div className="modal-row centered-row">
+                <div className="modal-form-group inline-group" style={{ flex: 1 }}>
+                  <label className="inline-label">Product Name</label>
                   <input
                     type="text"
                     value={formData.name}
                     disabled
-                    className="modal-input disabled"
+                    className="modal-input disabled inline-input"
                   />
                 </div>
               </div>

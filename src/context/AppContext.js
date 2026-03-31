@@ -392,9 +392,12 @@ export const AppProvider = ({ children }) => {
         try {
             const data = await productionTargetApi.save(target);
             setProductionTargets(prev => {
-                const exists = prev.find(t => t.id === data._id || (t.productName === data.productName && t.productSize === data.productSize));
+                const exists = prev.find(t => 
+                    t.id === data._id || 
+                    (t.productName === data.productName && t.productSize === data.productSize && t.date === data.date)
+                );
                 if (exists) {
-                    return prev.map(t => (t.id === exists.id) ? { ...data, id: data._id } : t);
+                    return prev.map(t => (t.id === exists.id || t._id === data._id) ? { ...data, id: data._id } : t);
                 }
                 return [{ ...data, id: data._id }, ...prev];
             });
@@ -409,6 +412,14 @@ export const AppProvider = ({ children }) => {
         try {
             await productionTargetApi.delete(id);
             setProductionTargets(prev => prev.filter(t => t.id !== id));
+        } catch (error) {
+            console.error("Error deleting target:", error);
+            // If it's a 404, it's already gone from DB, so remove from local state too
+            if (error.response?.status === 404) {
+                setProductionTargets(prev => prev.filter(t => t.id !== id));
+            } else {
+                throw error;
+            }
         } finally {
             setIsUpdating(false);
         }

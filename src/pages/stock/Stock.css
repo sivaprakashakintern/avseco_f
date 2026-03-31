@@ -3069,9 +3069,11 @@
 }
 
 /* Alert Themes */
+.blue-alert .hero-icon-box span { color: #2563eb !important; }
 .yellow-alert .hero-icon-box span { color: #d97706 !important; }
 .red-alert .hero-icon-box span { color: #dc2626 !important; }
 
+.blue-alert .hero-value { color: #2563eb !important; }
 .yellow-alert .hero-value { color: #b45309 !important; }
 .red-alert .hero-value { color: #dc2626 !important; }
 

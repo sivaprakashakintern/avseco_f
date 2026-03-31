@@ -198,7 +198,7 @@ const StockOverview = () => {
       {/* ===== UNIFIED HERO STATUS BAR ===== */}
       <div className="stock-unified-hero-row">
         {/* TOTAL STOCK */}
-        <div className="hero-stat-item main-total">
+        <div className="hero-stat-item secondary-alert blue-alert">
           <div className="hero-icon-box">
             <span className="material-symbols-outlined">inventory_2</span>
           </div>
@@ -282,19 +282,7 @@ const StockOverview = () => {
                     </div>
 
                     {/* PRODUCTION PROGRESS BAR */}
-                    <div className="production-progress-container-new">
-                      <div className="progress-track-new">
-                        <div 
-                          className="progress-fill-new" 
-                          style={{ width: `${v.productionProgress}%` }}
-                        ></div>
-                      </div>
-                      {v.targetQty > 0 && (
-                        <div className="progress-info-new">
-                          Target: {v.producedQty.toLocaleString()} / {v.targetQty.toLocaleString()}
-                        </div>
-                      )}
-                    </div>
+
 
                     <div 
                       className={`footer-status-btn-new ${v.quantity < 2000 ? (v.quantity <= 0 ? 'red' : 'yellow') : 'green disabled'}`}

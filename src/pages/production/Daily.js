@@ -148,11 +148,25 @@ const Production = () => {
       }));
     }
   }, [productOptions, formData.product]);
+  
+  const getSizesForProduct = () => {
+    const product = productOptions.find(p => 
+      (p.name || "").toLowerCase().trim() === (formData.product || "").toLowerCase().trim()
+    );
+    return product ? product.sizes : [];
+  };
 
   const getSummaryData = () => {
-    const dailyRecords = (productionHistory || []).filter(item => item.date === formatDate(productionDate));
+    const dailyRecords = (productionHistory || []).filter(item => {
+      if (item.date !== formatDate(productionDate)) return false;
+      // Filter by the currently selected product in the form
+      const isSelectedProduct = (item.product || "").toLowerCase().trim() === (formData.product || "").toLowerCase().trim();
+      const productActive = (dbProducts || []).some(p => p.name === item.product);
+      return isSelectedProduct && productActive;
+    });
     const bySize = {};
-    availableSizes.forEach(size => {
+    const relevantSizes = getSizesForProduct();
+    relevantSizes.forEach(size => {
       bySize[size] = dailyRecords
         .filter(item => (item.size || "").toLowerCase().trim() === size.toLowerCase().trim())
         .reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
@@ -160,7 +174,8 @@ const Production = () => {
 
     return {
       total: dailyRecords.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
-      bySize: bySize
+      bySize: bySize,
+      sizes: relevantSizes
     };
   };
 
@@ -210,13 +225,6 @@ const Production = () => {
     }
   };
 
-  const getSizesForProduct = () => {
-    const product = productOptions.find(p => 
-      (p.name || "").toLowerCase().trim() === (formData.product || "").toLowerCase().trim()
-    );
-    return product ? product.sizes : [];
-  };
-
   const getSizeTargetInfo = (size) => {
     if (!productionTargets || !formData.product || !size) return null;
     let target = productionTargets.find(t => 
@@ -253,6 +261,10 @@ const Production = () => {
   const getFilteredHistory = () => {
     let list = (productionHistory || []).filter(item => {
       if (item.date !== formatDate(productionDate)) return false;
+      
+      const productActive = (dbProducts || []).some(p => p.name === item.product);
+      if (!productActive) return false;
+
       const matchesSearch = !historySearch.trim() ||
         (item.product?.toLowerCase() || "").includes(historySearch.toLowerCase()) ||
         (item.operator?.toLowerCase() || "").includes(historySearch.toLowerCase());
@@ -518,7 +530,7 @@ const Production = () => {
               </div>
               <div className="card-body">
                 <div className="dashboard-grid-mini-new">
-                  {availableSizes.map(size => {
+                  {(summaryData.sizes || []).map(size => {
                     const quantity = summaryData.bySize[size] || 0;
                     
                     // Find combined target for this size on the current date

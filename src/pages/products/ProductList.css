@@ -1898,14 +1898,15 @@
 
 .variants-list {
   background: #f8fafc;
-  border-radius: 16px;
-  padding: 8px;
+  border-radius: 20px;
+  padding: 12px;
   border: 1px solid #e2e8f0;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .dark .variants-list {
-  background: #111e16;
+  background: #0d1a14;
   border-color: #1f4a3e;
 }
 
@@ -1925,21 +1926,22 @@
 }
 
 .variant-table td {
-  padding: 12px;
+  padding: 14px 16px;
   background: white;
   border-top: 1px solid #e2e8f0;
   border-bottom: 1px solid #e2e8f0;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  vertical-align: middle;
 }
 
 .variant-table tr td:first-child {
   border-left: 1px solid #e2e8f0;
-  border-radius: 12px 0 0 12px;
+  border-radius: 16px 0 0 16px;
 }
 
 .variant-table tr td:last-child {
   border-right: 1px solid #e2e8f0;
-  border-radius: 0 12px 12px 0;
+  border-radius: 0 16px 16px 0;
 }
 
 .dark .variant-table td {
@@ -1949,11 +1951,17 @@
 
 .active-row td {
   border-color: #b0e6a0;
+  background: #f0fff4 !important;
 }
 
 .active-row td:first-child,
 .active-row td:last-child {
   border-color: #b0e6a0;
+}
+
+.dark .active-row td {
+  background: #0f2b1d !important;
+  border-color: #006A4E;
 }
 
 .inactive-row td {
@@ -1962,11 +1970,13 @@
 
 .table-input {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
   font-size: 14px;
   color: #0f172a;
+  transition: all 0.2s;
+  background: white;
 }
 
 .dark .table-input {
@@ -1984,26 +1994,42 @@
 .add-custom-row td {
   background: #f1f5f9 !important;
   border-color: transparent !important;
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 
 .dark .add-custom-row td {
-  background: #0a3028 !important;
+  background: #1a2e25 !important;
+}
+
+.add-custom-row .table-input {
+  background: #fff;
+  border-color: #cbd5e1;
+}
+
+.dark .add-custom-row .table-input {
+  background: #0a1410;
+  border-color: #1f4a3e;
 }
 
 .add-row-btn {
-  padding: 8px 16px;
+  padding: 10px 20px;
   background: #006A4E;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(0, 106, 78, 0.2);
 }
 
 .add-row-btn:hover {
   background: #004d39;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(0, 106, 78, 0.3);
 }
 
 .modal-content.large {
@@ -2028,6 +2054,40 @@
   border-top-color: #1f4a3e;
 }
 
+
+.centered-row {
+  display: flex !important;
+  justify-content: center !important;
+  margin-bottom: 32px !important;
+}
+
+.inline-group {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 20px !important;
+  width: 100% !important;
+  max-width: 600px !important;
+}
+
+.inline-label {
+  margin-bottom: 0 !important;
+  white-space: nowrap !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #006A4E !important;
+  min-width: 140px;
+  text-align: right;
+}
+
+.inline-input {
+  max-width: 400px !important;
+  flex: 1 !important;
+}
+
+.dark .inline-label {
+  color: #b0e6a0 !important;
+}
 
 /* --- MODAL LEVEL 2 OVERRIDES --- */
 .variant-modal-overlay { background: rgba(0, 0, 0, 0.4) !important; backdrop-filter: blur(8px) !important; }
