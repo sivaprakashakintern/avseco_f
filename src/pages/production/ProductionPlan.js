@@ -14,15 +14,8 @@ import 'jspdf-autotable';
 
 const today = formatDate(new Date());
 
-const getWorkingDaysInMonth = (monthStr) => {
-  const d = dayjs(monthStr, 'YYYY-MM');
-  const daysInMonth = d.daysInMonth();
-  let count = 0;
-  for (let i = 1; i <= daysInMonth; i++) {
-    if (d.date(i).day() !== 0) count++;
-  }
-  return count;
-};
+// Removed unused helper getWorkingDaysInMonth to fix build warnings
+
 
 const getWorkingDaysLeftInMonth = (monthStr) => {
   const now = dayjs();

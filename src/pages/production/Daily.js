@@ -32,7 +32,8 @@ const Production = () => {
   );
 
   // Mobile card expand state
-  const [showHistoryOnly] = useState(false);
+  // Mobile card expand state (removed unused showHistoryOnly)
+
 
   // ========== STATE MANAGEMENT ==========
   const [historySearch, setHistorySearch] = useState('');
