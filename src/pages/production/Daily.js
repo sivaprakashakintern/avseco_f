@@ -55,12 +55,12 @@ const Production = () => {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
 
-  const showNotificationMessage = (message, type = 'success') => {
+  const showNotificationMessage = React.useCallback((message, type = 'success') => {
     setNotificationMessage(message);
     setNotificationType(type);
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
-  };
+  }, []);
 
   const {
     productionHistory,
@@ -159,12 +159,12 @@ const Production = () => {
     }
   }, [productOptions, formData.product]);
   
-  const getSizesForProduct = () => {
+  const getSizesForProduct = React.useCallback(() => {
     const product = productOptions.find(p => 
       (p.name || "").toLowerCase().trim() === (formData.product || "").toLowerCase().trim()
     );
     return product ? product.sizes : [];
-  };
+  }, [productOptions, formData.product]);
 
   const getSummaryData = () => {
     const dailyRecords = (productionHistory || []).filter(item => {
