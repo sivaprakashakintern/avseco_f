@@ -452,13 +452,17 @@ const Employees = () => {
       <div className="employee-stats">
         <div className="stat-card total-card">
           <div className="stat-content">
-            <div className="stat-icon total">
-              <span className="material-symbols-outlined">group</span>
+            <div className="stat-icon-wrapper-header">
+                <div className="stat-icon total">
+                    <span className="material-symbols-outlined">group_work</span>
+                </div>
+                <p className="stat-label">Total Workforce</p>
             </div>
             <div className="stat-info">
-              <p className="stat-label">Total Workforce</p>
-              <h2 className="stat-number">{stats.totalEmployees}</h2>
-              <p className="stat-subtext">Active Personnel</p>
+              <div className="stat-main-number-row">
+                <h2 className="stat-number">{stats.totalEmployees}</h2>
+                <p className="stat-subtext">Active Personnel</p>
+              </div>
             </div>
           </div>
           <div className="stat-visual">
@@ -472,13 +476,17 @@ const Employees = () => {
 
         <div className="stat-card dept-card">
           <div className="stat-content">
-            <div className="stat-icon department">
-              <span className="material-symbols-outlined">corporate_fare</span>
+            <div className="stat-icon-wrapper-header">
+                <div className="stat-icon department">
+                    <span className="material-symbols-outlined">widgets</span>
+                </div>
+                <p className="stat-label">Departments</p>
             </div>
             <div className="stat-info">
-              <p className="stat-label">Departments</p>
-              <h2 className="stat-number">{stats.departmentsCount}</h2>
-              <p className="stat-subtext">Largest: {stats.topDept[0]}</p>
+              <div className="stat-main-number-row">
+                <h2 className="stat-number">{stats.departmentsCount}</h2>
+                <p className="stat-subtext">Focus Areas</p>
+              </div>
             </div>
           </div>
           <div className="dept-distribution">
@@ -598,7 +606,7 @@ const Employees = () => {
               <thead>
                 <tr>
                   <th className="sticky-col-no" style={{ textAlign: 'center' }}>S.No</th>
-                  <th className="sticky-col" style={{ textAlign: 'center' }}>Employee</th>
+                  <th className="sticky-col" style={{ textAlign: 'left' }}>Employee</th>
                   <th className="col-dept" style={{ textAlign: 'center' }}>Department</th>
                   <th className="col-contact" style={{ textAlign: 'center' }}>Contact</th>
                   <th className="col-date" style={{ textAlign: 'center' }}>Join Date</th>
@@ -611,12 +619,12 @@ const Employees = () => {
                       key={employee.id}
                       className="employee-row clickable-row"
                       onClick={() => handleViewEmployee(employee)}
-                      style={{ cursor: "pointer", textAlign: 'center' }}
+                      style={{ cursor: "pointer", textAlign: 'left' }}
                       title="Click to view full employee details"
                     >
                       <td className="sticky-col-no" style={{ textAlign: 'center' }}>{startIndex + index + 1}</td>
-                      <td className="sticky-col" style={{ textAlign: 'center' }}>
-                        <div className="employee-info" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      <td className="sticky-col" style={{ textAlign: 'left' }}>
+                        <div className="employee-info" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                           <div className="employee-avatar">
                             {employee.avatar ? (
                               <div className="avatar-image" style={{ backgroundImage: `url("${employee.avatar}")` }}></div>

@@ -1,0 +1,115 @@
+
+/* ===== TRANSACTION HISTORY TABLE (FULL SCREEN) ===== */
+.history-modal-enterprise { 
+  width: 98% !important; 
+  max-width: 1650px !important; 
+  height: 92vh !important;
+  border-radius: 20px !important;
+}
+
+.header-flex-title { display: flex; align-items: center; gap: 20px; }
+.header-meta-combo { display: flex; flex-direction: column; }
+.upper-meta-label { font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.15em; }
+.hist-icon-header { color: #006A4E; font-size: 42px; font-weight: 600; }
+.highlight-client-name { color: #006A4E; font-weight: 900; }
+
+.enterprise-history-table { 
+  width: 100%; 
+  border-collapse: separate; 
+  border-spacing: 0;
+  margin-top: 10px; 
+}
+
+.enterprise-history-table th { 
+  background: #f1f5f9; 
+  padding: 20px 24px; 
+  text-align: left; 
+  font-size: 13px; 
+  font-weight: 800; 
+  color: #475569; 
+  text-transform: uppercase; 
+  letter-spacing: 0.08em;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.enterprise-history-table td { 
+  padding: 24px; 
+  border-bottom: 1px solid #f1f5f9; 
+  vertical-align: middle; 
+}
+
+.enterprise-history-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.dt-primary { font-size: 16px; font-weight: 800; color: #1e293b; }
+.dt-secondary { font-size: 13px; font-weight: 600; color: #94a3b8; margin-top: 4px; }
+
+.cust-primary { font-size: 16px; font-weight: 850; color: #0f172a; }
+.cust-secondary { font-size: 14px; font-weight: 600; color: #64748b; margin-top: 4px; }
+
+.prod-primary { font-size: 16px; font-weight: 800; color: #334155; }
+.prod-secondary { font-size: 14px; font-weight: 600; color: #94a3b8; margin-top: 4px; }
+
+.amount-cell { font-size: 18px; font-weight: 900; color: #0f172a; }
+
+.status-pill-small {
+  padding: 4px 12px; border-radius: 100px; font-size: 10px; font-weight: 850; text-transform: uppercase;
+}
+.status-pill-small.paid { background: #ecfdf5; color: #059669; }
+.status-pill-small.pending { background: #fffbeb; color: #d97706; }
+
+.invoice-btn-pro {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; color: #64748b;
+}
+.invoice-btn-pro:hover { background: #e0f2fe; color: #0ea5e9; border-color: #7dd3fc; }
+
+/* ===== STANDARD BILL MODAL CONTENT (FROM SALES HISTORY) ===== */
+.bill-modal-content-pro {
+  padding: 0; background: #ffffff; max-width: 850px; width: 850px;
+  margin: auto; box-shadow: 0 40px 80px rgba(0,0,0,0.3);
+  border: none; border-radius: 4px; position: relative; cursor: default;
+  overflow-y: auto; max-height: 90vh;
+}
+
+
+.ci-header { background: #1a6b3c; padding: 30px 40px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+.ci-logo-area { display: flex; align-items: center; gap: 20px; }
+.ci-logo-img { width: 75px; height: 75px; object-fit: contain; filter: brightness(0) invert(1); }
+.ci-company-name { font-size: 26px; font-weight: 900; letter-spacing: 0.02em; }
+.ci-company-addr { font-size: 11px; opacity: 0.9; line-height: 1.5; font-weight: 500; margin-top: 5px; }
+.ci-invoice-title { font-size: 34px; font-weight: 900; letter-spacing: 0.05em; text-align: right; }
+.ci-invoice-meta { margin-top: 10px; font-size: 12px; text-align: right; line-height: 1.8; }
+
+.ci-billto { padding: 18px 40px; border-bottom: 2px solid #1a6b3c; display: flex; gap: 60px; align-items: flex-start; }
+.ci-billto-title { font-size: 16px; font-weight: 800; color: #1a6b3c; margin-bottom: 10px; }
+.ci-billto-row { font-size: 12px; color: #333; line-height: 1.9; font-weight: 600; }
+
+.ci-section-title { font-size: 22px; font-weight: 800; color: #1a6b3c; padding: 18px 40px 10px; }
+.ci-table-wrap { padding: 0 40px; }
+.ci-table { width: 100%; border-collapse: collapse; border: 1.5px solid #1a6b3c; }
+.ci-tbl-head tr { background: #1a6b3c; }
+.ci-tbl-head th { padding: 11px 12px; font-size: 10.5px; font-weight: 700; color: #fff; text-transform: uppercase; text-align: left; }
+.ci-tbody td { padding: 10px 12px; font-size: 12.5px; color: #333; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; }
+
+.ci-summary { display: flex; justify-content: flex-end; padding: 0 40px; }
+.ci-summary-box { width: 280px; border: 1.5px solid #1a6b3c; border-top: none; }
+.ci-sum-row { display: flex; justify-content: space-between; padding: 8px 14px; font-size: 12.5px; border-bottom: 1px solid #e2e8f0; }
+.ci-total-row { background: #1a6b3c; color: #fff; display: flex; justify-content: space-between; padding: 11px 14px; font-size: 14px; font-weight: 900; }
+
+.ci-payment { display: grid; grid-template-columns: 1fr 1fr; padding: 20px 40px 10px; border-top: 2px solid #1a6b3c; margin-top: 24px; }
+.ci-pay-title { font-size: 13px; font-weight: 800; color: #1a6b3c; margin-bottom: 8px; }
+
+.bill-modal-footer-pro { padding: 20px 40px; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+.bill-btn-pro { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+.bill-btn-pro.close { background: white; color: #475569; border: 1px solid #e2e8f0; }
+.bill-btn-pro.print { background: #1a6b3c; color: white; }
+.bill-btn-pro.whatsapp { background: #25D366; color: white; }
+.bill-btn-pro:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+@media print {
+  .no-print { display: none !important; }
+  .modal-overlay { background: white; padding: 0; position: static; height: auto; display: block; }
+  .bill-modal-content-pro { width: 100% !important; box-shadow: none !important; border: none !important; position: static !important; }
+}

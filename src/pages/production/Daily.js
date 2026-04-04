@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
 import { useAuth } from '../../context/AuthContext.js';
 import { notificationApi } from '../../utils/api.js';
@@ -32,8 +32,7 @@ const Production = () => {
   );
 
   // Mobile card expand state
-  // Mobile card expand state (removed unused showHistoryOnly)
-
+  const [showHistoryOnly, setShowHistoryOnly] = useState(false);
 
   // ========== STATE MANAGEMENT ==========
   const [historySearch, setHistorySearch] = useState('');
@@ -87,6 +86,16 @@ const Production = () => {
     grade: "B",
     operator: ""
   });
+
+  const [isSizeSelectOpen, setIsSizeSelectOpen] = useState(false);
+  const [isProductSelectOpen, setIsProductSelectOpen] = useState(false);
+  const [isOperatorSelectOpen, setIsOperatorSelectOpen] = useState(false);
+
+  // ========== REFS FOR KEYBOARD SHORTCUTS ==========
+  const productRef = useRef(null);
+  const sizeRef = useRef(null);
+  const quantityRef = useRef(null);
+  const operatorRef = useRef(null);
 
   // DYNAMIC OPERATORS FROM EMPLOYEES
   const operators = React.useMemo(() => {
@@ -223,6 +232,8 @@ const Production = () => {
       showNotificationMessage(`✅ Production added! 📦 +${quantity} plates`, 'success');
     } catch (err) {
       showNotificationMessage("Failed to add production", "error");
+    } finally {
+      document.activeElement?.blur();
     }
   };
 
@@ -301,6 +312,66 @@ const Production = () => {
     setCurrentPage(1);
   }, [productionDate, historySearch, historySizeFilter]);
 
+  // ========== KEYBOARD SHORTCUTS HANDLER ==========
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      const isInput = ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName);
+      const key = e.key?.toLowerCase();
+
+      // Global Shortcuts (only when not typing in an input)
+      if (!isInput) {
+        if (key === 'p') {
+          e.preventDefault();
+          productRef.current?.focus();
+          setIsProductSelectOpen(true);
+        } else if (key === 's') {
+          e.preventDefault();
+          sizeRef.current?.focus();
+          setIsSizeSelectOpen(true);
+        } else if (key === 'q') {
+          e.preventDefault();
+          quantityRef.current?.focus();
+          quantityRef.current?.select();
+        } else if (key === 'o') {
+          e.preventDefault();
+          operatorRef.current?.focus();
+          setIsOperatorSelectOpen(true);
+        }
+      }
+
+      // Enter key to submit (always active if form is valid)
+      if (e.key === 'Enter') {
+        // If any dropdown is expanded, first Enter just "closes" it
+        if (isSizeSelectOpen && e.target === sizeRef.current) {
+          setIsSizeSelectOpen(false);
+          e.preventDefault();
+          return;
+        }
+        if (isProductSelectOpen && e.target === productRef.current) {
+          setIsProductSelectOpen(false);
+          e.preventDefault();
+          return;
+        }
+        if (isOperatorSelectOpen && e.target === operatorRef.current) {
+          setIsOperatorSelectOpen(false);
+          e.preventDefault();
+          return;
+        }
+
+        // Prevent default only if we are in a form field to avoid accidental double submits
+        if (isInput || e.target.classList.contains('premium-submit-btn-new')) {
+          if (canModify) {
+            e.preventDefault();
+            handleAddProduction();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [canModify, formData, isSizeSelectOpen, isProductSelectOpen, isOperatorSelectOpen]);
+
   const [editingProduction, setEditingProduction] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -345,6 +416,17 @@ const Production = () => {
           <h1 className="page-title">Daily Production</h1>
         </div>
         <div className="header-actions">
+          {/* Mobile History Toggle */}
+          <button 
+            className={`history-toggle-btn-mobile ${showHistoryOnly ? 'active' : ''}`}
+            onClick={() => setShowHistoryOnly(!showHistoryOnly)}
+          >
+            <span className="material-symbols-outlined">
+              {showHistoryOnly ? 'edit_note' : 'history'}
+            </span>
+            {showHistoryOnly ? 'Show Entry Form' : 'View History'}
+          </button>
+
           <button 
             className={`clear-all-btn-premium ${!canModify ? 'disabled-btn' : ''}`}
             disabled={!canModify}
@@ -379,28 +461,81 @@ const Production = () => {
                       </div>
                     </div>
 
-                    <div className="premium-form-group">
+                    <div className={`premium-form-group product-select-group ${isProductSelectOpen ? 'is-open' : ''}`}>
                       <label className="premium-label-new">Product Type</label>
-                      <div className="select-wrapper-new">
+                      <div className="select-wrapper-new product-select-wrapper">
                         <span className="material-symbols-outlined input-icon-new">category</span>
-                        <select name="product" value={formData.product} onChange={handleInputChange} className="premium-select-new">
+                        <select 
+                          ref={productRef}
+                          name="product" 
+                          value={formData.product} 
+                          onChange={(e) => {
+                            handleInputChange(e);
+                            setIsProductSelectOpen(false);
+                            sizeRef.current?.focus();
+                          }} 
+                          onFocus={() => setIsProductSelectOpen(true)}
+                          onBlur={() => setIsProductSelectOpen(false)}
+                          onKeyDown={(e) => {
+                            if (e.key >= '1' && e.key <= '9') {
+                              const index = parseInt(e.key) - 1;
+                              if (productOptions[index]) {
+                                e.preventDefault();
+                                handleInputChange({ target: { name: 'product', value: productOptions[index].name } });
+                                setIsProductSelectOpen(false);
+                                sizeRef.current?.focus();
+                              }
+                            }
+                          }}
+                          size={isProductSelectOpen ? (Math.min(productOptions.length, 8) || 1) : 1}
+                          className="premium-select-new"
+                        >
                           {productOptions.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                         </select>
                       </div>
                     </div>
 
                     <div className="premium-form-group">
-                      <label className="premium-label-new">Size / Dimensions</label>
-                      <div className={`select-wrapper-new ${
+                      <label className="premium-label-new">Size</label>
+                      <div className={`select-wrapper-new size-select-wrapper ${isSizeSelectOpen ? 'is-open' : ''} ${
                         getSizeTargetInfo(formData.size)?.remaining <= 0 ? 'status-green' : 
                         getSizeTargetInfo(formData.size)?.producedQty > 0 ? 'status-orange' : 
                         'status-red'
                       }`}>
                         <span className="material-symbols-outlined input-icon-new">straighten</span>
                         <select 
+                          ref={sizeRef}
                           name="size" 
                           value={formData.size} 
-                          onChange={handleInputChange} 
+                          onChange={(e) => {
+                            handleInputChange(e);
+                            setIsSizeSelectOpen(false);
+                            quantityRef.current?.focus();
+                          }} 
+                          onFocus={() => setIsSizeSelectOpen(true)}
+                          onBlur={() => setIsSizeSelectOpen(false)}
+                          onKeyDown={(e) => {
+                            if (e.key >= '1' && e.key <= '9') {
+                              const index = parseInt(e.key) - 1;
+                              const sizes = getSizesForProduct()
+                                .sort((a, b) => {
+                                  const infoA = getSizeTargetInfo(a);
+                                  const infoB = getSizeTargetInfo(b);
+                                  const isAComplete = infoA && infoA.remaining <= 0;
+                                  const isBComplete = infoB && infoB.remaining <= 0;
+                                  if (isAComplete && !isBComplete) return 1;
+                                  if (!isAComplete && isBComplete) return -1;
+                                  return (parseInt(a) || 0) - (parseInt(b) || 0);
+                                });
+                              if (sizes[index]) {
+                                e.preventDefault();
+                                setFormData(prev => ({ ...prev, size: sizes[index] }));
+                                setIsSizeSelectOpen(false);
+                                quantityRef.current?.focus();
+                              }
+                            }
+                          }}
+                          size={isSizeSelectOpen ? (Math.min(getSizesForProduct().length, 8) || 1) : 1}
                           className="premium-select-new"
                         >
                           {getSizesForProduct()
@@ -409,31 +544,23 @@ const Production = () => {
                               const infoB = getSizeTargetInfo(b);
                               const isAComplete = infoA && infoA.remaining <= 0;
                               const isBComplete = infoB && infoB.remaining <= 0;
-                              
                               if (isAComplete && !isBComplete) return 1;
                               if (!isAComplete && isBComplete) return -1;
-                              
-                              // If both same status, use numeric sort
                               return (parseInt(a) || 0) - (parseInt(b) || 0);
                             })
                             .map(s => {
                               const info = getSizeTargetInfo(s);
                               let text = s;
                               let optionStyle = { fontWeight: '600' };
-                              
                               if (info) {
                                 if (info.remaining <= 0) {
-                                  text = `${s} (Completed)`;
-                                  optionStyle.color = '#10b981'; // Green
-                                } else if (info.producedQty > 0) {
-                                  text = `${s} (${info.remaining.toLocaleString()} Left)`;
-                                  optionStyle.color = '#f59e0b'; // Orange
+                                  text = `${s} (Complete)`;
+                                  optionStyle.color = '#10b981';
                                 } else {
-                                  text = `${s} (${info.remaining.toLocaleString()} Left)`;
-                                  optionStyle.color = '#ef4444'; // Red
+                                  text = `${s} (${info.remaining})`;
+                                  optionStyle.color = info.producedQty > 0 ? '#f59e0b' : '#ef4444';
                                 }
                               }
-                              
                               return <option key={s} value={s} style={optionStyle}>{text}</option>;
                             })
                           }
@@ -446,6 +573,7 @@ const Production = () => {
                       <div className="input-wrapper-new">
                         <span className="material-symbols-outlined input-icon-new">production_quantity_limits</span>
                         <input 
+                          ref={quantityRef}
                           type="number" 
                           name="quantity" 
                           value={formData.quantity} 
@@ -476,12 +604,35 @@ const Production = () => {
                       </div>
                     </div>
 
-                    <div className="premium-form-group operator-group-new">
+                    <div className={`premium-form-group operator-select-group ${isOperatorSelectOpen ? 'is-open' : ''}`}>
                       <label className="premium-label-new">Machine Operator</label>
-                      <div className="select-wrapper-new">
+                      <div className="select-wrapper-new operator-select-wrapper">
                         <span className="material-symbols-outlined input-icon-new">person</span>
-                        <select name="operator" value={formData.operator} onChange={handleInputChange} className="premium-select-new">
-                          {operators.map(o => <option key={o} value={o}>{o}</option>)}
+                        <select 
+                          ref={operatorRef}
+                          name="operator" 
+                          value={formData.operator} 
+                          onChange={(e) => {
+                            handleInputChange(e);
+                            setIsOperatorSelectOpen(false);
+                          }} 
+                          onFocus={() => setIsOperatorSelectOpen(true)}
+                          onBlur={() => setIsOperatorSelectOpen(false)}
+                          onKeyDown={(e) => {
+                            if (e.key >= '1' && e.key <= '9') {
+                              const index = parseInt(e.key) - 1;
+                              if (employees[index]) {
+                                e.preventDefault();
+                                handleInputChange({ target: { name: 'operator', value: employees[index].name } });
+                                setIsOperatorSelectOpen(false);
+                              }
+                            }
+                          }}
+                          size={isOperatorSelectOpen ? (Math.min(employees.length, 6) || 1) : 1}
+                          className="premium-select-new"
+                        >
+                          <option value="">Select Operator</option>
+                          {employees.map(emp => <option key={emp._id} value={emp.name}>{emp.name}</option>)}
                         </select>
                       </div>
                     </div>
@@ -493,13 +644,13 @@ const Production = () => {
                         onClick={canModify ? handleAddProduction : null}
                         disabled={!canModify}
                       >
-                        <div className="btn-content-new">
-                          <span>{canModify ? 'SUBMIT' : 'LOCKED'}</span>
-                        </div>
+                        <span className="btn-content-new">{canModify ? 'SUBMIT' : 'LOCKED'}</span>
+                        <span className="material-symbols-outlined">send</span>
                       </button>
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
