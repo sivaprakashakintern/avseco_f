@@ -32,7 +32,7 @@ const Production = () => {
   );
 
   // Mobile card expand state
-  // Mobile card expand state (removed unused showHistoryOnly)
+  const [showHistoryOnly, setShowHistoryOnly] = useState(false);
 
 
   // ========== STATE MANAGEMENT ==========
@@ -345,6 +345,13 @@ const Production = () => {
           <h1 className="page-title">Daily Production</h1>
         </div>
         <div className="header-actions">
+          <button 
+            className="mobile-toggle-btn-premium"
+            onClick={() => setShowHistoryOnly(!showHistoryOnly)}
+          >
+            <span className="material-symbols-outlined">{showHistoryOnly ? 'add_box' : 'history'}</span>
+            {showHistoryOnly ? 'Entry' : 'History'}
+          </button>
           <button 
             className={`clear-all-btn-premium ${!canModify ? 'disabled-btn' : ''}`}
             disabled={!canModify}

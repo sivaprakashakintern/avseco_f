@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import axios from '../utils/axiosConfig.js';
 
 const AuthContext = createContext(null);
@@ -82,21 +82,21 @@ export const AuthProvider = ({ children }) => {
 
   const isAdmin = user && user.role && user.role.toLowerCase() === 'admin';
 
+  const value = useMemo(() => ({
+    user,
+    loading,
+    employee: user,
+    modules: user?.modules || [],
+    isAdmin,
+    isFirstLogin: user?.isFirstLogin,
+    login: loginHelper,
+    logout: logoutHelper,
+    refreshUser,
+    hasAccess,
+  }), [user, loading, isAdmin, refreshUser, hasAccess]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        employee: user,
-        modules: user?.modules || [],
-        isAdmin,
-        isFirstLogin: user?.isFirstLogin,
-        login: loginHelper,
-        logout: logoutHelper,
-        refreshUser,
-        hasAccess,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

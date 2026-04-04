@@ -31,6 +31,16 @@ const Sales = () => {
         return "+91 " + digits;
     };
 
+    const validateEmail = (email) => {
+        if (!email) return true; // Optional field if empty
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    };
+
+    const validatePhone = (phone) => {
+        const digits = phone.replace(/^\+91\s*/, "").replace(/\D/g, "");
+        return digits.length === 10;
+    };
+
     // Process products into unique base names and their variants
     const products = React.useMemo(() => {
         const processed = (dbProducts || []).map(p => {
@@ -66,9 +76,9 @@ const Sales = () => {
     const [exportFormat, setExportFormat] = useState('excel');
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
 
-    const [viewMode] = useState('entry'); // 'entry' or 'history'
     const [editingTransactionId, setEditingTransactionId] = useState(null);
     const [selectedBaseProduct, setSelectedBaseProduct] = useState("");
+
 
     // Auto-select first product to streamline entry
     useEffect(() => {
@@ -238,6 +248,18 @@ const Sales = () => {
 
         if (!customerPhone || !customerAddress) {
             setFeedbackMessage("Please enter Customer Phone and Address");
+            setTimeout(() => setFeedbackMessage(""), 3000);
+            return;
+        }
+
+        if (customerEmail && !validateEmail(customerEmail)) {
+            setFeedbackMessage("❌ Please enter a valid email address");
+            setTimeout(() => setFeedbackMessage(""), 3000);
+            return;
+        }
+
+        if (!validatePhone(customerPhone)) {
+            setFeedbackMessage("❌ Please enter a valid 10-digit phone number");
             setTimeout(() => setFeedbackMessage(""), 3000);
             return;
         }
@@ -497,23 +519,25 @@ const Sales = () => {
                 </div>
             )}
 
-            {/* ===== PREMIUM ANALYTICS HEADER ===== */}
-            <div className="page-header premium-header">
-                <div>
-                    <h1 className="page-title">Sale</h1>
-                </div>
-                <div className="header-actions">
-                    <button className="btn-export-premium" onClick={handleExport} disabled={exportLoading}>
+            <div className="stock-page-content">
+                {/* ===== GLOWING SALES HEADER ===== */}
+                <div className="sales-glowing-header">
+                    <div>
+                        <h1 className="page-title">Sales Entry</h1>
+                        <p className="page-subtitle">Manage billing & new client entries efficiently</p>
+                    </div>
+                    <button className="btn-export-glow" onClick={handleExport} disabled={exportLoading}>
                         <span className="material-symbols-outlined">
                             {exportLoading ? "hourglass_empty" : "download"}
                         </span>
                         {exportLoading ? "Exporting..." : "Export Report"}
                     </button>
                 </div>
-            </div>
 
-            {/* Quick Sales Entry Card */}
-            <div className={`desktop-view-section ${viewMode !== 'entry' ? 'mobile-hidden' : ''}`}>
+                {/* Main White Wrapper Matching Screenshot */}
+                <div className="glowing-main-card">
+                    {/* Quick Sales Entry Card */}
+                    <div className="desktop-view-section">
                 <div className="stock-table-container quick-entry-card">
                     <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 32px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
@@ -714,9 +738,57 @@ const Sales = () => {
                                                             </div>
                                                         </button>
                                                     ))
-                                            ) : (
-                                                <div className="no-items-dropdown">No matching customer. Enter name manually.</div>
-                                            )}
+                                                ) : (
+                                                    <div className="no-clients-found-container">
+                                                        <div className="no-clients-found">No matching customer found</div>
+                                                        <button 
+                                                            className="create-client-btn-inline"
+                                                            onClick={() => {
+                                                                setNewClientData({ 
+                                                                    ...newClientData, 
+                                                                    contactPerson: customerName,
+                                                                    clientType: 'Personal',
+                                                                    companyName: '' 
+                                                                });
+                                                                setShowAddClientModal(true);
+                                                                setIsCustomerDropdownOpen(false);
+                                                            }}
+                                                        >
+                                                            <span className="material-symbols-outlined">person_add</span>
+                                                            Create "{customerName}" as new client
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Always show the 'Add New Client' quick button at the bottom of results too */}
+                                                {(clients.filter(c => {
+                                                    const isCompany = !!(c.companyName && c.companyName.trim() !== "");
+                                                    const isPersonal = !isCompany || c.clientType?.toLowerCase() === 'personal';
+                                                    return clientType === 'Company' ? isCompany : isPersonal;
+                                                }).filter(c => 
+                                                    (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) || 
+                                                     c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
+                                                ).length > 0) && (
+                                                    <>
+                                                        <div className="dropdown-divider"></div>
+                                                        <button 
+                                                            className="add-new-client-dropdown-btn"
+                                                            onClick={() => {
+                                                                setNewClientData({ 
+                                                                    ...newClientData, 
+                                                                    contactPerson: customerName,
+                                                                    clientType: 'Personal',
+                                                                    companyName: ''
+                                                                });
+                                                                setShowAddClientModal(true);
+                                                                setIsCustomerDropdownOpen(false);
+                                                            }}
+                                                        >
+                                                            <span className="material-symbols-outlined">add_circle</span>
+                                                            Add New Client
+                                                        </button>
+                                                    </>
+                                                )}
                                         </div>
                                     )}
                                 </div>
@@ -925,15 +997,15 @@ const Sales = () => {
                             </div>
                         </div>
 
-                        <div className="quick-entry-row">
+                        <div className="quick-entry-row" style={{ marginTop: '12px' }}>
                             <div className="quick-entry-item two-col-item">
-                                <span className="quick-entry-label">Total Plate Amount:</span>
-                                <div className="amount-input-wrapper" style={{ background: '#ffffff' }}>
+                                <span className="quick-entry-label">Total Amount:</span>
+                                <div className="amount-input-wrapper">
                                     <span className="currency-prefix">₹</span>
                                     <input
                                         type="text"
                                         className="quick-entry-input amount-input"
-                                        style={{ fontWeight: 600, color: '#1a6b3c' }}
+                                        style={{ fontWeight: 700, color: '#166534', background: '#f0fdf4', borderColor: '#10b981' }}
                                         value={((parseFloat(quantity) || 0) * (parseFloat(unitPrice) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         readOnly
                                     />
@@ -941,37 +1013,34 @@ const Sales = () => {
                             </div>
 
                             <div className="quick-entry-item two-col-item" style={{ display: 'flex', alignItems: 'flex-end' }}>
-                                <span className="quick-entry-label" style={{ visibility: 'hidden' }}>Action:</span>
                                 <button
                                     className="btn-primary"
                                     onClick={handleAddItem}
                                     style={{ width: '100%', height: '44px', background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                 >
                                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add_circle</span>
-                                    ADD ITEM
+                                    ADD TO BILL
                                 </button>
                             </div>
                         </div>
 
-                        <div className="overall-bill-summary-fixed" style={{ marginTop: '28px', marginBottom: '42px', padding: '12px 32px', background: '#ffffff', borderRadius: '12px', border: '2px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{ background: '#334155', color: '#ffffff', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>receipt_long</span>
+                        <div className="bill-summary-integrated-card" style={{ marginTop: '28px', marginBottom: '32px', padding: '16px 24px', background: '#f8fafc', borderRadius: '16px', border: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                <div style={{ background: '#1e293b', color: '#ffffff', width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span className="material-symbols-outlined">shopping_cart_checkout</span>
                                 </div>
                                 <div>
-                                    <h4 style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Summary</h4>
-                                    <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>Total Bill</span>
+                                    <h4 style={{ margin: 0, fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Current Bill</h4>
+                                    <span style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>Total Estimated Amount</span>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                <span style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A' }}>₹</span>
-                                <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.01em', lineHeight: 1 }}>
-                                    {billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                </span>
+                            <div style={{ textAlign: 'right' }}>
+                                <span style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a' }}>₹{billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                <div style={{ fontSize: '10px', color: '#10b981', fontWeight: 700 }}>{billItems.length} items added to list</div>
                             </div>
                         </div>
 
-                        <div className="section-divider" style={{ margin: '0 -32px 32px -32px' }}></div>
+                        <div className="section-divider" style={{ margin: '0 -32px 32px' }}></div>
 
                         <div className="quick-entry-row" style={{ marginBottom: '16px' }}>
                             <div className="quick-entry-item two-col-item">
@@ -1299,6 +1368,10 @@ const Sales = () => {
                     </div>
                 </div>
             </div>
+            
+            </div> {/* Close glowing-main-card */}
+            </div> {/* Close stock-page-content */}
+
 
             {
                 showExportModal && (
@@ -1449,6 +1522,18 @@ const Sales = () => {
                                     className="modal-confirm"
                                     disabled={!newClientData.contactPerson || !newClientData.phone || !newClientData.address}
                                     onClick={async () => {
+                                        if (newClientData.email && !validateEmail(newClientData.email)) {
+                                            setFeedbackMessage("❌ Please enter a valid email address");
+                                            setTimeout(() => setFeedbackMessage(""), 3000);
+                                            return;
+                                        }
+
+                                        if (!validatePhone(newClientData.phone)) {
+                                            setFeedbackMessage("❌ Please enter a valid 10-digit phone number");
+                                            setTimeout(() => setFeedbackMessage(""), 3000);
+                                            return;
+                                        }
+
                                         try {
                                             const newClient = {
                                                 ...newClientData,

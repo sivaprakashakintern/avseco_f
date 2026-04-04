@@ -117,6 +117,7 @@ const Sidebar = () => {
     },
     { icon: "badge", label: "Employees", path: "/employees", module: "employees" },
     { icon: "group", label: "Clients", path: "/clients", module: "clients" },
+    { icon: "account_balance_wallet", label: "Turnover", path: "/turnover", module: "turnover" },
 
     // ATTENDANCE SUB-MENU (Now Hover/Popup based via CSS)
     {
