@@ -185,7 +185,7 @@ const Sales = () => {
 
 
     // Add item to current bill session - Merges duplicates if the same product is added
-    const handleAddItem = () => {
+    const handleAddItem = useCallback(() => {
         if (!quantity || parseFloat(quantity) <= 0) return;
 
         const qtyToAdd = parseFloat(quantity);
@@ -238,7 +238,7 @@ const Sales = () => {
 
         setQuantity("");
         document.activeElement?.blur();
-    };
+    }, [quantity, unitPrice, stockData, selectedBaseProduct, selectedSize, billItems, selectedProductId, selectedProduct, products]);
     const handleLogTransaction = async () => {
         if (billItems.length === 0 && (!quantity || parseFloat(quantity) <= 0)) {
             return;
@@ -534,7 +534,7 @@ const Sales = () => {
 
         window.addEventListener('keydown', handleGlobalKeyDown);
         return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-    }, [isBaseProductDropdownOpen, isSizeDropdownOpen, quantity, unitPrice, selectedBaseProduct, selectedSize]);
+    }, [isBaseProductDropdownOpen, isSizeDropdownOpen, quantity, unitPrice, selectedBaseProduct, selectedSize, handleAddItem]);
 
     return (
         <div className="stock-page">

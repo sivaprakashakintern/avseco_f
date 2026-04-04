@@ -196,7 +196,7 @@ const Production = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddProduction = async () => {
+  const handleAddProduction = React.useCallback(async () => {
     if (!formData.quantity || parseInt(formData.quantity) <= 0) {
       showNotificationMessage("Please enter valid quantity", 'error');
       return;
@@ -235,7 +235,7 @@ const Production = () => {
     } finally {
       document.activeElement?.blur();
     }
-  };
+  }, [formData, productionDate, addProduction, showNotificationMessage, getSizesForProduct]);
 
   const getSizeTargetInfo = (size) => {
     if (!productionTargets || !formData.product || !size) return null;
@@ -370,7 +370,7 @@ const Production = () => {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [canModify, formData, isSizeSelectOpen, isProductSelectOpen, isOperatorSelectOpen]);
+  }, [canModify, formData, isSizeSelectOpen, isProductSelectOpen, isOperatorSelectOpen, handleAddProduction]);
 
   const [editingProduction, setEditingProduction] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
