@@ -1,5 +1,58 @@
 /* Daily.css - Complete Production Dashboard Styles with Export Modal */
 
+/* HEADER ACTION BUTTONS OVERRIDES */
+.header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.history-toggle-btn-mobile {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #1e3a2f !important; /* Dark text as seen in reference image */
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  cursor: pointer !important;
+  padding: 8px 16px !important;
+  border-radius: 50px !important;
+  transition: all 0.3s ease !important;
+}
+
+.history-toggle-btn-mobile .material-symbols-outlined {
+  font-size: 22px !important;
+}
+
+.clear-all-btn-premium {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #fee2e2 !important; /* Premium Pink as seen in reference image */
+  border: 1px solid #fecaca !important;
+  color: #dc2626 !important; /* Dark Red text as seen in reference image */
+  padding: 8px 24px !important;
+  border-radius: 50px !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.1) !important;
+}
+
+.clear-all-btn-premium:hover {
+  background: #fecaca !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.15) !important;
+}
+
+.clear-all-btn-premium .material-symbols-outlined {
+  font-size: 20px !important;
+}
+
+
 /* ===== GLOBAL STYLES ===== */
 .daily-production-page {
   padding: 24px;
@@ -4097,25 +4150,28 @@
 
 /* SUPER ACTION ROW REDESIGN */
 .premium-form-row.four-cols {
+  display: grid;
   grid-template-columns: repeat(4, 1fr) !important;
+  gap: 20px;
+  align-items: flex-end;
 }
 
 .super-action-row-new {
   display: grid;
-  grid-template-columns: 1fr 300px 200px;
+  grid-template-columns: 1fr 300px 200px !important;
   gap: 20px;
   align-items: flex-end;
   margin-top: 20px;
 }
 
 .premium-submit-btn-new.super-action-btn {
-  height: 62px !important;
-  border-radius: 16px !important;
+  height: 48px !important;
+  border-radius: 8px !important;
   margin-top: 0 !important;
 }
 
 @media (max-width: 1024px) {
-  .premium-form-row.four-cols {
+  .premium-form-row.four-cols, .super-action-row-new {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 }
@@ -4124,6 +4180,15 @@
   .premium-form-row.four-cols, .super-action-row-new {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* Specific group widths for harmony */
+.grade-group-new {
+  min-width: 140px;
+}
+
+.submit-action-group-new {
+  min-width: 110px;
 }
 
 /* FINAL SIZE NORMALIZATION */
@@ -4955,3 +5020,93 @@
 .modal-content::before {
   display: none !important;
 }
+
+/* ===================================================================
+   DROPDOWN EXPANSION OVERHAUL (FOR SHARED KEYBOARD SHORTCUT WORKFLOW)
+   =================================================================== */
+
+/* IMPORTANT: Prevent parent cards from cutting off the dropdown */
+.premium-entry-card, 
+.production-form-section,
+.production-main-grid {
+  overflow: visible !important;
+}
+
+/* Target the wrapper when open */
+.product-select-wrapper.is-open, 
+.size-select-wrapper.is-open,
+.operator-select-wrapper.is-open {
+  overflow: visible !important;
+  z-index: 10000 !important;
+}
+
+/* Detach and position the select element closer to the input with breathing room */
+.is-open select.premium-select-new {
+  position: absolute !important;
+  top: calc(100% + 4px) !important; /* Detached with slight gap for clean look */
+  left: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100px !important;
+  max-height: 480px !important;
+  background: #ffffff !important;
+  
+  /* Reset browser appearance */
+  appearance: listbox !important;
+  padding: 5px 0 !important;
+  margin: 0 !important;
+  
+  /* Premium Border & Shadow */
+  border: 2px solid #10b981 !important; /* CONSISTENT BORDER ALL AROUND */
+  border-radius: 12px !important; /* FULLY ROUNDED TO NOT CUT */
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15) !important;
+  
+  /* Selection & Text */
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  cursor: pointer !important;
+  z-index: 99999 !important;
+  animation: dropdownPop 0.15s ease-out;
+}
+
+
+/* Standardize options inside the list */
+.is-open select.premium-select-new option {
+  padding: 14px 20px !important;
+  border-bottom: 1px solid #f8fafc !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  background: white !important;
+}
+
+.is-open select.premium-select-new option:hover {
+  background-color: #f0fdf4 !important;
+  color: #10b981 !important;
+}
+
+/* Force Emerald selection color */
+.is-open select.premium-select-new option:checked {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 0 0 999px #10b981 !important;
+}
+
+@keyframes dropdownPop {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Visual fix for the field itself when open */
+.select-wrapper-new.is-open {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-color: #10b981 !important;
+  z-index: 10001 !important;
+}
+
+.is-open .input-icon-new {
+  color: #10b981 !important;
+  opacity: 1 !important;
+}
+
+

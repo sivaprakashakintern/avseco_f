@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
 import { useAuth } from '../../context/AuthContext.js';
 import './Sales.css';
@@ -116,6 +116,13 @@ const Sales = () => {
     }, [user, isAdmin, soldBy, editingTransactionId]);
 
     const [isSoldByDropdownOpen, setIsSoldByDropdownOpen] = useState(false);
+    
+    // NEW REFS FOR KEYBOARD SHORTCUTS
+    const baseProductRef = useRef(null);
+    const sizeRef = useRef(null);
+    const quantityRef = useRef(null);
+    const priceRef = useRef(null);
+    const addItemRef = useRef(null);
     const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
     const [paidStatus, setPaidStatus] = useState("Paid");
     const [isPaidStatusDropdownOpen, setIsPaidStatusDropdownOpen] = useState(false);
@@ -188,7 +195,7 @@ const Sales = () => {
 
 
     // Add item to current bill session - Merges duplicates if the same product is added
-    const handleAddItem = () => {
+    const handleAddItem = useCallback(() => {
         if (!quantity || parseFloat(quantity) <= 0) return;
 
         const qtyToAdd = parseFloat(quantity);
@@ -240,7 +247,8 @@ const Sales = () => {
         });
 
         setQuantity("");
-    };
+        document.activeElement?.blur();
+    }, [quantity, unitPrice, stockData, selectedBaseProduct, selectedSize, billItems, selectedProductId, selectedProduct, products]);
     const handleLogTransaction = async () => {
         if (billItems.length === 0 && (!quantity || parseFloat(quantity) <= 0)) {
             return;
@@ -496,14 +504,65 @@ const Sales = () => {
         };
     }, []);
 
-    // Helper to extract and format time consistently (12h AM/PM)
+    // KEYBOARD SHORTCUTS HANDLER
+    useEffect(() => {
+        const handleGlobalKeyDown = (e) => {
+            // Ignore if focus is in an input we don't want to override (except for global shortcuts)
+            const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+            const key = e.key?.toLowerCase();
 
+            // Only trigger if Not Typing OR if it's a specific navigation key
+            if (!isTyping) {
+                if (key === 'p') {
+                    e.preventDefault();
+                    baseProductRef.current?.focus();
+                    setIsBaseProductDropdownOpen(true);
+                } else if (key === 's') {
+                    e.preventDefault();
+                    sizeRef.current?.focus();
+                    setIsSizeDropdownOpen(true);
+                } else if (key === 'q') {
+                    e.preventDefault();
+                    quantityRef.current?.focus();
+                    setTimeout(() => quantityRef.current?.select(), 10);
+                } else if (key === 'r') {
+                    e.preventDefault();
+                    priceRef.current?.focus();
+                    setTimeout(() => priceRef.current?.select(), 10);
+                }
+            }
+
+            // Enter key logic
+            if (e.key === 'Enter') {
+                // If a dropdown is open, just close it
+                if (isBaseProductDropdownOpen && e.target === baseProductRef.current) {
+                    setIsBaseProductDropdownOpen(false);
+                    e.preventDefault();
+                    return;
+                }
+                if (isSizeDropdownOpen && e.target === sizeRef.current) {
+                    setIsSizeDropdownOpen(false);
+                    e.preventDefault();
+                    return;
+                }
+
+                // If in billing fields, trigger Add Item
+                if (e.target === quantityRef.current || e.target === priceRef.current || e.target === addItemRef.current) {
+                    e.preventDefault();
+                    handleAddItem();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, [isBaseProductDropdownOpen, isSizeDropdownOpen, quantity, unitPrice, selectedBaseProduct, selectedSize, handleAddItem]);
 
     return (
         <div className="stock-page">
             {/* Feedback Toast */}
             {feedbackMessage && (
-                <div className={`feedback-toast ${feedbackMessage.includes('✅') || feedbackMessage.toLowerCase().includes('added') || feedbackMessage.toLowerCase().includes('success') ? 'success' : ''}`}>
+                <div className={`feedback-toast ${feedbackMessage?.toLowerCase().includes('✅') || feedbackMessage?.toLowerCase().includes('added') || feedbackMessage?.toLowerCase().includes('success') ? 'success' : ''}`}>
                     <span className="material-symbols-outlined">
                         {feedbackMessage.includes('✅') || feedbackMessage.toLowerCase().includes('added') || feedbackMessage.toLowerCase().includes('success') ? 'check_circle' : 'info'}
                     </span>
@@ -868,7 +927,20 @@ const Sales = () => {
                                 <span className="quick-entry-label">Product Name:</span>
                                 <div className="product-dropdown base-product-dropdown">
                                     <button
+                                        ref={baseProductRef}
                                         onClick={() => setIsBaseProductDropdownOpen(!isBaseProductDropdownOpen)}
+                                        onKeyDown={(e) => {
+                                            if (e.key >= '1' && e.key <= '9' && isBaseProductDropdownOpen) {
+                                                const uniqueBaseNames = [...new Set(products.map(p => p.baseName))];
+                                                const index = parseInt(e.key) - 1;
+                                                if (uniqueBaseNames[index]) {
+                                                    e.preventDefault();
+                                                    setSelectedBaseProduct(uniqueBaseNames[index]);
+                                                    setIsBaseProductDropdownOpen(false);
+                                                    sizeRef.current?.focus();
+                                                }
+                                            }
+                                        }}
                                         className="product-dropdown-toggle"
                                     >
                                         <span className="product-dropdown-text">{selectedBaseProduct || "Select Product"}</span>
@@ -903,7 +975,20 @@ const Sales = () => {
                                 <span className="quick-entry-label">Size/Variant:</span>
                                 <div className="product-dropdown size-dropdown">
                                     <button
+                                        ref={sizeRef}
                                         onClick={() => setIsSizeDropdownOpen(!isSizeDropdownOpen)}
+                                        onKeyDown={(e) => {
+                                            if (e.key >= '1' && e.key <= '9' && isSizeDropdownOpen) {
+                                                const availableSizes = products.filter(p => p.baseName === selectedBaseProduct);
+                                                const index = parseInt(e.key) - 1;
+                                                if (availableSizes[index]) {
+                                                    e.preventDefault();
+                                                    setSelectedSize(availableSizes[index].size);
+                                                    setIsSizeDropdownOpen(false);
+                                                    quantityRef.current?.focus();
+                                                }
+                                            }
+                                        }}
                                         className="product-dropdown-toggle"
                                         disabled={!selectedBaseProduct}
                                         style={!selectedBaseProduct ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
@@ -973,6 +1058,7 @@ const Sales = () => {
                                         </div>
                                     )}
                                     <input
+                                        ref={quantityRef}
                                         type="number"
                                         placeholder="Enter total pieces"
                                         className="quick-entry-input"
@@ -987,6 +1073,7 @@ const Sales = () => {
                                 <div className="amount-input-wrapper">
                                     <span className="currency-prefix">₹</span>
                                     <input
+                                        ref={priceRef}
                                         type="number"
                                         placeholder="0.00"
                                         className="quick-entry-input amount-input"
@@ -1014,6 +1101,7 @@ const Sales = () => {
 
                             <div className="quick-entry-item two-col-item" style={{ display: 'flex', alignItems: 'flex-end' }}>
                                 <button
+                                    ref={addItemRef}
                                     className="btn-primary"
                                     onClick={handleAddItem}
                                     style={{ width: '100%', height: '44px', background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
