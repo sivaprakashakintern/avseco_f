@@ -10,33 +10,34 @@ import './Daily.css';
 
 // Sizes will be derived dynamically below
 
-const Production = () => {
-  // ========== HELPER FUNCTIONS ==========
-  const formatDate = (date) => {
-    if (!date) return '';
-    return date.format('DD-MM-YYYY');
-  };
+// ========== HELPER FUNCTIONS ==========
+const formatDate = (date) => {
+  if (!date) return '';
+  return date.format('DD-MM-YYYY');
+};
 
-  const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
-    <div className="calendar-wrapper">
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <DateCalendar
-          value={selectedDate}
-          onChange={(newDate) => {
-            onDateChange(newDate);
-            onClose();
-          }}
-        />
-      </LocalizationProvider>
-    </div>
-  );
+const CalendarPicker = ({ selectedDate, onDateChange, onClose }) => (
+  <div className="calendar-wrapper">
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <DateCalendar
+        value={selectedDate}
+        onChange={(newDate) => {
+          onDateChange(newDate);
+          onClose();
+        }}
+      />
+    </LocalizationProvider>
+  </div>
+);
+
+const Production = () => {
 
   // Mobile card expand state
   // Mobile card expand state (removed unused showHistoryOnly)
 
 
   // ========== STATE MANAGEMENT ==========
-  const [showHistoryOnly, setShowHistoryOnly] = useState(false);
+  const [showHistoryOnly] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
   const [historySizeFilter, setHistorySizeFilter] = useState('all');
 
@@ -58,12 +59,12 @@ const Production = () => {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
 
-  const showNotificationMessage = (message, type = 'success') => {
+  const showNotificationMessage = React.useCallback((message, type = 'success') => {
     setNotificationMessage(message);
     setNotificationType(type);
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
-  };
+  }, []);
 
   const {
     productionHistory,
@@ -152,12 +153,12 @@ const Production = () => {
     }
   }, [productOptions, formData.product]);
   
-  const getSizesForProduct = () => {
+  const getSizesForProduct = React.useCallback(() => {
     const product = productOptions.find(p => 
       (p.name || "").toLowerCase().trim() === (formData.product || "").toLowerCase().trim()
     );
     return product ? product.sizes : [];
-  };
+  }, [productOptions, formData.product]);
 
   const getSummaryData = () => {
     const dailyRecords = (productionHistory || []).filter(item => {
@@ -184,12 +185,17 @@ const Production = () => {
 
   const summaryData = getSummaryData();
 
-  const inputRefs = {
-    product: React.useRef(null),
-    size: React.useRef(null),
-    quantity: React.useRef(null),
-    operator: React.useRef(null)
-  };
+  const productRef = React.useRef(null);
+  const sizeRef = React.useRef(null);
+  const quantityRef = React.useRef(null);
+  const operatorRef = React.useRef(null);
+
+  const inputRefs = React.useMemo(() => ({
+    product: productRef,
+    size: sizeRef,
+    quantity: quantityRef,
+    operator: operatorRef
+  }), []);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
@@ -244,7 +250,7 @@ const Production = () => {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [formData, openDropdown, productOptions, operators]);
+  }, [formData, openDropdown, productOptions, operators, getSizesForProduct, handleAddProduction, handleInputChange, inputRefs.quantity]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -256,7 +262,7 @@ const Production = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = React.useCallback((e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
@@ -269,7 +275,7 @@ const Production = () => {
     } else if (name === 'operator') {
       setOpenDropdown(null);
     }
-  };
+  }, [inputRefs.quantity]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -280,7 +286,7 @@ const Production = () => {
     }
   };
 
-  const handleAddProduction = async () => {
+  const handleAddProduction = React.useCallback(async () => {
     // FORM VALIDATION
     if (!formData.product) {
       showNotificationMessage("⚠️ Please select a Product first (Press P)", 'error');
@@ -339,7 +345,7 @@ const Production = () => {
     } catch (err) {
       showNotificationMessage("Failed to add production", "error");
     }
-  };
+  }, [formData, productionDate, showNotificationMessage, addProduction, getSizesForProduct, inputRefs.quantity]);
 
   const getSizeTargetInfo = (size) => {
     if (!productionTargets || !formData.product || !size) return null;

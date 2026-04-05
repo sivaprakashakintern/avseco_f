@@ -5,6 +5,8 @@ import { useAppContext } from "../../context/AppContext.js";
 // Removed image imports as per user request
 
 
+const DEFAULT_SIZES = ["4-inch", "6-inch", "8-inch", "10-inch", "12-inch"];
+
 const ProductList = () => {
   const { products, fetchData, addProduct, updateProduct, deleteProduct } = useAppContext();
   // Simplified states - removed unused filters
@@ -17,31 +19,6 @@ const ProductList = () => {
   const [variantToDelete, setVariantToDelete] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Trigger Shift + N or Shift + S to add product, ignore if in an input/textarea
-      const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT';
-      if (e.shiftKey && (e.key.toLowerCase() === 'n' || e.key.toLowerCase() === 's') && !isInput) {
-        e.preventDefault();
-        handleAddProduct();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      await fetchData();
-    } catch (err) {
-      console.error("Error fetching products:", err);
-      setFeedbackMessage("Error connecting to server");
-    }
-  };
-
-  const DEFAULT_SIZES = ["4-inch", "6-inch", "8-inch", "10-inch", "12-inch"];
-
   // Form state for add/edit
   const [formData, setFormData] = useState({
     name: "",
@@ -53,7 +30,7 @@ const ProductList = () => {
   const [newSize, setNewSize] = useState({ size: "", hsn: "", cost: "", sell: "" });
 
   // Add Product
-  const handleAddProduct = () => {
+  const handleAddProduct = React.useCallback(() => {
     setFormData({
       name: "",
       hsn: "",
@@ -67,7 +44,21 @@ const ProductList = () => {
       isNew: true
     })));
     setShowAddModal(true);
-  };
+  }, [DEFAULT_SIZES]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Trigger Shift + N or Shift + S to add product, ignore if in an input/textarea
+      const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT';
+      if (e.shiftKey && (e.key.toLowerCase() === 'n' || e.key.toLowerCase() === 's') && !isInput) {
+        e.preventDefault();
+        handleAddProduct();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleAddProduct]);
 
   const confirmAddProduct = async () => {
     if (!formData.name.trim()) {
