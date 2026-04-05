@@ -90,18 +90,7 @@ const Turnover = () => {
     );
   }
 
-  const { financials, production, charts, recentData } = analytics;
-
-  const displayDate = (dateStr) => {
-    if (!dateStr) return 'N/A';
-    if (dateStr.includes(',')) return dateStr.split(',')[0].trim();
-    if (dateStr.includes('-')) {
-        const parts = dateStr.split('-');
-        if (parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert YYYY-MM-DD to DD-MM-YYYY
-        return dateStr;
-    }
-    return new Date(dateStr).toLocaleDateString('en-GB');
-  };
+  const { financials, production, charts } = analytics;
 
   // Prepare Profit/Loss Donut Data
   const donutData = [
@@ -134,7 +123,6 @@ const Turnover = () => {
               className={`filter-btn ${filterType === type ? 'active' : ''}`}
               onClick={() => {
                 setFilterType(type);
-                // Auto-reset context on click
                 if (type === 'daily') setSelectedDate(getToday());
                 if (type === 'monthly') setSelectedMonth(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`);
                 if (type === 'yearly') setSelectedYear(new Date().getFullYear().toString());
@@ -188,9 +176,7 @@ const Turnover = () => {
         </div>
       </div>
 
-      {/* 4. Analytics Section (Comparison Panels) */}
       <div className="analytics-grid">
-        {/* Redesigned Sales Performance Comparison */}
         <div className="analytics-card comparison-card-v2">
           <div className="card-header-main">
             <div className="title-group">
@@ -215,7 +201,7 @@ const Turnover = () => {
           </div>
 
           <div style={{ height: 160, minWidth: 0, marginTop: '10px' }}>
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+            <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={charts.monthlyIncomeChart}>
                 <defs>
                   <linearGradient id="colorIncomeV2" x1="0" y1="0" x2="0" y2="1">
@@ -229,7 +215,6 @@ const Turnover = () => {
           </div>
         </div>
 
-        {/* Redesigned Production Growth Comparison */}
         <div className="analytics-card comparison-card-v2">
           <div className="card-header-main">
             <div className="title-group">
@@ -269,25 +254,15 @@ const Turnover = () => {
         </div>
       </div>
 
-      {/* 5. Charts Section (Donut & Distribution) */}
       <div className="charts-grid">
-        {/* Income vs Expense Donut */}
         <div className="chart-card">
-          <h3 className="card-title">Financial Balance (Income vs Expenses)</h3>
+          <h3 className="card-title">Financial Balance</h3>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <div style={{ width: '60%', height: 260, minWidth: 0 }}>
-              <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie 
-                    data={donutData} 
-                    innerRadius={60} 
-                    outerRadius={80} 
-                    paddingAngle={5} 
-                    dataKey="value"
-                  >
-                    {donutData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+                  <Pie data={donutData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                    {donutData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                   </Pie>
                   <Tooltip />
                 </PieChart>
@@ -296,23 +271,22 @@ const Turnover = () => {
             <div style={{ width: '40%' }}>
               <div style={{ marginBottom: '12px' }}>
                 <span style={{ height: '10px', width: '10px', background: '#10b981', display: 'inline-block', borderRadius: '50%', marginRight: '8px' }}></span>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>Income: </span>
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>Income</span>
                 <div style={{ fontWeight: 800 }}>₹{financials.totalIncome.toLocaleString()}</div>
               </div>
               <div>
                 <span style={{ height: '10px', width: '10px', background: '#ef4444', display: 'inline-block', borderRadius: '50%', marginRight: '8px' }}></span>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>Expenses: </span>
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>Expenses</span>
                 <div style={{ fontWeight: 800 }}>₹{financials.totalExpenses.toLocaleString()}</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Product Size Distribution Bar */}
         <div className="chart-card">
-          <h3 className="card-title">Sales Distribution by Size</h3>
+          <h3 className="card-title">Sales by Size</h3>
           <div style={{ height: 260, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={charts.salesSizeChart}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
@@ -324,49 +298,16 @@ const Turnover = () => {
           </div>
         </div>
 
-        {/* Production Size Distribution Bar */}
         <div className="chart-card">
-          <h3 className="card-title">Stock Availability by Size</h3>
+          <h3 className="card-title">Stock by Size</h3>
           <div style={{ height: 260, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={charts.prodSizeChart}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
                 <YAxis hide />
                 <Tooltip cursor={{fill: '#f8fafc'}} />
                 <Bar dataKey="ProdQty" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* New Expense Categories Chart */}
-        <div className="chart-card">
-          <div className="card-header-main">
-            <h3 className="card-title">Top Expense Sources</h3>
-            <span className="material-symbols-outlined" style={{color: '#f43f5e'}}>account_balance_wallet</span>
-          </div>
-          <div style={{ height: 260, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
-              <BarChart 
-                data={(charts.expenseCatChart || []).slice(0, 5)} 
-                layout="vertical"
-                margin={{ left: 20, right: 30, top: 10, bottom: 10 }}
-              >
-                <XAxis type="number" hide />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  width={100}
-                  tick={{fill: '#475569', fontSize: 12, fontWeight: 700}} 
-                />
-                <Tooltip 
-                  cursor={{fill: '#f1f5f9'}} 
-                  formatter={(value) => [`₹${value.toLocaleString()}`, 'Amount']}
-                />
-                <Bar dataKey="Amount" fill="#f43f5e" radius={[0, 4, 4, 0]} barSize={24} />
               </BarChart>
             </ResponsiveContainer>
           </div>

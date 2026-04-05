@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./ProductList.css";
 import { useAppContext } from "../../context/AppContext.js";
 
@@ -16,6 +16,20 @@ const ProductList = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [variantToDelete, setVariantToDelete] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Trigger Shift + N or Shift + S to add product, ignore if in an input/textarea
+      const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT';
+      if (e.shiftKey && (e.key.toLowerCase() === 'n' || e.key.toLowerCase() === 's') && !isInput) {
+        e.preventDefault();
+        handleAddProduct();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const fetchProducts = async () => {
     try {
@@ -255,6 +269,17 @@ const ProductList = () => {
     });
   };
 
+  const handleModalKeyDown = (e, type) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (type === 'add') {
+        confirmAddProduct();
+      } else {
+        confirmEditProduct();
+      }
+    }
+  };
+
   // Get product abbreviation (first word)
   const getAbbr = (name) => {
     return name ? name.split(" ")[0] : "Product";
@@ -391,6 +416,7 @@ const ProductList = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => handleModalKeyDown(e, 'add')}
                     placeholder="Enter product name"
                     className="modal-input inline-input"
                   />
@@ -431,6 +457,7 @@ const ProductList = () => {
                               type="text" 
                               value={v.hsn || ""} 
                               onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
+                              onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
                               placeholder="HSN"
                               className="table-input"
                               style={{ fontSize: '12px' }}
@@ -443,6 +470,7 @@ const ProductList = () => {
                               type="number" 
                               value={v.cost} 
                               onChange={(e) => handleVariantChange(idx, 'cost', e.target.value)}
+                              onKeyDown={(e) => handleModalKeyDown(e, 'add')}
                               placeholder="0"
                               className="table-input"
                             />
@@ -454,6 +482,7 @@ const ProductList = () => {
                               type="number" 
                               value={v.sell} 
                               onChange={(e) => handleVariantChange(idx, 'sell', e.target.value)}
+                              onKeyDown={(e) => handleModalKeyDown(e, 'add')}
                               placeholder="0"
                               className="table-input"
                             />
@@ -485,6 +514,7 @@ const ProductList = () => {
                           placeholder="Size (e.g. 14-inch)" 
                           value={newSize.size} 
                           onChange={(e) => setNewSize({...newSize, size: e.target.value})}
+                          onKeyDown={(e) => handleModalKeyDown(e, 'add')}
                           className="table-input"
                         />
                       </td>
@@ -504,6 +534,7 @@ const ProductList = () => {
                           placeholder="Cost" 
                           value={newSize.cost} 
                           onChange={(e) => setNewSize({...newSize, cost: e.target.value})}
+                          onKeyDown={(e) => handleModalKeyDown(e, 'add')}
                           className="table-input"
                         />
                       </td>
@@ -591,6 +622,7 @@ const ProductList = () => {
                               type="text" 
                               value={v.hsn || ""} 
                               onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
+                              onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
                               placeholder="HSN"
                               className="table-input"
                               style={{ fontSize: '12px' }}
@@ -603,6 +635,7 @@ const ProductList = () => {
                               type="number" 
                               value={v.cost} 
                               onChange={(e) => handleVariantChange(idx, 'cost', e.target.value)}
+                              onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
                               placeholder="0"
                               className="table-input"
                             />
@@ -614,6 +647,7 @@ const ProductList = () => {
                               type="number" 
                               value={v.sell} 
                               onChange={(e) => handleVariantChange(idx, 'sell', e.target.value)}
+                              onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
                               placeholder="0"
                               className="table-input"
                             />
@@ -641,6 +675,7 @@ const ProductList = () => {
                           placeholder="Custom Size" 
                           value={newSize.size} 
                           onChange={(e) => setNewSize({...newSize, size: e.target.value})}
+                          onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
                           className="table-input"
                         />
                       </td>

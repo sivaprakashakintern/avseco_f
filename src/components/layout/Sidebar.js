@@ -130,6 +130,7 @@ const Sidebar = () => {
         { label: "Attendance Report", path: "/attendance-report" }
       ]
     },
+    { icon: "analytics", label: "Turnover", path: "/turnover", module: "turnover" },
     { icon: "notifications", label: "Notifications", path: "/notifications", module: "notifications" },
   ];
 

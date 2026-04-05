@@ -36,6 +36,7 @@ const Production = () => {
 
 
   // ========== STATE MANAGEMENT ==========
+  const [showHistoryOnly, setShowHistoryOnly] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
   const [historySizeFilter, setHistorySizeFilter] = useState('all');
 
@@ -52,6 +53,7 @@ const Production = () => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [productionToDelete, setProductionToDelete] = useState(null);
   const [dateToClear, setDateToClear] = useState('');
+  const [openDropdown, setOpenDropdown] = useState(null); // 'product', 'size', 'operator' or null
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
@@ -182,14 +184,122 @@ const Production = () => {
 
   const summaryData = getSummaryData();
 
+  const inputRefs = {
+    product: React.useRef(null),
+    size: React.useRef(null),
+    quantity: React.useRef(null),
+    operator: React.useRef(null)
+  };
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      const isInput = e.target.tagName === 'INPUT' || (e.target.tagName === 'SELECT' && !e.target.classList.contains('custom-select-bypass'));
+      const key = e.key.toLowerCase();
+
+      if (!isInput) {
+        if (key === 'p') { 
+          e.preventDefault(); 
+          setOpenDropdown(prev => prev === 'product' ? null : 'product');
+        }
+        if (key === 's') { 
+          e.preventDefault(); 
+          setOpenDropdown(prev => prev === 'size' ? null : 'size');
+        }
+        if (key === 'q') { 
+          e.preventDefault(); 
+          setOpenDropdown(null);
+          inputRefs.quantity.current?.focus(); 
+        }
+        if (key === 'm') { 
+          e.preventDefault(); 
+          setOpenDropdown(prev => prev === 'operator' ? null : 'operator');
+        }
+
+        // NUMBER SHORTCUTS (1-9) for selecting items in an open dropdown
+        if (openDropdown && /^[1-9]$/.test(e.key)) {
+            e.preventDefault();
+            const index = parseInt(e.key) - 1;
+            let options = [];
+            let name = "";
+            
+            if (openDropdown === 'product') { options = productOptions.map(p => p.name); name = 'product'; }
+            if (openDropdown === 'size') { options = getSizesForProduct(); name = 'size'; }
+            if (openDropdown === 'operator') { options = operators; name = 'operator'; }
+
+            if (options[index]) {
+                handleInputChange({ target: { name, value: options[index] } });
+            }
+        }
+      }
+
+      if (e.key === 'Escape') {
+          setOpenDropdown(null);
+      }
+
+      if (e.key === 'Enter' && e.shiftKey) {
+        e.preventDefault();
+        handleAddProduction();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [formData, openDropdown, productOptions, operators]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.premium-form-group')) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // AUTOMATIC PROGRESSION
+    if (name === 'product') {
+      setOpenDropdown('size');
+    } else if (name === 'size') {
+      setOpenDropdown(null);
+      setTimeout(() => inputRefs.quantity.current?.focus(), 50);
+    } else if (name === 'operator') {
+      setOpenDropdown(null);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (e.target.name === 'quantity') {
+        handleAddProduction();
+      }
+    }
   };
 
   const handleAddProduction = async () => {
+    // FORM VALIDATION
+    if (!formData.product) {
+      showNotificationMessage("⚠️ Please select a Product first (Press P)", 'error');
+      setOpenDropdown('product');
+      return;
+    }
+    if (!formData.size) {
+      showNotificationMessage("⚠️ Please select a Size first (Press S)", 'error');
+      setOpenDropdown('size');
+      return;
+    }
     if (!formData.quantity || parseInt(formData.quantity) <= 0) {
-      showNotificationMessage("Please enter valid quantity", 'error');
+      showNotificationMessage("⚠️ Please enter a valid Quantity (Press Q)", 'error');
+      inputRefs.quantity.current?.focus();
+      return;
+    }
+    if (!formData.operator) {
+      showNotificationMessage("⚠️ Please select a Machine Operator (Press M)", 'error');
+      setOpenDropdown('operator');
       return;
     }
 
@@ -221,6 +331,11 @@ const Production = () => {
         };
       });
       showNotificationMessage(`✅ Production added! 📦 +${quantity} plates`, 'success');
+      
+      // Remove focus from all inputs as per user request
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
     } catch (err) {
       showNotificationMessage("Failed to add production", "error");
     }
@@ -381,63 +496,73 @@ const Production = () => {
 
                     <div className="premium-form-group">
                       <label className="premium-label-new">Product Type</label>
-                      <div className="select-wrapper-new">
-                        <span className="material-symbols-outlined input-icon-new">category</span>
-                        <select name="product" value={formData.product} onChange={handleInputChange} className="premium-select-new">
-                          {productOptions.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                        </select>
+                      <div className={`custom-dropdown-premium ${openDropdown === 'product' ? 'active' : ''}`}>
+                        <div 
+                          className="custom-dropdown-toggle"
+                          onClick={() => setOpenDropdown(prev => prev === 'product' ? null : 'product')}
+                        >
+                          <span className="material-symbols-outlined dropdown-icon">category</span>
+                          <span className="dropdown-selected-text">{formData.product || "Select Product"}</span>
+                          <span className="material-symbols-outlined arrow-icon">
+                            {openDropdown === 'product' ? 'arrow_drop_up' : 'arrow_drop_down'}
+                          </span>
+                        </div>
+                        {openDropdown === 'product' && (
+                          <div className="custom-dropdown-menu">
+                            {productOptions.map((p, idx) => (
+                              <div 
+                                key={p.name} 
+                                className={`custom-dropdown-item ${formData.product === p.name ? 'active' : ''}`}
+                                onClick={() => handleInputChange({ target: { name: 'product', value: p.name } })}
+                              >
+                                <span className="item-index">{idx + 1}</span>
+                                <span className="item-text">{p.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     <div className="premium-form-group">
-                      <label className="premium-label-new">Size / Dimensions</label>
-                      <div className={`select-wrapper-new ${
-                        getSizeTargetInfo(formData.size)?.remaining <= 0 ? 'status-green' : 
-                        getSizeTargetInfo(formData.size)?.producedQty > 0 ? 'status-orange' : 
-                        'status-red'
-                      }`}>
-                        <span className="material-symbols-outlined input-icon-new">straighten</span>
-                        <select 
-                          name="size" 
-                          value={formData.size} 
-                          onChange={handleInputChange} 
-                          className="premium-select-new"
+                      <label className="premium-label-new">Size</label>
+                      <div className={`custom-dropdown-premium ${openDropdown === 'size' ? 'active' : ''}`}>
+                        <div 
+                          className="custom-dropdown-toggle"
+                          onClick={() => setOpenDropdown(prev => prev === 'size' ? null : 'size')}
                         >
-                          {getSizesForProduct()
-                            .sort((a, b) => {
-                              const infoA = getSizeTargetInfo(a);
-                              const infoB = getSizeTargetInfo(b);
-                              const isAComplete = infoA && infoA.remaining <= 0;
-                              const isBComplete = infoB && infoB.remaining <= 0;
-                              
-                              if (isAComplete && !isBComplete) return 1;
-                              if (!isAComplete && isBComplete) return -1;
-                              
-                              // If both same status, use numeric sort
-                              return (parseInt(a) || 0) - (parseInt(b) || 0);
-                            })
-                            .map(s => {
-                              const info = getSizeTargetInfo(s);
-                              let text = s;
-                              let optionStyle = { fontWeight: '600' };
-                              
-                              if (info) {
-                                if (info.remaining <= 0) {
-                                  text = `${s} (Completed)`;
-                                  optionStyle.color = '#10b981'; // Green
-                                } else if (info.producedQty > 0) {
-                                  text = `${s} (${info.remaining.toLocaleString()} Left)`;
-                                  optionStyle.color = '#f59e0b'; // Orange
-                                } else {
-                                  text = `${s} (${info.remaining.toLocaleString()} Left)`;
-                                  optionStyle.color = '#ef4444'; // Red
-                                }
-                              }
-                              
-                              return <option key={s} value={s} style={optionStyle}>{text}</option>;
-                            })
-                          }
-                        </select>
+                          <span className="material-symbols-outlined dropdown-icon">straighten</span>
+                          <span className="dropdown-selected-text">{formData.size || "Select Size"}</span>
+                          <span className="material-symbols-outlined arrow-icon">
+                            {openDropdown === 'size' ? 'arrow_drop_up' : 'arrow_drop_down'}
+                          </span>
+                        </div>
+                        {openDropdown === 'size' && (
+                          <div className="custom-dropdown-menu">
+                            {getSizesForProduct()
+                              .sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0))
+                              .map((s, idx) => {
+                                const info = getSizeTargetInfo(s);
+                                let statusClass = info?.remaining <= 0 ? 'completed' : (info?.producedQty > 0 ? 'partial' : 'pending');
+                                return (
+                                  <div 
+                                    key={s} 
+                                    className={`custom-dropdown-item ${formData.size === s ? 'active' : ''} ${statusClass}`}
+                                    onClick={() => handleInputChange({ target: { name: 'size', value: s } })}
+                                  >
+                                    <span className="item-index">{idx + 1}</span>
+                                    <span className="item-text">{s}</span>
+                                    {info && (
+                                       <span className="item-hint">
+                                          {info.remaining <= 0 ? '(Done)' : `${info.remaining.toLocaleString()} left`}
+                                       </span>
+                                    )}
+                                  </div>
+                                );
+                              })
+                            }
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -448,8 +573,10 @@ const Production = () => {
                         <input 
                           type="number" 
                           name="quantity" 
+                          ref={inputRefs.quantity}
                           value={formData.quantity} 
                           onChange={handleInputChange} 
+                          onKeyDown={handleKeyDown}
                           className="premium-input-new" 
                           placeholder="0" 
                         />
@@ -478,11 +605,31 @@ const Production = () => {
 
                     <div className="premium-form-group operator-group-new">
                       <label className="premium-label-new">Machine Operator</label>
-                      <div className="select-wrapper-new">
-                        <span className="material-symbols-outlined input-icon-new">person</span>
-                        <select name="operator" value={formData.operator} onChange={handleInputChange} className="premium-select-new">
-                          {operators.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
+                      <div className={`custom-dropdown-premium ${openDropdown === 'operator' ? 'active' : ''}`}>
+                        <div 
+                          className="custom-dropdown-toggle"
+                          onClick={() => setOpenDropdown(prev => prev === 'operator' ? null : 'operator')}
+                        >
+                          <span className="material-symbols-outlined dropdown-icon">person</span>
+                          <span className="dropdown-selected-text">{formData.operator || "Select Operator"}</span>
+                          <span className="material-symbols-outlined arrow-icon">
+                            {openDropdown === 'operator' ? 'arrow_drop_up' : 'arrow_drop_down'}
+                          </span>
+                        </div>
+                        {openDropdown === 'operator' && (
+                          <div className="custom-dropdown-menu">
+                            {operators.map((o, idx) => (
+                              <div 
+                                key={o} 
+                                className={`custom-dropdown-item ${formData.operator === o ? 'active' : ''}`}
+                                onClick={() => handleInputChange({ target: { name: 'operator', value: o } })}
+                              >
+                                <span className="item-index">{idx + 1}</span>
+                                <span className="item-text">{o}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 

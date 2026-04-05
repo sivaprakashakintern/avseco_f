@@ -116,6 +116,13 @@ const Sales = () => {
     const [billItems, setBillItems] = useState([]);
     const [exportLoading, setExportLoading] = useState(false);
 
+    // Keyboard navigation focus refs
+    const itemRefs = {
+        quantity: React.useRef(null),
+        unitPrice: React.useRef(null),
+        customerPhone: React.useRef(null)
+    };
+
 
     // Filtered employees for delivery
     const deliveryEmployees = React.useMemo(() => {
@@ -230,7 +237,20 @@ const Sales = () => {
         });
 
         setQuantity("");
+        // Set focus back to quantity for next item
+        if (itemRefs.quantity.current) itemRefs.quantity.current.focus();
     };
+    const handleKeyDown = (e, nextField = null) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (nextField && itemRefs[nextField]?.current) {
+                itemRefs[nextField].current.focus();
+            } else {
+                handleAddItem();
+            }
+        }
+    };
+
     const handleLogTransaction = async () => {
         if (billItems.length === 0 && (!quantity || parseFloat(quantity) <= 0)) {
             return;
@@ -904,8 +924,10 @@ const Sales = () => {
                                         type="number"
                                         placeholder="Enter total pieces"
                                         className="quick-entry-input"
+                                        ref={itemRefs.quantity}
                                         value={quantity}
                                         onChange={(e) => setQuantity(e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(e, 'unitPrice')}
                                     />
                                 </div>
                             </div>
@@ -918,8 +940,10 @@ const Sales = () => {
                                         type="number"
                                         placeholder="0.00"
                                         className="quick-entry-input amount-input"
+                                        ref={itemRefs.unitPrice}
                                         value={unitPrice}
                                         onChange={(e) => setUnitPrice(e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(e)}
                                     />
                                 </div>
                             </div>

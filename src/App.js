@@ -43,6 +43,9 @@ import CheckPage from "./pages/CheckPage.js";
 // Client Pages
 import Clients from "./pages/clients/Clients.js";
 
+// Turnover Pages
+import Turnover from "./pages/turnover/Turnover.js";
+
 import Sales from "./pages/sales/Sales.js";
 import SalesHistory from "./pages/sales/SalesHistory.js";
 import Help from "./pages/Help.js";
@@ -192,6 +195,13 @@ const App = () => {
             <Route path="/clients" element={
               <ProtectedRoute module="clients">
                 <AppLayout><Clients /></AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Turnover */}
+            <Route path="/turnover" element={
+              <ProtectedRoute module="turnover">
+                <AppLayout><Turnover /></AppLayout>
               </ProtectedRoute>
             } />
 
