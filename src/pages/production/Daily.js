@@ -250,7 +250,8 @@ const Production = () => {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [formData, openDropdown, productOptions, operators, getSizesForProduct, handleAddProduction, handleInputChange, inputRefs.quantity]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, openDropdown, productOptions, operators, getSizesForProduct]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

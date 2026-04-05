@@ -44,7 +44,7 @@ const ProductList = () => {
       isNew: true
     })));
     setShowAddModal(true);
-  }, [DEFAULT_SIZES]);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
