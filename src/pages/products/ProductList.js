@@ -60,6 +60,15 @@ const ProductList = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleAddProduct]);
 
+  const fetchProducts = React.useCallback(async () => {
+    try {
+      await fetchData();
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setFeedbackMessage("Error connecting to server");
+    }
+  }, [fetchData]);
+
   const confirmAddProduct = async () => {
     if (!formData.name.trim()) {
       setFeedbackMessage("Please enter product name");
