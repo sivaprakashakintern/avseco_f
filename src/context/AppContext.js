@@ -31,7 +31,7 @@ export const AppProvider = ({ children }) => {
     const [toast, setToast] = useState(null); // { message, type }
     const [isUpdating, setIsUpdating] = useState(false);
     const [hasFetched, setHasFetched] = useState(false);
-    const { user, hasAccess, isAdmin } = useAuth();
+    const { user, refreshUser, hasAccess, isAdmin } = useAuth();
     
     // ✅ Helper to avoid UTC timezone shift (IST+5:30 bug)
     const toLocalDateKey = useCallback((date) => {
@@ -41,7 +41,7 @@ export const AppProvider = ({ children }) => {
         return `${y}-${m}-${d}`;
     }, []);
 
-    const todayStr = useMemo(() => toLocalDateKey(new Date()), [toLocalDateKey]);
+    const todayStr = toLocalDateKey(new Date());
 
     // ── Fetch Initial Data ──────────────────────────────────────────────────────
     const fetchData = useCallback(async (isInitial = false, isBackground = false) => {
@@ -52,16 +52,15 @@ export const AppProvider = ({ children }) => {
                 setIsUpdating(true);
             }
             
-            // We do NOT refresh user profile here because it updates the 'user' state,
-            // which in turn resets the 'fetchData' dependency, causing a loop.
-            // if (user) await refreshUser();
+            // Refresh permissions from backend
+            if (user) await refreshUser();
 
             // Build request map
             const requestMap = [];
             if (hasAccess('employees') || hasAccess('production') || hasAccess('attendance') || hasAccess('sales')) {
                 requestMap.push({ key: 'employees', call: employeeApi.getAll() });
             }
-            if (hasAccess('expenses') || hasAccess('stock')) requestMap.push({ key: 'expenses', call: expenseApi.getAll() });
+            if (hasAccess('stock')) requestMap.push({ key: 'expenses', call: expenseApi.getAll() });
             if (hasAccess('clients') || hasAccess('sales')) {
                 requestMap.push({ key: 'clients', call: clientApi.getAll() });
             }
@@ -90,19 +89,10 @@ export const AppProvider = ({ children }) => {
                     if (key === 'employees') {
                         setEmployees(data.map(e => ({ ...e, id: e._id })).sort((a, b) => a.name.localeCompare(b.name)));
                     } else if (key === 'expenses') {
-                        setExpenses(data.map(e => ({ ...e, id: e._id, amount: Number(e.amount || 0) })).sort((a, b) => {
-                            const parseDate = (dStr) => {
-                                if (!dStr) return new Date(0);
-                                if (dStr.includes('-')) {
-                                    const parts = dStr.split('-');
-                                    // Handle DD-MM-YYYY
-                                    if (parts[0].length === 2) return new Date(parts[2], parts[1] - 1, parts[0]);
-                                    // Handle YYYY-MM-DD
-                                    return new Date(dStr);
-                                }
-                                return new Date(dStr);
-                            };
-                            return parseDate(b.date) - parseDate(a.date);
+                        setExpenses(data.map(e => ({ ...e, id: e._id })).sort((a, b) => {
+                            const dateA = a.date.includes('-') ? new Date(a.date.split('-').reverse().join('-')) : new Date(a.date);
+                            const dateB = b.date.includes('-') ? new Date(b.date.split('-').reverse().join('-')) : new Date(b.date);
+                            return dateB - dateA;
                         }));
                     } else if (key === 'clients') {
                         setClients(data.map(c => ({ ...c, id: c._id })));
@@ -143,7 +133,7 @@ export const AppProvider = ({ children }) => {
                 setIsUpdating(false);
             }
         }
-    }, [todayStr, user, hasAccess]);
+    }, [todayStr, user, refreshUser, hasAccess]);
 
     // ── DERIVED METRICS ─────────────────────────────────────────────────────────
     
@@ -239,28 +229,32 @@ export const AppProvider = ({ children }) => {
     useEffect(() => {
         if (!user) return;
         
+        if (user.isFirstLogin) {
+            // Even if first login, we start the sync so sidebar/permissions update
+            if (!hasFetched) {
+                fetchData(true);
+            }
+        }
+        
+        
         // Initial fetch ONLY if not done yet
         if (!hasFetched) {
             fetchData(true);
         }
 
         // Periodic background sync (5 mins) - Always run for everyone
-        const interval = setInterval(() => {
-            if (user) fetchData(false, true);
-        }, 300000);
+        const interval = setInterval(() => fetchData(false, true), 300000);
         
         // Faster polling for notifications (10 seconds)
-        // Separate this into a stable effect or ensure it cleans up properly
         const notificationInterval = setInterval(async () => {
             if (user) {
                 try {
                     const notifs = await notificationApi.getAll();
                     // Auto-toast for new incoming notifications
                     setNotifications(prev => {
-                        const prevIds = new Set(prev.map(n => n._id));
-                        const hasNewUnread = notifs.some(n => !n.isRead && !prevIds.has(n._id));
-                        
-                        if (hasNewUnread) {
+                        const prevUnread = prev.filter(n => !n.isRead).length;
+                        const newUnread = notifs.filter(n => !n.isRead).length;
+                        if (newUnread > prevUnread) {
                             const latest = notifs[0]; // Assuming sorted by newest
                             setToast({ 
                                 message: latest.title || "New Notification Received", 
@@ -271,18 +265,15 @@ export const AppProvider = ({ children }) => {
                         }
                         return notifs;
                     });
-                } catch (e) {
-                    // console.error("Notif Poll Error", e);
-                }
+                } catch (e) { console.error("Notif Poll Error", e); }
             }
-        }, 15000); // 15 seconds is enough
+        }, 10000);
 
         return () => {
             clearInterval(interval);
             clearInterval(notificationInterval);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user, hasFetched]); // user is now memoized in AuthContext
+    }, [user, fetchData, employees.length, products.length, hasFetched]);
 
     // EMPLOYEES
     const addEmployee = useCallback(async (emp) => {

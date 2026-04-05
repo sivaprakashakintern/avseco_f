@@ -15,7 +15,6 @@ axiosInstance.interceptors.request.use(
     if (userInfo && userInfo.token) {
       config.headers.Authorization = `Bearer ${userInfo.token}`;
     }
-    console.log(`[AxiosRequest] URL: ${config.baseURL}${config.url}`);
     return config;
   },
   (error) => {

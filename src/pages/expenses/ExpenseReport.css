@@ -690,26 +690,6 @@
     cursor: not-allowed;
 }
 
-.btn-outline-red {
-    background: transparent;
-    color: #ef4444;
-    border: 1px solid #fee2e2;
-    padding: 10px 20px;
-    border-radius: 40px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s;
-}
-
-.btn-outline-red:hover {
-    background: #fef2f2;
-    border-color: #fecaca;
-    transform: translateY(-1px);
-}
-
 /* Handled by global utility */
 
 @keyframes slideDown {

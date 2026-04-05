@@ -36,10 +36,6 @@ const Expenses = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [detailCategory, setDetailCategory] = useState("");
     const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
-    const [clearAllConfirm, setClearAllConfirm] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
-
-
 
     // ── Toggle Expansion ──
     const toggleExpenseExpansion = (id) => {
@@ -148,11 +144,7 @@ const Expenses = () => {
                 <div>
                     <h1 className="page-title">Expense Details</h1>
                 </div>
-                <div className="header-actions" style={{ display: 'flex', gap: '12px' }}>
-                    <button className="btn-outline-red" onClick={() => setClearAllConfirm(true)}>
-                        <span className="material-symbols-outlined">delete_sweep</span>
-                        Clear All History
-                    </button>
+                <div className="header-actions">
                     <button className="btn-export-premium" onClick={() => { setIsEditMode(false); setIsModalOpen(true); }}>
                         <span className="material-symbols-outlined">add</span>
                         Add Expense
@@ -212,19 +204,9 @@ const Expenses = () => {
             <div className="stock-table-container">
                 <div className="table-header">
                     <h3>
-                        <span className="material-symbols-outlined" style={{ color: '#006A4E' }}>history</span>
-                        Recent Expense Records
+                        <span className="material-symbols-outlined" style={{ color: '#006A4E' }}>today</span>
+                        Today's Expenses
                     </h3>
-                    <div className="search-box" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', background: '#f8fafc', padding: '6px 16px', borderRadius: '40px', border: '1px solid #e2e8f0' }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#64748b', marginRight: '8px' }}>search</span>
-                        <input 
-                            type="text" 
-                            placeholder="Search category or description..." 
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '13px', width: '200px' }}
-                        />
-                    </div>
                 </div>
 
                 <div className="table-responsive desktop-only-table">
@@ -240,14 +222,7 @@ const Expenses = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {expenses
-                                .filter(ex => {
-                                    const searchMatch = (ex.category?.toLowerCase() || "").includes(searchTerm.toLowerCase()) || 
-                                                       (ex.description?.toLowerCase() || "").includes(searchTerm.toLowerCase());
-                                    return searchMatch;
-                                })
-                                .slice(0, 100) // Show last 100
-                                .map((expense, index) => (
+                            {expenses.filter(ex => formatDate(ex.date) === formatDate(new Date())).map((expense, index) => (
                                 <tr key={expense.id}>
                                     <td style={{ fontWeight: '700', color: '#94a3b8' }}>{index + 1}</td>
                                     <td style={{ fontWeight: '500' }}>{formatDate(expense.date)}</td>
@@ -305,15 +280,8 @@ const Expenses = () => {
 
                 {/* Mobile Cards View */}
                 <div className="mobile-history-cards">
-                    {expenses.length > 0 ? (
-                        expenses
-                        .filter(ex => {
-                            const searchMatch = (ex.category?.toLowerCase() || "").includes(searchTerm.toLowerCase()) || 
-                                               (ex.description?.toLowerCase() || "").includes(searchTerm.toLowerCase());
-                            return searchMatch;
-                        })
-                        .slice(0, 50)
-                        .map((ex, index) => {
+                    {expenses.filter(ex => formatDate(ex.date) === formatDate(new Date())).length > 0 ? (
+                        expenses.filter(ex => formatDate(ex.date) === formatDate(new Date())).map((ex, index) => {
                             const cfg = CATEGORY_CONFIG[ex.category] || { icon: "payments", color: "#006A4E" };
                             const isExpanded = expandedExpenseId === ex.id;
 
@@ -698,43 +666,6 @@ const Expenses = () => {
                                 style={{ flex: 1, backgroundColor: '#ef4444', borderColor: '#ef4444', justifyContent: 'center' }}
                             >
                                 Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {/* Reset / Clear All Confirmation Modal */}
-            {clearAllConfirm && (
-                <div className="modal-overlay" style={{ zIndex: 2000 }}>
-                    <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center', padding: '30px' }}>
-                        <div style={{ color: '#ef4444', marginBottom: '20px' }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: '64px' }}>delete_forever</span>
-                        </div>
-                        <h3 style={{ fontSize: '20px', marginBottom: '10px', color: '#10b981' }}>Reset Expenses Data</h3>
-                        <p style={{ color: '#64748b', marginBottom: '30px', fontSize: '14px' }}>
-                            Are you sure you want to <strong>REMOVE ALL</strong> expense details and set all records to 0? This will permanently delete your financial history.
-                        </p>
-                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                            <button 
-                                className="btn-outline" 
-                                onClick={() => setClearAllConfirm(false)}
-                                style={{ flex: 1, justifyContent: 'center' }}
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                className="btn-primary" 
-                                onClick={async () => {
-                                    // Normally we would call a backend 'clearAll' endpoint
-                                    // For now, let's delete them one by one if no bulk endpoint exists
-                                    for (const exp of expenses) {
-                                        await ctxDeleteExpense(exp.id || exp._id);
-                                    }
-                                    setClearAllConfirm(false);
-                                }}
-                                style={{ flex: 1, backgroundColor: '#ef4444', borderColor: '#ef4444', justifyContent: 'center' }}
-                            >
-                                Clear Everything
                             </button>
                         </div>
                     </div>

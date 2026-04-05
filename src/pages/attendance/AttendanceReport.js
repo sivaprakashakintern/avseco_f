@@ -328,8 +328,31 @@ const AttendanceReport = () => {
                 <div className="ar-banner-left">
                     <h1 className="ar-banner-title">Monthly Attendance</h1>
                 </div>
-            </div>
 
+                <div className="ar-banner-right">
+                    <div className="custom-dropdown" onClick={(e) => e.stopPropagation()}>
+                        <button className="ar-export-btn" onClick={() => setShowExportDropdown(!showExportDropdown)}>
+                            <span className="material-symbols-outlined">download</span>
+                            Export Report
+                            <span className="material-symbols-outlined" style={{ marginLeft: '4px' }}>
+                                {showExportDropdown ? 'arrow_drop_up' : 'arrow_drop_down'}
+                            </span>
+                        </button>
+                        {showExportDropdown && (
+                            <div className="dropdown-menu export-dropdown">
+                                <div className="dropdown-item" onClick={() => { handleExportExcel(); setShowExportDropdown(false); }}>
+                                    <span className="material-symbols-outlined">description</span>
+                                    <span>Current Month ({months[selectedMonth]})</span>
+                                </div>
+                                <div className="dropdown-item" onClick={() => { handleExportYearlyExcel(); setShowExportDropdown(false); }}>
+                                    <span className="material-symbols-outlined">calendar_today</span>
+                                    <span>Full Year ({selectedYear})</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
 
             <div className="report-filters-row">
                 <div className="filter-item">
@@ -377,32 +400,7 @@ const AttendanceReport = () => {
                         </button>
                     </div>
                 </div>
-
-                <div 
-                    className="custom-dropdown export-dropdown-wrapper" 
-                    onMouseEnter={() => setShowExportDropdown(true)}
-                    onMouseLeave={() => setShowExportDropdown(false)}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <button className="ar-export-btn-filter">
-                        <span className="material-symbols-outlined">download</span>
-                        Export
-                    </button>
-                    {showExportDropdown && (
-                        <div className="dropdown-menu export-dropdown">
-                            <div className="dropdown-item" onClick={() => { handleExportExcel(); setShowExportDropdown(false); }}>
-                                <span className="material-symbols-outlined">description</span>
-                                <span>Current Month ({months[selectedMonth]})</span>
-                            </div>
-                            <div className="dropdown-item" onClick={() => { handleExportYearlyExcel(); setShowExportDropdown(false); }}>
-                                <span className="material-symbols-outlined">calendar_today</span>
-                                <span>Full Year ({selectedYear})</span>
-                            </div>
-                        </div>
-                    )}
-                </div>
             </div>
-
 
             <div className="status-legend">
                 <div className="legend-item"><span className="legend-box present">P</span> Present</div>

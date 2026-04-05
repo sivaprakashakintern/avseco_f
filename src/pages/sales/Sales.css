@@ -1,105 +1,39 @@
 /* Sales.css - Reused from Stock.css for Consistency */
 
-/* ===== PAGE LAYOUT (Glowing Theme) ===== */
+/* ===== PAGE LAYOUT ===== */
 .stock-page {
-  padding: 32px;
-  background-color: #0a3123; /* Dark Forest Green base */
-  margin: -32px; /* Pulls the background to fill the screen past padding */
-  min-height: calc(100vh); 
+  padding: 28px 32px;
+  background-color: #ffffff;
+  min-height: 100vh;
   font-family: 'Inter', sans-serif;
-  position: relative;
-  overflow: hidden;
 }
 
-/* Glowing Aurora Waves / Shapes */
-.stock-page::before {
-  content: '';
-  position: absolute;
-  top: -100px;
-  left: 0%;
-  width: 90%;
-  height: 400px;
-  background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.45) 0%, rgba(5, 150, 105, 0.15) 50%, transparent 70%);
-  filter: blur(60px);
-  z-index: 0;
-  pointer-events: none;
-  transform: rotate(-5deg);
-}
-
-.stock-page::after {
-  content: '';
-  position: absolute;
-  top: -200px;
-  right: -10%;
-  width: 700px;
-  height: 600px;
-  background: radial-gradient(circle at center, rgba(74, 222, 128, 0.25) 0%, transparent 60%);
-  filter: blur(80px);
-  z-index: 0;
-  pointer-events: none;
-}
-
-.stock-page-content {
-  position: relative;
-  z-index: 1;
-}
-
-/* Main White Container matching screenshot */
-.glowing-main-card {
-  background: #ffffff;
-  border-radius: 28px;
-  padding: 12px;
-  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.35);
-  margin-top: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  min-height: 80vh;
-}
-
-/* ===== GLOWING SALES HEADER ===== */
-.sales-glowing-header {
+/* ===== PAGE HEADER (Premium Analytics Style) ===== */
+.page-header.premium-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding: 12px 20px;
-}
-
-.sales-glowing-header .page-title {
-  font-size: 32px;
-  font-weight: 800;
-  color: #ffffff;
-  margin: 0;
-  letter-spacing: -0.015em;
-  text-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.sales-glowing-header .page-subtitle {
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.9);
-  margin-top: 4px;
-}
-
-.btn-export-glow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
+  margin-bottom: 32px;
+  background: linear-gradient(135deg, #006A4E 0%, #004d39 100%);
+  padding: 32px 48px;
   border-radius: 20px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  color: #ffffff;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px -12px rgba(0, 71, 52, 0.35);
+  position: relative;
+  overflow: hidden;
+  animation: slideFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.btn-export-glow:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+.page-header.premium-header::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .page-header.premium-header .page-title {

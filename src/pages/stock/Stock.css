@@ -16,7 +16,7 @@
   margin-bottom: 32px;
   background: #006A4E;
   padding: 28px 40px;
-  border-radius: 100px; /* Pill shape */
+  border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 12px 30px -5px rgba(0, 71, 52, 0.25);
   animation: slideFadeIn var(--transition-smooth);
