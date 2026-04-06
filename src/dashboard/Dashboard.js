@@ -451,11 +451,31 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* STOCK OVERVIEW */}
+      {/* INVENTORY LAYOUT AREA (ILA) */}
       {hasAccess('stock') && (
-        <div className="stock-overview-section">
-          <h3>ALL STOCK ITEMS ({stockData.length})</h3>
-          <div className="stock-grid">
+        <div className="stock-overview-section ila-section">
+          <div className="ila-header">
+            <div className="ila-title-box">
+              <span className="ila-label">INVENTORY LAYOUT AREA</span>
+              <h3>TOTAL STOCK OVERVIEW</h3>
+            </div>
+            <div className="ila-summary-badges">
+              <div className="ila-badge">
+                <span className="badge-label">TOTAL UNITS</span>
+                <span className="badge-value">{(stockData.reduce((s, i) => s + i.quantity, 0)).toLocaleString()}</span>
+              </div>
+              <div className="ila-badge">
+                <span className="badge-label">TOTAL VALUE</span>
+                <span className="badge-value">₹{(stockData.reduce((s, i) => s + i.totalValue, 0)).toLocaleString()}</span>
+              </div>
+              <div className="ila-badge urgent">
+                <span className="badge-label">LOW STOCK</span>
+                <span className="badge-value">{stockData.filter(i => i.quantity < 2000).length}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="stock-grid ila-grid">
             {stockData.map((item, index) => {
               const currentMonthStr = dayjs().format('YYYY-MM');
               
@@ -479,48 +499,55 @@ const Dashboard = () => {
               } else {
                 producedThisMonth = productionStats.monthBySize?.[item.size] || 0;
               }
-              
-              const progress = targetQty > 0 ? Math.min(100, (producedThisMonth / targetQty) * 100) : 0;
+              const progress = targetQty > 0 ? (producedThisMonth / targetQty) * 100 : 0;
+              const status = progress >= 100 ? 'optimal' : progress >= 50 ? 'good' : progress > 0 ? 'warning' : 'critical';
 
               return (
                 <div
                   key={index}
-                  className="stock-item-card"
+                  className={`stock-item-card ila-card ${status}`}
                   onClick={handleStockClick}
-                  style={{
-                    cursor: 'pointer'
-                  }}
                 >
+                  <div className="ila-card-status-dot"></div>
                   <div className="stock-item-header">
-                    <div>
-                      <span className="stock-name" style={{ fontSize: '11px', fontWeight: '800', display: 'block', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>{item.name}</span>
-                      <span className="stock-size" style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b' }}>{item.size}</span>
+                    <div className="item-main-info">
+                      <span className="stock-name-tag">{item.name}</span>
+                      <span className="stock-size-val">{item.size}</span>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                      <span className="stock-value" style={{ fontSize: '15px', fontWeight: '800', color: '#2563eb' }}>{item.quantity.toLocaleString()} pcs</span>
-                      <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>Value: ₹{item.totalValue.toLocaleString()}</span>
+                    <div className="item-value-info">
+                      <span className="stock-value-pcs">{item.quantity.toLocaleString()} <small>PCS</small></span>
+                      <span className="stock-total-val">₹{item.totalValue.toLocaleString()}</span>
                     </div>
                   </div>
 
-                  {targetQty > 0 && (
-                    <div className="stock-target-progress" style={{ marginTop: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>
-                        <span>MONTHLY TARGET</span>
-                        <span>{progress.toFixed(1)}%</span>
-                      </div>
-                      <div style={{ height: '4px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ 
-                          height: '100%', 
-                          width: `${progress}%`, 
-                          background: progress >= 100 ? '#10b981' : '#3b82f6',
-                          borderRadius: '4px'
-                        }}></div>
-                      </div>
-                      <div style={{ marginTop: '4px', fontSize: '10px', fontWeight: '600', color: '#94a3b8', textAlign: 'right' }}>
-                        {producedThisMonth.toLocaleString()} / {targetQty.toLocaleString()}
-                      </div>
+                  <div className="ila-item-details">
+                    <div className="ila-detail-row">
+                      <span>Rate/pcs</span>
+                      <span className="ila-val">₹{item.perPlateRate}</span>
                     </div>
-                  )}
+                    {targetQty > 0 && (
+                      <div className="ila-progress-box">
+                        <div className="progress-text">
+                          <span>Target Progress</span>
+                          <span>{progress.toFixed(0)}%</span>
+                        </div>
+                        <div className="progress-bar-container">
+                          <div 
+                            className="progress-bar-fill" 
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                        <div className="progress-counts">
+                          {producedThisMonth.toLocaleString()} / {targetQty.toLocaleString()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="ila-card-footer">
+                    <span className="material-symbols-outlined">analytics</span>
+                    <span>View Analysis</span>
+                  </div>
                 </div>
               );
             })}

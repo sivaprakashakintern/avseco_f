@@ -5113,3 +5113,25 @@
 .custom-dropdown-item.active .item-text {
   font-weight: 700;
 }
+/* ===== SHORTCUT HINT STYLE ===== */
+.shortcut-hint {
+    font-size: 10px;
+    color: #94a3b8;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-left: 6px;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+}
+
+.premium-label-new {
+    display: flex;
+    align-items: center;
+}

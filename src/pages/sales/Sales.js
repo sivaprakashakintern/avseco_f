@@ -66,7 +66,7 @@ const Sales = () => {
     const [exportFormat, setExportFormat] = useState('excel');
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
 
-    const [viewMode] = useState('entry'); // 'entry' or 'history'
+    const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
     const [editingTransactionId, setEditingTransactionId] = useState(null);
     const [selectedBaseProduct, setSelectedBaseProduct] = useState("");
 
@@ -94,9 +94,9 @@ const Sales = () => {
     const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
     const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
     const [deliveryEmployee, setDeliveryEmployee] = useState("");
-    const [isEmployeeDropdownOpen, setIsEmployeeDropdownOpen] = useState(false);
-    const [soldBy, setSoldBy] = useState("");
+    const [soldBy, setSoldBy] = useState(user?.name || "");
     const [clientType, setClientType] = useState("Company"); // Company or Individual
+    const [isEmployeeDropdownOpen, setIsEmployeeDropdownOpen] = useState(false);
 
     // Auto-fill Sold By for non-admin employees
     useEffect(() => {
@@ -120,7 +120,9 @@ const Sales = () => {
     const itemRefs = {
         quantity: React.useRef(null),
         unitPrice: React.useRef(null),
-        customerPhone: React.useRef(null)
+        customerPhone: React.useRef(null),
+        customerName: React.useRef(null),
+        companySearch: React.useRef(null)
     };
 
 
@@ -237,8 +239,10 @@ const Sales = () => {
         });
 
         setQuantity("");
-        // Set focus back to quantity for next item
-        if (itemRefs.quantity.current) itemRefs.quantity.current.focus();
+        // Remove focus after adding item as per user request
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
     };
     const handleKeyDown = (e, nextField = null) => {
         if (e.key === 'Enter') {
@@ -354,7 +358,7 @@ const Sales = () => {
         setCustomerGstin("");
         setCustomerAddress("");
         setDeliveryEmployee("");
-        setSoldBy("");
+        setSoldBy(user?.name || "");
         setDeliveryMode("Door Delivery");
         setPaymentMode("Cash");
         setPaidStatus("Paid");
@@ -459,39 +463,218 @@ const Sales = () => {
 
 
 
-    // Close dropdown when clicking outside
+    // Keyboard Shortcuts
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (!event.target.closest('.base-product-dropdown')) {
-                setIsBaseProductDropdownOpen(false);
+        const handleGlobalKeyDown = (e) => {
+            // Avoid shortcuts when typing in inputs (except for specifically handled keys)
+            const isTyping = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+            
+            // SHIFT + Z -> Toggle Client Type (Company / Individual)
+            if (e.shiftKey && (e.key === 'Z' || e.key === 'z')) {
+                e.preventDefault();
+                setClientType(prev => prev === 'Company' ? 'Individual' : 'Company');
+                setFeedbackMessage("Client Type Switched");
+                setTimeout(() => setFeedbackMessage(""), 1000);
+                return;
             }
-            if (!event.target.closest('.size-dropdown')) {
-                setIsSizeDropdownOpen(false);
+
+            // Global Shortcuts (only when NOT typing)
+            if (!isTyping && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                const key = e.key.toLowerCase();
+                // 'c' -> Open/Focus Company selection
+                if (key === 'c') {
+                    if (clientType === 'Company') {
+                        setIsClientDropdownOpen(true);
+                        setTimeout(() => itemRefs.companySearch.current?.focus(), 100);
+                        e.preventDefault();
+                    }
+                }
+                // 'n' -> Focus Person/Customer Name field
+                if (key === 'n') {
+                    itemRefs.customerName.current?.focus();
+                    e.preventDefault();
+                }
+                // 'p' -> Cycle Product Name
+                if (key === 'p') {
+                    const baseProducts = [...new Set(products.map(p => p.baseName))];
+                    if (!isBaseProductDropdownOpen) {
+                        setIsBaseProductDropdownOpen(true);
+                    } else {
+                        const currentIndex = baseProducts.indexOf(selectedBaseProduct);
+                        const nextIndex = (currentIndex + 1) % baseProducts.length;
+                        setSelectedBaseProduct(baseProducts[nextIndex]);
+                        // Auto-open size dropdown if we moved to a new product
+                        setTimeout(() => setIsSizeDropdownOpen(true), 50);
+                    }
+                    e.preventDefault();
+                }
+                // 's' -> Cycle Size dropdown
+                if (key === 's') {
+                    if (selectedBaseProduct) {
+                        const availableSizes = products.filter(p => p.baseName === selectedBaseProduct).map(p => p.size);
+                        if (!isSizeDropdownOpen) {
+                            setIsSizeDropdownOpen(true);
+                        } else {
+                            const currentIndex = availableSizes.indexOf(selectedSize);
+                            const nextIndex = (currentIndex + 1) % availableSizes.length;
+                            setSelectedSize(availableSizes[nextIndex]);
+                        }
+                    }
+                    e.preventDefault();
+                }
+                // 'q' -> Quantity
+                if (key === 'q') {
+                    itemRefs.quantity.current?.focus();
+                    e.preventDefault();
+                }
+                // 'r' -> Rate
+                if (key === 'r') {
+                    itemRefs.unitPrice.current?.focus();
+                    e.preventDefault();
+                }
+                // 'p' -> Cycle Product Name
+                if (key === 'p') {
+                    const baseProducts = [...new Set(products.map(p => p.baseName))];
+                    if (!isBaseProductDropdownOpen) {
+                        setIsBaseProductDropdownOpen(true);
+                    } else {
+                        const currentIndex = baseProducts.indexOf(selectedBaseProduct);
+                        const nextIndex = (currentIndex + 1) % baseProducts.length;
+                        setSelectedBaseProduct(baseProducts[nextIndex]);
+                        // Auto-open size dropdown if we moved to a new product
+                        setTimeout(() => setIsSizeDropdownOpen(true), 50);
+                    }
+                    e.preventDefault();
+                }
+                // 's' -> Cycle Size dropdown
+                if (key === 's') {
+                    if (selectedBaseProduct) {
+                        const availableSizes = products.filter(p => p.baseName === selectedBaseProduct).map(p => p.size);
+                        if (!isSizeDropdownOpen) {
+                            setIsSizeDropdownOpen(true);
+                        } else {
+                            const currentIndex = availableSizes.indexOf(selectedSize);
+                            const nextIndex = (currentIndex + 1) % availableSizes.length;
+                            setSelectedSize(availableSizes[nextIndex]);
+                        }
+                    }
+                    e.preventDefault();
+                }
+                // 'q' -> Quantity
+                if (key === 'q') {
+                    itemRefs.quantity.current?.focus();
+                    e.preventDefault();
+                }
+                // 'r' -> Rate
+                if (key === 'r') {
+                    itemRefs.unitPrice.current?.focus();
+                    e.preventDefault();
+                }
             }
-            if (!event.target.closest('.client-dropdown')) {
-                setIsClientDropdownOpen(false);
+
+            // Shift + Enter -> SAVE ENTRY (Log Transaction)
+            if (e.shiftKey && e.key === 'Enter') {
+                if (!isLogging && (billItems.length > 0 || quantity)) {
+                    handleLogTransaction();
+                    e.preventDefault();
+                }
             }
-            if (!event.target.closest('.customer-dropdown')) {
-                setIsCustomerDropdownOpen(false);
+
+            if (e.key === 'Enter') {
+                if (isPaymentDropdownOpen || isPaidStatusDropdownOpen || isDeliveryModeDropdownOpen || isBaseProductDropdownOpen || isSizeDropdownOpen) {
+                    setIsPaymentDropdownOpen(false);
+                    setIsPaidStatusDropdownOpen(false);
+                    setIsDeliveryModeDropdownOpen(false);
+                    setIsBaseProductDropdownOpen(false);
+                    setIsSizeDropdownOpen(false);
+                    if (document.activeElement) document.activeElement.blur();
+                    e.preventDefault();
+                    return;
+                }
             }
-            if (!event.target.closest('.employee-dropdown')) {
-                setIsEmployeeDropdownOpen(false);
-            }
-            if (!event.target.closest('.payment-dropdown')) {
-                setIsPaymentDropdownOpen(false);
-            }
-            if (!event.target.closest('.delivery-mode-dropdown')) {
-                setIsDeliveryModeDropdownOpen(false);
-            }
-            if (!event.target.closest('.sold-by-dropdown')) {
-                setIsSoldByDropdownOpen(false);
+
+            // Dropdown selection (1-9) when a dropdown is open
+            const anyOpenDropdown = isClientDropdownOpen || isCustomerDropdownOpen || isBaseProductDropdownOpen || isSizeDropdownOpen;
+            if (anyOpenDropdown) {
+                const num = parseInt(e.key);
+                if (!isNaN(num) && num >= 1 && num <= 9) {
+                    if (isClientDropdownOpen || isCustomerDropdownOpen) {
+                        const dropdownType = isClientDropdownOpen ? 'client' : 'customer';
+                        const list = dropdownType === 'client' 
+                            ? clients.filter(c => (clientType === 'Company' ? (c.companyName && (c.clientType?.toLowerCase() !== 'personal')) : (!c.companyName || c.clientType?.toLowerCase() === 'personal')))
+                                .filter(c => (c.companyName?.toLowerCase() || "").includes(companyName?.toLowerCase() || ""))
+                            : clients.filter(c => {
+                                    const isComp = !!(c.companyName && c.companyName.trim() !== "");
+                                    const isPers = !isComp || c.clientType?.toLowerCase() === 'personal';
+                                    return clientType === 'Company' ? isComp : isPers;
+                                }).filter(c => (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) || c.companyName?.toLowerCase().includes(customerName.toLowerCase())));
+                        
+                        if (list[num - 1]) {
+                            e.preventDefault();
+                            const client = list[num - 1];
+                            if (dropdownType === 'client') {
+                                setCompanyName(client.companyName);
+                                setCustomerName(client.contactPerson || "");
+                                setCustomerEmail(client.email || "");
+                                setCustomerPhone(client.phone || "");
+                                setCustomerGstin(client.gst || "");
+                                setCustomerAddress(client.address || "");
+                                setIsClientDropdownOpen(false);
+                                if (document.activeElement) document.activeElement.blur();
+                            } else {
+                                setCustomerName(client.companyName || client.contactPerson);
+                                setCompanyName(client.companyName || "");
+                                setCustomerEmail(client.email || "");
+                                setCustomerPhone(client.phone || "+91 ");
+                                setCustomerGstin(client.gst || "");
+                                setCustomerAddress(client.address || "");
+                                setIsCustomerDropdownOpen(false);
+                                if (document.activeElement) document.activeElement.blur();
+                            }
+                        }
+                    } else if (isBaseProductDropdownOpen) {
+                        const list = [...new Set(products.map(p => p.baseName))];
+                        if (list[num - 1]) {
+                            e.preventDefault();
+                            setSelectedBaseProduct(list[num - 1]);
+                            setIsBaseProductDropdownOpen(false);
+                            // Auto-progress to size
+                            setTimeout(() => setIsSizeDropdownOpen(true), 50);
+                        }
+                    } else if (isSizeDropdownOpen) {
+                        const list = products.filter(p => p.baseName === selectedBaseProduct);
+                        if (list[num - 1]) {
+                            e.preventDefault();
+                            const product = list[num - 1];
+                            setSelectedSize(product.size);
+                            setIsSizeDropdownOpen(false);
+                            // Auto-progress to quantity
+                            setTimeout(() => itemRefs.quantity.current?.focus(), 50);
+                        }
+                    }
+                }
             }
         };
 
-        document.addEventListener('click', handleClickOutside);
-        return () => {
-            document.removeEventListener('click', handleClickOutside);
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, [clientType, isClientDropdownOpen, isCustomerDropdownOpen, isBaseProductDropdownOpen, isSizeDropdownOpen, companyName, customerName, clients, products, selectedBaseProduct, paidStatus, paymentMode]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.client-dropdown')) setIsClientDropdownOpen(false);
+            if (!event.target.closest('.customer-dropdown')) setIsCustomerDropdownOpen(false);
+            if (!event.target.closest('.base-product-dropdown')) setIsBaseProductDropdownOpen(false);
+            if (!event.target.closest('.size-dropdown')) setIsSizeDropdownOpen(false);
+            if (!event.target.closest('.employee-dropdown')) setIsEmployeeDropdownOpen(false);
+            if (!event.target.closest('.payment-dropdown')) setIsPaymentDropdownOpen(false);
+            if (!event.target.closest('.delivery-mode-dropdown')) setIsDeliveryModeDropdownOpen(false);
+            if (!event.target.closest('.sold-by-dropdown')) setIsSoldByDropdownOpen(false);
         };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
     }, []);
 
     // Helper to extract and format time consistently (12h AM/PM)
@@ -564,7 +747,7 @@ const Sales = () => {
                     <div className="quick-entry-grid" style={{ paddingBottom: '8px' }}>
                         <div className="quick-entry-row">
                             <div className="quick-entry-item two-col-item" style={clientType === 'Individual' ? { opacity: 0.6 } : {}}>
-                                <span className="quick-entry-label">Company Name:</span>
+                                <span className="quick-entry-label">Company Name: <span className="shortcut-hint">C</span></span>
                                 <div className={`product-dropdown client-dropdown ${clientType === 'Individual' ? 'disabled-dropdown' : ''}`}>
                                     <div className="dropdown-input-wrapper">
                                         <button
@@ -599,6 +782,7 @@ const Sales = () => {
                                             <div className="dropdown-search-wrapper">
                                                 <input
                                                     type="text"
+                                                    ref={itemRefs.companySearch}
                                                     placeholder="Search companies..."
                                                     className="dropdown-search-input"
                                                     autoFocus
@@ -615,7 +799,7 @@ const Sales = () => {
                                                     {clients
                                                         .filter(c => (clientType === 'Company' ? (c.companyName && (c.clientType?.toLowerCase() !== 'personal')) : (!c.companyName || c.clientType?.toLowerCase() === 'personal')))
                                                         .filter(c => (c.companyName?.toLowerCase() || "").includes(companyName?.toLowerCase() || ""))
-                                                        .map((client) => (
+                                                        .map((client, idx) => (
                                                             <button
                                                                 key={client.id}
                                                                 onClick={() => {
@@ -626,10 +810,14 @@ const Sales = () => {
                                                                     setCustomerGstin(client.gst || "");
                                                                     setCustomerAddress(client.address || "");
                                                                     setIsClientDropdownOpen(false);
+                                                                    // Remove focus after selection
+                                                                    if (document.activeElement) document.activeElement.blur();
                                                                 }}
                                                                 className={`product-dropdown-item ${companyName === client.companyName ? 'active' : ''}`}
                                                             >
-                                                                <span className="product-name-text">{client.companyName}</span>
+                                                                <span className="product-name-text">
+                                                                    <span className="keyboard-shortcut-tag">{idx + 1}</span> {client.companyName}
+                                                                </span>
                                                                 <span className="product-sku-category">{client.contactPerson}</span>
                                                             </button>
                                                         ))}
@@ -668,11 +856,12 @@ const Sales = () => {
                             </div>
 
                             <div className="quick-entry-item two-col-item">
-                                <span className="quick-entry-label">{clientType === 'Individual' ? 'Person Name' : 'Customer Name'}:</span>
+                                <span className="quick-entry-label">{clientType === 'Individual' ? 'Person Name' : 'Customer Name'}: <span className="shortcut-hint">N</span></span>
                                 <div className="product-dropdown customer-dropdown">
                                     <div className="dropdown-input-wrapper">
                                         <input
                                             type="text"
+                                            ref={itemRefs.customerName}
                                             placeholder={clientType === 'Individual' ? "Enter or search person name..." : "Enter or search customer name..."}
                                             className="quick-entry-input dropdown-search-input"
                                             style={{ width: '100%' }}
@@ -710,7 +899,7 @@ const Sales = () => {
                                                         (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) ||
                                                          c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
                                                     )
-                                                    .map((client) => (
+                                                    .map((client, idx) => (
                                                         <button
                                                             key={client.id || client._id}
                                                             onClick={() => {
@@ -721,11 +910,15 @@ const Sales = () => {
                                                                 setCustomerGstin(client.gst || "");
                                                                 setCustomerAddress(client.address || "");
                                                                 setIsCustomerDropdownOpen(false);
+                                                                // Remove focus after selection
+                                                                if (document.activeElement) document.activeElement.blur();
                                                             }}
                                                             className="product-dropdown-item"
                                                         >
                                                             <div className="client-option-main">
-                                                                <span className="product-name-text">{client.companyName || client.contactPerson}</span>
+                                                                <span className="product-name-text">
+                                                                    <span className="keyboard-shortcut-tag">{idx + 1}</span> {client.companyName || client.contactPerson}
+                                                                </span>
                                                                 <span className="type-tag">{client.clientType || 'Personal'}</span>
                                                             </div>
                                                             <div className="client-option-sub">
@@ -806,14 +999,13 @@ const Sales = () => {
                     </div>
 
                     <div className="section-divider"></div>
-
-                    <div className="table-header" style={{ padding: '14px 32px' }}>
+<div className="table-header" style={{ padding: '14px 32px' }}>
                         <h3 className="section-title">Billing Details</h3>
                     </div>
                     <div className="quick-entry-grid" style={{ paddingTop: 0 }}>
                         <div className="quick-entry-row">
                             <div className="quick-entry-item two-col-item">
-                                <span className="quick-entry-label">Product Name:</span>
+                                <span className="quick-entry-label">Product Name: <span className="shortcut-hint">P</span></span>
                                 <div className="product-dropdown base-product-dropdown">
                                     <button
                                         onClick={() => setIsBaseProductDropdownOpen(!isBaseProductDropdownOpen)}
@@ -827,16 +1019,20 @@ const Sales = () => {
                                     {isBaseProductDropdownOpen && (
                                         <div className="product-dropdown-menu">
                                             {products.length > 0 ? (
-                                                [...new Set(products.map(p => p.baseName))].map((baseName) => (
+                                                [...new Set(products.map(p => p.baseName))].map((baseName, idx) => (
                                                     <button
                                                         key={baseName}
                                                         onClick={() => {
                                                             setSelectedBaseProduct(baseName);
                                                             setIsBaseProductDropdownOpen(false);
+                                                            // Auto-progress to size
+                                                            setTimeout(() => setIsSizeDropdownOpen(true), 100);
                                                         }}
                                                         className={`product-dropdown-item ${selectedBaseProduct === baseName ? 'active' : ''}`}
                                                     >
-                                                        <span className="product-name-text">{baseName}</span>
+                                                        <span className="product-name-text">
+                                                            <span className="keyboard-shortcut-tag">{idx + 1}</span> {baseName}
+                                                        </span>
                                                     </button>
                                                 ))
                                             ) : (
@@ -848,7 +1044,7 @@ const Sales = () => {
                             </div>
 
                             <div className="quick-entry-item two-col-item">
-                                <span className="quick-entry-label">Size/Variant:</span>
+                                <span className="quick-entry-label">Size/Variant: <span className="shortcut-hint">S</span></span>
                                 <div className="product-dropdown size-dropdown">
                                     <button
                                         onClick={() => setIsSizeDropdownOpen(!isSizeDropdownOpen)}
@@ -865,16 +1061,20 @@ const Sales = () => {
                                     </button>
                                     {isSizeDropdownOpen && selectedBaseProduct && (
                                         <div className="product-dropdown-menu">
-                                            {products.filter(p => p.baseName === selectedBaseProduct).map((product) => (
+                                            {products.filter(p => p.baseName === selectedBaseProduct).map((product, idx) => (
                                                 <button
                                                     key={product.size}
                                                     onClick={() => {
                                                         setSelectedSize(product.size);
                                                         setIsSizeDropdownOpen(false);
+                                                        // Focus quantity after size selection
+                                                        setTimeout(() => itemRefs.quantity.current?.focus(), 100);
                                                     }}
                                                     className={`product-dropdown-item ${selectedSize === product.size ? 'active' : ''}`}
                                                 >
-                                                    <span className="product-name-text">{product.size}</span>
+                                                    <span className="product-name-text">
+                                                        <span className="keyboard-shortcut-tag">{idx + 1}</span> {product.size}
+                                                    </span>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         <span style={{ fontSize: '11px', color: '#059669', background: '#f0fdf4', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
                                                             {product.stock || 0} in stock
@@ -894,7 +1094,7 @@ const Sales = () => {
 
                         <div className="quick-entry-row">
                             <div className="quick-entry-item two-col-item">
-                                <span className="quick-entry-label">Total Pieces:</span>
+                                <span className="quick-entry-label">Total Pieces: <span className="shortcut-hint">Q</span></span>
                                 <div style={{ width: '100%', position: 'relative' }}>
                                     {selectedBaseProduct && selectedSize && (
                                         <div style={{ position: 'absolute', top: '-14px', right: '10px', zIndex: 10 }}>
@@ -933,7 +1133,7 @@ const Sales = () => {
                             </div>
 
                             <div className="quick-entry-item two-col-item">
-                                <span className="quick-entry-label">Per Plate Price:</span>
+                                <span className="quick-entry-label">Per Plate Price: <span className="shortcut-hint">R</span></span>
                                 <div className="amount-input-wrapper">
                                     <span className="currency-prefix">₹</span>
                                     <input

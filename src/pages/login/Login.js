@@ -67,13 +67,13 @@ const Login = () => {
                         </div>}
 
                         <div className="form-group">
-                            <label htmlFor="username">Email Address</label>
+                            <label htmlFor="username">EMAIL ADDRESS</label>
                             <div className="input-wrapper">
                                 <span className="material-symbols-outlined input-icon">mail</span>
                                 <input
                                     type="text"
                                     id="username"
-                                    placeholder="Enter your email"
+                                    placeholder="name@gmail.com"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     required
@@ -82,13 +82,13 @@ const Login = () => {
                         </div>
 
                         <div className="form-group">
-                            <label htmlFor="password">Password</label>
+                            <label htmlFor="password">PASSWORD</label>
                             <div className="input-wrapper">
                                 <span className="material-symbols-outlined input-icon">lock</span>
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     id="password"
-                                    placeholder="••••••••"
+                                    placeholder="••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required

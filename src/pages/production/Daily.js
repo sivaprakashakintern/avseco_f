@@ -275,6 +275,7 @@ const Production = () => {
       setTimeout(() => inputRefs.quantity.current?.focus(), 50);
     } else if (name === 'operator') {
       setOpenDropdown(null);
+      if (document.activeElement) document.activeElement.blur();
     }
   }, [inputRefs.quantity]);
 
@@ -502,7 +503,7 @@ const Production = () => {
                     </div>
 
                     <div className="premium-form-group">
-                      <label className="premium-label-new">Product Type</label>
+                      <label className="premium-label-new">Product Type <span className="shortcut-hint">P</span></label>
                       <div className={`custom-dropdown-premium ${openDropdown === 'product' ? 'active' : ''}`}>
                         <div 
                           className="custom-dropdown-toggle"
@@ -532,7 +533,7 @@ const Production = () => {
                     </div>
 
                     <div className="premium-form-group">
-                      <label className="premium-label-new">Size</label>
+                      <label className="premium-label-new">Size <span className="shortcut-hint">S</span></label>
                       <div className={`custom-dropdown-premium ${openDropdown === 'size' ? 'active' : ''}`}>
                         <div 
                           className="custom-dropdown-toggle"
@@ -574,7 +575,7 @@ const Production = () => {
                     </div>
 
                     <div className="premium-form-group">
-                      <label className="premium-label-new">Quantity (PCS)</label>
+                      <label className="premium-label-new">Quantity (PCS) <span className="shortcut-hint">Q</span></label>
                       <div className="input-wrapper-new">
                         <span className="material-symbols-outlined input-icon-new">production_quantity_limits</span>
                         <input 
@@ -611,7 +612,7 @@ const Production = () => {
                     </div>
 
                     <div className="premium-form-group operator-group-new">
-                      <label className="premium-label-new">Machine Operator</label>
+                      <label className="premium-label-new">Machine Operator <span className="shortcut-hint">M</span></label>
                       <div className={`custom-dropdown-premium ${openDropdown === 'operator' ? 'active' : ''}`}>
                         <div 
                           className="custom-dropdown-toggle"

@@ -932,64 +932,242 @@
   }
 }
 
-/* STOCK OVERVIEW */
-.stock-overview-section {
+/* INVENTORY LAYOUT AREA (ILA) */
+.ila-section {
   background: white;
   padding: 32px;
-  border-radius: var(--avs-base-radius);
+  border-radius: 32px;
+  margin-bottom: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f1f5f9;
+}
+
+.ila-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
   margin-bottom: 32px;
-  box-shadow: var(--avs-card-shadow);
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.stock-overview-section h3 {
-  margin: 0 0 24px;
-  font-size: 16px;
+.ila-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 2px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.ila-title-box h3 {
+  font-size: 24px;
+  font-weight: 850;
+  color: #1e293b;
+  margin: 0;
+  letter-spacing: -1px;
+}
+
+.ila-summary-badges {
+  display: flex;
+  gap: 16px;
+}
+
+.ila-badge {
+  background: #f8fafc;
+  padding: 12px 20px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  border: 1px solid #f1f5f9;
+}
+
+.ila-badge.urgent {
+  background: #fff1f2;
+  border-color: #ffe4e6;
+}
+
+.ila-badge.urgent .badge-value {
+  color: #e11d48;
+}
+
+.badge-label {
+  font-size: 10px;
   font-weight: 700;
-  color: var(--avs-text-dark);
-  letter-spacing: 0.5px;
+  color: #64748b;
+  text-transform: uppercase;
 }
 
-.stock-grid {
+.badge-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.ila-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
 }
 
-.stock-item-card {
-  padding: 20px;
-  background: #f8fafc;
-  border-radius: var(--avs-base-radius);
-  transition: var(--avs-transition);
-  border: 1px solid #e2e8f0;
+.ila-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 24px !important;
+  padding: 24px !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-@media (hover: hover) {
-  .stock-item-card:hover {
-    transform: translateY(-4px);
-    border-color: #3b82f6;
-    box-shadow: var(--avs-popup-shadow);
-  }
+.ila-card:hover {
+  transform: translateY(-8px) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08) !important;
+  border-color: #3b82f6 !important;
 }
 
-.stock-item-header {
+.ila-card-status-dot {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.ila-card.optimal .ila-card-status-dot { background: #10b981; box-shadow: 0 0 10px #10b981; }
+.ila-card.good .ila-card-status-dot { background: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
+.ila-card.warning .ila-card-status-dot { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+.ila-card.critical .ila-card-status-dot { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+
+.item-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stock-name-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stock-size-val {
+  font-size: 20px;
+  font-weight: 900;
+  color: #1e293b;
+  letter-spacing: -0.5px;
+}
+
+.item-value-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.stock-value-pcs {
+  font-size: 18px;
+  font-weight: 850;
+  color: #2563eb;
+}
+
+.stock-value-pcs small {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.stock-total-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.ila-item-details {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed #f1f5f9;
+}
+
+.ila-detail-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 16px;
 }
 
-.stock-size {
-  font-size: 18px;
+.ila-val {
+  color: #1e293b;
   font-weight: 700;
-  color: var(--avs-text-dark);
 }
 
-.stock-value {
-  font-size: 14px;
+.ila-progress-box {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.progress-bar-container {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.ila-card.optimal .progress-bar-fill { background: linear-gradient(90deg, #10b981, #059669); }
+.ila-card.critical .progress-bar-fill { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+.progress-counts {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-align: right;
+}
+
+.ila-card-footer {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
   font-weight: 700;
   color: #2563eb;
-  background: #e0f2fe;
-  padding: 6px 14px;
-  border-radius: 30px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+}
+
+.ila-card:hover .ila-card-footer {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ila-card-footer span:first-child {
+  font-size: 18px;
 }
 
 /* EXPENSES BREAKDOWN */
