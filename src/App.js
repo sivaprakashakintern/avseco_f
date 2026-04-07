@@ -31,6 +31,8 @@ import DailyProduction from "./pages/production/Daily.js";
 
 // Auth Pages
 import Login from "./pages/login/Login.js";
+import ForgotPassword from "./pages/forgot-password/ForgotPassword.js";
+import ResetPassword from "./pages/forgot-password/ResetPassword.js";
 
 // Report Pages
 import StockReport from "./pages/reports/StockReport.js";
@@ -117,6 +119,8 @@ const App = () => {
             {/* Public Routes */}
             <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+            <Route path="/reset-password/:token" element={<PublicRoute><ResetPassword /></PublicRoute>} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* Dashboard */}

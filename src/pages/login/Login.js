@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.js";
 import logo from "../../assets/logo.png";
 import "./Login.css";
@@ -103,6 +103,10 @@ const Login = () => {
                                     </span>
                                 </button>
                             </div>
+                        </div>
+
+                        <div className="login-footer">
+                            <Link to="/forgot-password">Forgot password?</Link>
                         </div>
 
                         <button type="submit" className="login-submit" disabled={isLoading}>

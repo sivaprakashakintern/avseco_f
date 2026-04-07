@@ -308,7 +308,7 @@
 @media (max-width: 480px) {
     .login-page {
         padding: 15px;
-        align-items: flex-end; 
+        align-items: center; 
     }
     
     .login-container {
@@ -352,4 +352,33 @@
     .login-card {
         padding: 20px;
     }
+}
+
+.login-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -10px;
+    margin-bottom: -5px;
+}
+
+.login-footer a {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13.5px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    padding: 5px;
+}
+
+@media (max-width: 480px) {
+    .login-footer a {
+        font-size: 14.5px;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+    }
+}
+
+.login-footer a:hover {
+    color: #ffffff;
+    text-decoration: underline;
 }
