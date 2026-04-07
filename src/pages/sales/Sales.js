@@ -6,30 +6,29 @@ import './Sales.css';
 
 
 
+// Helper: Format date for display (Moved out of component to avoid re-render conflicts)
+const formatDate = (date) => {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+};
+
+const formatPhone = (value) => {
+    if (!value.startsWith("+91 ")) {
+        value = "+91 " + value.replace(/^\+91\s*/, "");
+    }
+    const digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
+    return "+91 " + digits;
+};
+
 const Sales = () => {
     const {
         clients, addClient, employees, products: dbProducts, stockData,
         salesHistory, addSale, updateSale
     } = useAppContext();
     const { user, isAdmin } = useAuth();
-
-    // Helper: Format date for display (Moved up to avoid initialization error)
-    // Helper: Format date for display (Standardized to avoid split conflicts)
-    const formatDate = (date) => {
-        const d = new Date(date);
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${day}-${month}-${year}`;
-    };
-
-    const formatPhone = (value) => {
-        if (!value.startsWith("+91 ")) {
-            value = "+91 " + value.replace(/^\+91\s*/, "");
-        }
-        const digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
-        return "+91 " + digits;
-    };
 
     // Process products into unique base names and their variants
     const products = React.useMemo(() => {
@@ -364,7 +363,7 @@ const Sales = () => {
         setPaidStatus("Paid");
         setAmountPaid("");
         setTimeout(() => setFeedbackMessage(""), 3000);
-    }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, formatDate, paidStatus, paymentMode, quantity, salesHistory, selectedProduct, selectedProductObj, setIsLogging, soldBy, updateSale, user?.name, unitPrice]);
+    }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, paidStatus, paymentMode, quantity, salesHistory, selectedProduct, selectedProductObj, setIsLogging, soldBy, updateSale, user?.name, unitPrice]);
 
 
 
