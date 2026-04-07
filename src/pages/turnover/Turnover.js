@@ -209,7 +209,7 @@ const Turnover = () => {
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <Area type="monotone" dataKey="Income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncomeV2)" />
+                <Area type="monotone" dataKey="Income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncomeV2)" isAnimationActive={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -261,9 +261,9 @@ const Turnover = () => {
             <div style={{ width: '60%', height: 260, minWidth: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={donutData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                    {donutData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                  </Pie>
+                    <Pie data={donutData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" isAnimationActive={false}>
+                      {donutData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                    </Pie>
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
@@ -292,7 +292,7 @@ const Turnover = () => {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
                 <YAxis hide />
                 <Tooltip cursor={{fill: '#f8fafc'}} />
-                <Bar dataKey="SalesQty" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
+                <Bar dataKey="SalesQty" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -307,7 +307,7 @@ const Turnover = () => {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
                 <YAxis hide />
                 <Tooltip cursor={{fill: '#f8fafc'}} />
-                <Bar dataKey="ProdQty" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={40} />
+                <Bar dataKey="ProdQty" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={40} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
