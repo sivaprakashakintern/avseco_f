@@ -180,7 +180,10 @@ const Turnover = () => {
               <span className="material-symbols-outlined icon-accent">bar_chart</span>
               <h3>Sales Performance</h3>
             </div>
-
+            <div className={`trend-badge-premium ${incomeGrowthColor}`}>
+              {financials.incomeGrowthPercent >= 0 ? 'trending_up' : 'trending_down'}
+              <span>{Math.abs(financials.incomeGrowthPercent)}%</span>
+            </div>
           </div>
 
           <div className="chart-wrapper-premium" style={{ height: 350, width: '100%', minWidth: 0, marginTop: '20px', position: 'relative' }}>

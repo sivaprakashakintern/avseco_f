@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
 import { useAuth } from '../../context/AuthContext.js';
 import './Sales.css';
@@ -255,7 +255,7 @@ const Sales = () => {
         }
     };
 
-    const handleLogTransaction = async () => {
+    const handleLogTransaction = useCallback(async () => {
         if (billItems.length === 0 && (!quantity || parseFloat(quantity) <= 0)) {
             return;
         }
@@ -364,7 +364,7 @@ const Sales = () => {
         setPaidStatus("Paid");
         setAmountPaid("");
         setTimeout(() => setFeedbackMessage(""), 3000);
-    };
+    }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, formatDate, isLogging, paidStatus, paymentMode, quantity, salesHistory, selectedProduct, selectedProductObj, setIsLogging, soldBy, updateSale, user?.name]);
 
 
 
