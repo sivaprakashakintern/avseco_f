@@ -102,7 +102,7 @@ const Sidebar = () => {
       module: "sales",
       children: [
         { label: "Sale", path: "/sales" },
-        { label: "Transaction History", path: "/sales/history" }
+        { label: "Order Details", path: "/sales/history" }
       ]
     },
     {

@@ -151,7 +151,7 @@ const Turnover = () => {
         <div className="stat-card">
           <div className="stat-icon icon-income"><span className="material-symbols-outlined">payments</span></div>
           <div className="stat-info">
-            <span className="stat-label">Total Income ({filterType})</span>
+            <span className="stat-label">Total Turnover ({filterType})</span>
             <span className="stat-value income">₹{financials.totalIncome.toLocaleString('en-IN')}</span>
           </div>
         </div>
@@ -169,6 +169,66 @@ const Turnover = () => {
             <span className="stat-value profit">
               ₹{financials.netProfit.toLocaleString('en-IN')}
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Financial Distribution moved to top */}
+      <div className="analytics-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+        <div className="analytics-card" style={{ minWidth: 0, position: 'relative' }}>
+          <div className="card-header-main">
+            <div className="title-group">
+              <span className="material-symbols-outlined icon-accent">pie_chart</span>
+              <h3>Income vs Expenses</h3>
+            </div>
+          </div>
+          <div style={{ height: 320, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Income', value: financials.totalIncome },
+                    { name: 'Expenses', value: financials.totalExpenses }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  <Cell fill="#10b981" />
+                  <Cell fill="#ef4444" />
+                </Pie>
+                <Tooltip cursor={false} formatter={(value) => `₹${value.toLocaleString()}`} />
+                <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="analytics-card" style={{ minWidth: 0, position: 'relative' }}>
+          <div className="card-header-main">
+            <div className="title-group">
+              <span className="material-symbols-outlined icon-accent">account_balance_wallet</span>
+              <h3>Expense Analysis by Category</h3>
+            </div>
+          </div>
+          <div style={{ height: 320, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <BarChart layout="vertical" data={charts.expenseCatChart} margin={{ left: 20, right: 30 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" hide />
+                <YAxis type="category" dataKey="name" width={120} axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600 }} />
+                <Tooltip cursor={false} formatter={(value) => `₹${value.toLocaleString()}`} />
+                <Bar dataKey="Amount" radius={[0, 4, 4, 0]} barSize={25}>
+                  {charts.expenseCatChart.map((entry, index) => {
+                    const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899'];
+                    return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -232,10 +292,7 @@ const Turnover = () => {
               <span className="material-symbols-outlined icon-accent-purple">monitoring</span>
               <h3>Monthly Production Performance</h3>
             </div>
-            <div className={`trend-badge-premium ${prodGrowthColor}`}>
-              {production.prodGrowthPercent >= 0 ? 'add_box' : 'do_not_disturb_on'}
-              <span>{Math.abs(production.prodGrowthPercent)}%</span>
-            </div>
+
           </div>
 
           <div style={{ height: 350, minWidth: 0, marginTop: '20px', position: 'relative' }}>
@@ -267,65 +324,6 @@ const Turnover = () => {
         </div>
       </div>
 
-      {/* Row 3: Financial Distribution */}
-      <div className="analytics-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
-        <div className="analytics-card" style={{ minWidth: 0, position: 'relative' }}>
-          <div className="card-header-main">
-            <div className="title-group">
-              <span className="material-symbols-outlined icon-accent">pie_chart</span>
-              <h3>Income vs Expenses</h3>
-            </div>
-          </div>
-          <div style={{ height: 320, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: 'Income', value: financials.totalIncome },
-                    { name: 'Expenses', value: financials.totalExpenses }
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  <Cell fill="#10b981" />
-                  <Cell fill="#ef4444" />
-                </Pie>
-                <Tooltip cursor={false} formatter={(value) => `₹${value.toLocaleString()}`} />
-                <Legend layout="horizontal" verticalAlign="bottom" align="center" />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="analytics-card" style={{ minWidth: 0, position: 'relative' }}>
-          <div className="card-header-main">
-            <div className="title-group">
-              <span className="material-symbols-outlined icon-accent">account_balance_wallet</span>
-              <h3>Expense Analysis by Category</h3>
-            </div>
-          </div>
-          <div style={{ height: 320, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
-              <BarChart layout="vertical" data={charts.expenseCatChart} margin={{ left: 20, right: 30 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={120} axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600 }} />
-                <Tooltip cursor={false} formatter={(value) => `₹${value.toLocaleString()}`} />
-                <Bar dataKey="Amount" radius={[0, 4, 4, 0]} barSize={25}>
-                  {charts.expenseCatChart.map((entry, index) => {
-                    const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899'];
-                    return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
