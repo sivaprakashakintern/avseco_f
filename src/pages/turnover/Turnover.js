@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
 import axios from '../../utils/axiosConfig.js';
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area
+  Cell, PieChart, Pie, Legend
 } from 'recharts';
 import './Turnover.css';
 
 const Turnover = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Filter states
   const [filterType, setFilterType] = useState('monthly'); // 'daily', 'monthly', 'yearly', 'all'
   const getToday = () => {
@@ -23,7 +23,7 @@ const Turnover = () => {
   const [selectedDate, setSelectedDate] = useState(getToday());
   const [selectedMonth, setSelectedMonth] = useState(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
-  
+
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -53,7 +53,7 @@ const Turnover = () => {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       if (filterType) params.append('type', filterType);
-      
+
       // For daily, explicitly send the date as 'date' param too (matching spec)
       if (filterType === 'daily' && selectedDate) {
         params.append('date', selectedDate);
@@ -66,10 +66,10 @@ const Turnover = () => {
       }
 
       const query = `?${params.toString()}`;
-      const res = await axios.get(`/turnover/analytics${query}`);
+      const res = await axios.get(`turnover/analytics${query}`);
       setAnalytics(res.data);
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      console.error('API Error: Failed to fetch turnover analytics.', error.response?.data || error.message);
     } finally {
       setLoading(false);
     }
@@ -84,19 +84,16 @@ const Turnover = () => {
 
   if (loading || !analytics) {
     return (
-      <div className="turnover-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div className="loader">Loading Modern ERP Insights...</div>
+      <div className="turnover-container">
+        <div className="loader-container">
+          <div className="premium-loader"></div>
+          <div className="loader-text">Analyzing ERP Insights...</div>
+        </div>
       </div>
     );
   }
 
   const { financials, production, charts } = analytics;
-
-  // Prepare Profit/Loss Donut Data
-  const donutData = [
-    { name: 'Income', value: financials.totalIncome, color: '#10b981' },
-    { name: 'Expenses', value: financials.totalExpenses, color: '#ef4444' }
-  ].filter(d => d.value > 0);
 
   // Growth colors
   const incomeGrowthColor = financials.incomeGrowthPercent >= 0 ? 'badge-green' : 'badge-red';
@@ -107,18 +104,18 @@ const Turnover = () => {
       {/* 1. Header Section */}
       <div className="premium-header-green">
         <div className="header-left-group">
-          <h1>Modern ERP Analytics Dashboard</h1>
-          <p className="subtitle-slim">Real-time performance tracking for AVSECO Inventory & Sales</p>
+          <h1>Turnover</h1>
+          <p className="subtitle-slim"></p>
         </div>
         <button className="btn-add-premium-outline" onClick={fetchAnalytics}>
-           Refresh Insights
+          Refresh Insights
         </button>
       </div>
 
       <div className="filters-section">
         <div className="filter-type-buttons">
           {['daily', 'monthly', 'yearly', 'all'].map(type => (
-            <button 
+            <button
               key={type}
               className={`filter-btn ${filterType === type ? 'active' : ''}`}
               onClick={() => {
@@ -176,138 +173,151 @@ const Turnover = () => {
         </div>
       </div>
 
-      <div className="analytics-grid">
-        <div className="analytics-card comparison-card-v2">
+      <div className="analytics-grid-main" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '24px' }}>
+        <div className="analytics-card" style={{ minWidth: 0 }}>
           <div className="card-header-main">
             <div className="title-group">
-              <span className="material-symbols-outlined icon-accent">analytics</span>
-              <h3>Sales Performance (MoM)</h3>
+              <span className="material-symbols-outlined icon-accent">bar_chart</span>
+              <h3>Sales Performance</h3>
             </div>
-            <div className={`trend-badge-premium ${incomeGrowthColor}`}>
-               {financials.incomeGrowthPercent >= 0 ? 'trending_up' : 'trending_down'}
-               <span>{Math.abs(financials.incomeGrowthPercent)}%</span>
-            </div>
-          </div>
-          
-          <div className="dual-metric-grid">
-            <div className="metric-box start">
-              <span className="label-lite">Selected Period</span>
-              <div className="metric-value-huge">₹{financials.currentMonthIncome.toLocaleString('en-IN')}</div>
-            </div>
-            <div className="metric-box end">
-              <span className="label-lite">Prior Period</span>
-              <div className="metric-value-ghost">₹{financials.prevMonthIncome.toLocaleString('en-IN')}</div>
-            </div>
+
           </div>
 
-          <div style={{ height: 160, minWidth: 0, marginTop: '10px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={charts.monthlyIncomeChart}>
-                <defs>
-                  <linearGradient id="colorIncomeV2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <Area type="monotone" dataKey="Income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncomeV2)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="analytics-card comparison-card-v2">
-          <div className="card-header-main">
-            <div className="title-group">
-              <span className="material-symbols-outlined icon-accent-purple">inventory_2</span>
-              <h3>Production Analysis</h3>
-            </div>
-            <div className={`trend-badge-premium ${prodGrowthColor}`}>
-               {production.prodGrowthPercent >= 0 ? 'add_circle' : 'do_not_disturb_on'}
-               <span>{Math.abs(production.prodGrowthPercent)}%</span>
-            </div>
-          </div>
-
-          <div className="production-vs-grid">
-            <div className="prod-period">
-              <div className="main-stat">{production.currentMonthProduction.toLocaleString()}</div>
-              <span className="sub-stat">Current Pcs</span>
-            </div>
-            <div className="vs-center">VS</div>
-            <div className="prod-period ghost">
-              <div className="main-stat">{production.prevMonthProduction.toLocaleString()}</div>
-              <span className="sub-stat">Prior Pcs</span>
-            </div>
-          </div>
-
-          <div className="progress-stack">
-            <div className="progress-label-row">
-              <span className="p-label">Volume Target Progress</span>
-              <span className="p-val">{Math.min(100, Math.round((production.currentMonthProduction / (production.prevMonthProduction || 1)) * 100))}%</span>
-            </div>
-            <div className="modern-progress-bar">
-              <div 
-                className={`progress-fill-glow ${production.prodGrowthPercent >= 0 ? 'safe' : 'warn'}`}
-                style={{ width: `${Math.min(100, (production.currentMonthProduction / (production.prevMonthProduction || 1)) * 100)}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="charts-grid">
-        <div className="chart-card">
-          <h3 className="card-title">Financial Balance</h3>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ width: '60%', height: 260, minWidth: 0 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={donutData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                    {donutData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div style={{ width: '40%' }}>
-              <div style={{ marginBottom: '12px' }}>
-                <span style={{ height: '10px', width: '10px', background: '#10b981', display: 'inline-block', borderRadius: '50%', marginRight: '8px' }}></span>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>Income</span>
-                <div style={{ fontWeight: 800 }}>₹{financials.totalIncome.toLocaleString()}</div>
-              </div>
-              <div>
-                <span style={{ height: '10px', width: '10px', background: '#ef4444', display: 'inline-block', borderRadius: '50%', marginRight: '8px' }}></span>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>Expenses</span>
-                <div style={{ fontWeight: 800 }}>₹{financials.totalExpenses.toLocaleString()}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="chart-card">
-          <h3 className="card-title">Sales by Size</h3>
-          <div style={{ height: 260, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={charts.salesSizeChart}>
+          <div className="chart-wrapper-premium" style={{ height: 350, width: '100%', minWidth: 0, marginTop: '20px', position: 'relative' }}>
+            <ResponsiveContainer width="99%" height="100%" debounce={50}>
+              <BarChart data={charts.fullMonthlyChart} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                <YAxis hide />
-                <Tooltip cursor={{fill: '#f8fafc'}} />
-                <Bar dataKey="SalesQty" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }}
+                  interval={0}
+                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#b4c2d3', fontSize: 11 }} tickFormatter={(val) => `₹${val / 1000}k`} />
+                <Tooltip
+                  cursor={false}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  formatter={(value) => [`₹${value.toLocaleString()}`, 'Income']}
+                />
+                <Bar dataKey="Income" fill="#10b981" radius={[6, 6, 0, 0]} barSize={40} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="chart-card">
-          <h3 className="card-title">Stock by Size</h3>
-          <div style={{ height: 260, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%">
+        <div className="chart-card" style={{ minWidth: 0, position: 'relative' }}>
+          <h3 className="card-title">Sales by Size</h3>
+          <div style={{ height: 350, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <BarChart data={charts.salesSizeChart}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <YAxis hide />
+                <Tooltip cursor={false} />
+                <Bar dataKey="SalesQty" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="analytics-grid-main" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '24px' }}>
+        <div className="analytics-card" style={{ minWidth: 0 }}>
+          <div className="card-header-main">
+            <div className="title-group">
+              <span className="material-symbols-outlined icon-accent-purple">monitoring</span>
+              <h3>Monthly Production Performance</h3>
+            </div>
+            <div className={`trend-badge-premium ${prodGrowthColor}`}>
+              {production.prodGrowthPercent >= 0 ? 'add_box' : 'do_not_disturb_on'}
+              <span>{Math.abs(production.prodGrowthPercent)}%</span>
+            </div>
+          </div>
+
+          <div style={{ height: 350, minWidth: 0, marginTop: '20px', position: 'relative' }}>
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <BarChart data={charts.monthlyProductionChart}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                <YAxis hide />
+                <Tooltip cursor={false} />
+                <Bar dataKey="Production" fill="#8b5cf6" radius={[6, 6, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="chart-card" style={{ minWidth: 0, position: 'relative' }}>
+          <h3 className="card-title">Production by Size</h3>
+          <div style={{ height: 350, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <BarChart data={charts.prodSizeChart}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                 <YAxis hide />
-                <Tooltip cursor={{fill: '#f8fafc'}} />
-                <Bar dataKey="ProdQty" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={40} />
+                <Tooltip cursor={false} />
+                <Bar dataKey="ProdQty" fill="#a855f7" radius={[4, 4, 0, 0]} barSize={35} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 3: Financial Distribution */}
+      <div className="analytics-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+        <div className="analytics-card" style={{ minWidth: 0, position: 'relative' }}>
+          <div className="card-header-main">
+            <div className="title-group">
+              <span className="material-symbols-outlined icon-accent">pie_chart</span>
+              <h3>Income vs Expenses</h3>
+            </div>
+          </div>
+          <div style={{ height: 320, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Income', value: financials.totalIncome },
+                    { name: 'Expenses', value: financials.totalExpenses }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  <Cell fill="#10b981" />
+                  <Cell fill="#ef4444" />
+                </Pie>
+                <Tooltip cursor={false} formatter={(value) => `₹${value.toLocaleString()}`} />
+                <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="analytics-card" style={{ minWidth: 0, position: 'relative' }}>
+          <div className="card-header-main">
+            <div className="title-group">
+              <span className="material-symbols-outlined icon-accent">account_balance_wallet</span>
+              <h3>Expense Analysis by Category</h3>
+            </div>
+          </div>
+          <div style={{ height: 320, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <BarChart layout="vertical" data={charts.expenseCatChart} margin={{ left: 20, right: 30 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" hide />
+                <YAxis type="category" dataKey="name" width={120} axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600 }} />
+                <Tooltip cursor={false} formatter={(value) => `₹${value.toLocaleString()}`} />
+                <Bar dataKey="Amount" radius={[0, 4, 4, 0]} barSize={25}>
+                  {charts.expenseCatChart.map((entry, index) => {
+                    const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899'];
+                    return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                  })}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>

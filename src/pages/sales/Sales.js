@@ -66,7 +66,7 @@ const Sales = () => {
     const [exportFormat, setExportFormat] = useState('excel');
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
 
-    const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
+    const [viewMode] = useState('entry'); // 'entry' or 'history'
     const [editingTransactionId, setEditingTransactionId] = useState(null);
     const [selectedBaseProduct, setSelectedBaseProduct] = useState("");
 
@@ -658,7 +658,7 @@ const Sales = () => {
 
         window.addEventListener('keydown', handleGlobalKeyDown);
         return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-    }, [clientType, isClientDropdownOpen, isCustomerDropdownOpen, isBaseProductDropdownOpen, isSizeDropdownOpen, companyName, customerName, clients, products, selectedBaseProduct, paidStatus, paymentMode]);
+    }, [clientType, isClientDropdownOpen, isCustomerDropdownOpen, isBaseProductDropdownOpen, isSizeDropdownOpen, companyName, customerName, clients, products, selectedBaseProduct, paidStatus, paymentMode, billItems.length, handleLogTransaction, isDeliveryModeDropdownOpen, isLogging, isPaidStatusDropdownOpen, isPaymentDropdownOpen, itemRefs.companySearch, itemRefs.customerName, itemRefs.quantity, itemRefs.unitPrice, quantity, selectedSize]);
 
     // Close dropdown when clicking outside
     useEffect(() => {

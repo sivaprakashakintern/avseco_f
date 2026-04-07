@@ -8,6 +8,10 @@ export const formatDate = (dateInput) => {
         // YYYY-MM-DD: parse as LOCAL date (avoid UTC midnight shift)
         const [y, m, d] = dateInput.split('-').map(Number);
         date = new Date(y, m - 1, d);
+    } else if (typeof dateInput === 'string' && /^\d{1,2}-\d{1,2}-\d{4}$/.test(dateInput)) {
+        // DD-MM-YYYY: parse correctly
+        const [d, m, y] = dateInput.split('-').map(Number);
+        date = new Date(y, m - 1, d);
     } else {
         date = new Date(dateInput);
     }

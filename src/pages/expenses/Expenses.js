@@ -97,21 +97,26 @@ const Expenses = () => {
         setNewExpense({ ...newExpense, [name]: value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         const expenseData = {
             ...newExpense,
+            description: newExpense.description || `${newExpense.category} Expense`,
+            amount: parseFloat(newExpense.amount),
             date: isEditMode ? expenses.find(e => e.id === currentExpenseId).date : formatDate(new Date()),
         };
 
-        if (isEditMode) {
-            ctxUpdateExpense(currentExpenseId, expenseData);
-        } else {
-            ctxAddExpense(expenseData);
+        try {
+            if (isEditMode) {
+                await ctxUpdateExpense(currentExpenseId, expenseData);
+            } else {
+                await ctxAddExpense(expenseData);
+            }
+            handleCloseModal();
+        } catch (error) {
+            console.error("Failed to save expense:", error);
         }
-        
-        handleCloseModal();
     };
 
     const handleCloseModal = () => {
