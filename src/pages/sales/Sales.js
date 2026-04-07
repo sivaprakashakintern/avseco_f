@@ -364,7 +364,7 @@ const Sales = () => {
         setPaidStatus("Paid");
         setAmountPaid("");
         setTimeout(() => setFeedbackMessage(""), 3000);
-    }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, formatDate, isLogging, paidStatus, paymentMode, quantity, salesHistory, selectedProduct, selectedProductObj, setIsLogging, soldBy, updateSale, user?.name, unitPrice]);
+    }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, formatDate, paidStatus, paymentMode, quantity, salesHistory, selectedProduct, selectedProductObj, setIsLogging, soldBy, updateSale, user?.name, unitPrice]);
 
 
 
