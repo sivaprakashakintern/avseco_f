@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import axios from "../../utils/axiosConfig.js";
 import logo from "../../assets/logo.png";
 import "../login/Login.css";
@@ -7,7 +7,6 @@ import "../forgot-password/ForgotPassword.css";
 
 const ResetPassword = () => {
     const { token } = useParams();
-    const navigate = useNavigate();
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);

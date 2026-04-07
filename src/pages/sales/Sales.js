@@ -66,7 +66,7 @@ const Sales = () => {
     const [exportFormat, setExportFormat] = useState('excel');
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
 
-    const [viewMode, setViewMode] = useState('entry'); // 'entry' or 'history'
+    const [viewMode] = useState('entry'); // 'entry' or 'history'
     const [editingTransactionId, setEditingTransactionId] = useState(null);
     const [selectedBaseProduct, setSelectedBaseProduct] = useState("");
 
@@ -658,6 +658,7 @@ const Sales = () => {
 
         window.addEventListener('keydown', handleGlobalKeyDown);
         return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [clientType, isClientDropdownOpen, isCustomerDropdownOpen, isBaseProductDropdownOpen, isSizeDropdownOpen, companyName, customerName, clients, products, selectedBaseProduct, paidStatus, paymentMode]);
 
     // Close dropdown when clicking outside
