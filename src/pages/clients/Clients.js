@@ -36,18 +36,30 @@ const Clients = () => {
 
   // Filter & Enrich Clients
   const processedClients = clients.map(client => {
-    const clientSales = (salesHistory || []).filter(s => 
-      s.customerPhone === client.phone || 
-      s.companyName === client.companyName
-    );
+    // Robust linking logic: normalize phone and name to ensure match
+    const clientPhoneClean = (client.phone || "").replace(/\D/g, "").slice(-10);
+    const clientNameClean = (client.companyName || "").toLowerCase().trim();
+    const contactNameClean = (client.contactPerson || "").toLowerCase().trim();
+
+    const clientSales = (salesHistory || []).filter(s => {
+      const salePhoneClean = (s.customerPhone || "").replace(/\D/g, "").slice(-10);
+      const saleNameClean = (s.companyName || "").toLowerCase().trim();
+      const saleContactClean = (s.customerName || "").toLowerCase().trim();
+
+      return (
+        (clientPhoneClean && salePhoneClean === clientPhoneClean) ||
+        (clientNameClean && saleNameClean === clientNameClean) ||
+        (contactNameClean && saleContactClean === contactNameClean)
+      );
+    });
+
     const totalOrders = clientSales.length;
     const totalSpentValue = clientSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
     
     return {
       ...client,
       totalOrders,
-      totalSpentValue,
-      totalSpent: `₹${totalSpentValue.toLocaleString('en-IN')}`
+      totalSpentValue
     };
   });
 
@@ -232,48 +244,39 @@ const Clients = () => {
           <table className="clients-table">
             <thead>
               <tr>
-                <th style={{ textAlign: 'center' }}>Company / GST</th>
-                <th style={{ textAlign: 'center' }}>Contact</th>
-                <th style={{ textAlign: 'center' }}>Communication</th>
-                <th style={{ textAlign: 'center' }}>History</th>
-                <th style={{ textAlign: 'center' }}>Actions</th>
+                <th style={{ textAlign: 'left' }}>COMPANY / INDIVIDUAL</th>
+                <th style={{ textAlign: 'left' }}>Contact</th>
+                <th style={{ textAlign: 'left' }}>Phone</th>
+                <th style={{ textAlign: 'left' }}>Orders</th>
+                <th style={{ textAlign: 'left' }}>Spent Amount</th>
+                <th style={{ textAlign: 'left' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {paginatedClients.map(client => (
                 <tr key={client.id} className="client-row">
-                  <td style={{ textAlign: 'center' }}>
-                    <div className="company-info" style={{ justifyContent: 'center' }}>
-                      <div className="company-icon"><span className="material-symbols-outlined">business</span></div>
-                      <div style={{ textAlign: 'left' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span className="company-name">{client.companyName || client.contactPerson}</span>
-                          <span className={`type-badge-mini ${client.clientType?.toLowerCase() || 'company'}`}>
-                            {client.clientType || 'Company'}
-                          </span>
-                        </div>
-                        {client.companyName && client.gst && (
-                          <span className="company-gst-inline">{client.gst}</span>
-                        )}
-                      </div>
+                  <td style={{ textAlign: 'left' }}>
+                    <div className="company-info-row">
+                      <span className="company-name">{client.companyName || client.contactPerson}</span>
+                      <span className={`type-badge-mini ${client.clientType?.toLowerCase() || 'company'}`}>
+                        {client.clientType === "Personal" ? "I" : "C"}
+                      </span>
                     </div>
                   </td>
-                  <td style={{ textAlign: 'center' }}><p className="contact-person">{client.contactPerson}</p></td>
-                  <td style={{ textAlign: 'center' }}>
+                  <td style={{ textAlign: 'left' }}><p className="contact-person">{client.contactPerson}</p></td>
+                  <td style={{ textAlign: 'left' }}>
                     <div className="comm-inline-group">
-                      <span className="client-email">{client.email}</span>
-                      <span className="comm-divider">|</span>
                       <span className="client-phone">{client.phone}</span>
                     </div>
                   </td>
-                  <td>
-                    <div className="history-inline-group">
-                      <span className="order-count-badge">{client.orderCount || 0} Orders</span>
-                      <span className="spent-amount-bold">₹{parseFloat(client.totalSpent || 0).toLocaleString()}</span>
-                    </div>
+                  <td style={{ textAlign: 'left' }}>
+                    <span className="order-count-badge">{client.totalOrders || 0} Orders</span>
                   </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <div className="action-buttons" style={{ justifyContent: 'center' }}>
+                  <td style={{ textAlign: 'left' }}>
+                    <span className="spent-amount-bold">₹{(client.totalSpentValue || 0).toLocaleString('en-IN')}</span>
+                  </td>
+                  <td style={{ textAlign: 'left' }}>
+                    <div className="action-buttons" style={{ justifyContent: 'flex-start' }}>
                       <button className="action-btn" onClick={() => { 
                         setSelectedClient(client);
                         setFormData({
@@ -306,10 +309,8 @@ const Clients = () => {
           {paginatedClients.map(client => (
             <div key={client.id} className="mobile-client-card">
               <div className="mobile-client-header">
-                <div className="company-icon"><span className="material-symbols-outlined">business</span></div>
                 <div>
                   <p className="mobile-client-name">{client.companyName || client.contactPerson}</p>
-                  <p className="company-gst">{client.gst}</p>
                 </div>
               </div>
               <div className="mobile-client-meta">
@@ -375,8 +376,8 @@ const Clients = () => {
                         value="Company" 
                         checked={formData.clientType === 'Company'} 
                         onChange={handleInputChange} 
+                        style={{ position: 'absolute', opacity: 0 }}
                       />
-                      <span className="material-symbols-outlined">business</span>
                       Business / Company
                     </label>
                     <label className={`type-option ${formData.clientType === 'Personal' ? 'active' : ''}`}>
@@ -386,8 +387,8 @@ const Clients = () => {
                         value="Personal" 
                         checked={formData.clientType === 'Personal'} 
                         onChange={handleInputChange} 
+                        style={{ position: 'absolute', opacity: 0 }}
                       />
-                      <span className="material-symbols-outlined">person</span>
                       Personal / Individuals
                     </label>
                   </div>

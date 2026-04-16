@@ -2,11 +2,17 @@
 
 .clients-container {
   padding: 32px;
-  background-color: #f8faf9;
+  background-color: #f8fafc;
   min-height: 100vh;
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   max-width: 1400px;
   margin: 0 auto;
+}
+
+@media (max-width: 1400px) {
+  .clients-container {
+    padding: 20px;
+  }
 }
 
 .dark .clients-container {
@@ -208,7 +214,7 @@
   border: 1px solid #e0f0e5;
   padding: 8px;
   box-shadow: 0 10px 30px rgba(0, 106, 78, 0.04);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .dark .table-container {
@@ -223,110 +229,145 @@
 
 .clients-table th {
   text-align: left;
-  padding: 20px;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 18px 12px;
+  font-size: 11px;
+  font-weight: 800;
   color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  border-bottom: 1px solid #f1f5f9;
-  background: #fbfcfb;
+  letter-spacing: 0.12em;
+  border-bottom: 2px solid #f1f5f9;
+  background: #ffffff;
 }
 
 .dark .clients-table th {
-  background: #1d3324;
+  background: #1c2e21;
   border-bottom-color: #2a3a2e;
   color: #94a3b8;
 }
 
 .clients-table td {
-  padding: 20px;
+  padding: 16px 12px;
   border-bottom: 1px solid #f1f5f9;
   color: #334155;
-  font-size: 14px;
+  vertical-align: middle;
 }
 
-.dark .clients-table td {
-  border-bottom-color: #2a3a2e;
-  color: #cbd5e1;
-}
-
-.client-row {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-left: 4px solid transparent;
-}
-
-.client-row:hover {
-  background: #f0fdf4 !important;
-  border-left-color: #006A4E;
-  transform: scale(1.002);
-  box-shadow: 0 4px 12px rgba(0, 106, 78, 0.05);
-}
-
-.dark .client-row:hover {
-  background: #1d3324 !important;
-}
-
-/* TYPE BADGES */
+/* TYPE BADGES - COMPACT SINGLE LETTER */
 .type-badge-mini {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 6px;
-  letter-spacing: 0.02em;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: inherit;
 }
 
 .type-badge-mini.company {
-  background: #eef2ff;
-  color: #4f46e5;
-  border: 1px solid #c7d2fe;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
 }
 
 .type-badge-mini.personal {
-  background: #fff7ed;
-  color: #c2410c;
-  border: 1px solid #ffedd5;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.company-info-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.company-icon {
+  width: 32px;
+  height: 32px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.company-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+  background: #f8faf9;
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px solid #e0f0e5;
+  width: fit-content;
+}
+
+.dark .company-info-row {
+  background: #1d3324;
+  border-color: #2a3a2e;
 }
 
 .company-name {
-  font-size: 16px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
   font-weight: 800;
   color: #0f172a;
-}
-
-.company-gst-inline {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #64748b;
-  margin-top: 1px;
+  letter-spacing: -0.01em;
 }
 
 .contact-person {
   font-weight: 700;
   color: #475569;
+  white-space: nowrap;
 }
 
-.history-inline-group {
+.comm-inline-group, .history-inline-group {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.client-email {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #64748b;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.client-phone {
+  font-size: 14px;
+  color: #475569;
+  font-weight: 500;
+  font-family: inherit;
 }
 
 .order-count-badge {
   background: #f1f5f9;
-  padding: 6px 14px;
-  border-radius: 12px;
-  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 11px;
   font-weight: 800;
   color: #475569;
   border: 1px solid #e2e8f0;
 }
 
 .spent-amount-bold {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 800;
   color: #006A4E;
   display: flex;
@@ -341,7 +382,24 @@
 }
 
 .client-row {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 4px solid transparent;
   animation: rowFadeIn 0.4s ease-out forwards;
+}
+
+.client-row:hover {
+  background: #f0fdf4 !important;
+  border-left-color: #006A4E;
+  box-shadow: 0 4px 12px rgba(0, 106, 78, 0.05);
+}
+
+.dark .client-row {
+  border-bottom-color: #2a3a2e;
+  color: #cbd5e1;
+}
+
+.dark .client-row:hover {
+  background: #1d3324 !important;
 }
 
 /* Action Chips */
