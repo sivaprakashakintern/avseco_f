@@ -4,7 +4,7 @@
   padding: 28px 32px;
   background-color: #ffff;
   min-height: 100vh;
-  font-family: 'Manrope', sans-serif;
+  font-family: inherit;
 }
 
 .dark .product-list-container {

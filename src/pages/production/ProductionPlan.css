@@ -17,7 +17,7 @@ body,
 /* ===== MAIN CONTAINER ===== */
 .production-container {
   padding: 24px 32px;
-  font-family: 'Manrope', 'Inter', -apple-system, sans-serif;
+  font-family: inherit;
   min-height: 100%;
   width: 100%;
   background-color: #f8fafc;
@@ -3244,7 +3244,7 @@ body,
   min-height: 100vh;
   background: #f8faf9;
   padding: 32px;
-  font-family: 'Manrope', -apple-system, sans-serif;
+  font-family: inherit;
 }
 
 .premium-dashboard-container-new {

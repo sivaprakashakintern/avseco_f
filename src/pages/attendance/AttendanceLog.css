@@ -24,7 +24,7 @@
   padding: 40px 60px; /* Aligned with Monthly Attendance for luxury spacing */
   background-color: #f8faf9;
   min-height: 100vh;
-  font-family: 'Manrope', -apple-system, sans-serif;
+  font-family: inherit;
   max-width: 1600px;
   margin: 0 auto;
 }

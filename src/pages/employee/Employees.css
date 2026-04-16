@@ -111,8 +111,7 @@ body,
 /* ===== MAIN CONTAINER ===== */
 .employees-container {
   padding: 28px 32px;
-  background-color: #ffff;
-  font-family: 'Manrope', sans-serif;
+  background-color: #fff;
   min-height: 100%;
   box-sizing: border-box;
 }

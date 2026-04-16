@@ -3,7 +3,7 @@
 /* ===== GLOBAL STYLES ===== */
 .daily-production-page {
   padding: 24px;
-  font-family: 'Manrope', -apple-system, sans-serif;
+  font-family: inherit;
   background-color: #f8faf9;
   min-height: 100vh;
   font-size: 14px;

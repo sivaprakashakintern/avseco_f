@@ -1,19 +1,17 @@
 /* Clients.css - Premium & Fully Responsive Styles */
 
 .clients-container {
-  padding: 32px;
-  background-color: #f8fafc;
+  padding: 28px;
+  background-color: var(--color-bg, #f1f5f9);
   min-height: 100vh;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   max-width: 1400px;
   margin: 0 auto;
 }
 
 @media (max-width: 1400px) {
-  .clients-container {
-    padding: 20px;
-  }
+  .clients-container { padding: 20px; }
 }
+
 
 .dark .clients-container {
   background-color: #0a1f1a;
