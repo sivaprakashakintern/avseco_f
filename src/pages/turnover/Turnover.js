@@ -11,7 +11,6 @@ const Turnover = () => {
   } = useAppContext();
 
   const [filterType, setFilterType] = useState('monthly'); // 'daily', 'monthly', 'yearly', 'all'
-  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
 
   const getToday = () => {
     const d = new Date();
