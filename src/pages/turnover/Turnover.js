@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
-import axios from '../../utils/axiosConfig.js';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   Cell, PieChart, Pie, Legend
@@ -8,322 +7,520 @@ import {
 import './Turnover.css';
 
 const Turnover = () => {
-  const [analytics, setAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { 
+    salesHistory = [], 
+    expenses: appContextExpenses = [], 
+    productionHistory = [],
+    turnoverRecords = [],
+    addTurnover,
+    updateTurnover,
+    deleteTurnover
+  } = useAppContext();
 
-  // Filter states
   const [filterType, setFilterType] = useState('monthly'); // 'daily', 'monthly', 'yearly', 'all'
+  const [isMounted, setIsMounted] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
+
+  const [formData, setFormData] = useState({
+    amount: '',
+    category: 'General Sales',
+    notes: '',
+    date: new Date().toISOString().split('T')[0]
+  });
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
   const getToday = () => {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
+
   const [selectedDate, setSelectedDate] = useState(getToday());
   const [selectedMonth, setSelectedMonth] = useState(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-
-  // Sync date range based on filter type
-  useEffect(() => {
-    if (filterType === 'daily') {
-      setStartDate(selectedDate);
-      setEndDate(selectedDate);
-    } else if (filterType === 'monthly') {
-      const [year, month] = selectedMonth.split('-');
-      setStartDate(`${year}-${month}-01`);
-      const lastDay = new Date(year, parseInt(month), 0).getDate();
-      setEndDate(`${year}-${month}-${String(lastDay).padStart(2, '0')}`);
-    } else if (filterType === 'yearly') {
-      setStartDate(`${selectedYear}-01-01`);
-      setEndDate(`${selectedYear}-12-31`);
-    } else if (filterType === 'all') {
-      setStartDate('');
-      setEndDate('');
+  // Handlers
+  const handleOpenModal = (record = null) => {
+    if (record) {
+      setIsEditMode(true);
+      setEditingId(record.id);
+      setFormData({
+        amount: record.amount,
+        category: record.category || 'General Sales',
+        notes: record.notes || '',
+        date: new Date(record.date).toISOString().split('T')[0]
+      });
+    } else {
+      setIsEditMode(false);
+      setEditingId(null);
+      setFormData({
+        amount: '',
+        category: 'General Sales',
+        notes: '',
+        date: new Date().toISOString().split('T')[0]
+      });
     }
-  }, [filterType, selectedDate, selectedMonth, selectedYear]);
+    setIsModalOpen(true);
+  };
 
-  const fetchAnalytics = async () => {
-    setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      let params = new URLSearchParams();
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
-      if (filterType) params.append('type', filterType);
-
-      // For daily, explicitly send the date as 'date' param too (matching spec)
-      if (filterType === 'daily' && selectedDate) {
-        params.append('date', selectedDate);
-      } else if (filterType === 'monthly') {
-        const [y, m] = selectedMonth.split('-');
-        params.append('year', y);
-        params.append('month', m);
-      } else if (filterType === 'yearly') {
-        params.append('year', selectedYear);
+      if (isEditMode) {
+        await updateTurnover(editingId, formData);
+      } else {
+        await addTurnover(formData);
       }
-
-      const query = `?${params.toString()}`;
-      const res = await axios.get(`turnover/analytics${query}`);
-      setAnalytics(res.data);
-    } catch (error) {
-      console.error('API Error: Failed to fetch turnover analytics.', error.response?.data || error.message);
-    } finally {
-      setLoading(false);
+      setIsModalOpen(false);
+    } catch (err) {
+      alert('Failed to save record');
     }
   };
 
-  const { salesHistory, expenses: appContextExpenses } = useAppContext();
+  const handleDelete = async () => {
+    try {
+      if (deleteConfirm.id) {
+        await deleteTurnover(deleteConfirm.id);
+      }
+      setDeleteConfirm({ isOpen: false, id: null });
+    } catch (err) {
+      alert('Failed to delete record');
+    }
+  };
 
-  useEffect(() => {
-    fetchAnalytics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate, salesHistory, appContextExpenses]);
+  // Main Analytics Logic
+  const analytics = useMemo(() => {
+    const parseDate = (info) => {
+      if (!info) return null;
+      if (info instanceof Date) return info;
+      
+      const dStr = String(info);
+      // Extract parts using regex to be format-agnostic
+      // Matches DD-MM-YYYY or YYYY-MM-DD, ignoring time/suffixes
+      const match = dStr.match(/(\d{1,4})[-/](\d{1,2})[-/](\d{1,4})/);
+      if (match) {
+        const [, p1, p2, p3] = match;
+        // YYYY-MM-DD
+        if (p1.length === 4) return new Date(Number(p1), Number(p2) - 1, Number(p3));
+        // DD-MM-YYYY
+        if (p3.length === 4) return new Date(Number(p3), Number(p2) - 1, Number(p1));
+      }
 
-  if (loading || !analytics) {
-    return (
-      <div className="turnover-container">
-        <div className="loader-container">
-          <div className="premium-loader"></div>
-          <div className="loader-text">Analyzing ERP Insights...</div>
-        </div>
-      </div>
-    );
-  }
+      const d = new Date(dStr);
+      return isNaN(d.getTime()) ? null : d;
+    };
 
-  const { financials, production, charts } = analytics;
+    const isMatch = (date) => {
+      const d = parseDate(date);
+      if (!d || isNaN(d.getTime())) return false;
+      if (filterType === 'all') return true;
 
-  // Growth colors
-  const incomeGrowthColor = financials.incomeGrowthPercent >= 0 ? 'badge-green' : 'badge-red';
-  const prodGrowthColor = production.prodGrowthPercent >= 0 ? 'badge-green' : 'badge-red';
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const day = d.getDate();
+
+      if (filterType === 'daily') {
+        const [sy, sm, sd] = selectedDate.split('-').map(Number);
+        return y === sy && m === sm && day === sd;
+      }
+      if (filterType === 'monthly') {
+        const [sy, sm] = selectedMonth.split('-').map(Number);
+        return y === sy && m === sm;
+      }
+      if (filterType === 'yearly') {
+        return y === Number(selectedYear);
+      }
+      return false;
+    };
+
+    // 1. Filtered Sets
+    const filteredSales = (salesHistory || []).filter(s => {
+      // Exclude cancelled or rejected sales
+      if (s.status && (s.status.toLowerCase().includes('cancel') || s.status.toLowerCase().includes('reject'))) return false;
+      return isMatch(s.date || s.createdAt);
+    });
+    const filteredExpenses = (appContextExpenses || []).filter(e => isMatch(e.date || e.createdAt));
+    const filteredProduction = (productionHistory || []).filter(p => isMatch(p.date || p.createdAt));
+    const filteredManualTurnover = (turnoverRecords || []).filter(t => isMatch(t.date || t.createdAt));
+
+    // 2. Financial Metrics
+    const salesIncome = filteredSales.reduce((sum, s) => {
+      return sum + Number(s.totalAmount || s.amount || 0);
+    }, 0);
+    const manualIncome = filteredManualTurnover.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    
+    const totalIncome = salesIncome + manualIncome;
+    const totalExpenses = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const netProfit = totalIncome - totalExpenses;
+
+    // 3. Expense Categories
+    const expCatMap = {};
+    filteredExpenses.forEach(e => {
+      const cat = e.category || 'Others';
+      expCatMap[cat] = (expCatMap[cat] || 0) + Number(e.amount || 0);
+    });
+    const expenseCatChart = Object.keys(expCatMap).map(name => ({ name, Amount: expCatMap[name] }))
+      .sort((a, b) => b.Amount - a.Amount);
+
+    // 4. Monthly Trend Data
+    const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYearNum = filterType === 'yearly' ? Number(selectedYear) : new Date().getFullYear();
+    
+    const monthlyIncomeData = monthsShort.map((m, i) => {
+      const sVal = (salesHistory || []).filter(s => {
+        const d = parseDate(s.date || s.createdAt);
+        return d && d.getFullYear() === currentYearNum && d.getMonth() === i;
+      }).reduce((sum, s) => sum + Number(s.totalAmount || s.amount || 0), 0);
+      
+      const tVal = (turnoverRecords || []).filter(t => {
+        const d = parseDate(t.date || t.createdAt);
+        return d && d.getFullYear() === currentYearNum && d.getMonth() === i;
+      }).reduce((sum, t) => sum + Number(t.amount || 0), 0);
+      
+      return { name: m, Income: sVal + tVal };
+    });
+
+    const monthlyProdData = monthsShort.map((m, i) => {
+      const val = (productionHistory || []).filter(p => {
+        const d = parseDate(p.date || p.createdAt);
+        return d && d.getFullYear() === currentYearNum && d.getMonth() === i;
+      }).reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+      return { name: m, Production: val };
+    });
+
+    // 5. Size Breakdown
+    const salesSizeMap = {};
+    filteredSales.forEach(s => {
+      if (s.saleItems && s.saleItems.length > 0) {
+        s.saleItems.forEach(item => {
+          const sz = (item.size || '').toString().trim() || 'Other';
+          // Fix: database uses 'qty', frontend was looking for 'quantity'
+          salesSizeMap[sz] = (salesSizeMap[sz] || 0) + Number(item.qty || item.quantity || 0);
+        });
+      } else {
+        const sz = (s.size || '').toString().trim() || 'Other';
+        salesSizeMap[sz] = (salesSizeMap[sz] || 0) + Number(s.qty || s.quantity || 0);
+      }
+    });
+    const salesSizeChart = Object.keys(salesSizeMap)
+      .map(name => ({ name, SalesQty: salesSizeMap[name] }))
+      .sort((a, b) => (parseFloat(a.name) || 0) - (parseFloat(b.name) || 0));
+
+    const prodSizeMap = {};
+    filteredProduction.forEach(p => {
+      const sz = (p.size || p.productSize || '').toString().trim() || 'Other';
+      prodSizeMap[sz] = (prodSizeMap[sz] || 0) + Number(p.quantity || 0);
+    });
+    const prodSizeChart = Object.keys(prodSizeMap)
+      .map(name => ({ name, ProdQty: prodSizeMap[name] }))
+      .sort((a, b) => (parseFloat(a.name) || 0) - (parseFloat(b.name) || 0));
+
+    return {
+      financials: { totalIncome, totalExpenses, netProfit },
+      charts: { expenseCatChart, monthlyIncomeData, monthlyProdData, salesSizeChart, prodSizeChart },
+      manualRecords: filteredManualTurnover
+    };
+  }, [salesHistory, appContextExpenses, productionHistory, turnoverRecords, filterType, selectedDate, selectedMonth, selectedYear]);
+
+  const { financials, charts, manualRecords } = analytics;
 
   return (
     <div className="turnover-container">
-      {/* 1. Header Section */}
+      {/* HEADER */}
       <div className="premium-header-green">
         <div className="header-left-group">
           <h1>Turnover</h1>
-          <p className="subtitle-slim"></p>
         </div>
-        <button className="btn-add-premium-outline" onClick={fetchAnalytics}>
-          Refresh Insights
-        </button>
       </div>
 
+      {/* FILTERS */}
       <div className="filters-section">
         <div className="filter-type-buttons">
-          {['daily', 'monthly', 'yearly', 'all'].map(type => (
-            <button
-              key={type}
-              className={`filter-btn ${filterType === type ? 'active' : ''}`}
-              onClick={() => {
-                setFilterType(type);
-                if (type === 'daily') setSelectedDate(getToday());
-                if (type === 'monthly') setSelectedMonth(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`);
-                if (type === 'yearly') setSelectedYear(new Date().getFullYear().toString());
-              }}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
+          {['daily', 'monthly', 'yearly', 'all'].map(t => (
+            <button key={t} className={`filter-btn ${filterType === t ? 'active' : ''}`} onClick={() => setFilterType(t)}>
+              {t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           ))}
         </div>
-
         <div className="filter-inputs">
-          {filterType === 'daily' && (
-            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="search-input" />
-          )}
-          {filterType === 'monthly' && (
-            <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="search-input" />
-          )}
+          {filterType === 'daily' && <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="search-input" />}
+          {filterType === 'monthly' && <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="search-input" />}
           {filterType === 'yearly' && (
-            <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="search-input">
+            <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)} className="search-input">
               {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           )}
-          {filterType === 'all' && <span style={{ color: '#64748b', fontWeight: 600 }}>All Time Records</span>}
+          {filterType === 'all' && <span className="all-time-label">Showing All Time Data</span>}
         </div>
       </div>
 
-      {/* 3. Top Summary KPI Cards */}
+      {/* KPI GRID */}
       <div className="turnover-stats">
         <div className="stat-card">
           <div className="stat-icon icon-income"><span className="material-symbols-outlined">payments</span></div>
           <div className="stat-info">
-            <span className="stat-label">Total Turnover ({filterType})</span>
+            <span className="stat-label">Total Turnover</span>
             <span className="stat-value income">₹{financials.totalIncome.toLocaleString('en-IN')}</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon icon-expense"><span className="material-symbols-outlined">receipt_long</span></div>
           <div className="stat-info">
-            <span className="stat-label">Total Expenses ({filterType})</span>
+            <span className="stat-label">Total Expenses</span>
             <span className="stat-value expense">₹{financials.totalExpenses.toLocaleString('en-IN')}</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon icon-profit"><span className="material-symbols-outlined">savings</span></div>
           <div className="stat-info">
-            <span className="stat-label">Net Profit ({filterType})</span>
-            <span className="stat-value profit">
-              ₹{financials.netProfit.toLocaleString('en-IN')}
-            </span>
+            <span className="stat-label">Net Profit</span>
+            <span className="stat-value profit">₹{financials.netProfit.toLocaleString('en-IN')}</span>
           </div>
         </div>
       </div>
 
-      {/* Financial Distribution moved to top */}
-      <div className="analytics-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
-        <div className="analytics-card" style={{ minWidth: 0, position: 'relative' }}>
+      {/* PREMIUM CSS VISUALIZATIONS */}
+      <div className="analytics-grid">
+        {/* INCOME VS EXPENSES BALANCER */}
+        <div className="analytics-card">
           <div className="card-header-main">
             <div className="title-group">
-              <span className="material-symbols-outlined icon-accent">pie_chart</span>
-              <h3>Income vs Expenses</h3>
+              <span className="material-symbols-outlined icon-accent">balance</span>
+              <h3>Profitability Ratio</h3>
             </div>
           </div>
-          <div style={{ height: 320, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: 'Income', value: financials.totalIncome },
-                    { name: 'Expenses', value: financials.totalExpenses }
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  <Cell fill="#10b981" />
-                  <Cell fill="#ef4444" />
-                </Pie>
-                <Tooltip cursor={false} formatter={(value) => `₹${value.toLocaleString()}`} />
-                <Legend layout="horizontal" verticalAlign="bottom" align="center" />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="css-chart-container">
+            <div className="balance-metrics">
+              <div className="balance-item">
+                <div className="label-row">
+                  <span>Gross Sales</span>
+                  <span className="val income">₹{financials.totalIncome.toLocaleString()}</span>
+                </div>
+                <div className="progress-track">
+                  <div 
+                    className="progress-fill income" 
+                    style={{ width: `${financials.totalIncome > 0 ? (financials.totalIncome / Math.max(financials.totalIncome, financials.totalExpenses)) * 100 : 0}%` }}
+                  ></div>
+                </div>
+              </div>
+              <div className="balance-item">
+                <div className="label-row">
+                  <span>Total Expenses</span>
+                  <span className="val expense">₹{financials.totalExpenses.toLocaleString()}</span>
+                </div>
+                <div className="progress-track">
+                  <div 
+                    className="progress-fill expense" 
+                    style={{ width: `${financials.totalExpenses > 0 ? (financials.totalExpenses / Math.max(financials.totalIncome, financials.totalExpenses)) * 100 : 0}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="profit-gauge">
+               <div className="gauge-circle">
+                  <div className="gauge-fill" style={{ 
+                    background: `conic-gradient(#10b981 ${financials.totalIncome > 0 ? (financials.netProfit / financials.totalIncome) * 360 : 0}deg, #f1f5f9 0deg)`
+                  }}></div>
+                  <div className="gauge-center">
+                    <span className="perc">{financials.totalIncome > 0 ? Math.round((financials.netProfit / financials.totalIncome) * 100) : 0}%</span>
+                    <span className="lbl">Margin</span>
+                  </div>
+               </div>
+            </div>
           </div>
         </div>
 
-        <div className="analytics-card" style={{ minWidth: 0, position: 'relative' }}>
+        {/* EXPENSE CATEGORY BARS */}
+        <div className="analytics-card">
           <div className="card-header-main">
             <div className="title-group">
-              <span className="material-symbols-outlined icon-accent">account_balance_wallet</span>
-              <h3>Expense Analysis by Category</h3>
+              <span className="material-symbols-outlined icon-accent-purple">analytics</span>
+              <h3>Expense Breakdown</h3>
             </div>
           </div>
-          <div style={{ height: 320, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
-              <BarChart layout="vertical" data={charts.expenseCatChart} margin={{ left: 20, right: 30 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={120} axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600 }} />
-                <Tooltip cursor={false} formatter={(value) => `₹${value.toLocaleString()}`} />
-                <Bar dataKey="Amount" radius={[0, 4, 4, 0]} barSize={25}>
-                  {charts.expenseCatChart.map((entry, index) => {
-                    const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899'];
-                    return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="css-chart-container scrollable">
+            {charts.expenseCatChart.length > 0 ? (
+              charts.expenseCatChart.map((cat, i) => (
+                <div key={i} className="cat-bar-item">
+                  <div className="cat-info">
+                    <span className="cat-name">{cat.name}</span>
+                    <span className="cat-val">₹{cat.Amount.toLocaleString()}</span>
+                  </div>
+                  <div className="cat-track">
+                    <div 
+                      className="cat-fill" 
+                      style={{ 
+                        width: `${(cat.Amount / financials.totalExpenses) * 100}%`,
+                        backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#f43f5e'][i % 5]
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-chart-msg">No expenses found for this period</div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="analytics-grid-main" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '24px' }}>
-        <div className="analytics-card" style={{ minWidth: 0 }}>
+      {/* MONTHLY REVENUE TREND (CSS GRID) */}
+      <div className="analytics-grid-full" style={{ marginBottom: '24px' }}>
+        <div className="analytics-card">
           <div className="card-header-main">
             <div className="title-group">
-              <span className="material-symbols-outlined icon-accent">bar_chart</span>
-              <h3>Sales Performance</h3>
-            </div>
-            <div className={`trend-badge-premium ${incomeGrowthColor}`}>
-              {financials.incomeGrowthPercent >= 0 ? 'trending_up' : 'trending_down'}
-              <span>{Math.abs(financials.incomeGrowthPercent)}%</span>
+              <span className="material-symbols-outlined icon-accent">trending_up</span>
+              <h3>Monthly Performance ({filterType === 'yearly' ? selectedYear : new Date().getFullYear()})</h3>
             </div>
           </div>
-
-          <div className="chart-wrapper-premium" style={{ height: 350, width: '100%', minWidth: 0, marginTop: '20px', position: 'relative' }}>
-            <ResponsiveContainer width="99%" height="100%" debounce={50}>
-              <BarChart data={charts.fullMonthlyChart} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }}
-                  interval={0}
-                />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#b4c2d3', fontSize: 11 }} tickFormatter={(val) => `₹${val / 1000}k`} />
-                <Tooltip
-                  cursor={false}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                  formatter={(value) => [`₹${value.toLocaleString()}`, 'Income']}
-                />
-                <Bar dataKey="Income" fill="#10b981" radius={[6, 6, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="chart-card" style={{ minWidth: 0, position: 'relative' }}>
-          <h3 className="card-title">Sales by Size</h3>
-          <div style={{ height: 350, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
-              <BarChart data={charts.salesSizeChart}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <YAxis hide />
-                <Tooltip cursor={false} />
-                <Bar dataKey="SalesQty" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="css-trend-chart">
+            <div className="trend-grid">
+              {charts.monthlyIncomeData.map((m, i) => {
+                const maxIncome = Math.max(...charts.monthlyIncomeData.map(d => d.Income), 1);
+                const heightPerc = (m.Income / maxIncome) * 100;
+                return (
+                  <div key={i} className="trend-col">
+                    <div className="col-bar-wrapper">
+                      <div className="col-bar" style={{ height: `${heightPerc}%` }}>
+                        {m.Income > 0 && <span className="bar-tip">₹{Math.round(m.Income/1000)}k</span>}
+                      </div>
+                    </div>
+                    <span className="col-label">{m.name}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="analytics-grid-main" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '24px' }}>
-        <div className="analytics-card" style={{ minWidth: 0 }}>
+      {/* SIZE ANALYSIS GRID */}
+      <div className="analytics-grid">
+        <div className="analytics-card">
           <div className="card-header-main">
             <div className="title-group">
-              <span className="material-symbols-outlined icon-accent-purple">monitoring</span>
-              <h3>Monthly Production Performance</h3>
+              <span className="material-symbols-outlined icon-accent">shopping_bag</span>
+              <h3>Sales Qty by Size</h3>
             </div>
-
           </div>
-
-          <div style={{ height: 350, minWidth: 0, marginTop: '20px', position: 'relative' }}>
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
-              <BarChart data={charts.monthlyProductionChart}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
-                <YAxis hide />
-                <Tooltip cursor={false} />
-                <Bar dataKey="Production" fill="#8b5cf6" radius={[6, 6, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="css-size-grid">
+            {charts.salesSizeChart.length > 0 ? charts.salesSizeChart.map((s, i) => (
+              <div key={i} className="size-stat-item">
+                <span className="s-lbl">{s.name}</span>
+                <div className="s-bar-group">
+                  <div className="s-bar sales" style={{ width: `${(s.SalesQty / Math.max(...charts.salesSizeChart.map(x => x.SalesQty), 1)) * 100}%` }}></div>
+                  <span className="s-qty">{s.SalesQty}</span>
+                </div>
+              </div>
+            )) : <div className="empty-chart-msg">No sales data</div>}
           </div>
         </div>
 
-        <div className="chart-card" style={{ minWidth: 0, position: 'relative' }}>
-          <h3 className="card-title">Production by Size</h3>
-          <div style={{ height: 350, minWidth: 0 }}>
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
-              <BarChart data={charts.prodSizeChart}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <YAxis hide />
-                <Tooltip cursor={false} />
-                <Bar dataKey="ProdQty" fill="#a855f7" radius={[4, 4, 0, 0]} barSize={35} />
-              </BarChart>
-            </ResponsiveContainer>
+        <div className="analytics-card">
+          <div className="card-header-main">
+            <div className="title-group">
+              <span className="material-symbols-outlined icon-accent-purple">precision_manufacturing</span>
+              <h3>Production Qty by Size</h3>
+            </div>
+          </div>
+          <div className="css-size-grid">
+            {charts.prodSizeChart.length > 0 ? charts.prodSizeChart.map((s, i) => (
+              <div key={i} className="size-stat-item">
+                <span className="s-lbl">{s.name}</span>
+                <div className="s-bar-group">
+                  <div className="s-bar prod" style={{ width: `${(s.ProdQty / Math.max(...charts.prodSizeChart.map(x => x.ProdQty), 1)) * 100}%` }}></div>
+                  <span className="s-qty">{s.ProdQty}</span>
+                </div>
+              </div>
+            )) : <div className="empty-chart-msg">No production data</div>}
           </div>
         </div>
       </div>
 
+      {/* ADD/EDIT MODAL */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content-green">
+            <div className="modal-header">
+              <h3>{isEditMode ? 'Edit Manual Entry' : 'Add Manual Turnover'}</h3>
+              <button className="close-btn" onClick={() => setIsModalOpen(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="modal-form">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Amount (₹)</label>
+                  <input 
+                    type="number" 
+                    value={formData.amount} 
+                    onChange={e => setFormData({...formData, amount: e.target.value})}
+                    required
+                    placeholder="Enter amount"
+                  />
+                </div>
+                <div className="form-group">
+                   <label>Date</label>
+                   <input 
+                    type="date" 
+                    value={formData.date}
+                    onChange={e => setFormData({...formData, date: e.target.value})}
+                    required
+                   />
+                </div>
+                <div className="form-group full-width">
+                  <label>Category</label>
+                  <select 
+                    value={formData.category}
+                    onChange={e => setFormData({...formData, category: e.target.value})}
+                  >
+                    <option value="General Sales">General Sales</option>
+                    <option value="Direct Order">Direct Order</option>
+                    <option value="Scrap Sale">Scrap Sale</option>
+                    <option value="Other Revenue">Other Revenue</option>
+                  </select>
+                </div>
+                <div className="form-group full-width">
+                  <label>Notes</label>
+                  <textarea 
+                    value={formData.notes}
+                    onChange={e => setFormData({...formData, notes: e.target.value})}
+                    placeholder="Optional notes..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                <button type="submit" className="btn-save-green">
+                  {isEditMode ? 'Update Record' : 'Save Record'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION */}
+      {deleteConfirm.isOpen && (
+        <div className="modal-overlay">
+           <div className="confirm-modal">
+              <div className="warning-icon"><span className="material-symbols-outlined">warning</span></div>
+              <h3>Confirm Deletion</h3>
+              <p>Are you sure you want to delete this record? This action cannot be undone.</p>
+              <div className="confirm-actions">
+                 <button className="btn-cancel" onClick={() => setDeleteConfirm({ isOpen: false, id: null })}>Cancel</button>
+                 <button className="btn-confirm-delete" onClick={handleDelete}>Delete Permanently</button>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

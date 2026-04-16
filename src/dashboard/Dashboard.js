@@ -28,6 +28,32 @@ const Dashboard = () => {
 
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
+  
+  const getAvailableSizes = () => {
+    const sizesSet = new Set();
+    
+    // Get sizes from stock
+    (stockData || []).forEach(item => {
+      if (item.size && item.size !== 'All Sizes') sizesSet.add(item.size);
+    });
+    
+    // Get sizes from production stats
+    if (productionStats.monthBySize) {
+      Object.keys(productionStats.monthBySize).forEach(size => {
+        if (size !== 'All Sizes' && size !== 'total') sizesSet.add(size);
+      });
+    }
+    
+    // Basic sorting for "2 inch", "6-inch" etc.
+    return Array.from(sizesSet).sort((a, b) => {
+      const valA = parseFloat(a) || 0;
+      const valB = parseFloat(b) || 0;
+      return valA - valB;
+    });
+  };
+
+  const dynamicSizes = getAvailableSizes();
+  const attendanceNotMarked = hasAccess('attendance') && (!todayStats || todayStats.total === 0);
   const formatUnits = (val) => val >= 1000 ? `${(val / 1000).toFixed(1)}K Units` : `${val} Units`;
 
   const getMetrics = (period) => {
@@ -51,20 +77,25 @@ const Dashboard = () => {
   };
 
   const getPlatesData = (period = 'Monthly') => {
-    const sizes = ["6-inch", "8-inch", "10-inch", "12-inch"];
+    const sizes = dynamicSizes;
     const now = new Date();
     
     // 1. Determine period dates
     const isYearly = period === 'Yearly';
     const isWeekly = period === 'Weekly';
     
-    const safeDate = (dateStr) => {
-      if (!dateStr) return new Date(0);
-      if (typeof dateStr === 'string' && dateStr.includes('-')) {
-        const parts = dateStr.split('-');
-        if (parts[0].length === 2) return new Date(parts[2], parts[1] - 1, parts[0]); // DD-MM-YYYY
+    const safeDate = (info) => {
+      if (!info) return new Date(0);
+      if (info instanceof Date) return info;
+      const dStr = String(info);
+      const match = dStr.match(/(\d{1,4})[-/](\d{1,2})[-/](\d{1,4})/);
+      if (match) {
+        const [, p1, p2, p3] = match;
+        if (p1.length === 4) return new Date(Number(p1), Number(p2) - 1, Number(p3));
+        if (p3.length === 4) return new Date(Number(p3), Number(p2) - 1, Number(p1));
       }
-      return new Date(dateStr);
+      const d = new Date(dStr);
+      return isNaN(d.getTime()) ? new Date(0) : d;
     };
 
     // 2. Filter sales and expenses by period
@@ -84,37 +115,44 @@ const Dashboard = () => {
 
     const totalPeriodExpenses = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
     
-    // 3. Get production for the period (already in context stats)
+    // 3. Get production for the period
     const productionBySize = period === 'Weekly' ? productionStats.weekBySize : 
-                             period === 'Yearly' ? productionStats.monthBySize : // Use monthly if yearly not mapped
+                             period === 'Yearly' ? productionStats.monthBySize : 
                              productionStats.monthBySize;
     
-    const totalProduction = Object.values(productionBySize).reduce((sum, val) => sum + val, 0) || 1;
+    const totalProduction = Object.values(productionBySize).reduce((sum, val) => sum + (Number(val) || 0), 0) || 1;
     const expensePerUnit = totalPeriodExpenses / totalProduction;
 
-    // 4. Group data by size
-    return sizes.map(size => {
+    // 4. Calculate total period sales correctly (Turnover)
+    // This is the "True" total for the period from all valid sales
+    const totalTurnover = filteredSales.reduce((sum, sale) => sum + Number(sale.totalAmount || sale.amount || 0), 0);
+
+    // 5. Group data by size for the chart
+    const platesData = sizes.map(size => {
       const sKey = size.toLowerCase().trim().replace(" ", "-");
       
-      // Calculate sales value for this size
       const salesValue = filteredSales.reduce((sum, sale) => {
-        const item = sale.saleItems?.find(i => (i.size || "").toLowerCase().trim().replace(" ", "-") === sKey);
-        return sum + (item ? Number(item.amount || 0) : 0);
+        // Fix: Use filter and sum instead of find to capture all items of same size in one sale
+        const items = (sale.saleItems || []).filter(i => (i.size || "").toLowerCase().trim().replace(" ", "-") === sKey);
+        const itemSum = items.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+        return sum + itemSum;
       }, 0);
 
-      const production = productionBySize[size] || 0;
+      const production = Number(productionBySize[size] || 0);
       const distributedExpense = production * expensePerUnit;
 
       return {
         size,
         salesValue,
-        expensesValue: distributedExpense || (salesValue * 0.15) // Fallback if no production but have sales
+        expensesValue: distributedExpense || (salesValue * 0.15)
       };
     });
+
+    return { platesData, totalTurnover, totalPeriodExpenses };
   };
 
   const getProductionDetails = () => {
-    const sizes = ["6-inch", "8-inch", "10-inch", "12-inch"];
+    const sizes = dynamicSizes;
     return sizes.map(size => ({
       size,
       today: productionStats.todayBySize[size] || 0
@@ -190,12 +228,11 @@ const Dashboard = () => {
     }
   };
 
-  // For the bar chart logic, if all sold are 0, use stock to show SOMETHING
-  const plateDisplayData = getPlatesData(timeFilter);
-  const totalPeriodSales = plateDisplayData.reduce((sum, p) => sum + p.salesValue, 0);
-
-
-  const totalPeriodExpenses = plateDisplayData.reduce((sum, p) => sum + p.expensesValue, 0);
+  // Get correctly calculated period data and totals
+  const periodData = getPlatesData(timeFilter);
+  const plateDisplayData = periodData.platesData;
+  const totalPeriodSales = periodData.totalTurnover;
+  const totalPeriodExpenses = periodData.totalPeriodExpenses;
 
   const currentData = dashboardData[timeFilter];
 
@@ -219,6 +256,20 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
+      {/* ATTENDANCE ALERT */}
+      {attendanceNotMarked && (
+        <div className="attendance-warning-banner" onClick={handleAttendanceClick}>
+          <div className="warning-icon">
+            <span className="material-symbols-outlined">warning</span>
+          </div>
+          <div className="warning-text">
+            <h4>Attendance Not Marked!</h4>
+            <p>Please update today's attendance to see accurate productivity stats.</p>
+          </div>
+          <button className="mark-now-btn">MARK NOW →</button>
+        </div>
+      )}
+
       {/* GREETINGS HEADER */}
       <div className="greetings-header">
         <div className="greetings-left">
@@ -251,9 +302,9 @@ const Dashboard = () => {
             <span className="p-stat-label">Today's Production</span>
             <div className="p-stat-value">{(productionStats?.today || 0).toLocaleString()}</div>
             <div className="p-stat-breakdown">
-              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+              {dynamicSizes.map(size => (
                 <span key={size} className="breakdown-tag">
-                  {size.split('-')[0]}: {productionStats?.todayBySize?.[size] || 0}
+                  {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.todayBySize?.[size] || 0}
                 </span>
               ))}
             </div>
@@ -265,9 +316,9 @@ const Dashboard = () => {
             <span className="p-stat-label">Last 7 Days</span>
             <div className="p-stat-value">{(productionStats?.week || 0).toLocaleString()}</div>
             <div className="p-stat-breakdown">
-              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+              {dynamicSizes.map(size => (
                 <span key={size} className="breakdown-tag">
-                  {size.split('-')[0]}: {productionStats?.weekBySize?.[size] || 0}
+                  {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.weekBySize?.[size] || 0}
                 </span>
               ))}
             </div>
@@ -279,9 +330,9 @@ const Dashboard = () => {
             <span className="p-stat-label">This Month</span>
             <div className="p-stat-value">{(productionStats?.month || 0).toLocaleString()}</div>
             <div className="p-stat-breakdown">
-              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+              {dynamicSizes.map(size => (
                 <span key={size} className="breakdown-tag">
-                  {size.split('-')[0]}: {productionStats?.monthBySize?.[size] || 0}
+                  {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.monthBySize?.[size] || 0}
                 </span>
               ))}
             </div>
@@ -293,9 +344,9 @@ const Dashboard = () => {
             <span className="p-stat-label">Total Produced</span>
             <div className="p-stat-value">{(productionStats?.stock || 0).toLocaleString()}</div>
             <div className="p-stat-breakdown">
-              {["6-inch", "8-inch", "10-inch", "12-inch"].map(size => (
+              {dynamicSizes.map(size => (
                 <span key={size} className="breakdown-tag">
-                  {size.split('-')[0]}: {productionStats?.stockBySize?.[size] || 0}
+                  {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.stockBySize?.[size] || 0}
                 </span>
               ))}
             </div>
@@ -323,58 +374,38 @@ const Dashboard = () => {
                 ))}
               </div>
             </div>
-            <div className="summary-pie-wrapper">
-                <div className="summary-pie-container">
-                    <div className="pie-chart-main">
-                        <div 
-                           className="pie-slice sales-slice" 
-                           style={{ 
-                              transform: `rotate(0deg)`, 
-                              background: `conic-gradient(#2563eb 0deg ${totalPeriodSales > 0 ? (totalPeriodSales / (totalPeriodSales + totalPeriodExpenses)) * 360 : 180}deg, transparent 0deg 360deg)` 
-                           }}
-                           onMouseEnter={() => setHoveredBar({ type: 'sales', value: totalPeriodSales })}
-                           onMouseMove={handleMouseMove}
-                           onMouseLeave={() => setHoveredBar(null)}
-                        ></div>
-                        <div 
-                           className="pie-slice expenses-slice" 
-                           style={{ 
-                              transform: `rotate(${totalPeriodSales > 0 ? (totalPeriodSales / (totalPeriodSales + totalPeriodExpenses)) * 360 : 180}deg)`, 
-                              background: `conic-gradient(#ef4444 0deg ${totalPeriodExpenses > 0 ? (totalPeriodExpenses / (totalPeriodSales + totalPeriodExpenses)) * 360 : 180}deg, transparent 0deg 360deg)` 
-                           }}
-                           onMouseEnter={() => setHoveredBar({ type: 'expenses', value: totalPeriodExpenses })}
-                           onMouseMove={handleMouseMove}
-                           onMouseLeave={() => setHoveredBar(null)}
-                        ></div>
-                        <div className="pie-center-hole">
-                            <span className="pie-center-label">BALANCE</span>
-                        </div>
+            
+            <div className="balance-comparison-module">
+                <div className="balance-bar-container">
+                    <div className="balance-bar-info">
+                        <span className="bar-label">TOTAL TURNOVER</span>
+                        <span className="bar-value revenue">{formatStatValue(totalPeriodSales)}</span>
                     </div>
-
-                    {hoveredBar && (
-                        <div className="bar-tooltip dynamic-tooltip" style={{ position: 'fixed', left: mousePos.x + 15, top: mousePos.y - 40, pointerEvents: 'none' }}>
-                            <strong>{hoveredBar.type === 'sales' ? 'Total Sales' : 'Total Expenses'}</strong><br />
-                            Value: ₹{hoveredBar.value.toLocaleString()}<br />
-                            Percentage: {((hoveredBar.value / (totalPeriodSales + totalPeriodExpenses || 1)) * 100).toFixed(1)}%
-                        </div>
-                    )}
+                    <div className="balance-progress-bg">
+                        <div className="balance-progress-fill revenue" style={{ width: `${totalPeriodSales > 0 ? (totalPeriodSales / Math.max(totalPeriodSales, totalPeriodExpenses || 1)) * 100 : 0}%` }}></div>
+                    </div>
                 </div>
-                
-                <div className="pie-stats-column">
-                    <div className="stat-item sales">
-                        <span className="stat-dot blue"></span>
-                        <div className="stat-details">
-                            <span className="stat-val prominent">{formatCurrency(totalPeriodSales, true)}</span>
-                        </div>
+
+                <div className="balance-bar-container">
+                    <div className="balance-bar-info">
+                        <span className="bar-label">TOTAL EXPENSES</span>
+                        <span className="bar-value expenses">{formatStatValue(totalPeriodExpenses)}</span>
                     </div>
-                    <div className="stat-item expenses">
-                        <span className="stat-dot red"></span>
-                        <div className="stat-details">
-                            <span className="stat-val prominent">{formatCurrency(totalPeriodExpenses, true)}</span>
-                        </div>
+                    <div className="balance-progress-bg">
+                        <div className="balance-progress-fill expenses" style={{ width: `${totalPeriodExpenses > 0 ? (totalPeriodExpenses / Math.max(totalPeriodSales, totalPeriodExpenses || 1)) * 100 : 0}%` }}></div>
                     </div>
+                </div>
+
+                <div className="balance-summary-footer">
+                  <div className={`net-balance-card ${totalPeriodSales >= totalPeriodExpenses ? 'profit' : 'loss'}`}>
+                    <span className="net-label">NET BALANCE</span>
+                    <span className="net-amount">
+                      {totalPeriodSales >= totalPeriodExpenses ? '+' : '-'}{formatStatValue(Math.abs(totalPeriodSales - totalPeriodExpenses))}
+                    </span>
+                  </div>
                 </div>
             </div>
+
             <div className="chart-legend-row-bottom">
               <div className="chart-legend-item">
                 <span className="legend-dot sales-dot"></span>
@@ -555,42 +586,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* EXPENSES BREAKDOWN */}
-      {hasAccess('expenses') && (
-        <div className="expenses-breakdown-section">
-          <h3>THIS MONTH EXPENSES BREAKDOWN</h3>
-          <div className="expenses-categories-grid">
-            <div className="expense-category-card">
-              <div className="category-icon machine-icon"><span className="material-symbols-outlined">precision_manufacturing</span></div>
-              <div className="category-details">
-                <span className="category-name">MACHINE MAINTENANCE</span>
-                <span className="category-amount">{currentData.expenses.categories[0].amount}</span>
-              </div>
-            </div>
-            <div className="expense-category-card">
-              <div className="category-icon stock-icon"><span className="material-symbols-outlined">shopping_cart</span></div>
-              <div className="category-details">
-                <span className="category-name">STOCK PURCHASED</span>
-                <span className="category-amount">{currentData.expenses.categories[1].amount}</span>
-              </div>
-            </div>
-            <div className="expense-category-card">
-              <div className="category-icon salary-icon"><span className="material-symbols-outlined">payments</span></div>
-              <div className="category-details">
-                <span className="category-name">EMPLOYEE SALARY</span>
-                <span className="category-amount">{currentData.expenses.categories[2].amount}</span>
-              </div>
-            </div>
-            <div className="expense-category-card">
-              <div className="category-icon others-icon"><span className="material-symbols-outlined">category</span></div>
-              <div className="category-details">
-                <span className="category-name">OTHERS</span>
-                <span className="category-amount">{currentData.expenses.categories[3].amount}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

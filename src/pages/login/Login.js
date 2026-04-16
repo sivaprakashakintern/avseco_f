@@ -69,7 +69,7 @@ const Login = () => {
                         <div className="form-group">
                             <label htmlFor="username">EMAIL ADDRESS</label>
                             <div className="input-wrapper">
-                                <span className="material-symbols-outlined input-icon">mail</span>
+                                <span className="material-symbols-outlined input-icon">alternate_email</span>
                                 <input
                                     type="text"
                                     id="username"

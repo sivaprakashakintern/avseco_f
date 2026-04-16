@@ -85,11 +85,14 @@ const Expenses = () => {
     });
 
     // Stats derived from global state
-    const totalExpense = totalExpenseAmount;
-    const machineMaintTotal = expenseByCategory["Machine Maintenance"] || 0;
-    const materialTotal = expenseByCategory["Material"] || 0;
-    const salaryTotal = expenseByCategory["Salary"] || 0;
-    const othersTotal = totalExpense - machineMaintTotal - materialTotal - salaryTotal;
+    const today = formatDate(new Date());
+    const todayExpenses = (expenses || []).filter(ex => formatDate(ex.date) === today);
+
+    const todayTotal = todayExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const todayMachineTotal = todayExpenses.filter(e => e.category === "Machine Maintenance").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const todayMaterialTotal = todayExpenses.filter(e => e.category === "Material").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const todaySalaryTotal = todayExpenses.filter(e => e.category === "Salary").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const todayOthersTotal = todayTotal - todayMachineTotal - todayMaterialTotal - todaySalaryTotal;
 
     // --- Form Handlers ---
     const handleInputChange = (e) => {
@@ -148,6 +151,7 @@ const Expenses = () => {
             <div className="page-header premium-header">
                 <div>
                     <h1 className="page-title">Expense Details</h1>
+                    <p className="page-subtitle" style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', margin: '4px 0 0 0' }}>Daily Summary for {today}</p>
                 </div>
                 <div className="header-actions">
                     <button className="btn-export-premium" onClick={() => { setIsEditMode(false); setIsModalOpen(true); }}>
@@ -157,16 +161,16 @@ const Expenses = () => {
                 </div>
             </div>
 
-            {/* Stats Cards - Overall */}
+            {/* Stats Cards - Daily */}
             <div className="stock-stats">
                 <div className="stat-card" onClick={() => { setDetailCategory("All Expenses"); setShowDetailModal(true); }}>
                     <div className="stat-icon purple">
                         <span className="material-symbols-outlined">payments</span>
                     </div>
                     <div className="stat-info">
-                        <span className="stat-label">Total Expenses</span>
-                        <span className="stat-value" style={getDynamicFontSize(totalExpense)}>
-                            {formatCurrency(totalExpense, true)}
+                        <span className="stat-label">Daily Expenses</span>
+                        <span className="stat-value" style={getDynamicFontSize(todayTotal)}>
+                            {formatCurrency(todayTotal, true)}
                         </span>
                     </div>
                 </div>
@@ -175,9 +179,9 @@ const Expenses = () => {
                         <span className="material-symbols-outlined">build</span>
                     </div>
                     <div className="stat-info">
-                        <span className="stat-label">Machine Maint.</span>
-                        <span className="stat-value" style={getDynamicFontSize(machineMaintTotal)}>
-                            {formatCurrency(machineMaintTotal, true)}
+                        <span className="stat-label">Daily Maintenance</span>
+                        <span className="stat-value" style={getDynamicFontSize(todayMachineTotal)}>
+                            {formatCurrency(todayMachineTotal, true)}
                         </span>
                     </div>
                 </div>
@@ -186,9 +190,9 @@ const Expenses = () => {
                         <span className="material-symbols-outlined">shopping_cart</span>
                     </div>
                     <div className="stat-info">
-                        <span className="stat-label">Material Total</span>
-                        <span className="stat-value" style={getDynamicFontSize(materialTotal)}>
-                            {formatCurrency(materialTotal, true)}
+                        <span className="stat-label">Daily Material</span>
+                        <span className="stat-value" style={getDynamicFontSize(todayMaterialTotal)}>
+                            {formatCurrency(todayMaterialTotal, true)}
                         </span>
                     </div>
                 </div>
@@ -197,9 +201,9 @@ const Expenses = () => {
                         <span className="material-symbols-outlined">group</span>
                     </div>
                     <div className="stat-info">
-                        <span className="stat-label">Salary & Others</span>
-                        <span className="stat-value" style={getDynamicFontSize(salaryTotal + othersTotal)}>
-                            {formatCurrency(salaryTotal + othersTotal, true)}
+                        <span className="stat-label">Daily Salary & Others</span>
+                        <span className="stat-value" style={getDynamicFontSize(todaySalaryTotal + todayOthersTotal)}>
+                            {formatCurrency(todaySalaryTotal + todayOthersTotal, true)}
                         </span>
                     </div>
                 </div>

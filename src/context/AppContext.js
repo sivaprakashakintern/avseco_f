@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
-import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi, productsApi, productionTargetApi, salesApi, notificationApi } from "../utils/api.js";
+import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi, productsApi, productionTargetApi, salesApi, notificationApi, turnoverApi } from "../utils/api.js";
 import { useAuth } from "./AuthContext.js";
 
 const DEPARTMENTS = ["All Departments", "CEO", "HR", "Sales Team", "IT Admin", "Operator", "Maintenance", "Machine Operator", "Cleaning", "Driver", "Others"];
@@ -14,6 +14,7 @@ export const AppProvider = ({ children }) => {
     const [productionTargets, setProductionTargets] = useState([]);
     const [products, setProducts] = useState([]);
     const [salesHistory, setSalesHistory] = useState([]);
+    const [turnoverRecords, setTurnoverRecords] = useState([]);
     const [attendanceRecords, setAttendanceRecords] = useState({});
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -24,6 +25,7 @@ export const AppProvider = ({ children }) => {
         production: 'pending',
         products: 'pending',
         sales: 'pending',
+        turnover: 'pending',
         attendance: 'pending',
         notifications: 'pending'
     });
@@ -77,6 +79,9 @@ export const AppProvider = ({ children }) => {
             if (hasAccess('sales') || hasAccess('production') || hasAccess('stock')) {
                 requestMap.push({ key: 'sales', call: salesApi.getAll() });
             }
+            if (hasAccess('turnover')) {
+                requestMap.push({ key: 'turnover', call: turnoverApi.getAll() });
+            }
 
             const results = await Promise.allSettled(requestMap.map(r => r.call));
 
@@ -111,6 +116,8 @@ export const AppProvider = ({ children }) => {
                         setProducts(data.map(p => ({ ...p, id: p._id })));
                     } else if (key === 'sales') {
                         setSalesHistory(data.map(s => ({ ...s, id: s._id })));
+                    } else if (key === 'turnover') {
+                        setTurnoverRecords(data.map(t => ({ ...t, id: t._id })));
                     }
                 } else {
                     setFetchStatus(prev => ({ ...prev, [key]: 'error' }));
@@ -621,6 +628,39 @@ export const AppProvider = ({ children }) => {
         }
     }, []);
 
+    // TURNOVER
+    const addTurnover = useCallback(async (turnover) => {
+        setIsUpdating(true);
+        try {
+            const data = await turnoverApi.add(turnover);
+            setTurnoverRecords(prev => [{ ...data, id: data._id }, ...prev]);
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
+    }, []);
+
+    const updateTurnover = useCallback(async (id, updates) => {
+        setIsUpdating(true);
+        try {
+            const data = await turnoverApi.update(id, updates);
+            setTurnoverRecords(prev => prev.map(t => t.id === id ? { ...data, id: data._id } : t));
+            return data;
+        } finally {
+            setIsUpdating(false);
+        }
+    }, []);
+
+    const deleteTurnover = useCallback(async (id) => {
+        setIsUpdating(true);
+        try {
+            await turnoverApi.delete(id);
+            setTurnoverRecords(prev => prev.filter(t => t.id !== id));
+        } finally {
+            setIsUpdating(false);
+        }
+    }, []);
+
 
     // ANALYTICS / DERIVED
     const totalExpenseAmount = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
@@ -906,6 +946,11 @@ export const AppProvider = ({ children }) => {
             setIsUpdating,
             totalSalesAmount,
             salesHistory, 
+            turnoverRecords,
+            setTurnoverRecords,
+            addTurnover,
+            updateTurnover,
+            deleteTurnover,
             addSale,
             updateSale,
             deleteSale,

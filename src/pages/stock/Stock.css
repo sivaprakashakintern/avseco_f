@@ -227,7 +227,8 @@
   text-transform: uppercase;
   letter-spacing: 0.12em;
   margin-bottom: 4px;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 .stat-value {
@@ -235,9 +236,8 @@
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
   transition: font-size 0.2s ease;
 }
 
@@ -1086,7 +1086,7 @@
   .page-header.premium-header .page-title {
     font-size: 16px !important;
     /* Smaller text to ensure single line fit */
-    white-space: nowrap !important;
+    white-space: normal !important;
   }
 
   .page-header.premium-header .page-subtitle {
@@ -1397,7 +1397,7 @@
     color: #006A4E !important;
     font-size: 17px !important;
     font-weight: 800 !important;
-    white-space: nowrap !important;
+    white-space: normal !important;
   }
 
   .modal-row {
@@ -2752,7 +2752,7 @@
 
   .stat-label-new {
     font-size: 13px !important;
-    white-space: nowrap !important;
+    white-space: normal !important;
     display: block !important;
     width: 100% !important;
     overflow: hidden !important;
@@ -3047,14 +3047,14 @@
   font-weight: 800 !important;
   color: #64748b !important;
   letter-spacing: 0.5px !important;
-  white-space: nowrap !important;
+  white-space: normal !important;
 }
 
 .hero-value {
   font-size: 22px !important;
   font-weight: 900 !important;
   color: #1e293b !important;
-  white-space: nowrap !important;
+  white-space: normal !important;
   line-height: 1.2 !important;
 }
 

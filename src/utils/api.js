@@ -214,3 +214,26 @@ export const notificationApi = {
     return data;
   }
 };
+
+export const turnoverApi = {
+  getSummary: async (params) => {
+    const { data } = await axios.get('/turnover/analytics', { params });
+    return data;
+  },
+  getAll: async () => {
+    const { data } = await axios.get('/turnover');
+    return data;
+  },
+  add: async (turnoverData) => {
+    const { data } = await axios.post('/turnover', turnoverData);
+    return data;
+  },
+  update: async (id, turnoverData) => {
+    const { data } = await axios.put(`/turnover/${id}`, turnoverData);
+    return data;
+  },
+  delete: async (id) => {
+    const { data } = await axios.delete(`/turnover/${id}`);
+    return data;
+  }
+};
