@@ -23,8 +23,6 @@ const Dashboard = () => {
     productionTargets = []
   } = useAppContext();
   const [timeFilter, setTimeFilter] = useState("Monthly");
-  const [hoveredBar, setHoveredBar] = useState(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
@@ -230,16 +228,10 @@ const Dashboard = () => {
 
   // Get correctly calculated period data and totals
   const periodData = getPlatesData(timeFilter);
-  const plateDisplayData = periodData.platesData;
   const totalPeriodSales = periodData.totalTurnover;
   const totalPeriodExpenses = periodData.totalPeriodExpenses;
 
   const currentData = dashboardData[timeFilter];
-
-
-  const handleMouseMove = (e) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-  };
 
   // Navigation handlers
   const handleStockClick = () => navigate("/stock");

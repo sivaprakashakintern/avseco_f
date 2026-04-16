@@ -23,8 +23,6 @@ const Expenses = () => {
         updateExpense: ctxUpdateExpense,
         deleteExpense: ctxDeleteExpense,
         employees,
-        totalExpenseAmount,
-        expenseByCategory,
     } = useAppContext();
 
     const [isModalOpen, setIsModalOpen] = useState(false);

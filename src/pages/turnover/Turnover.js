@@ -1,9 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Cell, PieChart, Pie, Legend
-} from 'recharts';
 import './Turnover.css';
 
 const Turnover = () => {
@@ -11,30 +7,12 @@ const Turnover = () => {
     salesHistory = [], 
     expenses: appContextExpenses = [], 
     productionHistory = [],
-    turnoverRecords = [],
-    addTurnover,
-    updateTurnover,
-    deleteTurnover
+    turnoverRecords = []
   } = useAppContext();
 
   const [filterType, setFilterType] = useState('monthly'); // 'daily', 'monthly', 'yearly', 'all'
-  const [isMounted, setIsMounted] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editingId, setEditingId] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
 
-  const [formData, setFormData] = useState({
-    amount: '',
-    category: 'General Sales',
-    notes: '',
-    date: new Date().toISOString().split('T')[0]
-  });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-  
   const getToday = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -43,55 +21,6 @@ const Turnover = () => {
   const [selectedDate, setSelectedDate] = useState(getToday());
   const [selectedMonth, setSelectedMonth] = useState(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
-
-  // Handlers
-  const handleOpenModal = (record = null) => {
-    if (record) {
-      setIsEditMode(true);
-      setEditingId(record.id);
-      setFormData({
-        amount: record.amount,
-        category: record.category || 'General Sales',
-        notes: record.notes || '',
-        date: new Date(record.date).toISOString().split('T')[0]
-      });
-    } else {
-      setIsEditMode(false);
-      setEditingId(null);
-      setFormData({
-        amount: '',
-        category: 'General Sales',
-        notes: '',
-        date: new Date().toISOString().split('T')[0]
-      });
-    }
-    setIsModalOpen(true);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (isEditMode) {
-        await updateTurnover(editingId, formData);
-      } else {
-        await addTurnover(formData);
-      }
-      setIsModalOpen(false);
-    } catch (err) {
-      alert('Failed to save record');
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      if (deleteConfirm.id) {
-        await deleteTurnover(deleteConfirm.id);
-      }
-      setDeleteConfirm({ isOpen: false, id: null });
-    } catch (err) {
-      alert('Failed to delete record');
-    }
-  };
 
   // Main Analytics Logic
   const analytics = useMemo(() => {
@@ -227,7 +156,7 @@ const Turnover = () => {
     };
   }, [salesHistory, appContextExpenses, productionHistory, turnoverRecords, filterType, selectedDate, selectedMonth, selectedYear]);
 
-  const { financials, charts, manualRecords } = analytics;
+  const { financials, charts } = analytics;
 
   return (
     <div className="turnover-container">
@@ -443,84 +372,6 @@ const Turnover = () => {
         </div>
       </div>
 
-      {/* ADD/EDIT MODAL */}
-      {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content-green">
-            <div className="modal-header">
-              <h3>{isEditMode ? 'Edit Manual Entry' : 'Add Manual Turnover'}</h3>
-              <button className="close-btn" onClick={() => setIsModalOpen(false)}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Amount (₹)</label>
-                  <input 
-                    type="number" 
-                    value={formData.amount} 
-                    onChange={e => setFormData({...formData, amount: e.target.value})}
-                    required
-                    placeholder="Enter amount"
-                  />
-                </div>
-                <div className="form-group">
-                   <label>Date</label>
-                   <input 
-                    type="date" 
-                    value={formData.date}
-                    onChange={e => setFormData({...formData, date: e.target.value})}
-                    required
-                   />
-                </div>
-                <div className="form-group full-width">
-                  <label>Category</label>
-                  <select 
-                    value={formData.category}
-                    onChange={e => setFormData({...formData, category: e.target.value})}
-                  >
-                    <option value="General Sales">General Sales</option>
-                    <option value="Direct Order">Direct Order</option>
-                    <option value="Scrap Sale">Scrap Sale</option>
-                    <option value="Other Revenue">Other Revenue</option>
-                  </select>
-                </div>
-                <div className="form-group full-width">
-                  <label>Notes</label>
-                  <textarea 
-                    value={formData.notes}
-                    onChange={e => setFormData({...formData, notes: e.target.value})}
-                    placeholder="Optional notes..."
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <div className="modal-actions">
-                <button type="button" className="btn-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn-save-green">
-                  {isEditMode ? 'Update Record' : 'Save Record'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* DELETE CONFIRMATION */}
-      {deleteConfirm.isOpen && (
-        <div className="modal-overlay">
-           <div className="confirm-modal">
-              <div className="warning-icon"><span className="material-symbols-outlined">warning</span></div>
-              <h3>Confirm Deletion</h3>
-              <p>Are you sure you want to delete this record? This action cannot be undone.</p>
-              <div className="confirm-actions">
-                 <button className="btn-cancel" onClick={() => setDeleteConfirm({ isOpen: false, id: null })}>Cancel</button>
-                 <button className="btn-confirm-delete" onClick={handleDelete}>Delete Permanently</button>
-              </div>
-           </div>
-        </div>
-      )}
     </div>
   );
 };
