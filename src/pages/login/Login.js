@@ -73,6 +73,7 @@ const Login = () => {
                                 <input
                                     type="text"
                                     id="username"
+                                    name="username"
                                     placeholder="name@gmail.com"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
@@ -88,6 +89,7 @@ const Login = () => {
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     id="password"
+                                    name="password"
                                     placeholder="••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
