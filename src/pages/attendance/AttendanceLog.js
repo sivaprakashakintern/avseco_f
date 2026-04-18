@@ -100,17 +100,25 @@ const AttendanceLog = () => {
   // ── Derived Employees List ────────────────────────────────────────────────────
   const employees = useMemo(() => {
     const dayRecords = attendanceRecords[dateKey] || [];
-    return globalEmployees.map(emp => {
-      const record = dayRecords.find(r => r.empId === emp.id);
-      return {
-        ...emp,
-        empId: emp.empId || `EMP-${String(emp.id).padStart(4, "0")}`,
-        status: record?.status || "present",
-        note: record?.note || "",
-        halfDayTime: record?.halfDayTime || null,
-      };
-    });
-  }, [globalEmployees, attendanceRecords, dateKey]);
+    
+    // Filter out Admins and the Current User
+    return globalEmployees
+      .filter(emp => {
+        const isAdmin = emp.role === 'admin';
+        const isCurrentUser = emp.email === user?.email || emp.id === user?.id;
+        return !isAdmin && !isCurrentUser;
+      })
+      .map(emp => {
+        const record = dayRecords.find(r => r.empId === emp.id);
+        return {
+          ...emp,
+          empId: emp.empId || `EMP-${String(emp.id).padStart(4, "0")}`,
+          status: record?.status || "present",
+          note: record?.note || "",
+          halfDayTime: record?.halfDayTime || null,
+        };
+      });
+  }, [globalEmployees, attendanceRecords, dateKey, user]);
 
   // ── Quick Stats ───────────────────────────────────────────────────────────────
   const stats = useMemo(() => {

@@ -60,11 +60,12 @@ const Employees = () => {
     salary: ""
   });
 
-  // Calculate stats - WITH Department Breakdown
+  // Calculate stats - Strictly for staff (excludes admins)
   const stats = useMemo(() => {
-    const totalEmployees = employees.length;
+    const staffOnly = employees.filter(e => e.role !== 'admin');
+    const totalEmployees = staffOnly.length;
     const deptCounts = {};
-    employees.forEach(emp => {
+    staffOnly.forEach(emp => {
       deptCounts[emp.department] = (deptCounts[emp.department] || 0) + 1;
     });
 
@@ -76,6 +77,11 @@ const Employees = () => {
 
   // Filter employees
   const filteredEmployees = employees.filter((employee) => {
+    // Hide Admins and self from the Employee list
+    const isAdminUser = employee.role === 'admin';
+    const isSelf = employee.email === user?.email || employee.id === user?.id;
+    if (isAdminUser || isSelf) return false;
+
     // Department filter
     const matchesDepartment =
       selectedDepartment === "All Departments" || employee.department === selectedDepartment;

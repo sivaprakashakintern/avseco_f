@@ -149,7 +149,7 @@ const ProfilePage = () => {
     }
 
     return (
-        <div className="profile-page-modern">
+        <div className={`profile-page-modern ${profileData.role === 'admin' ? 'admin-view' : ''} ${isEditing ? 'is-editing-mode' : ''}`}>
             {/* Feedback Toast */}
             {feedback.message && (
                 <div className={`profile-toast-modern ${feedback.type}`}>
@@ -205,46 +205,48 @@ const ProfilePage = () => {
 
             {/* Profile Content */}
             <div className="profile-info-grid">
-                {/* Personal Section */}
-                <div className="info-card">
-                    <div className="card-header">
-                        <span className="material-symbols-outlined">account_circle</span>
-                        <h3>Account Identity</h3>
+                {/* Personal Section - Hidden for Admins to simplify */}
+                {profileData.role !== 'admin' && (
+                    <div className="info-card">
+                        <div className="card-header">
+                            <span className="material-symbols-outlined">account_circle</span>
+                            <h3>Account Identity</h3>
+                        </div>
+                        <div className="card-body">
+                            <div className={`detail-item ${errors.name ? 'error' : ''}`}>
+                                <label>Full Name *</label>
+                                {isEditing ? (
+                                    <input name="name" value={profileData.name} onChange={handleInputChange} className="profile-input" />
+                                ) : (
+                                    <span>{profileData.name}</span>
+                                )}
+                                {errors.name && <small className="err-msg">{errors.name}</small>}
+                            </div>
+                            <div className="detail-item">
+                                <label>Employee ID</label>
+                                <span className="readonly-val">{profileData.empId}</span>
+                            </div>
+                            <div className="detail-item">
+                                <label>System Designation</label>
+                                <span className="readonly-val">{profileData.role}</span>
+                            </div>
+                            <div className="detail-item">
+                                <label>Birth Date</label>
+                                {isEditing ? (
+                                    <input name="dob" type="date" value={profileData.dob} onChange={handleInputChange} className="profile-input" />
+                                ) : (
+                                    <span>{profileData.dob || "Not specified"}</span>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                    <div className="card-body">
-                        <div className={`detail-item ${errors.name ? 'error' : ''}`}>
-                            <label>Full Name *</label>
-                            {isEditing ? (
-                                <input name="name" value={profileData.name} onChange={handleInputChange} className="profile-input" />
-                            ) : (
-                                <span>{profileData.name}</span>
-                            )}
-                            {errors.name && <small className="err-msg">{errors.name}</small>}
-                        </div>
-                        <div className="detail-item">
-                            <label>Employee ID</label>
-                            <span className="readonly-val">{profileData.empId}</span>
-                        </div>
-                        <div className="detail-item">
-                            <label>System Designation</label>
-                            <span className="readonly-val">{profileData.role}</span>
-                        </div>
-                        <div className="detail-item">
-                            <label>Birth Date</label>
-                            {isEditing ? (
-                                <input name="dob" type="date" value={profileData.dob} onChange={handleInputChange} className="profile-input" />
-                            ) : (
-                                <span>{profileData.dob || "Not specified"}</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
+                )}
 
-                {/* Contact Section */}
+                {/* Combined / Simplified Section for Admin (Email, Password, Phone) */}
                 <div className="info-card">
                     <div className="card-header">
-                        <span className="material-symbols-outlined">alternate_email</span>
-                        <h3>Contact Information</h3>
+                        <span className="material-symbols-outlined">contact_page</span>
+                        <h3>Security & Contact</h3>
                     </div>
                     <div className="card-body">
                         <div className="detail-item">
@@ -263,19 +265,34 @@ const ProfilePage = () => {
                                 <span>{profileData.phone || "Not linked"}</span>
                             )}
                         </div>
-                        <div className="detail-item">
-                            <label>Address Details</label>
-                            {isEditing ? (
-                                <textarea name="address" value={profileData.address} onChange={handleInputChange} className="profile-input area" />
-                            ) : (
-                                <p className="address-display">{profileData.address || "No address provided"}</p>
-                            )}
-                        </div>
+                        
+                        {/* Always show password button in this section for admins */}
+                        {profileData.role === 'admin' && isSelf && (
+                             <div className="detail-item password-fix">
+                                <label>Account Security</label>
+                                <button className="security-action-btn-inline" onClick={() => setIsPassModalOpen(true)}>
+                                    <span className="material-symbols-outlined">lock_reset</span>
+                                    Change Login Password
+                                </button>
+                             </div>
+                        )}
+
+                        {/* Hide address for admins */}
+                        {profileData.role !== 'admin' && (
+                            <div className="detail-item">
+                                <label>Address Details</label>
+                                {isEditing ? (
+                                    <textarea name="address" value={profileData.address} onChange={handleInputChange} className="profile-input area" />
+                                ) : (
+                                    <p className="address-display">{profileData.address || "No address provided"}</p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Avatar / Settings Section */}
-                {isEditing && (
+                {/* Avatar / Settings Section - Hidden for Admins */}
+                {(isEditing && profileData.role !== 'admin') && (
                     <div className="info-card avatar-settings-card">
                         <div className="card-header">
                             <span className="material-symbols-outlined">photo_camera</span>
@@ -297,30 +314,32 @@ const ProfilePage = () => {
                     </div>
                 )}
 
-                {/* Account Security */}
-                <div className={`info-card ${isEditing ? 'security-card-compact' : 'security-card-wide'}`}>
-                    <div className="card-header">
-                        <span className="material-symbols-outlined">shield_person</span>
-                        <h3>System Connection</h3>
-                    </div>
-                    <div className="card-body">
-                        <div className="security-belt">
-                            <div className="security-info">
-                                <div className="status-indicator-pill">
-                                    <span className="pulse-dot"></span>
-                                    Operational
+                {/* Account Security - Only shown for non-admins as it was already merged for admins */}
+                {profileData.role !== 'admin' && (
+                    <div className={`info-card ${isEditing ? 'security-card-compact' : 'security-card-wide'}`}>
+                        <div className="card-header">
+                            <span className="material-symbols-outlined">shield_person</span>
+                            <h3>System Connection</h3>
+                        </div>
+                        <div className="card-body">
+                            <div className="security-belt">
+                                <div className="security-info">
+                                    <div className="status-indicator-pill">
+                                        <span className="pulse-dot"></span>
+                                        Operational
+                                    </div>
+                                    <p className="join-date-inf">Onboarded since: <strong>{formatDate(profileData.joinDate)}</strong></p>
                                 </div>
-                                <p className="join-date-inf">Onboarded since: <strong>{formatDate(profileData.joinDate)}</strong></p>
+                                {isSelf && (
+                                    <button className="security-action-btn" onClick={() => setIsPassModalOpen(true)}>
+                                        <span className="material-symbols-outlined">key</span>
+                                        Change Password
+                                    </button>
+                                )}
                             </div>
-                            {isSelf && (
-                                <button className="security-action-btn" onClick={() => setIsPassModalOpen(true)}>
-                                    <span className="material-symbols-outlined">key</span>
-                                    Change Password
-                                </button>
-                            )}
                         </div>
                     </div>
-                </div>
+                )}
             </div>
 
             <ProfilePasswordModal isOpen={isPassModalOpen} onClose={() => setIsPassModalOpen(false)} />
