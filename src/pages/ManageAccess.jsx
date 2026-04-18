@@ -142,11 +142,16 @@ const ManageAccess = () => {
     }
   };
 
-  const filteredEmployees = employees.filter(emp => 
-    emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (emp.username && emp.username.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    emp.department.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredEmployees = employees.filter(emp => {
+    if (!emp || !emp.name) return false;
+    
+    const searchLower = searchQuery.toLowerCase();
+    const nameMatch = emp.name.toLowerCase().includes(searchLower);
+    const userMatch = emp.username ? emp.username.toLowerCase().includes(searchLower) : false;
+    const deptMatch = emp.department ? emp.department.toLowerCase().includes(searchLower) : false;
+    
+    return nameMatch || userMatch || deptMatch;
+  });
 
   const getModuleIcon = (module) => {
     const icons = {
