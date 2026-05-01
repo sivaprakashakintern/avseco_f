@@ -42,7 +42,7 @@ axiosInstance.interceptors.response.use(
     } else if (error.response.status === 401) {
       // Handle unauthorized error
       localStorage.removeItem('userInfo');
-      // window.location.href = '/login';
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
