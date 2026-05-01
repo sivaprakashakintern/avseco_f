@@ -72,6 +72,13 @@ const SalesHistory = () => {
     };
 
     const handleViewBill = (transaction, returnOnly = false) => {
+        const status = (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase();
+        if (status === 'unpaid' && !returnOnly) {
+            setFeedbackMessage("⚠️ Bill cannot be generated for Unpaid transactions");
+            setTimeout(() => setFeedbackMessage(""), 3000);
+            return;
+        }
+
         const clientInfo = clients?.find(c => c.companyName === transaction.company);
         const billData = {
             invoiceNo: transaction.invoiceNo || (transaction.id || transaction._id)?.slice(-6).toUpperCase() || "N/A",
@@ -87,6 +94,7 @@ const SalesHistory = () => {
                 baseName: item.baseName || item.productName || item.product,
                 size: item.size || "-",
                 qty: item.qty,
+                rate: item.rate || (item.qty > 0 ? (item.amount / item.qty) : 0),
                 amount: item.amount,
                 hsn: item.hsn || "-"
             })) || [
@@ -95,6 +103,7 @@ const SalesHistory = () => {
                     baseName: transaction.product,
                     size: transaction.size || "—",
                     qty: Math.abs(transaction.quantity),
+                    rate: transaction.amount / Math.abs(transaction.quantity) || 0,
                     amount: transaction.totalAmount || transaction.amount,
                     hsn: "-"
                 }
@@ -187,7 +196,7 @@ const SalesHistory = () => {
             const pdfBlob = doc.output('blob');
             const pdfFile = new File([pdfBlob], `Invoice_${bill.invoiceNo}.pdf`, { type: 'application/pdf' });
 
-            const message = `*INVOICE: ${bill.invoiceNo}*%0A%0ADear *${bill.customer}*,%0A%0AThank you for your business with *AVSECO INDUSTRIES*! 🌿%0A%0APlease find your invoice attached below.`;
+            const message = `*INVOICE: ${bill.invoiceNo}*%0A%0ADear *${bill.customer}*,%0A%0AThank you for your business with *AVS ECO INDUSTRIES*! 🌿%0A%0APlease find your invoice attached below.`;
             const waUrl = `https://wa.me/${phone}?text=${message}`;
 
             if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
@@ -338,8 +347,9 @@ const SalesHistory = () => {
                                                     <button 
                                                         className="icon-action-btn" 
                                                         onClick={(e) => { e.stopPropagation(); handleViewBill(transaction); }} 
-                                                        title="View Bill" 
-                                                        style={{ color: '#10b981' }}
+                                                        title={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? "Bill not available for Unpaid" : "View Bill"}
+                                                        style={{ color: (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? '#94a3b8' : '#10b981', cursor: (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? 'not-allowed' : 'pointer' }}
+                                                        disabled={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid'}
                                                     >
                                                         <span className="material-symbols-outlined">receipt_long</span>
                                                     </button>
@@ -415,7 +425,12 @@ const SalesHistory = () => {
                                         </div>
                                     </div>
                                     <div className="sale-card-actions" onClick={(e) => e.stopPropagation()}>
-                                        <button className="sale-action-btn view" onClick={() => handleViewBill(transaction)}>
+                                        <button 
+                                            className="sale-action-btn view" 
+                                            onClick={() => handleViewBill(transaction)}
+                                            disabled={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid'}
+                                            style={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                        >
                                             <span className="material-symbols-outlined">receipt_long</span>
                                             View Bill
                                         </button>
@@ -469,35 +484,35 @@ const SalesHistory = () => {
                                 .no-print { display: none !important; }
                                 body, html { margin: 0 !important; padding: 0 !important; background: #fff !important; width: 850px !important; }
                             }
-                            .ci-header { background: #1a6b3c; padding: 30px 40px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+                            .ci-header { background: #045b54; padding: 30px 40px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
                             .ci-logo-area { display: flex; align-items: center; gap: 20px; }
-                            .ci-logo-img { width: 75px; height: 75px; object-fit: contain; filter: brightness(0) invert(1); }
+                            .ci-logo-img { width: 140px; height: auto; object-fit: contain; }
                             .ci-company-name { font-size: 26px; font-weight: 900; letter-spacing: 0.02em; }
                             .ci-company-addr { font-size: 11px; opacity: 0.9; line-height: 1.5; font-weight: 500; margin-top: 5px; }
                             .ci-invoice-title { font-size: 34px; font-weight: 900; letter-spacing: 0.05em; text-align: right; }
                             .ci-invoice-meta { margin-top: 10px; font-size: 12px; text-align: right; line-height: 1.8; }
-                            .ci-billto { padding: 18px 40px; border-bottom: 2px solid #1a6b3c; display: flex; gap: 60px; align-items: flex-start; }
-                            .ci-billto-title { font-size: 16px; font-weight: 800; color: #1a6b3c; margin-bottom: 10px; }
+                            .ci-billto { padding: 18px 40px; border-bottom: 2px solid #045b54; display: flex; gap: 60px; align-items: flex-start; }
+                            .ci-billto-title { font-size: 16px; font-weight: 800; color: #045b54; margin-bottom: 10px; }
                             .ci-billto-row { font-size: 12px; color: #333; line-height: 1.9; font-weight: 600; }
-                            .ci-section-title { font-size: 22px; font-weight: 800; color: #1a6b3c; padding: 18px 40px 10px; }
+                            .ci-section-title { font-size: 22px; font-weight: 800; color: #045b54; padding: 18px 40px 10px; }
                             .ci-table-wrap { padding: 0 40px; }
-                            .ci-table { width: 100%; border-collapse: collapse; border: 1.5px solid #1a6b3c; }
-                            .ci-tbl-head tr { background: #1a6b3c; }
+                            .ci-table { width: 100%; border-collapse: collapse; border: 1.5px solid #045b54; }
+                            .ci-tbl-head tr { background: #045b54; }
                             .ci-tbl-head th { padding: 11px 12px; font-size: 10.5px; font-weight: 700; color: #fff; text-transform: uppercase; text-align: left; }
                             .ci-tbody td { padding: 10px 12px; font-size: 12.5px; color: #333; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; }
                             .ci-summary { display: flex; justify-content: flex-end; padding: 0 40px; }
-                            .ci-summary-box { width: 280px; border: 1.5px solid #1a6b3c; border-top: none; }
+                            .ci-summary-box { width: 280px; border: 1.5px solid #045b54; border-top: none; }
                             .ci-sum-row { display: flex; justify-content: space-between; padding: 8px 14px; font-size: 12.5px; border-bottom: 1px solid #e2e8f0; }
-                            .ci-total-row { background: #1a6b3c; color: #fff; display: flex; justify-content: space-between; padding: 11px 14px; font-size: 14px; font-weight: 900; }
-                            .ci-payment { display: grid; grid-template-columns: 1fr 1fr; padding: 20px 40px 10px; border-top: 2px solid #1a6b3c; margin-top: 24px; }
-                            .ci-pay-title { font-size: 13px; font-weight: 800; color: #1a6b3c; margin-bottom: 8px; }
-                            .ci-footer { border-top: 2px solid #1a6b3c; margin-top: 20px; padding: 14px 40px; text-align: center; font-size: 12px; font-style: italic; }
+                            .ci-total-row { background: #045b54; color: #fff; display: flex; justify-content: space-between; padding: 11px 14px; font-size: 14px; font-weight: 900; }
+                            .ci-payment { display: grid; grid-template-columns: 1fr 1fr; padding: 20px 40px 10px; border-top: 2px solid #045b54; margin-top: 24px; }
+                            .ci-pay-title { font-size: 13px; font-weight: 800; color: #045b54; margin-bottom: 8px; }
+                            .ci-footer { border-top: 2px solid #045b54; margin-top: 20px; padding: 14px 40px; text-align: center; font-size: 12px; font-style: italic; }
                         `}</style>
                         <div className="ci-header">
                             <div className="ci-logo-area">
                                 <img src={logo} alt="Logo" className="ci-logo-img" />
                                 <div>
-                                    <div className="ci-company-name">AVSECO INDUSTRIES</div>
+                                    <div className="ci-company-name">AVS ECO INDUSTRIES</div>
                                     <div className="ci-company-addr">Tiruttani, Thiruvallur (Dt) - 631210</div>
                                 </div>
                             </div>
@@ -529,6 +544,7 @@ const SalesHistory = () => {
                                         <th>Product Name</th>
                                         <th>Size</th>
                                         <th>Qty</th>
+                                        <th>Rate</th>
                                         <th>Amount</th>
                                     </tr>
                                 </thead>
@@ -539,7 +555,8 @@ const SalesHistory = () => {
                                             <td>{item.baseName}</td>
                                             <td>{item.size}</td>
                                             <td>{item.qty}</td>
-                                            <td>₹{item.amount.toLocaleString()}</td>
+                                            <td>₹{item.rate?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                            <td>₹{item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -549,7 +566,7 @@ const SalesHistory = () => {
                             <div className="ci-summary-box">
                                 <div className="ci-total-row">
                                     <span>TOTAL:</span>
-                                    <span>₹{selectedBill.totalAmount.toLocaleString()}</span>
+                                    <span>₹{selectedBill.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
                         </div>

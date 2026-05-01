@@ -229,6 +229,7 @@ const Sales = () => {
                     baseName: selectedBaseProduct,
                     size: selectedSize,
                     qty: qtyToAdd,
+                    rate: pricePerUnit,
                     amount: (pricePerUnit * qtyToAdd) || 0,
                     unit: products.find(p => p.id === selectedProductId)?.unit || "pcs",
                     hsn: products.find(p => p.id === selectedProductId)?.hsnCode || "-"
@@ -272,6 +273,7 @@ const Sales = () => {
             itemsToLog.push({
                 product: selectedProduct,
                 qty: parseFloat(quantity),
+                rate: parseFloat(unitPrice),
                 amount: (parseFloat(unitPrice) * parseFloat(quantity)) || 0,
                 unit: selectedProductObj?.unit || "pcs"
             });
@@ -300,6 +302,7 @@ const Sales = () => {
                 baseName: item.baseName || item.product,
                 size: item.size || "-",
                 qty: item.qty,
+                rate: item.rate,
                 amount: item.amount,
                 unit: item.unit || "pcs",
                 hsn: item.hsn
@@ -1461,12 +1464,13 @@ const Sales = () => {
                                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
                                     <thead>
                                         <tr style={{ background: '#fefefe', borderBottom: '1px solid #e2e8f0' }}>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '25%' }}>PRODUCT NAME</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '15%' }}>SIZE</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '15%' }}>HSN CODE</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '15%' }}>QTY</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '20%' }}>PRODUCT NAME</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '12%' }}>SIZE</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '12%' }}>HSN</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '12%' }}>QTY</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '15%' }}>RATE</th>
                                             <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '15%' }}>TOTAL</th>
-                                            <th style={{ padding: '12px 16px', width: '10%', textAlign: 'center' }}>ACTION</th>
+                                            <th style={{ padding: '12px 16px', width: '12%', textAlign: 'center' }}>ACTION</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1476,6 +1480,7 @@ const Sales = () => {
                                                 <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'left' }}>{item.size}</td>
                                                 <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'left' }}>{item.hsn || "-"}</td>
                                                 <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>{item.qty}</td>
+                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>₹{item.rate?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                                 <td style={{ padding: '16px', color: '#1e293b', fontWeight: 500, fontSize: '0.9rem', textAlign: 'right' }}>₹{item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                                 <td style={{ padding: '16px', textAlign: 'center' }}>
                                                     <button
