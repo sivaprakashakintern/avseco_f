@@ -470,7 +470,7 @@ const Sales = () => {
         const handleGlobalKeyDown = (e) => {
             // Avoid shortcuts when typing in inputs (except for specifically handled keys)
             const isTyping = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
-            
+
             // SHIFT + Z -> Toggle Client Type (Company / Individual)
             if (e.shiftKey && (e.key === 'Z' || e.key === 'z')) {
                 e.preventDefault();
@@ -494,44 +494,6 @@ const Sales = () => {
                 // 'n' -> Focus Person/Customer Name field
                 if (key === 'n') {
                     itemRefs.customerName.current?.focus();
-                    e.preventDefault();
-                }
-                // 'p' -> Cycle Product Name
-                if (key === 'p') {
-                    const baseProducts = [...new Set(products.map(p => p.baseName))];
-                    if (!isBaseProductDropdownOpen) {
-                        setIsBaseProductDropdownOpen(true);
-                    } else {
-                        const currentIndex = baseProducts.indexOf(selectedBaseProduct);
-                        const nextIndex = (currentIndex + 1) % baseProducts.length;
-                        setSelectedBaseProduct(baseProducts[nextIndex]);
-                        // Auto-open size dropdown if we moved to a new product
-                        setTimeout(() => setIsSizeDropdownOpen(true), 50);
-                    }
-                    e.preventDefault();
-                }
-                // 's' -> Cycle Size dropdown
-                if (key === 's') {
-                    if (selectedBaseProduct) {
-                        const availableSizes = products.filter(p => p.baseName === selectedBaseProduct).map(p => p.size);
-                        if (!isSizeDropdownOpen) {
-                            setIsSizeDropdownOpen(true);
-                        } else {
-                            const currentIndex = availableSizes.indexOf(selectedSize);
-                            const nextIndex = (currentIndex + 1) % availableSizes.length;
-                            setSelectedSize(availableSizes[nextIndex]);
-                        }
-                    }
-                    e.preventDefault();
-                }
-                // 'q' -> Quantity
-                if (key === 'q') {
-                    itemRefs.quantity.current?.focus();
-                    e.preventDefault();
-                }
-                // 'r' -> Rate
-                if (key === 'r') {
-                    itemRefs.unitPrice.current?.focus();
                     e.preventDefault();
                 }
                 // 'p' -> Cycle Product Name
@@ -602,15 +564,15 @@ const Sales = () => {
                 if (!isNaN(num) && num >= 1 && num <= 9) {
                     if (isClientDropdownOpen || isCustomerDropdownOpen) {
                         const dropdownType = isClientDropdownOpen ? 'client' : 'customer';
-                        const list = dropdownType === 'client' 
+                        const list = dropdownType === 'client'
                             ? clients.filter(c => (clientType === 'Company' ? (c.companyName && (c.clientType?.toLowerCase() !== 'personal')) : (!c.companyName || c.clientType?.toLowerCase() === 'personal')))
                                 .filter(c => (c.companyName?.toLowerCase() || "").includes(companyName?.toLowerCase() || ""))
                             : clients.filter(c => {
-                                    const isComp = !!(c.companyName && c.companyName.trim() !== "");
-                                    const isPers = !isComp || c.clientType?.toLowerCase() === 'personal';
-                                    return clientType === 'Company' ? isComp : isPers;
-                                }).filter(c => (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) || c.companyName?.toLowerCase().includes(customerName.toLowerCase())));
-                        
+                                const isComp = !!(c.companyName && c.companyName.trim() !== "");
+                                const isPers = !isComp || c.clientType?.toLowerCase() === 'personal';
+                                return clientType === 'Company' ? isComp : isPers;
+                            }).filter(c => (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) || c.companyName?.toLowerCase().includes(customerName.toLowerCase())));
+
                         if (list[num - 1]) {
                             e.preventDefault();
                             const client = list[num - 1];
@@ -724,14 +686,14 @@ const Sales = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                             <h3 className="section-title">{editingTransactionId ? "Edit Sales Record" : "Customer Details"}</h3>
                             <div className="client-type-toggle-mini">
-                                <button 
+                                <button
                                     className={`mini-toggle-btn ${clientType === 'Company' ? 'active' : ''}`}
                                     onClick={() => setClientType('Company')}
                                 >
                                     <span className="material-symbols-outlined">business</span>
                                     COMPANY
                                 </button>
-                                <button 
+                                <button
                                     className={`mini-toggle-btn ${clientType === 'Individual' ? 'active' : ''}`}
                                     onClick={() => setClientType('Individual')}
                                 >
@@ -882,15 +844,15 @@ const Sales = () => {
                                     {isCustomerDropdownOpen && (
                                         <div className="product-dropdown-menu">
                                             {clients
-                                            .filter(c => {
-                                                const isCompany = !!(c.companyName && c.companyName.trim() !== "");
-                                                const isPersonal = !isCompany || c.clientType?.toLowerCase() === 'personal';
-                                                return clientType === 'Company' ? isCompany : isPersonal;
-                                            })
-                                            .filter(c =>
-                                                (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) ||
-                                                 c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
-                                            ).length > 0 ? (
+                                                .filter(c => {
+                                                    const isCompany = !!(c.companyName && c.companyName.trim() !== "");
+                                                    const isPersonal = !isCompany || c.clientType?.toLowerCase() === 'personal';
+                                                    return clientType === 'Company' ? isCompany : isPersonal;
+                                                })
+                                                .filter(c =>
+                                                    (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) ||
+                                                        c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
+                                                ).length > 0 ? (
                                                 clients
                                                     .filter(c => {
                                                         const isCompany = !!(c.companyName && c.companyName.trim() !== "");
@@ -899,7 +861,7 @@ const Sales = () => {
                                                     })
                                                     .filter(c =>
                                                         (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) ||
-                                                         c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
+                                                            c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
                                                     )
                                                     .map((client, idx) => (
                                                         <button
@@ -1001,7 +963,7 @@ const Sales = () => {
                     </div>
 
                     <div className="section-divider"></div>
-<div className="table-header" style={{ padding: '14px 32px' }}>
+                    <div className="table-header" style={{ padding: '14px 32px' }}>
                         <h3 className="section-title">Billing Details</h3>
                     </div>
                     <div className="quick-entry-grid" style={{ paddingTop: 0 }}>
