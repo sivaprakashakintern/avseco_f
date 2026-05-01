@@ -268,7 +268,7 @@ const SalesHistory = () => {
                 <div className="table-header">
                     <h3 className="section-title">Sales Records</h3>
                 </div>
-                <div className="table-responsive">
+                <div className="table-responsive desktop-only-table">
                     <table className="stock-table">
                         <thead>
                             <tr>
@@ -365,6 +365,74 @@ const SalesHistory = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Cards View */}
+                <div className="mobile-history-cards">
+                    {loading ? (
+                        <div className="no-data-mobile">
+                            <div className="loading-spinner"></div>
+                            <p>Loading sales history...</p>
+                        </div>
+                    ) : filteredTransactions.length > 0 ? (
+                        filteredTransactions.map((transaction) => {
+                            const baseNames = [...new Set(transaction.saleItems?.map(item => item.baseName))].filter(Boolean);
+                            const baseProducts = baseNames.length > 0 ? baseNames.join(', ') : (transaction.product || "-");
+                            const totalPieces = transaction.saleItems?.reduce((sum, item) => sum + (Number(item.qty) || 0), 0) || Math.abs(transaction.quantity || 0);
+                            const displayAmount = transaction.totalAmount || transaction.amount || 0;
+                            const formattedTime = getFormattedTime(transaction);
+                            const datePart = transaction.date?.split(', ')[0] || new Date(transaction.createdAt).toLocaleDateString();
+
+                            return (
+                                <div key={transaction.id || transaction._id} className="mobile-sale-card" onClick={() => handleViewBill(transaction)}>
+                                    <div className="sale-card-header">
+                                        <div className="sale-date">
+                                            <span className="material-symbols-outlined">calendar_today</span>
+                                            {datePart} &bull; {formattedTime}
+                                        </div>
+                                        <span className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}>
+                                            {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
+                                        </span>
+                                    </div>
+                                    <div className="sale-card-body">
+                                        <div className="company-info">
+                                            <h4 className="sale-company">{transaction.company || "Direct Sale"}</h4>
+                                            <p className="sale-customer">{transaction.customer || "Walking Customer"}</p>
+                                        </div>
+                                        <div className="sale-details-grid">
+                                            <div className="detail-item">
+                                                <span className="detail-label">TOTAL AMOUNT</span>
+                                                <span className="detail-value amount">₹{displayAmount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                            <div className="detail-item">
+                                                <span className="detail-label">SOLD BY</span>
+                                                <span className="detail-value">{transaction.soldBy || "-"}</span>
+                                            </div>
+                                        </div>
+                                        <div className="sale-product-line">
+                                            <span className="material-symbols-outlined">inventory_2</span>
+                                            {baseProducts} ({totalPieces} pcs)
+                                        </div>
+                                    </div>
+                                    <div className="sale-card-actions" onClick={(e) => e.stopPropagation()}>
+                                        <button className="sale-action-btn view" onClick={() => handleViewBill(transaction)}>
+                                            <span className="material-symbols-outlined">receipt_long</span>
+                                            View Bill
+                                        </button>
+                                        <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}>
+                                            <span className="material-symbols-outlined">delete</span>
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="no-data-mobile">
+                            <span className="material-symbols-outlined">receipt_long</span>
+                            <h4>No sales records found</h4>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -1912,7 +1912,7 @@
   }
 
   .mobile-history-cards {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     gap: 12px;
     padding: 0 4px 14px;
