@@ -23,17 +23,21 @@ const SalesHistory = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showExportModal, setShowExportModal] = useState(false);
-    const [, setExportLoading] = useState(false);
     const [showBillModal, setShowBillModal] = useState(false);
     const [selectedBill, setSelectedBill] = useState(null);
     const [feedbackMessage, setFeedbackMessage] = useState("");
+    const [exportType, setExportType] = useState('all'); // all, paid, unpaid
+    const [exportFormat, setExportFormat] = useState('csv'); // csv, excel
+    const [exportLoading, setExportLoading] = useState(false);
 
     const fetchSales = useCallback(async () => {
         setLoading(true);
         try {
             const response = await axios.get('/sales');
             const sorted = response.data.sort((a, b) => {
-                return new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date);
+                const dateA = new Date(a.createdAt || a.date);
+                const dateB = new Date(b.createdAt || b.date);
+                return dateB - dateA;
             });
             setTransactions(sorted);
         } catch (err) {
@@ -220,15 +224,53 @@ const SalesHistory = () => {
         }
     };
 
+    const exportToCSV = (data, fileName) => {
+        const headers = ["Date", "Customer", "Company", "Products", "Pieces", "Amount (₹)", "Status"];
+        const csvData = data.map((item) => {
+            const baseNames = [...new Set(item.saleItems?.map(si => si.baseName))].filter(Boolean);
+            const products = baseNames.length > 0 ? baseNames.join('; ') : (item.product || "-");
+            const totalPieces = item.saleItems?.reduce((sum, si) => sum + (Number(si.qty) || 0), 0) || Math.abs(item.quantity || 0);
+            
+            return [
+                item.date?.split(', ')[0] || new Date(item.createdAt).toLocaleDateString(),
+                item.customer || "-",
+                item.company || "-",
+                products,
+                totalPieces,
+                item.totalAmount || item.amount || 0,
+                item.paidStatus || item.paymentStatus || "Paid"
+            ];
+        });
+
+        const csvContent = [headers, ...csvData].map((e) => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${fileName}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     const confirmExport = () => {
         setExportLoading(true);
-        // Implement CSV export logic here if needed, exactly like in Sales.js
+        
         setTimeout(() => {
+            let dataToExport = filteredTransactions;
+            if (exportType !== 'all') {
+                dataToExport = filteredTransactions.filter(t => 
+                    (t.paidStatus || t.paymentStatus || 'Paid').toLowerCase() === exportType.toLowerCase()
+                );
+            }
+
+            const fileName = `Sales_Report_${exportType}_${new Date().toISOString().split('T')[0]}`;
+            exportToCSV(dataToExport, fileName);
+
             setExportLoading(false);
             setShowExportModal(false);
             setFeedbackMessage("✅ Report exported successfully");
             setTimeout(() => setFeedbackMessage(""), 3000);
-        }, 1500);
+        }, 1000);
     };
 
     return (
@@ -604,17 +646,62 @@ const SalesHistory = () => {
                 <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>Export Sales Report</h3>
+                            <div className="header-icon-title">
+                                <span className="material-symbols-outlined header-icon">download</span>
+                                <h3>Export Sales Report</h3>
+                            </div>
                             <button className="modal-close" onClick={() => setShowExportModal(false)}>
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
                         <div className="modal-body">
-                            <p>Choose export format and range...</p>
+                            <div className="export-options-grid">
+                                <div className="export-option-group">
+                                    <label className="export-label">Transaction Type</label>
+                                    <div className="export-selector">
+                                        <button 
+                                            className={`selector-btn ${exportType === 'all' ? 'active' : ''}`}
+                                            onClick={() => setExportType('all')}
+                                        >All</button>
+                                        <button 
+                                            className={`selector-btn ${exportType === 'paid' ? 'active' : ''}`}
+                                            onClick={() => setExportType('paid')}
+                                        >Paid</button>
+                                        <button 
+                                            className={`selector-btn ${exportType === 'unpaid' ? 'active' : ''}`}
+                                            onClick={() => setExportType('unpaid')}
+                                        >Unpaid</button>
+                                    </div>
+                                </div>
+                                <div className="export-option-group">
+                                    <label className="export-label">Format</label>
+                                    <div className="export-selector">
+                                        <button 
+                                            className={`selector-btn ${exportFormat === 'csv' ? 'active' : ''}`}
+                                            onClick={() => setExportFormat('csv')}
+                                        >CSV</button>
+                                        <button 
+                                            className={`selector-btn ${exportFormat === 'excel' ? 'active' : ''}`}
+                                            onClick={() => setExportFormat('excel')}
+                                        >Excel</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="export-note">This will export the currently filtered {filteredTransactions.length} records based on your search.</p>
                         </div>
                         <div className="modal-footer">
                             <button className="modal-cancel" onClick={() => setShowExportModal(false)}>Cancel</button>
-                            <button className="modal-confirm" onClick={confirmExport}>Export Now</button>
+                            <button 
+                                className="modal-confirm premium-btn" 
+                                onClick={confirmExport}
+                                disabled={exportLoading}
+                            >
+                                {exportLoading ? (
+                                    <><div className="btn-spinner"></div> Exporting...</>
+                                ) : (
+                                    <><span className="material-symbols-outlined">download</span> Download Report</>
+                                )}
+                            </button>
                         </div>
                     </div>
                 </div>
