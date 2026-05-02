@@ -590,6 +590,11 @@
   color: #1e40af;
 }
 
+.payment-badge[style*="cursor: pointer"]:hover {
+  filter: brightness(0.9);
+  transform: scale(1.05);
+}
+
 .table-actions {
   display: flex;
   gap: 8px;
@@ -2706,4 +2711,24 @@
 
 @keyframes btn-spin {
     to { transform: rotate(360deg); }
+}
+
+.status-confirm-icon {
+    width: 64px;
+    height: 64px;
+    background: #ecfdf5;
+    color: #10b981;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.status-confirm-icon span {
+    font-size: 36px;
+}
+
+.status-modal {
+    max-width: 400px !important;
 }

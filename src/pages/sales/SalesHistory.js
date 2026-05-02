@@ -29,6 +29,8 @@ const SalesHistory = () => {
     const [exportType, setExportType] = useState('all'); // all, paid, unpaid
     const [exportFormat, setExportFormat] = useState('csv'); // csv, excel
     const [exportLoading, setExportLoading] = useState(false);
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [statusUpdateTarget, setStatusUpdateTarget] = useState(null);
 
     const fetchSales = useCallback(async () => {
         setLoading(true);
@@ -72,6 +74,39 @@ const SalesHistory = () => {
         } catch (err) {
             console.error("Error deleting transaction:", err);
             alert("Failed to delete transaction.");
+        }
+    };
+
+    const handleTogglePaymentStatus = (transaction) => {
+        const currentStatus = (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase();
+        if (currentStatus !== 'unpaid') return;
+        setStatusUpdateTarget(transaction);
+        setShowStatusModal(true);
+    };
+
+    const confirmStatusUpdate = async () => {
+        if (!statusUpdateTarget) return;
+        
+        try {
+            const updatedData = { paidStatus: 'Paid', paymentMode: 'Cash' };
+            const response = await axios.put(`/sales/${statusUpdateTarget.id || statusUpdateTarget._id}`, updatedData);
+            
+            if (response.data) {
+                setTransactions(prev => prev.map(t => 
+                    (t.id || t._id) === (statusUpdateTarget.id || statusUpdateTarget._id) 
+                    ? { ...t, paidStatus: 'Paid', paymentMode: 'Cash' } 
+                    : t
+                ));
+                
+                setFeedbackMessage("✅ Status updated to PAID");
+                setTimeout(() => setFeedbackMessage(""), 3000);
+            }
+        } catch (err) {
+            console.error("Error updating payment status:", err);
+            alert("Failed to update status. Please try again.");
+        } finally {
+            setShowStatusModal(false);
+            setStatusUpdateTarget(null);
         }
     };
 
@@ -353,8 +388,7 @@ const SalesHistory = () => {
                                     return (
                                         <tr 
                                             key={transaction.id || transaction._id}
-                                            onClick={() => handleViewBill(transaction)}
-                                            style={{ cursor: 'pointer', transition: 'background 0.2s' }}
+                                            style={{ transition: 'background 0.2s' }}
                                             onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
                                             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                                         >
@@ -377,7 +411,20 @@ const SalesHistory = () => {
                                                 ₹{displayAmount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
                                             <td style={{ textAlign: 'center' }}>
-                                                <span className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}>
+                                                <span 
+                                                    className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        if ((transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid') {
+                                                            handleTogglePaymentStatus(transaction);
+                                                        }
+                                                    }}
+                                                    style={{ 
+                                                        cursor: (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? 'pointer' : 'default',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    title={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? "Click to mark as Paid" : ""}
+                                                >
                                                     {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
                                                 </span>
                                             </td>
@@ -436,13 +483,22 @@ const SalesHistory = () => {
                             const datePart = transaction.date?.split(', ')[0] || new Date(transaction.createdAt).toLocaleDateString();
 
                             return (
-                                <div key={transaction.id || transaction._id} className="mobile-sale-card" onClick={() => handleViewBill(transaction)}>
+                                <div key={transaction.id || transaction._id} className="mobile-sale-card">
                                     <div className="sale-card-header">
                                         <div className="sale-date">
                                             <span className="material-symbols-outlined">calendar_today</span>
                                             {datePart} &bull; {formattedTime}
                                         </div>
-                                        <span className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}>
+                                         <span 
+                                            className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}
+                                            onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                if ((transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid') {
+                                                    handleTogglePaymentStatus(transaction);
+                                                }
+                                            }}
+                                            style={{ cursor: (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? 'pointer' : 'default' }}
+                                        >
                                             {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
                                         </span>
                                     </div>
@@ -701,6 +757,38 @@ const SalesHistory = () => {
                                 ) : (
                                     <><span className="material-symbols-outlined">download</span> Download Report</>
                                 )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Status Update Confirmation Modal */}
+            {showStatusModal && (
+                <div className="modal-overlay" onClick={() => setShowStatusModal(false)}>
+                    <div className="modal-content status-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <div className="header-icon-title">
+                                <span className="material-symbols-outlined header-icon" style={{ color: '#10b981', background: '#ecfdf5' }}>payments</span>
+                                <h3>Change Payment Status</h3>
+                            </div>
+                            <button className="modal-close" onClick={() => setShowStatusModal(false)}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="modal-body" style={{ textAlign: 'center', padding: '30px 20px' }}>
+                            <div className="status-confirm-icon">
+                                <span className="material-symbols-outlined">help</span>
+                            </div>
+                            <h4 style={{ margin: '15px 0 10px', fontSize: '18px', color: '#1e293b' }}>Mark as Paid?</h4>
+                            <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.6' }}>
+                                Are you sure you want to change the status of invoice <strong>AVS-{statusUpdateTarget?.invoiceNo}</strong> to <strong>PAID</strong>?
+                            </p>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="modal-cancel" onClick={() => setShowStatusModal(false)}>No, Keep Unpaid</button>
+                            <button className="modal-confirm premium-btn" onClick={confirmStatusUpdate} style={{ background: '#10b981' }}>
+                                Yes, Mark as Paid
                             </button>
                         </div>
                     </div>
