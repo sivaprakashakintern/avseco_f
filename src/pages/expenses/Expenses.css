@@ -1,0 +1,273 @@
+/* Expenses.css - Premium Industrial Dashboard Styles */
+
+:root {
+  --primary-industrial: #006A4E;
+  --primary-glow: rgba(0, 106, 78, 0.15);
+  --primary-deep: #004d39;
+  --slate-900: #0f172a;
+  --slate-800: #1e293b;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --white: #ffffff;
+  --industrial-radius: 20px;
+  --industrial-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+.stock-page {
+  padding: 32px 40px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: var(--slate-800);
+}
+
+/* ===== PREMIUM INDUSTRIAL HEADER ===== */
+.page-header.premium-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  background: linear-gradient(135deg, var(--primary-industrial) 0%, var(--primary-deep) 100%);
+  padding: 40px 50px;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 106, 78, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header.premium-header::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.page-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.btn-add-premium {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-add-premium:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+/* ===== INDUSTRIAL STAT CARDS ===== */
+.stock-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  background: var(--white);
+  border-radius: 20px;
+  padding: 30px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border: 1px solid var(--slate-200);
+  box-shadow: var(--industrial-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--primary-industrial);
+  box-shadow: 0 20px 30px -10px rgba(0, 106, 78, 0.1);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.stat-icon.purple { background: #f5f3ff; color: #7c3aed; }
+.stat-icon.blue { background: #eff6ff; color: #2563eb; }
+.stat-icon.yellow { background: #fffbeb; color: #d97706; }
+.stat-icon.green { background: #f0fdf4; color: #16a34a; }
+.stat-icon.red { background: #fee2e2; color: #ef4444; }
+
+.stat-info { display: flex; flex-direction: column; gap: 4px; }
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--slate-400);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--slate-900);
+  letter-spacing: -0.03em;
+}
+
+/* Salary Card Month Badge */
+.month-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #fff7ed;
+  color: #c2410c;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid #ffedd5;
+  box-shadow: 0 2px 4px rgba(194, 65, 12, 0.08);
+}
+
+/* ===== INDUSTRIAL TABLE ===== */
+.stock-table-container {
+  background: var(--white);
+  border-radius: 24px;
+  border: 1px solid var(--slate-200);
+  box-shadow: var(--industrial-shadow);
+  overflow: hidden;
+  margin-bottom: 50px;
+}
+
+.table-header {
+  padding: 28px 35px;
+  background: #fcfdfe;
+  border-bottom: 1px solid var(--slate-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-header h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--slate-900);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon-accent { color: var(--primary-industrial); font-size: 24px; }
+
+.stock-table { width: 100%; border-collapse: collapse; }
+
+.stock-table th {
+  padding: 20px 24px;
+  background: #f8fafc;
+  color: var(--slate-500);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border-bottom: 2px solid var(--slate-100);
+}
+
+.stock-table td {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--slate-100);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--slate-700);
+}
+
+.amount-cell {
+  font-weight: 900;
+  color: var(--primary-industrial);
+  font-size: 17px;
+  text-align: right !important;
+}
+
+.status-badge-lite {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  display: inline-block;
+  min-width: 140px;
+  text-align: center;
+}
+
+.status-badge-lite.normal { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.status-badge-lite.low { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+.status-badge-lite.critical { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+
+/* Action Buttons */
+.action-buttons-center { display: flex; gap: 8px; justify-content: center; }
+
+.action-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn.edit { background: #eff6ff; color: #2563eb; }
+.action-btn.edit:hover { background: #2563eb; color: white; transform: scale(1.1); }
+
+.action-btn.delete { background: #fee2e2; color: #ef4444; }
+.action-btn.delete:hover { background: #ef4444; color: white; transform: scale(1.1); }
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .stock-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .stock-stats { grid-template-columns: 1fr; }
+  .page-header.premium-header { padding: 30px; flex-direction: column; gap: 20px; text-align: center; }
+  .stat-card { padding: 25px; }
+  .stat-value { font-size: 22px; }
+  .desktop-only-table { display: none; }
+}

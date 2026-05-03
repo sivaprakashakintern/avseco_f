@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { useAppContext } from '../../context/AppContext.js';
 import { formatDate, isWithinLast2Days } from '../../utils/dateUtils.js';
 import { formatCurrency, getDynamicFontSize } from '../../utils/formatUtils.js';
-import "../stock/Stock.css";
-import "./ExpenseReport.css";
+import "./Expenses.css";
 
 const CATEGORY_CONFIG = {
     "Machine Maintenance": { color: "#006A4E", icon: "build" },
@@ -60,7 +59,7 @@ const Expenses = () => {
                 amount: expenseToEdit.amount,
                 paymentMode: expenseToEdit.paymentMode,
             });
-            
+
             if (expenseToEdit.category === 'Salary') {
                 const nameMatch = expenseToEdit.description.match(/Salary for (.*)/);
                 if (nameMatch) {
@@ -87,10 +86,9 @@ const Expenses = () => {
     const todayExpenses = (expenses || []).filter(ex => formatDate(ex.date) === today);
 
     const todayTotal = todayExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-    const todayMachineTotal = todayExpenses.filter(e => e.category === "Machine Maintenance").reduce((sum, e) => sum + Number(e.amount || 0), 0);
-    const todayMaterialTotal = todayExpenses.filter(e => e.category === "Material").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const todayMaintenanceTotal = todayExpenses.filter(e => ["Material", "Machine Maintenance", "Electricity", "Rent"].includes(e.category)).reduce((sum, e) => sum + Number(e.amount || 0), 0);
     const todaySalaryTotal = todayExpenses.filter(e => e.category === "Salary").reduce((sum, e) => sum + Number(e.amount || 0), 0);
-    const todayOthersTotal = todayTotal - todayMachineTotal - todayMaterialTotal - todaySalaryTotal;
+    const todayOthersTotal = todayTotal - todayMaintenanceTotal - todaySalaryTotal;
 
     // --- Form Handlers ---
     const handleInputChange = (e) => {
@@ -138,18 +136,17 @@ const Expenses = () => {
         setShowEmployeeDropdown(false);
     };
 
-    const filteredEmployees = (employees || []).filter(emp => 
+    const filteredEmployees = (employees || []).filter(emp =>
         (emp.name?.toLowerCase() || "").includes(employeeSearch?.toLowerCase() || "") ||
         (emp.empId?.toLowerCase() || "").includes(employeeSearch?.toLowerCase() || "")
     );
 
     return (
         <div className="stock-page">
-            {/* ===== PREMIUM ANALYTICS HEADER ===== */}
             <div className="page-header premium-header">
                 <div>
                     <h1 className="page-title">Expense Details</h1>
-                    <p className="page-subtitle" style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', margin: '4px 0 0 0' }}>Daily Summary for {today}</p>
+                    <p className="page-subtitle">Daily Summary for {today}</p>
                 </div>
                 <div className="header-actions">
                     <button className="btn-export-premium" onClick={() => { setIsEditMode(false); setIsModalOpen(true); }}>
@@ -166,42 +163,43 @@ const Expenses = () => {
                         <span className="material-symbols-outlined">payments</span>
                     </div>
                     <div className="stat-info">
-                        <span className="stat-label">Daily Expenses</span>
+                        <span className="stat-label">Overall Expenses</span>
                         <span className="stat-value" style={getDynamicFontSize(todayTotal)}>
                             {formatCurrency(todayTotal, true)}
                         </span>
                     </div>
                 </div>
-                <div className="stat-card" onClick={() => { setDetailCategory("Machine Maintenance"); setShowDetailModal(true); }}>
+                <div className="stat-card" onClick={() => { setDetailCategory("Maintenance"); setShowDetailModal(true); }}>
                     <div className="stat-icon blue">
                         <span className="material-symbols-outlined">build</span>
                     </div>
                     <div className="stat-info">
-                        <span className="stat-label">Daily Maintenance</span>
-                        <span className="stat-value" style={getDynamicFontSize(todayMachineTotal)}>
-                            {formatCurrency(todayMachineTotal, true)}
+                        <span className="stat-label">Maintenance</span>
+                        <span className="stat-value" style={getDynamicFontSize(todayMaintenanceTotal)}>
+                            {formatCurrency(todayMaintenanceTotal, true)}
                         </span>
                     </div>
                 </div>
-                <div className="stat-card" onClick={() => { setDetailCategory("Material"); setShowDetailModal(true); }}>
-                    <div className="stat-icon green">
-                        <span className="material-symbols-outlined">shopping_cart</span>
-                    </div>
-                    <div className="stat-info">
-                        <span className="stat-label">Daily Material</span>
-                        <span className="stat-value" style={getDynamicFontSize(todayMaterialTotal)}>
-                            {formatCurrency(todayMaterialTotal, true)}
-                        </span>
-                    </div>
-                </div>
-                <div className="stat-card" onClick={() => { setDetailCategory("Salary & Others"); setShowDetailModal(true); }}>
+                <div className="stat-card" onClick={() => { setDetailCategory("Salary"); setShowDetailModal(true); }}>
+                    <div className="month-badge">{new Date().toLocaleString('default', { month: 'short' })}</div>
                     <div className="stat-icon yellow">
-                        <span className="material-symbols-outlined">group</span>
+                        <span className="material-symbols-outlined">payments</span>
                     </div>
                     <div className="stat-info">
-                        <span className="stat-label">Daily Salary & Others</span>
-                        <span className="stat-value" style={getDynamicFontSize(todaySalaryTotal + todayOthersTotal)}>
-                            {formatCurrency(todaySalaryTotal + todayOthersTotal, true)}
+                        <span className="stat-label">Salary</span>
+                        <span className="stat-value" style={getDynamicFontSize(todaySalaryTotal)}>
+                            {formatCurrency(todaySalaryTotal, true)}
+                        </span>
+                    </div>
+                </div>
+                <div className="stat-card" onClick={() => { setDetailCategory("Others"); setShowDetailModal(true); }}>
+                    <div className="stat-icon green">
+                        <span className="material-symbols-outlined">more_horiz</span>
+                    </div>
+                    <div className="stat-info">
+                        <span className="stat-label">Others</span>
+                        <span className="stat-value" style={getDynamicFontSize(todayOthersTotal)}>
+                            {formatCurrency(todayOthersTotal, true)}
                         </span>
                     </div>
                 </div>
@@ -220,54 +218,46 @@ const Expenses = () => {
                     <table className="stock-table">
                         <thead>
                             <tr>
-                                <th style={{ textAlign: 'center' }}>S.No</th>
-                                <th style={{ textAlign: 'center' }}>Date & Time</th>
-                                <th style={{ textAlign: 'center' }}>Category</th>
-                                <th style={{ textAlign: 'center' }}>Payment Mode</th>
-                                <th style={{ textAlign: 'center' }}>Amount (₹)</th>
-                                <th style={{ textAlign: 'center' }}>Actions</th>
+                                <th className="text-center">S.No</th>
+                                <th className="text-center">Date & Time</th>
+                                <th className="text-center">Category</th>
+                                <th className="text-center">Payment Mode</th>
+                                <th className="text-center">Amount (₹)</th>
+                                <th className="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {expenses.filter(ex => formatDate(ex.date) === formatDate(new Date())).map((expense, index) => (
                                 <tr key={expense.id}>
-                                    <td style={{ fontWeight: '700', color: '#94a3b8' }}>{index + 1}</td>
-                                    <td style={{ fontWeight: '500' }}>{formatDate(expense.date)}</td>
-                                     <td style={{ textAlign: 'center' }}>
-                                         <span className={`status-badge ${expense.category === 'Machine Maintenance' ? 'low' :
-                                              expense.category === 'Material' ? 'normal' :
-                                                  expense.category === 'Salary' ? 'critical' : 'normal'
-                                              }`} style={{ display: 'inline-block', minWidth: '140px' }}>
-                                              {expense.category}
-                                          </span>
-                                      </td>
-                                     <td style={{ textAlign: 'center' }}>
-                                         <span className="payment-badge" style={{
-                                             padding: '4px 12px',
-                                             borderRadius: '20px',
-                                             fontSize: '11px',
-                                             fontWeight: '700',
-                                             backgroundColor: '#f1f5f9',
-                                             color: '#475569',
-                                             display: 'inline-block'
-                                         }}>
-                                             {expense.paymentMode}
-                                         </span>
-                                     </td>
-                                     <td className="amount" style={{ fontWeight: '800', color: '#006A4E', textAlign: 'center' }}>₹{Number(expense.amount).toLocaleString()}</td>
-                                    <td style={{ textAlign: 'center' }}>
-                                        <div className="action-buttons" style={{ justifyContent: 'center' }}>
+                                    <td className="sno-cell">{index + 1}</td>
+                                    <td className="date-cell">{formatDate(expense.date)}</td>
+                                    <td className="text-center">
+                                        <span className={`status-badge-lite ${expense.category === 'Machine Maintenance' ? 'low' :
+                                            expense.category === 'Material' ? 'normal' :
+                                                expense.category === 'Salary' ? 'critical' : 'normal'
+                                            }`}>
+                                            {expense.category}
+                                        </span>
+                                    </td>
+                                    <td className="text-center">
+                                        <span className="payment-badge-lite">
+                                            {expense.paymentMode}
+                                        </span>
+                                    </td>
+                                    <td className="amount-cell">₹{Number(expense.amount).toLocaleString()}</td>
+                                    <td className="text-center">
+                                        <div className="action-buttons-center">
                                             {isWithinLast2Days(expense.date) ? (
                                                 <>
-                                                    <button 
-                                                        className="action-btn edit" 
+                                                    <button
+                                                        className="action-btn edit"
                                                         title="Edit"
                                                         onClick={() => handleEditExpense(expense.id)}
                                                     >
                                                         <span className="material-symbols-outlined">edit</span>
                                                     </button>
-                                                    <button 
-                                                        className="action-btn delete" 
+                                                    <button
+                                                        className="action-btn delete"
                                                         title="Delete"
                                                         onClick={() => handleDeleteExpense(expense.id)}
                                                     >
@@ -275,7 +265,7 @@ const Expenses = () => {
                                                     </button>
                                                 </>
                                             ) : (
-                                                <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>Locked</span>
+                                                <span className="locked-badge">Locked</span>
                                             )}
                                         </div>
                                     </td>
@@ -370,9 +360,9 @@ const Expenses = () => {
 
                         <div className="modal-body">
                             <form onSubmit={handleSubmit}>
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>Category</label>
-                                    <div className="dropdown-container" style={{ width: '100%' }}>
+                                <div className="perfect-input-group">
+                                    <label className="perfect-label">Category</label>
+                                    <div className="dropdown-container">
                                         <select
                                             name="category"
                                             value={newExpense.category}
@@ -382,16 +372,7 @@ const Expenses = () => {
                                                     setEmployeeSearch("");
                                                 }
                                             }}
-                                            style={{
-                                                width: '100%',
-                                                padding: '12px',
-                                                borderRadius: '12px',
-                                                border: '1px solid #e2e8f0',
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                backgroundColor: '#f8fafc',
-                                                cursor: 'pointer'
-                                            }}
+                                            className="perfect-input perfect-select"
                                         >
                                             <option value="Machine Maintenance">Machine Maintenance</option>
                                             <option value="Material">Material</option>
@@ -405,8 +386,8 @@ const Expenses = () => {
                                 </div>
 
                                 {newExpense.category === 'Salary' && (
-                                    <div style={{ marginBottom: '16px', position: 'relative' }}>
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>Select Employee</label>
+                                    <div className="perfect-input-group" style={{ position: 'relative' }}>
+                                        <label className="perfect-label">Select Employee</label>
                                         <div style={{ position: 'relative' }}>
                                             <input
                                                 type="text"
@@ -417,15 +398,7 @@ const Expenses = () => {
                                                     setShowEmployeeDropdown(true);
                                                 }}
                                                 onFocus={() => setShowEmployeeDropdown(true)}
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '12px',
-                                                    borderRadius: '12px',
-                                                    border: '1px solid #e2e8f0',
-                                                    fontSize: '14px',
-                                                    outline: 'none',
-                                                    backgroundColor: '#f8fafc'
-                                                }}
+                                                className="perfect-input"
                                             />
                                             {showEmployeeDropdown && filteredEmployees.length > 0 && (
                                                 <div style={{
@@ -435,12 +408,12 @@ const Expenses = () => {
                                                     right: 0,
                                                     backgroundColor: 'white',
                                                     border: '1px solid #e2e8f0',
-                                                    borderRadius: '8px',
-                                                    marginTop: '4px',
+                                                    borderRadius: '16px',
+                                                    marginTop: '8px',
                                                     maxHeight: '200px',
                                                     overflowY: 'auto',
                                                     zIndex: 1000,
-                                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                                                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
                                                 }}>
                                                     {filteredEmployees.map(emp => (
                                                         <div
@@ -465,23 +438,14 @@ const Expenses = () => {
                                     </div>
                                 )}
 
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>Payment Method</label>
-                                    <div className="dropdown-container" style={{ width: '100%' }}>
+                                <div className="perfect-input-group">
+                                    <label className="perfect-label">Payment Method</label>
+                                    <div className="dropdown-container">
                                         <select
                                             name="paymentMode"
                                             value={newExpense.paymentMode}
                                             onChange={handleInputChange}
-                                            style={{
-                                                width: '100%',
-                                                padding: '12px',
-                                                borderRadius: '12px',
-                                                border: '1px solid #e2e8f0',
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                backgroundColor: '#f8fafc',
-                                                cursor: 'pointer'
-                                            }}
+                                            className="perfect-input perfect-select"
                                         >
                                             <option value="Cash">Cash</option>
                                             <option value="UPI">UPI</option>
@@ -493,10 +457,8 @@ const Expenses = () => {
                                 </div>
 
                                 {newExpense.category === 'Others' && (
-                                    <div style={{ marginBottom: '16px' }}>
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>
-                                            Description *
-                                        </label>
+                                    <div className="perfect-input-group">
+                                        <label className="perfect-label">Description *</label>
                                         <input
                                             type="text"
                                             name="description"
@@ -504,21 +466,13 @@ const Expenses = () => {
                                             placeholder="Enter expense details"
                                             value={newExpense.description}
                                             onChange={handleInputChange}
-                                            style={{
-                                                width: '100%',
-                                                padding: '12px',
-                                                borderRadius: '12px',
-                                                border: '1px solid #e2e8f0',
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                backgroundColor: '#f8fafc'
-                                            }}
+                                            className="perfect-input"
                                         />
                                     </div>
                                 )}
 
-                                <div style={{ marginBottom: '24px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#334155' }}>Amount (₹)</label>
+                                <div className="perfect-input-group" style={{ marginBottom: '32px' }}>
+                                    <label className="perfect-label">Amount (₹)</label>
                                     <input
                                         type="number"
                                         name="amount"
@@ -526,15 +480,7 @@ const Expenses = () => {
                                         placeholder="0.00"
                                         value={newExpense.amount}
                                         onChange={handleInputChange}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px',
-                                            borderRadius: '12px',
-                                            border: '1px solid #e2e8f0',
-                                            fontSize: '14px',
-                                            outline: 'none',
-                                            backgroundColor: '#f8fafc'
-                                        }}
+                                        className="perfect-input"
                                     />
                                 </div>
 
@@ -563,11 +509,11 @@ const Expenses = () => {
             {/* Detail Breakdown Modal */}
             {showDetailModal && (
                 <div className="modal-overlay" onClick={() => setShowDetailModal(false)} style={{ zIndex: 1100 }}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%' }}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', width: '90%' }}>
                         <div className="modal-header">
                             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span className="material-symbols-outlined" style={{ color: '#006A4E' }}>
-                                    {detailCategory === "Salary & Others" ? 'group' : 'analytics'}
+                                    {detailCategory === "Others" ? 'more_horiz' : 'analytics'}
                                 </span>
                                 {detailCategory} Breakdown
                             </h3>
@@ -585,58 +531,64 @@ const Expenses = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {[...expenses]
+                                    {todayExpenses
                                         .filter(e => {
                                             if (detailCategory === "All Expenses") return true;
-                                            if (detailCategory === "Salary & Others") return e.category === "Salary" || e.category === "Others";
+                                            if (detailCategory === "Maintenance") return ["Material", "Machine Maintenance", "Electricity", "Rent"].includes(e.category);
+                                            if (detailCategory === "Salary") return e.category === "Salary";
+                                            if (detailCategory === "Others") return !["Material", "Machine Maintenance", "Electricity", "Rent", "Salary"].includes(e.category);
                                             return e.category === detailCategory;
                                         })
                                         .sort((a, b) => b.amount - a.amount)
                                         .map((exp, idx) => (
                                             <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                                 <td style={{ padding: '14px 20px', textAlign: 'center' }}>
-                                                     <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px' }}>
-                                                         {exp.category === "Salary" ? (exp.description.replace('Salary for ', '')) : exp.description}
-                                                     </div>
-                                                     <div style={{ fontSize: '11px', color: '#94a3b8' }}>{formatDate(exp.date)}</div>
-                                                 </td>
-                                                 <td style={{ padding: '14px 20px', textAlign: 'center' }}>
-                                                     <span style={{ 
-                                                         padding: '4px 12px', 
-                                                         borderRadius: '20px', 
-                                                         fontSize: '11px', 
-                                                         fontWeight: '700',
-                                                         display: 'inline-block',
-                                                         minWidth: '140px',
-                                                         backgroundColor: exp.category === 'Salary' ? '#fff7ed' : '#f5f3ff',
-                                                         color: exp.category === 'Salary' ? '#9a3412' : '#5b21b6'
-                                                     }}>
-                                                         {exp.category}
-                                                     </span>
-                                                 </td>
-                                                 <td style={{ padding: '14px 20px', textAlign: 'center', fontWeight: '700', color: '#006A4E', fontSize: '14px' }}>
-                                                     ₹{Number(exp.amount).toLocaleString()}
-                                                 </td>
+                                                <td style={{ padding: '14px 20px', textAlign: 'center' }}>
+                                                    <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px' }}>
+                                                        {exp.category === "Salary" ? (exp.description.replace('Salary for ', '')) : exp.description}
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>{formatDate(exp.date)}</div>
+                                                </td>
+                                                <td style={{ padding: '14px 20px', textAlign: 'center' }}>
+                                                    <span style={{
+                                                        padding: '4px 12px',
+                                                        borderRadius: '20px',
+                                                        fontSize: '11px',
+                                                        fontWeight: '700',
+                                                        display: 'inline-block',
+                                                        minWidth: '140px',
+                                                        backgroundColor: exp.category === 'Salary' ? '#fff7ed' : '#f5f3ff',
+                                                        color: exp.category === 'Salary' ? '#9a3412' : '#5b21b6'
+                                                    }}>
+                                                        {exp.category}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '14px 20px', textAlign: 'center', fontWeight: '700', color: '#006A4E', fontSize: '14px' }}>
+                                                    ₹{Number(exp.amount).toLocaleString()}
+                                                </td>
                                             </tr>
                                         ))}
                                 </tbody>
                             </table>
-                            {expenses.filter(e => {
+                            {todayExpenses.filter(e => {
                                 if (detailCategory === "All Expenses") return true;
-                                if (detailCategory === "Salary & Others") return e.category === "Salary" || e.category === "Others";
+                                if (detailCategory === "Maintenance") return ["Material", "Machine Maintenance", "Electricity", "Rent"].includes(e.category);
+                                if (detailCategory === "Salary") return e.category === "Salary";
+                                if (detailCategory === "Others") return !["Material", "Machine Maintenance", "Electricity", "Rent", "Salary"].includes(e.category);
                                 return e.category === detailCategory;
                             }).length === 0 && (
-                                <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
-                                    No records found for this category.
-                                </div>
-                            )}
+                                    <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                                        No records found for this category.
+                                    </div>
+                                )}
                         </div>
                         <div className="modal-footer" style={{ borderTop: '1px solid #f1f5f9', padding: '16px 20px' }}>
                             <div style={{ marginRight: 'auto', fontWeight: '700', fontSize: '15px' }}>
-                                Total: ₹{expenses
+                                Total: ₹{todayExpenses
                                     .filter(e => {
                                         if (detailCategory === "All Expenses") return true;
-                                        if (detailCategory === "Salary & Others") return e.category === "Salary" || e.category === "Others";
+                                        if (detailCategory === "Maintenance") return ["Material", "Machine Maintenance", "Electricity", "Rent"].includes(e.category);
+                                        if (detailCategory === "Salary") return e.category === "Salary";
+                                        if (detailCategory === "Others") return !["Material", "Machine Maintenance", "Electricity", "Rent", "Salary"].includes(e.category);
                                         return e.category === detailCategory;
                                     })
                                     .reduce((acc, curr) => acc + Number(curr.amount), 0)
@@ -651,26 +603,24 @@ const Expenses = () => {
             {/* Delete Confirmation Modal */}
             {deleteConfirm.isOpen && (
                 <div className="modal-overlay" style={{ zIndex: 2000 }}>
-                    <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center', padding: '30px' }}>
-                        <div style={{ color: '#ef4444', marginBottom: '20px' }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: '64px' }}>warning</span>
+                    <div className="modal-content perfect-modal-delete">
+                        <div className="delete-icon-container">
+                            <span className="material-symbols-outlined">warning</span>
                         </div>
-                        <h3 style={{ fontSize: '20px', marginBottom: '10px', color: '#1e293b' }}>Confirm Deletion</h3>
-                        <p style={{ color: '#64748b', marginBottom: '30px', fontSize: '14px' }}>
+                        <h3 className="delete-modal-title">Confirm Deletion</h3>
+                        <p className="delete-modal-text">
                             Are you sure you want to delete this expense record? This action cannot be undone.
                         </p>
-                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                            <button 
-                                className="btn-outline" 
+                        <div className="modal-actions-flex">
+                            <button
+                                className="btn-outline perfect-btn-full"
                                 onClick={() => setDeleteConfirm({ isOpen: false, id: null })}
-                                style={{ flex: 1, justifyContent: 'center' }}
                             >
                                 Cancel
                             </button>
-                            <button 
-                                className="btn-primary" 
+                            <button
+                                className="btn-primary perfect-btn-full btn-danger"
                                 onClick={confirmDelete}
-                                style={{ flex: 1, backgroundColor: '#ef4444', borderColor: '#ef4444', justifyContent: 'center' }}
                             >
                                 Delete
                             </button>

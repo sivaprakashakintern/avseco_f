@@ -582,30 +582,49 @@ const SalesHistory = () => {
                                 .no-print { display: none !important; }
                                 body, html { margin: 0 !important; padding: 0 !important; background: #fff !important; width: 850px !important; }
                             }
-                            .ci-header { background: #045b54; padding: 30px 40px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
-                            .ci-logo-area { display: flex; align-items: center; gap: 20px; }
-                            .ci-logo-img { width: 140px; height: auto; object-fit: contain; }
-                            .ci-company-name { font-size: 26px; font-weight: 900; letter-spacing: 0.02em; }
-                            .ci-company-addr { font-size: 11px; opacity: 0.9; line-height: 1.5; font-weight: 500; margin-top: 5px; }
-                            .ci-invoice-title { font-size: 34px; font-weight: 900; letter-spacing: 0.05em; text-align: right; }
-                            .ci-invoice-meta { margin-top: 10px; font-size: 12px; text-align: right; line-height: 1.8; }
-                            .ci-billto { padding: 18px 40px; border-bottom: 2px solid #045b54; display: flex; gap: 60px; align-items: flex-start; }
-                            .ci-billto-title { font-size: 16px; font-weight: 800; color: #045b54; margin-bottom: 10px; }
-                            .ci-billto-row { font-size: 12px; color: #333; line-height: 1.9; font-weight: 600; }
-                            .ci-section-title { font-size: 22px; font-weight: 800; color: #045b54; padding: 18px 40px 10px; }
-                            .ci-table-wrap { padding: 0 40px; }
-                            .ci-table { width: 100%; border-collapse: collapse; border: 1.5px solid #045b54; }
-                            .ci-tbl-head tr { background: #045b54; }
-                            .ci-tbl-head th { padding: 11px 12px; font-size: 10.5px; font-weight: 700; color: #fff; text-transform: uppercase; text-align: left; }
-                            .ci-tbody td { padding: 10px 12px; font-size: 12.5px; color: #333; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; }
-                            .ci-summary { display: flex; justify-content: flex-end; padding: 0 40px; }
+                            .ci-container { padding: 35px 0; background: #fff; width: 100%; min-height: 800px; display: flex; flex-direction: column; }
+                            .ci-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #045b54; padding: 0 40px 18px; margin-bottom: 24px; }
+                            .ci-logo-area { display: flex; align-items: center; gap: 18px; }
+                            .ci-logo-img { height: 70px; object-fit: contain; }
+                            .ci-company-name { font-size: 22px; font-weight: 900; color: #045b54; letter-spacing: -0.01em; }
+                            .ci-company-addr { font-size: 13px; color: #64748b; font-weight: 500; }
+                            .ci-invoice-title { font-size: 28px; font-weight: 900; color: #045b54; text-align: right; letter-spacing: 0.05em; margin-bottom: 8px; }
+                            .ci-invoice-meta { font-size: 13px; color: #334155; text-align: right; display: flex; flex-direction: column; gap: 4px; }
+                            .ci-billto { display: flex; justify-content: space-between; padding: 0 40px; margin-bottom: 30px; gap: 40px; }
+                            .ci-billto-title { font-size: 12px; font-weight: 800; color: #045b54; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+                            .ci-billto-row { font-size: 13px; margin-bottom: 5px; color: #1e293b; line-height: 1.5; }
+                            .ci-section-title { background: #f8fafc; padding: 10px 40px; font-size: 12px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+                            .ci-table-wrap { padding: 0 40px; flex-grow: 1; }
+                            .ci-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1.5px solid #045b54; }
+                            .ci-tbl-head th { background: #045b54; color: #fff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.2); text-align: center; }
+                            .ci-tbody td { padding: 14px 14px; font-size: 13px; color: #333; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; text-align: center; font-weight: 500; }
+                            .ci-tbody tr:nth-child(even) { background: #fcfdfe; }
+                            .ci-summary { display: flex; justify-content: flex-end; padding: 0 40px; margin-top: -1.5px; }
                             .ci-summary-box { width: 280px; border: 1.5px solid #045b54; border-top: none; }
                             .ci-sum-row { display: flex; justify-content: space-between; padding: 8px 14px; font-size: 12.5px; border-bottom: 1px solid #e2e8f0; }
-                            .ci-total-row { background: #045b54; color: #fff; display: flex; justify-content: space-between; padding: 11px 14px; font-size: 14px; font-weight: 900; }
-                            .ci-payment { display: grid; grid-template-columns: 1fr 1fr; padding: 20px 40px 10px; border-top: 2px solid #045b54; margin-top: 24px; }
-                            .ci-pay-title { font-size: 13px; font-weight: 800; color: #045b54; margin-bottom: 8px; }
-                            .ci-footer { border-top: 2px solid #045b54; margin-top: 20px; padding: 14px 40px; text-align: center; font-size: 12px; font-style: italic; }
+                            .ci-total-row { background: #045b54; color: #fff; display: flex; justify-content: space-between; padding: 14px; font-size: 15px; font-weight: 900; }
+                            .ci-payment { display: grid; grid-template-columns: 1fr 1fr; padding: 24px 40px; border-top: 2px solid #045b54; margin-top: 40px; background: #fcfdfe; }
+                            .ci-pay-title { font-size: 13px; font-weight: 800; color: #045b54; margin-bottom: 10px; text-transform: uppercase; }
+                            .ci-footer { border-top: 2px solid #045b54; margin-top: auto; padding: 20px 40px; text-align: center; font-size: 12px; color: #64748b; font-weight: 500; }
+                            
+                            /* MOBILE RESPONSIVE INVOICE */
+                            @media screen and (max-width: 600px) {
+                                .ci-header { flex-direction: column; text-align: center; gap: 20px; padding: 0 20px 20px; }
+                                .ci-logo-area { flex-direction: column; gap: 10px; }
+                                .ci-invoice-title { text-align: center; font-size: 24px; }
+                                .ci-invoice-meta { text-align: center; align-items: center; }
+                                .ci-billto { flex-direction: column; gap: 25px; padding: 0 20px; }
+                                .ci-billto-right { text-align: left !important; }
+                                .ci-table-wrap { padding: 0 10px; overflow-x: auto; }
+                                .ci-table th, .ci-table td { padding: 10px 8px; font-size: 11px; }
+                                .ci-summary { padding: 0 20px; }
+                                .ci-summary-box { width: 100%; }
+                                .ci-payment { grid-template-columns: 1fr; gap: 20px; padding: 20px; }
+                                .ci-footer { padding: 15px 20px; }
+                                .bill-modal-content { width: 95% !important; max-width: 95% !important; zoom: 1 !important; }
+                            }
                         `}</style>
+                        <div className="ci-container" id="printable-invoice">
                         <div className="ci-header">
                             <div className="ci-logo-area">
                                 <img src={logo} alt="Logo" className="ci-logo-img" />
@@ -623,14 +642,15 @@ const SalesHistory = () => {
                             </div>
                         </div>
                         <div className="ci-billto">
-                            <div>
-                                <div className="ci-billto-title">BILL TO:</div>
+                            <div className="ci-billto-left">
+                                <div className="ci-billto-title">Bill To</div>
                                 <div className="ci-billto-row"><b>Company:</b> {selectedBill.company}</div>
-                                <div className="ci-billto-row"><b>Customer:</b> {selectedBill.customer}</div>
+                                <div className="ci-billto-row"><b>Contact:</b> {selectedBill.customer}</div>
                                 <div className="ci-billto-row"><b>Phone:</b> {selectedBill.phone}</div>
                             </div>
-                            <div style={{ marginLeft: 'auto' }}>
-                                <div className="ci-billto-row"><b>Address:</b> {selectedBill.address}</div>
+                            <div className="ci-billto-right" style={{ textAlign: 'right' }}>
+                                <div className="ci-billto-title">Project Address</div>
+                                <div className="ci-billto-row">{selectedBill.address}</div>
                             </div>
                         </div>
                         <div className="ci-section-title">Billing Details</div>
@@ -678,6 +698,7 @@ const SalesHistory = () => {
                                 <div className="ci-pay-title">DELIVERY:</div>
                                 <div>By: {selectedBill.deliveredBy}</div>
                             </div>
+                        </div>
                         </div>
                         <div className="bill-modal-footer no-print">
                             <button className="bill-btn bill-btn-close" onClick={() => setShowBillModal(false)}>

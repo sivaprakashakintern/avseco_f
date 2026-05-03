@@ -21,8 +21,7 @@ const ExpenseReport = () => {
     // ── Date range state ─────────────────────────────────────────────────────────
     const [dateRange, setDateRange] = useState(() => {
         const now = new Date();
-        // Default to showing last 30 days or at least this and last month to catch sample data (Feb)
-        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
         const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         return { startDate: start, endDate: end };
     });
@@ -53,12 +52,6 @@ const ExpenseReport = () => {
                 start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
                 end = new Date(today.getFullYear(), today.getMonth(), 0);
                 setViewType("lastMonth"); break;
-            case "thisQuarter": {
-                const q = Math.floor(today.getMonth() / 3);
-                start = new Date(today.getFullYear(), q * 3, 1);
-                end = new Date(today.getFullYear(), (q + 1) * 3, 0);
-                setViewType("quarterly"); break;
-            }
             case "thisYear":
                 start = new Date(today.getFullYear(), 0, 1);
                 end = new Date(today.getFullYear(), 11, 31);
@@ -102,15 +95,19 @@ const ExpenseReport = () => {
         const s = new Date(dateRange.startDate); s.setHours(0, 0, 0, 0);
         const e = new Date(dateRange.endDate); e.setHours(23, 59, 59, 999);
         return (expenses || [])
-            .filter((ex) => { 
-                const d = parseDateHelper(ex.date); 
-                return d >= s && d <= e; 
+            .filter((ex) => {
+                const d = parseDateHelper(ex.date);
+                return d >= s && d <= e;
             })
             .sort((a, b) => parseDateHelper(b.date) - parseDateHelper(a.date));
     }, [expenses, dateRange]);
 
     // ── Stats ────────────────────────────────────────────────────────────────────
     const totalExpense = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
+    const maintenanceTotal = filteredExpenses.filter(e => ["Material", "Machine Maintenance", "Electricity", "Rent"].includes(e.category)).reduce((s, e) => s + Number(e.amount), 0);
+    const salaryTotal = filteredExpenses.filter(e => e.category === "Salary").reduce((s, e) => s + Number(e.amount), 0);
+    const othersTotal = totalExpense - maintenanceTotal - salaryTotal;
+
     const daysDiff = Math.max(1, Math.ceil((dateRange.endDate - dateRange.startDate) / 86400000) + 1);
     const avgDaily = (totalExpense / daysDiff).toFixed(0);
 
@@ -126,14 +123,14 @@ const ExpenseReport = () => {
 
     const monthlyTrend = useMemo(() => {
         const months = {};
-        filteredExpenses.forEach((e) => {
+        expenses.forEach((e) => {
             const d = parseDateHelper(e.date);
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
             if (!months[key]) months[key] = { month: d.toLocaleString("default", { month: "short" }), year: d.getFullYear(), total: 0 };
             months[key].total += Number(e.amount);
         });
         return Object.values(months).sort((a, b) => a.year - b.year || a.month.localeCompare(b.month));
-    }, [filteredExpenses]);
+    }, [expenses]);
 
     const paymentStats = useMemo(() => {
         const s = {};
@@ -142,6 +139,10 @@ const ExpenseReport = () => {
     }, [filteredExpenses]);
 
     const maxChartValue = Math.max(...monthlyTrend.map((m) => m.total), 1);
+
+
+
+
 
     // ── Period helpers ───────────────────────────────────────────────────────────
     const formatPeriod = () =>
@@ -238,7 +239,6 @@ const ExpenseReport = () => {
                     {[
                         { key: "thisMonth", label: "This Month", type: "monthly" },
                         { key: "lastMonth", label: "Last Month", type: "lastMonth" },
-                        { key: "thisQuarter", label: "This Quarter", type: "quarterly" },
                         { key: "thisYear", label: "This Year", type: "yearly" },
                     ].map((p) => (
                         <button
@@ -290,40 +290,57 @@ const ExpenseReport = () => {
                 </div>
             </div>
 
-            {/* ── Key Metric Cards ── */}
-            <div className="metrics-grid">
-                <div className="metric-card highlight">
-                    <div className="metric-icon total">
-                        <span className="material-symbols-outlined">account_balance</span>
+            {/* ── Key Metric Cards (Dashboard Style) ── */}
+            <div className="stock-stats report-stats">
+                <div className="stat-card">
+                    <div className="stat-icon purple">
+                        <span className="material-symbols-outlined">account_balance_wallet</span>
                     </div>
-                    <div className="metric-content">
-                        <span className="metric-label">Total Expenses</span>
-                        <span className="metric-value" style={getDynamicFontSize(totalExpense)}>
+                    <div className="stat-info">
+                        <span className="stat-label">Overall Expenses</span>
+                        <span className="stat-value" style={getDynamicFontSize(totalExpense)}>
                             {formatCurrency(totalExpense, true)}
                         </span>
-                        <span className="metric-sub">{filteredExpenses.length} transactions</span>
+                        <div className="stat-sub"></div>
                     </div>
                 </div>
-                <div className="metric-card">
-                    <div className="metric-icon average">
-                        <span className="material-symbols-outlined">trending_up</span>
+
+                <div className="stat-card">
+                    <div className="stat-icon blue">
+                        <span className="material-symbols-outlined">build</span>
                     </div>
-                    <div className="metric-content">
-                        <span className="metric-label">Daily Average</span>
-                        <span className="metric-value" style={getDynamicFontSize(avgDaily)}>
-                            {formatCurrency(avgDaily, true)}
+                    <div className="stat-info">
+                        <span className="stat-label">Maintenance</span>
+                        <span className="stat-value" style={getDynamicFontSize(maintenanceTotal)}>
+                            {formatCurrency(maintenanceTotal, true)}
                         </span>
-                        <span className="metric-sub">per day ({daysDiff} days)</span>
+                        <div className="stat-sub"></div>
                     </div>
                 </div>
-                <div className="metric-card">
-                    <div className="metric-icon count">
-                        <span className="material-symbols-outlined">receipt_long</span>
+
+                <div className="stat-card">
+                    <div className="stat-icon yellow">
+                        <span className="material-symbols-outlined">payments</span>
                     </div>
-                    <div className="metric-content">
-                        <span className="metric-label">Categories Used</span>
-                        <span className="metric-value">{Object.keys(categoryStats).length}</span>
-                        <span className="metric-sub">of 7 categories</span>
+                    <div className="stat-info">
+                        <span className="stat-label">Salary</span>
+                        <span className="stat-value" style={getDynamicFontSize(salaryTotal)}>
+                            {formatCurrency(salaryTotal, true)}
+                        </span>
+                        <div className="stat-sub"></div>
+                    </div>
+                </div>
+
+                <div className="stat-card">
+                    <div className="stat-icon green">
+                        <span className="material-symbols-outlined">more_horiz</span>
+                    </div>
+                    <div className="stat-info">
+                        <span className="stat-label">Others</span>
+                        <span className="stat-value" style={getDynamicFontSize(othersTotal)}>
+                            {formatCurrency(othersTotal, true)}
+                        </span>
+                        <div className="stat-sub"></div>
                     </div>
                 </div>
             </div>
@@ -389,6 +406,8 @@ const ExpenseReport = () => {
                         )}
                     </div>
                 )}
+
+
 
                 {/* Monthly Trend */}
                 {selectedChart === "trend" && (
@@ -493,16 +512,18 @@ const ExpenseReport = () => {
                         )}
                     </div>
                 )}
+
+
             </div>
 
             {/* ── Transaction Table ── */}
             <div className="stock-table-container">
                 <div className="table-header">
                     <h3>
-                        <span className="material-symbols-outlined" style={{ color: "#006A4E" }}>table_chart</span>
+                        <span className="material-symbols-outlined header-icon-accent">table_chart</span>
                         Detailed Transaction List
                     </h3>
-                    <span style={{ fontSize: 13, color: "#64748b", marginLeft: 8 }}>
+                    <span className="records-count-lite">
                         {filteredExpenses.length} records · {formatPeriod()}
                     </span>
                 </div>
@@ -510,34 +531,33 @@ const ExpenseReport = () => {
                     <table className="stock-table">
                         <thead>
                             <tr>
-                                <th style={{ textAlign: 'center' }}>Date</th>
-                                <th style={{ textAlign: 'center' }}>Category</th>
-                                <th style={{ textAlign: 'center' }}>Description</th>
-                                <th style={{ textAlign: 'center' }}>Payment Mode</th>
-                                <th style={{ textAlign: 'center' }}>Amount (₹)</th>
+                                <th className="text-center">Date</th>
+                                <th className="text-center">Category</th>
+                                <th className="text-center">Description</th>
+                                <th className="text-center">Payment Mode</th>
+                                <th className="text-center">Amount (₹)</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredExpenses.length > 0 ? (
                                 filteredExpenses.map((ex) => (
                                     <tr key={ex.id}>
-                                        <td style={{ fontWeight: 500, textAlign: 'center' }}>{formatDate(ex.date)}</td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <span className="status-badge" style={{ ...catStyle(ex.category), display: 'inline-block', minWidth: '140px' }}>
+                                        <td className="date-cell text-center">{formatDate(ex.date)}</td>
+                                        <td className="text-center">
+                                            <span className={`status-badge-lite ${ex.category === 'Machine Maintenance' ? 'low' :
+                                                ex.category === 'Material' ? 'normal' :
+                                                    ex.category === 'Salary' ? 'critical' : 'normal'
+                                                }`}>
                                                 {ex.category}
                                             </span>
                                         </td>
-                                        <td style={{ color: "#64748b", textAlign: 'center' }}>{ex.description}</td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <span style={{
-                                                padding: "4px 12px", borderRadius: "20px", fontSize: 12,
-                                                fontWeight: 700, backgroundColor: "#f1f5f9", color: "#475569",
-                                                display: 'inline-block'
-                                            }}>
+                                        <td className="description-cell text-center">{ex.description}</td>
+                                        <td className="text-center">
+                                            <span className="payment-badge-lite">
                                                 {ex.paymentMode}
                                             </span>
                                         </td>
-                                        <td style={{ textAlign: 'center', fontWeight: 800, color: "#006A4E" }}>
+                                        <td className="amount-cell">
                                             ₹{Number(ex.amount).toLocaleString()}
                                         </td>
                                     </tr>
@@ -549,12 +569,12 @@ const ExpenseReport = () => {
                             )}
                         </tbody>
                         <tfoot>
-                             <tr>
-                                 <td colSpan="4" style={{ textAlign: "right", fontWeight: 700, padding: "14px 20px" }}>Total:</td>
-                                 <td style={{ textAlign: 'center', fontWeight: 800, color: "#006A4E", padding: "14px 20px" }}>
-                                     ₹{totalExpense.toLocaleString()}
-                                 </td>
-                             </tr>
+                            <tr>
+                                <td colSpan="4" className="footer-label-cell">Total:</td>
+                                <td className="amount-cell footer-value-cell">
+                                    ₹{totalExpense.toLocaleString()}
+                                </td>
+                            </tr>
                         </tfoot>
                     </table>
                 </div>
