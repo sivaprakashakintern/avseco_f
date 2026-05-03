@@ -108,9 +108,6 @@ const ExpenseReport = () => {
     const salaryTotal = filteredExpenses.filter(e => e.category === "Salary").reduce((s, e) => s + Number(e.amount), 0);
     const othersTotal = totalExpense - maintenanceTotal - salaryTotal;
 
-    const daysDiff = Math.max(1, Math.ceil((dateRange.endDate - dateRange.startDate) / 86400000) + 1);
-    const avgDaily = (totalExpense / daysDiff).toFixed(0);
-
     const categoryStats = useMemo(() => {
         const stats = {};
         filteredExpenses.forEach((e) => {
@@ -150,12 +147,6 @@ const ExpenseReport = () => {
 
     const getMonthName = () =>
         dateRange.startDate.toLocaleString("default", { month: "long", year: "numeric" });
-
-    // ── Category badge helper ────────────────────────────────────────────────────
-    const catStyle = (cat) => {
-        const cfg = CATEGORY_CONFIG[cat] || { bg: "#f1f5f9", color: "#475569" };
-        return { backgroundColor: cfg.bg, color: cfg.color };
-    };
 
     // ── Excel export ─────────────────────────────────────────────────────────────
     const exportToExcel = () => {
