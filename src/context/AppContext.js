@@ -146,7 +146,7 @@ export const AppProvider = ({ children }) => {
                 setIsUpdating(false);
             }
         }
-    }, [todayStr, user, refreshUser, hasAccess]);
+    }, [todayStr, user, refreshUser, hasAccess, isAdmin]);
 
     // ── DERIVED METRICS ─────────────────────────────────────────────────────────
     
@@ -635,7 +635,7 @@ export const AppProvider = ({ children }) => {
         } finally {
             setIsUpdating(false);
         }
-    }, []);
+    }, [employees]);
 
     // TURNOVER
     const addTurnover = useCallback(async (turnover) => {
