@@ -344,7 +344,7 @@ const Production = () => {
     } catch (err) {
       showNotificationMessage(`❌ Failed to ${editingId ? 'update' : 'add'} production`, "error");
     }
-  }, [formData, productionDate, showNotificationMessage, addProduction, updateProduction, editingId]);
+  }, [formData, productionDate, showNotificationMessage, addProduction, updateProduction, editingId, inputRefs.quantity]);
 
   const getSizeTargetInfo = (size) => {
     if (!productionTargets || !formData.product || !size) return null;

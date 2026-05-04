@@ -2,14 +2,13 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../context/AppContext.js';
 import { useAuth } from '../context/AuthContext.js';
-import logo from '../assets/logo.png';
 import { formatCurrency } from '../utils/formatUtils.js';
 import dayjs from 'dayjs';
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, hasAccess } = useAuth();
+  const { hasAccess } = useAuth();
   const {
     expenses,
     totalExpenseAmount,
@@ -245,13 +244,6 @@ const Dashboard = () => {
   const handleAttendanceClick = () => navigate("/attendance");
 
   // Popup handlers with position calculation
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 17) return "Good Afternoon";
-    return "Good Evening";
-  };
 
   return (
     <div className="dashboard-container">
