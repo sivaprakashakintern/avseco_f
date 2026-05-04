@@ -41,6 +41,13 @@ const Dashboard = () => {
         if (size !== 'All Sizes' && size !== 'total') sizesSet.add(size);
       });
     }
+
+    // Get sizes from Today's production to be safe
+    if (productionStats.todayBySize) {
+      Object.keys(productionStats.todayBySize).forEach(size => {
+        if (size !== 'All Sizes' && size !== 'total') sizesSet.add(size);
+      });
+    }
     
     // Basic sorting for "2 inch", "6-inch" etc.
     return Array.from(sizesSet).sort((a, b) => {
@@ -160,7 +167,7 @@ const Dashboard = () => {
   const dashboardData = {
     Weekly: {
       metrics: getMetrics('Weekly'),
-      plates: getPlatesData(productionStats.weekly),
+      plates: getPlatesData('Weekly'),
       productionDetails: getProductionDetails(),
       attendance: {
         present: todayStats.present,
@@ -182,7 +189,7 @@ const Dashboard = () => {
     },
     Monthly: {
       metrics: getMetrics('Monthly'),
-      plates: getPlatesData(productionStats.monthly),
+      plates: getPlatesData('Monthly'),
       productionDetails: getProductionDetails(),
       attendance: {
         present: todayStats.present,
@@ -204,7 +211,7 @@ const Dashboard = () => {
     },
     Yearly: {
       metrics: getMetrics('Yearly'),
-      plates: getPlatesData(productionStats.yearly),
+      plates: getPlatesData('Yearly'),
       productionDetails: getProductionDetails(),
       attendance: {
         present: todayStats.present,
