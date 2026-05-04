@@ -2248,5 +2248,159 @@
   .enhanced-bar-chart { gap: 8px; }
 }
 
+/* Premium Employee Dashboard Styles */
+.employee-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.employee-welcome-banner {
+  background: linear-gradient(135deg, #004d39 0%, #006A4E 100%);
+  color: white;
+  padding: 20px 28px;
+  border-radius: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.welcome-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.welcome-greeting {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.welcome-name {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  margin: 0;
+  color: #ffffff;
+}
+
+.welcome-role {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 480px) {
+  .employee-welcome-banner {
+    padding: 16px 20px;
+    border-radius: 12px;
+  }
+  .welcome-name {
+    font-size: 20px;
+  }
+  .welcome-greeting {
+    font-size: 9px;
+  }
+  .welcome-role {
+    font-size: 10px;
+  }
+}
+
+
+.premium-stat-card.attendance {
+  border-left: 4px solid #0ea5e9;
+}
+
+.premium-stat-card.sales {
+  border-left: 4px solid #10b981;
+}
+
+.premium-stat-card.stock {
+  border-left: 4px solid #8b5cf6;
+}
+
+.progress-bar-bg {
+  background: rgba(15, 23, 42, 0.08);
+  height: 8px;
+  border-radius: 10px;
+  width: 100%;
+  overflow: hidden;
+  margin-top: 14px;
+}
+
+.progress-bar-fill {
+  background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%);
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+.employee-records-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.status-badge.paid {
+  background: #dcfce7;
+  color: #166534;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.status-badge.unpaid {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.employee-dashboard .premium-stats-grid {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 24px;
+}
+
+.employee-charts-row {
+  display: flex !important;
+  flex-direction: column;
+  width: 100%;
+}
+
+@media screen and (max-width: 768px) {
+  .employee-dashboard .premium-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+}
+
+.employee-table-wrapper {
+  overflow-x: auto !important;
+  width: 100% !important;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 12px;
+}
+
+.employee-table-wrapper table {
+  min-width: 600px !important;
+}
+
+
+
+
 
 

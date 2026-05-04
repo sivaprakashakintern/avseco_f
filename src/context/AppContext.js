@@ -59,24 +59,27 @@ export const AppProvider = ({ children }) => {
 
             // Build request map
             const requestMap = [];
-            if (hasAccess('employees') || hasAccess('production') || hasAccess('attendance') || hasAccess('sales')) {
+            if (hasAccess('employees') || hasAccess('production') || hasAccess('attendance') || hasAccess('sales') || !isAdmin) {
                 requestMap.push({ key: 'employees', call: employeeApi.getAll() });
             }
             if (hasAccess('stock')) requestMap.push({ key: 'expenses', call: expenseApi.getAll() });
             if (hasAccess('clients') || hasAccess('sales')) {
                 requestMap.push({ key: 'clients', call: clientApi.getAll() });
             }
-            if (hasAccess('production') || hasAccess('sales')) {
+            if (hasAccess('production') || hasAccess('sales') || !isAdmin) {
                 requestMap.push({ key: 'production', call: productionApi.getAll() });
                 if (hasAccess('production')) {
                     requestMap.push({ key: 'productionTargets', call: productionTargetApi.getAll() });
                 }
             }
-            if (hasAccess('attendance')) requestMap.push({ key: 'attendance', call: attendanceApi.getByDate(todayStr) });
-            if (hasAccess('products') || hasAccess('production') || hasAccess('sales')) {
+            if (hasAccess('attendance') || !isAdmin) {
+                requestMap.push({ key: 'attendance', call: attendanceApi.getByDate(todayStr) });
+                requestMap.push({ key: 'attendanceYear', call: attendanceApi.getByYear(new Date().getFullYear()) });
+            }
+            if (hasAccess('products') || hasAccess('production') || hasAccess('sales') || !isAdmin) {
                 requestMap.push({ key: 'products', call: productsApi.getAll() });
             }
-            if (hasAccess('sales') || hasAccess('production') || hasAccess('stock')) {
+            if (hasAccess('sales') || hasAccess('production') || hasAccess('stock') || !isAdmin) {
                 requestMap.push({ key: 'sales', call: salesApi.getAll() });
             }
             if (hasAccess('turnover')) {
@@ -112,6 +115,9 @@ export const AppProvider = ({ children }) => {
                     } else if (key === 'attendance') {
                         const mapped = data.map(r => ({ ...r, empId: r.employee?._id ? String(r.employee._id) : String(r.employee), id: r._id }));
                         setAttendanceRecords(prev => ({ ...prev, [todayStr]: mapped }));
+                    } else if (key === 'attendanceYear') {
+                        const mapped = data.map(r => ({ ...r, empId: r.employee?._id ? String(r.employee._id) : String(r.employee), id: r._id }));
+                        setAttendanceRecords(prev => ({ ...prev, year: mapped }));
                     } else if (key === 'products') {
                         setProducts(data.map(p => ({ ...p, id: p._id })));
                     } else if (key === 'sales') {
@@ -607,12 +613,15 @@ export const AppProvider = ({ children }) => {
     const saveAttendanceForDate = useCallback(async (dateStr, records) => {
         setIsUpdating(true);
         try {
-            const formattedRecords = records.map(r => ({
-                employee: r.empId,
-                status: r.status || 'present',
-                note: r.note || '',
-                halfDayTime: r.halfDayTime || null
-            }));
+            const formattedRecords = records.map(r => {
+                const empObj = (employees || []).find(e => e.id === r.empId || e._id === r.empId || e.empId === r.empId);
+                return {
+                    employee: empObj ? empObj._id : r.empId,
+                    status: r.status || 'present',
+                    note: r.note || '',
+                    halfDayTime: r.halfDayTime || null
+                };
+            }).filter(r => r.employee);
             const data = await attendanceApi.saveBulk(dateStr, formattedRecords);
             const mapped = data.map(r => {
                 const empId = r.employee?._id ? String(r.employee._id) : String(r.employee);

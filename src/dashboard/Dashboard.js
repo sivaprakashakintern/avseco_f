@@ -8,7 +8,7 @@ import "./Dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { hasAccess } = useAuth();
+  const { hasAccess, user, isAdmin } = useAuth();
   const {
     expenses,
     totalExpenseAmount,
@@ -19,7 +19,9 @@ const Dashboard = () => {
     salesHistory,
     stockData,
     productionStats,
-    productionTargets = []
+    productionTargets = [],
+    attendanceRecords = {},
+    productionHistory = []
   } = useAppContext();
   const [timeFilter, setTimeFilter] = useState("Monthly");
 
@@ -244,6 +246,164 @@ const Dashboard = () => {
   const handleAttendanceClick = () => navigate("/attendance");
 
   // Popup handlers with position calculation
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  };
+
+  if (!isAdmin) {
+    const currentMonthYear = dayjs().format('YYYY-MM');
+    const empYearAttendance = (attendanceRecords.year || []).filter(r => 
+      r.empId === user?._id && dayjs(r.date).format('YYYY-MM') === currentMonthYear
+    );
+    
+    const presentCount = empYearAttendance.filter(r => r.status === 'present').length;
+    const absentCount = empYearAttendance.filter(r => r.status === 'absent').length;
+    const onLeaveCount = empYearAttendance.filter(r => r.status === 'half' || r.status === 'leave').length;
+    const attendancePercentage = empYearAttendance.length > 0 ? ((presentCount / empYearAttendance.length) * 100).toFixed(1) : 0;
+
+    const isSalesDept = (user?.department || "").toLowerCase().includes("sales") || hasAccess("sales");
+    
+    const mySales = (salesHistory || []).filter(sale => 
+      (sale.soldBy === user?.name || sale.recordedBy === user?.name) &&
+      dayjs(sale.date).format('YYYY-MM') === currentMonthYear
+    );
+    const totalMySalesValue = mySales.reduce((sum, sale) => sum + (Number(sale.totalAmount) || 0), 0);
+    
+    const myProduction = (productionHistory || []).filter(prod => 
+      (prod.operator === user?.name || prod.recordedBy === user?.name) &&
+      dayjs(prod.date).format('YYYY-MM') === currentMonthYear
+    );
+    const totalMyProduced = myProduction.reduce((sum, prod) => sum + (Number(prod.quantity) || 0), 0);
+
+    return (
+      <div className="dashboard-container employee-dashboard">
+        <div className="employee-welcome-banner">
+          <div className="welcome-text-group">
+            <span className="welcome-greeting">{getGreeting()},</span>
+            <h2 className="welcome-name">{user?.name}</h2>
+            <p className="welcome-role">{user?.role?.toUpperCase()} • {user?.department?.toUpperCase()}</p>
+          </div>
+        </div>
+
+        <div className="premium-stats-grid">
+          <div className="premium-stat-card attendance">
+            <div className="p-stat-info">
+              <span className="p-stat-label">This Month Attendance</span>
+              <div className="p-stat-value">{presentCount} <small>Days Present</small></div>
+              <div className="attendance-metric-progress">
+                <div className="progress-bar-bg">
+                  <div className="progress-bar-fill" style={{ width: `${attendancePercentage}%` }}></div>
+                </div>
+                <div className="progress-details" style={{ display: 'flex', gap: '10px', marginTop: '6px', fontSize: '13px', opacity: 0.85 }}>
+                  <span>Present: {presentCount}</span>
+                  <span>Absent: {absentCount}</span>
+                  <span>Leave: {onLeaveCount}</span>
+                </div>
+              </div>
+              <div className="attendance-total-status" style={{ marginTop: '10px', fontSize: '13px', opacity: 0.9 }}>
+                Overall Rate: <strong>{attendancePercentage}%</strong> (Out of {empYearAttendance.length} records logged)
+              </div>
+            </div>
+          </div>
+
+          {isSalesDept ? (
+            <div className="premium-stat-card sales">
+              <div className="p-stat-info">
+                <span className="p-stat-label">My Monthly Sales</span>
+                <div className="p-stat-value">₹{totalMySalesValue.toLocaleString()}</div>
+                <div className="sales-breakdown-details" style={{ marginTop: '10px' }}>
+                  <span className="breakdown-tag">Sales Logs: {mySales.length}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="premium-stat-card stock">
+              <div className="p-stat-info">
+                <span className="p-stat-label">My Monthly Production</span>
+                <div className="p-stat-value">{totalMyProduced.toLocaleString()} <small>PCS</small></div>
+                <div className="prod-breakdown-details" style={{ marginTop: '10px' }}>
+                  <span className="breakdown-tag">Production Entries: {myProduction.length}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="charts-row employee-charts-row">
+          <div className="chart-card large-chart employee-records-card" style={{ width: '100%', minWidth: '100%' }}>
+            <div className="chart-header" style={{ marginBottom: '16px' }}>
+              <h3>{isSalesDept ? "MY RECENT SALES LOGS" : "MY RECENT PRODUCTION LOGS"}</h3>
+            </div>
+            {isSalesDept ? (
+              <div className="daily-table-wrapper employee-table-wrapper">
+                <table className="premium-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>INVOICE</th>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>DATE</th>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>CUSTOMER</th>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>TOTAL VALUE</th>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mySales.slice(0, 5).map((sale, idx) => (
+                      <tr key={sale.id || sale._id || idx} style={{ borderBottom: '1px solid #334155' }}>
+                        <td style={{ padding: '12px' }}>{sale.invoiceNo}</td>
+                        <td style={{ padding: '12px' }}>{sale.date}</td>
+                        <td style={{ padding: '12px' }}>{sale.customer}</td>
+                        <td style={{ padding: '12px' }}>₹{Number(sale.totalAmount).toLocaleString()}</td>
+                        <td style={{ padding: '12px' }}><span className={`status-badge ${sale.paidStatus?.toLowerCase()}`}>{sale.paidStatus}</span></td>
+                      </tr>
+                    ))}
+                    {mySales.length === 0 && (
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#888' }}>No sales logs found for this month.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="daily-table-wrapper employee-table-wrapper">
+                <table className="premium-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>DATE</th>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>PRODUCT</th>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>SIZE</th>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>QUANTITY</th>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>GRADE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {myProduction.slice(0, 5).map((prod, idx) => (
+                      <tr key={prod.id || prod._id || idx} style={{ borderBottom: '1px solid #334155' }}>
+                        <td style={{ padding: '12px' }}>{prod.date}</td>
+                        <td style={{ padding: '12px' }}>{prod.product}</td>
+                        <td style={{ padding: '12px' }}>{prod.size}</td>
+                        <td style={{ padding: '12px' }}>{prod.quantity?.toLocaleString()} pcs</td>
+                        <td style={{ padding: '12px' }}>{prod.grade}</td>
+                      </tr>
+                    ))}
+                    {myProduction.length === 0 && (
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#888' }}>No production logs found for this month.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">

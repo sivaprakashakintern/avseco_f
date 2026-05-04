@@ -6,6 +6,7 @@
 
 .login-page {
     min-height: 100vh;
+    min-height: 100dvh;
     width: 100vw;
     display: flex;
     align-items: center;
@@ -309,12 +310,16 @@
 @media (max-width: 480px) {
     .login-page {
         padding: 15px;
-        align-items: center; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        min-height: 100dvh;
     }
     
     .login-container {
         max-width: 100%;
-        margin-bottom: 20px;
+        margin: 0;
     }
     
     .login-card {
