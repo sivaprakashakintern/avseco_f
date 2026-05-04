@@ -2,11 +2,6 @@ import axios from 'axios';
 
 let apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5555/api';
 
-// Automatically use local backend during local development to avoid internet dependency
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-  apiBaseUrl = 'http://localhost:5555/api';
-}
-
 const axiosInstance = axios.create({
   baseURL: apiBaseUrl,
   timeout: 30000, // 30 seconds
