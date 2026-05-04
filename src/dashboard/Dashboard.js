@@ -121,9 +121,9 @@ const Dashboard = () => {
     const totalPeriodExpenses = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
     
     // 3. Get production for the period
-    const productionBySize = period === 'Weekly' ? productionStats.weekBySize : 
-                             period === 'Yearly' ? productionStats.monthBySize : 
-                             productionStats.monthBySize;
+    const productionBySize = period === 'Weekly' ? (productionStats?.weekBySize || {}) : 
+                             period === 'Yearly' ? (productionStats?.monthBySize || {}) : 
+                             (productionStats?.monthBySize || {});
     
     const totalProduction = Object.values(productionBySize).reduce((sum, val) => sum + (Number(val) || 0), 0) || 1;
     const expensePerUnit = totalPeriodExpenses / totalProduction;
@@ -160,7 +160,7 @@ const Dashboard = () => {
     const sizes = dynamicSizes;
     return sizes.map(size => ({
       size,
-      today: productionStats.todayBySize[size] || 0
+      today: productionStats?.todayBySize?.[size] || 0
     }));
   };
 
@@ -170,15 +170,15 @@ const Dashboard = () => {
       plates: getPlatesData('Weekly'),
       productionDetails: getProductionDetails(),
       attendance: {
-        present: todayStats.present,
-        absent: todayStats.absent,
-        onLeave: todayStats.half,
-        total: todayStats.total,
-        trend: last7DaysTrend.map(t => t.present),
-        days: last7DaysTrend.map(t => t.label)
+        present: todayStats?.present || 0,
+        absent: todayStats?.absent || 0,
+        onLeave: todayStats?.half || 0,
+        total: todayStats?.total || 0,
+        trend: (last7DaysTrend || []).map(t => t.present || 0),
+        days: (last7DaysTrend || []).map(t => t.label || '')
       },
       expenses: {
-        total: formatStatValue(totalExpenseAmount),
+        total: formatStatValue(totalExpenseAmount || 0),
         categories: [
           { name: "Maintenance", amount: formatStatValue(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
           { name: "Material", amount: formatStatValue(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
@@ -192,15 +192,15 @@ const Dashboard = () => {
       plates: getPlatesData('Monthly'),
       productionDetails: getProductionDetails(),
       attendance: {
-        present: todayStats.present,
-        absent: todayStats.absent,
-        onLeave: todayStats.half,
-        total: todayStats.total,
-        trend: last7DaysTrend.map(t => t.present),
-        days: last7DaysTrend.map(t => t.label)
+        present: todayStats?.present || 0,
+        absent: todayStats?.absent || 0,
+        onLeave: todayStats?.half || 0,
+        total: todayStats?.total || 0,
+        trend: (last7DaysTrend || []).map(t => t.present || 0),
+        days: (last7DaysTrend || []).map(t => t.label || '')
       },
       expenses: {
-        total: formatStatValue(totalExpenseAmount),
+        total: formatStatValue(totalExpenseAmount || 0),
         categories: [
           { name: "Maintenance", amount: formatStatValue(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
           { name: "Material", amount: formatStatValue(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
@@ -214,15 +214,15 @@ const Dashboard = () => {
       plates: getPlatesData('Yearly'),
       productionDetails: getProductionDetails(),
       attendance: {
-        present: todayStats.present,
-        absent: todayStats.absent,
-        onLeave: todayStats.half,
-        total: todayStats.total,
-        trend: last7DaysTrend.map(t => t.present),
-        days: last7DaysTrend.map(t => t.label)
+        present: todayStats?.present || 0,
+        absent: todayStats?.absent || 0,
+        onLeave: todayStats?.half || 0,
+        total: todayStats?.total || 0,
+        trend: (last7DaysTrend || []).map(t => t.present || 0),
+        days: (last7DaysTrend || []).map(t => t.label || '')
       },
       expenses: {
-        total: formatStatValue(totalExpenseAmount),
+        total: formatStatValue(totalExpenseAmount || 0),
         categories: [
           { name: "Maintenance", amount: formatStatValue(expenseByCategory["Machine Maintenance"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Machine Maintenance"] || 0) / totalExpenseAmount) * 100) : 0, color: "#f97316" },
           { name: "Material", amount: formatStatValue(expenseByCategory["Material"] || 0), percentage: totalExpenseAmount > 0 ? Math.round(((expenseByCategory["Material"] || 0) / totalExpenseAmount) * 100) : 0, color: "#3b82f6" },
