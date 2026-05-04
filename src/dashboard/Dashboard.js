@@ -262,30 +262,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* GREETINGS HEADER */}
-      <div className="greetings-header">
-        <div className="greetings-left">
-          <div className="greetings-content-box">
-             <div className="greetings-text">
-                <h1>{getGreeting()}, {user?.name || "User"}! 👋</h1>
-                <p className="current-date">
-                  <span className="material-symbols-outlined">calendar_today</span>
-                  {new Date().toLocaleDateString('en-GB', { 
-                    weekday: 'long', 
-                    day: 'numeric', 
-                    month: 'long', 
-                    year: 'numeric' 
-                  })}
-                </p>
-             </div>
-          </div>
-        </div>
-        <div className="greetings-right">
-          <div className="header-logo-card">
-            <img src={logo} alt="AVS Logo" className="dashboard-brand-logo" />
-          </div>
-        </div>
-      </div>
 
       {/* PREMIUM ANALYTICS GRID (Production Stats) */}
       <div className="premium-stats-grid dashboard-top-stats">
@@ -388,24 +364,16 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <div className="balance-summary-footer">
-                  <div className={`net-balance-card ${totalPeriodSales >= totalPeriodExpenses ? 'profit' : 'loss'}`}>
-                    <span className="net-label">NET BALANCE</span>
-                    <span className="net-amount">
-                      {totalPeriodSales >= totalPeriodExpenses ? '+' : '-'}{formatStatValue(Math.abs(totalPeriodSales - totalPeriodExpenses))}
-                    </span>
-                  </div>
-                </div>
             </div>
 
             <div className="chart-legend-row-bottom">
               <div className="chart-legend-item">
                 <span className="legend-dot sales-dot"></span>
-                <span className="legend-text">Revenue</span>
+                <span className="legend-text">Revenue: <strong>{formatStatValue(totalPeriodSales)}</strong></span>
               </div>
               <div className="chart-legend-item">
                 <span className="legend-dot expenses-dot"></span>
-                <span className="legend-text">Expenses</span>
+                <span className="legend-text">Expenses: <strong>{formatStatValue(totalPeriodExpenses)}</strong></span>
               </div>
             </div>
           </div>

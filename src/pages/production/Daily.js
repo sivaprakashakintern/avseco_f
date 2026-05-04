@@ -6,7 +6,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
-import './Daily.css';
+import './dailyprod.css?v=1.1'; // Force reload with versioning
 
 // Sizes will be derived dynamically below
 
@@ -58,6 +58,7 @@ const Production = () => {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
+  const [editingId, setEditingId] = useState(null);
 
   const showNotificationMessage = React.useCallback((message, type = 'success') => {
     setNotificationMessage(message);
@@ -314,7 +315,7 @@ const Production = () => {
     const quantity = parseInt(formData.quantity);
     const timeString = dayjs().format('hh:mm A');
 
-    const newProduction = {
+    const entryData = {
       date: formatDate(productionDate),
       product: formData.product,
       size: formData.size,
@@ -326,28 +327,24 @@ const Production = () => {
     };
 
     try {
-      await addProduction(newProduction);
+      if (editingId) {
+        await updateProduction(editingId, entryData);
+        showNotificationMessage(`✅ Production updated! 📦`, 'success');
+        setEditingId(null);
+      } else {
+        await addProduction(entryData);
+        showNotificationMessage(`✅ Production added! 📦 +${quantity} plates`, 'success');
+      }
       
-      // Auto-update form for next entry: reset quantity and move to next size if current is complete
-      setFormData(prev => {
-        const remainingSizes = getSizesForProduct();
-        const stillInList = remainingSizes.includes(prev.size);
-        return { 
-          ...prev, 
-          quantity: "", 
-          size: stillInList ? prev.size : (remainingSizes[0] || "") 
-        };
-      });
-      showNotificationMessage(`✅ Production added! 📦 +${quantity} plates`, 'success');
-      
-      // Remove focus from all inputs as per user request
+      // Auto-reset
+      setFormData(prev => ({ ...prev, quantity: "" }));
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
     } catch (err) {
-      showNotificationMessage("Failed to add production", "error");
+      showNotificationMessage(`❌ Failed to ${editingId ? 'update' : 'add'} production`, "error");
     }
-  }, [formData, productionDate, showNotificationMessage, addProduction, getSizesForProduct, inputRefs.quantity]);
+  }, [formData, productionDate, showNotificationMessage, addProduction, updateProduction, editingId]);
 
   const getSizeTargetInfo = (size) => {
     if (!productionTargets || !formData.product || !size) return null;
@@ -424,12 +421,17 @@ const Production = () => {
     setCurrentPage(1);
   }, [productionDate, historySearch, historySizeFilter]);
 
-  const [editingProduction, setEditingProduction] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
   const handleEditProduction = (record) => {
-    setEditingProduction(record);
-    setIsEditModalOpen(true);
+    if (!canModify) return;
+    setEditingId(record.id || record._id);
+    setFormData({
+      product: record.product,
+      size: record.size,
+      quantity: record.quantity,
+      grade: record.grade || 'A',
+      operator: record.operator
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteProduction = (record) => {
@@ -485,25 +487,55 @@ const Production = () => {
       <div className="dashboard-content-main" style={{ display: showHistoryOnly ? 'none' : 'block' }}>
         <div className="production-main-grid">
           <div className="production-form-section">
-            <div className="premium-entry-card">
-              <div className="card-header entry-header">
-                <h3><span className="material-symbols-outlined">add_circle</span> New Entry</h3>
+            <div className={`premium-entry-card ${editingId ? 'edit-mode-active' : ''}`}>
+              <div className={`card-header entry-header ${editingId ? 'edit-mode-header' : ''}`}>
+                <h3>
+                  <span className="material-symbols-outlined">{editingId ? 'edit_note' : 'add_circle'}</span> 
+                  {editingId ? "Update Production Entry" : "New Production Entry"}
+                </h3>
+                {editingId && (
+                  <button className="cancel-edit-btn" onClick={() => { setEditingId(null); setFormData({ product: '', size: '', quantity: '', grade: 'A', operator: '' }); }}>
+                    <span className="material-symbols-outlined">close</span> CANCEL
+                  </button>
+                )}
               </div>
               <div className="card-body">
                 <div className="entry-form-premium">
                   <div className="premium-form-row four-cols">
-                    <div className="premium-form-group">
-                      <label className="premium-label-new">Production Date</label>
-                      <div className="date-picker-wrapper-new">
-                        <span className="material-symbols-outlined input-icon-new">calendar_month</span>
-                        <button className="premium-date-btn-new" disabled={!canModify}>
-                          {formatDate(productionDate)}
-                        </button>
-                      </div>
-                    </div>
+                     <div className="premium-form-group">
+                       <label className="premium-label-new">Production Date</label>
+                       <div className="date-picker-wrapper-new">
+                         <span 
+                           className="material-symbols-outlined input-icon-new"
+                           style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+                           onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}
+                         >
+                           calendar_month
+                         </span>
+                         <button 
+                           className="premium-date-btn-new" 
+                           disabled={!canModify}
+                           onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}
+                         >
+                           {formatDate(productionDate)}
+                         </button>
+                         {showProductionDatePicker && (
+                           <div className="date-picker-container">
+                             <CalendarPicker 
+                               selectedDate={productionDate}
+                               onDateChange={(date) => {
+                                 setProductionDate(date);
+                                 setShowProductionDatePicker(false);
+                               }}
+                               onClose={() => setShowProductionDatePicker(false)}
+                             />
+                           </div>
+                         )}
+                       </div>
+                     </div>
 
                     <div className="premium-form-group">
-                      <label className="premium-label-new">Product Type <span className="shortcut-hint">P</span></label>
+                      <label className="premium-label-new">Product Type </label>
                       <div className={`custom-dropdown-premium ${openDropdown === 'product' ? 'active' : ''}`}>
                         <div 
                           className="custom-dropdown-toggle"
@@ -533,7 +565,7 @@ const Production = () => {
                     </div>
 
                     <div className="premium-form-group">
-                      <label className="premium-label-new">Size <span className="shortcut-hint">S</span></label>
+                      <label className="premium-label-new">Size </label>
                       <div className={`custom-dropdown-premium ${openDropdown === 'size' ? 'active' : ''}`}>
                         <div 
                           className="custom-dropdown-toggle"
@@ -560,11 +592,6 @@ const Production = () => {
                                   >
                                     <span className="item-index">{idx + 1}</span>
                                     <span className="item-text">{s}</span>
-                                    {info && (
-                                       <span className="item-hint">
-                                          {info.remaining <= 0 ? '(Done)' : `${info.remaining.toLocaleString()} left`}
-                                       </span>
-                                    )}
                                   </div>
                                 );
                               })
@@ -575,7 +602,7 @@ const Production = () => {
                     </div>
 
                     <div className="premium-form-group">
-                      <label className="premium-label-new">Quantity (PCS) <span className="shortcut-hint">Q</span></label>
+                      <label className="premium-label-new">Quantity (PCS) </label>
                       <div className="input-wrapper-new">
                         <span className="material-symbols-outlined input-icon-new">production_quantity_limits</span>
                         <input 
@@ -612,7 +639,7 @@ const Production = () => {
                     </div>
 
                     <div className="premium-form-group operator-group-new">
-                      <label className="premium-label-new">Machine Operator <span className="shortcut-hint">M</span></label>
+                      <label className="premium-label-new">Machine Operator </label>
                       <div className={`custom-dropdown-premium ${openDropdown === 'operator' ? 'active' : ''}`}>
                         <div 
                           className="custom-dropdown-toggle"
@@ -751,12 +778,23 @@ const Production = () => {
                 {isToday ? "Today" : (isYesterday ? "Yesterday" : formatDate(productionDate))} Production
               </h3>
               <div className="table-actions">
-                <select value={historySizeFilter} onChange={(e) => setHistorySizeFilter(e.target.value)}>
+                <select 
+                  className="custom-select-premium"
+                  value={historySizeFilter} 
+                  onChange={(e) => setHistorySizeFilter(e.target.value)}
+                >
                   <option value="all">All Sizes</option>
                   {availableSizes.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
+
                 <div className="search-box">
-                  <input type="text" placeholder="Search..." value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} />
+                  <span className="material-symbols-outlined search-icon">search</span>
+                  <input 
+                    type="text" 
+                    placeholder="Search history..." 
+                    value={historySearch} 
+                    onChange={(e) => setHistorySearch(e.target.value)} 
+                  />
                 </div>
               </div>
             </div>
@@ -878,26 +916,18 @@ const Production = () => {
         </div>
       )}
 
-      {isEditModalOpen && editingProduction && (
-        <div className="modal-overlay">
-          <div className="export-modal" style={{ padding: '24px' }}>
-            <h2>Edit Record</h2>
-            <div className="edit-form" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
-              <input type="number" value={editingProduction.quantity} onChange={(e) => setEditingProduction({...editingProduction, quantity: e.target.value})} />
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={() => setIsEditModalOpen(false)}>Cancel</button>
-                <button onClick={async () => {
-                  try {
-                    await updateProduction(editingProduction.id || editingProduction._id, editingProduction);
-                    showNotificationMessage("Updated!");
-                    setIsEditModalOpen(false);
-                  } catch (err) {
-                    showNotificationMessage("Error!", "error");
-                  }
-                }}>Save</button>
-              </div>
-            </div>
+      {showNotification && (
+        <div className={`premium-toast-new ${notificationType}`}>
+          <div className="toast-icon-new">
+            <span className="material-symbols-outlined">
+              {notificationType === 'success' ? 'check_circle' : 
+               notificationType === 'error' ? 'error' : 'warning'}
+            </span>
           </div>
+          <div className="toast-content-new">
+            <p>{notificationMessage}</p>
+          </div>
+          <div className="toast-progress-new"></div>
         </div>
       )}
     </div>
