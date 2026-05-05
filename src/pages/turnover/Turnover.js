@@ -208,15 +208,8 @@ const Turnover = () => {
         <div className="stat-card">
           <div className="stat-icon icon-income"><span className="material-symbols-outlined">payments</span></div>
           <div className="stat-info">
-            <span className="stat-label">Current {filterType} Turnover</span>
+            <span className="stat-label">Total Turnover</span>
             <span className="stat-value income">₹{financials.totalIncome.toLocaleString('en-IN')}</span>
-          </div>
-        </div>
-        <div className="stat-card" style={{ borderLeft: '4px solid #f59e0b' }}>
-          <div className="stat-icon" style={{ background: '#fffbeb', color: '#d97706' }}><span className="material-symbols-outlined">history</span></div>
-          <div className="stat-info">
-            <span className="stat-label">Last Month Performance</span>
-            <span className="stat-value" style={{ color: '#d97706' }}>₹{financials.lastMonthIncome.toLocaleString('en-IN')}</span>
           </div>
         </div>
         <div className="stat-card">
