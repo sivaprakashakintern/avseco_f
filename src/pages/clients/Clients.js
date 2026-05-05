@@ -6,6 +6,8 @@ const Clients = () => {
   const { clients, addClient, updateClient, deleteClient, salesHistory } = useAppContext();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewClient, setViewClient] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [clientToDelete, setClientToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -277,7 +279,10 @@ const Clients = () => {
                   </td>
                   <td style={{ textAlign: 'left' }}>
                     <div className="action-buttons" style={{ justifyContent: 'flex-start' }}>
-                      <button className="action-btn" onClick={() => { 
+                      <button className="action-btn" title="View" onClick={() => { setViewClient(client); setShowViewModal(true); }} style={{ color: '#10b981' }}>
+                        <span className="material-symbols-outlined">visibility</span>
+                      </button>
+                      <button className="action-btn" title="Edit" onClick={() => { 
                         setSelectedClient(client);
                         setFormData({
                           clientType: client.clientType || "Company",
@@ -292,6 +297,7 @@ const Clients = () => {
                        }}><span className="material-symbols-outlined">edit</span></button>
                       <button
                         className="action-btn delete-btn"
+                        title="Delete"
                         onClick={() => { setClientToDelete(client); setShowDeleteModal(true); }}
                       >
                         <span className="material-symbols-outlined">delete</span>
@@ -324,6 +330,9 @@ const Clients = () => {
                 </div>
               </div>
               <div className="mobile-client-actions">
+                <button className="action-btn" style={{ color: '#10b981' }} onClick={(e) => { e.stopPropagation(); setViewClient(client); setShowViewModal(true); }}>
+                  <span className="material-symbols-outlined">visibility</span>
+                </button>
                 <button className="action-btn" onClick={(e) => { 
                    e.stopPropagation();
                    setSelectedClient(client); 
@@ -461,8 +470,145 @@ const Clients = () => {
                 style={{ background: '#dc2626' }}
                 onClick={handleDeleteClient}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: '16px', verticalAlign: 'middle', marginRight: '6px' }}>delete</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', verticalAlign: 'middle', marginRight: '6px' }}>delete</span>
                 Delete Client
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW CLIENT MODAL - PERFECTED VERSION */}
+      {showViewModal && viewClient && (
+        <div className="modal-overlay" onClick={() => { setShowViewModal(false); setViewClient(null); }}>
+          <div className="modal-content" style={{ maxWidth: '560px', padding: 0, border: 'none', background: '#f8fafc', boxShadow: '0 25px 70px rgba(0,0,0,0.15)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            
+            {/* TOP ACTION BAR */}
+            <div style={{ padding: '16px 24px', background: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #edf2f7' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Client Portfolio</span>
+              <button onClick={() => { setShowViewModal(false); setViewClient(null); }} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ padding: '24px 32px 32px' }}>
+              {/* PROFILE IDENTITY CARD */}
+              <div style={{ background: 'white', borderRadius: '20px', padding: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', border: '1px solid #edf2f7', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '18px', background: 'linear-gradient(135deg, #006A4E 0%, #004D39 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 20px rgba(0, 106, 78, 0.2)' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '32px', color: 'white' }}>
+                    {viewClient.clientType === 'Personal' ? 'person' : 'apartment'}
+                  </span>
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {viewClient.companyName || viewClient.contactPerson}
+                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
+                    <span style={{ background: '#ecfdf5', color: '#059669', fontSize: '11px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', textTransform: 'uppercase' }}>{viewClient.clientType || 'Corporate'}</span>
+                    <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 500 }}>ID: CL-{viewClient._id?.substring(20).toUpperCase() || 'NEW'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* CORE INFO GRID */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                {/* Contact Card */}
+                <div style={{ background: 'white', borderRadius: '16px', padding: '16px', border: '1px solid #edf2f7' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>person</span>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Contact Person</span>
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', paddingLeft: '38px' }}>{viewClient.contactPerson || '—'}</div>
+                </div>
+
+                {/* Phone Card */}
+                <div style={{ background: 'white', borderRadius: '16px', padding: '16px', border: '1px solid #edf2f7' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>call</span>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Phone Number</span>
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', paddingLeft: '38px' }}>{viewClient.phone || '—'}</div>
+                </div>
+
+                {/* Email Card */}
+                <div style={{ background: 'white', borderRadius: '16px', padding: '16px', border: '1px solid #edf2f7' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>mail</span>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Email Address</span>
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', paddingLeft: '38px', wordBreak: 'break-all' }}>{viewClient.email || '—'}</div>
+                </div>
+
+                {/* GST Card */}
+                <div style={{ background: 'white', borderRadius: '16px', padding: '16px', border: '1px solid #edf2f7' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>verified_user</span>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>GSTIN Number</span>
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', paddingLeft: '38px' }}>{viewClient.gst || '—'}</div>
+                </div>
+              </div>
+
+              {/* ADDRESS CARD */}
+              <div style={{ background: 'white', borderRadius: '16px', padding: '20px', border: '1px solid #edf2f7', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>location_on</span>
+                  </div>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Official Billing Address</span>
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 500, color: '#475569', paddingLeft: '38px', lineHeight: '1.6' }}>{viewClient.address || 'No address provided'}</div>
+              </div>
+
+              {/* REVENUE & ENGAGEMENT STATS */}
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div style={{ flex: 1, background: 'linear-gradient(to bottom right, #ffffff, #f1f5f9)', borderRadius: '16px', padding: '16px', border: '1px solid #edf2f7', textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '8px' }}>Orders</div>
+                  <div style={{ fontSize: '24px', fontWeight: 950, color: '#0f172a' }}>{viewClient.totalOrders || 0}</div>
+                </div>
+                <div style={{ flex: 1, background: 'linear-gradient(to bottom right, #ffffff, #f0fdf4)', borderRadius: '16px', padding: '16px', border: '1px solid #dcfce7', textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#059669', textTransform: 'uppercase', marginBottom: '8px' }}>Total Revenue</div>
+                  <div style={{ fontSize: '24px', fontWeight: 950, color: '#006A4E' }}>₹{(viewClient.totalSpentValue || 0).toLocaleString('en-IN')}</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* FOOTER ACTIONS */}
+            <div style={{ padding: '20px 32px', background: 'white', borderTop: '1px solid #edf2f7', display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => { setShowViewModal(false); setViewClient(null); }}
+                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'white', fontWeight: 700, color: '#64748b', cursor: 'pointer', fontSize: '14px' }}
+              >
+                Close Profile
+              </button>
+              <button 
+                onClick={() => {
+                  setShowViewModal(false);
+                  setSelectedClient(viewClient);
+                  setFormData({
+                    clientType: viewClient.clientType || "Company",
+                    companyName: viewClient.companyName || "",
+                    contactPerson: viewClient.contactPerson || "",
+                    email: viewClient.email || "",
+                    phone: viewClient.phone || "",
+                    address: viewClient.address || "",
+                    gst: viewClient.gst || ""
+                  });
+                  setViewClient(null);
+                  setShowEditModal(true);
+                }}
+                style={{ flex: 1.5, padding: '12px', borderRadius: '12px', border: 'none', background: '#006A4E', fontWeight: 700, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '14px', boxShadow: '0 4px 12px rgba(0, 106, 78, 0.2)' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit_note</span>
+                Edit Account Details
               </button>
             </div>
           </div>
