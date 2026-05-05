@@ -396,7 +396,7 @@ const Sales = () => {
         setHsnCode("4602 19 19");
         setGstRate("5");
         setTimeout(() => setFeedbackMessage(""), 3000);
-    }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, paidStatus, paymentMode, quantity, salesHistory, selectedProduct, selectedProductObj, setIsLogging, soldBy, updateSale, user?.name, unitPrice]);
+    }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, gstRate, hsnCode, paidStatus, paymentMode, quantity, salesHistory, selectedBaseProduct, selectedProduct, selectedProductObj, selectedSize, setIsLogging, soldBy, updateSale, user?.name, unitPrice]);
 
 
 
