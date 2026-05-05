@@ -329,6 +329,7 @@ const Sales = () => {
                 size: item.size || "-",
                 qty: item.qty,
                 rate: item.rate,
+                mrp: item.mrp,
                 amount: item.amount,
                 gstRate: item.gstRate,
                 gstAmount: item.gstAmount,
