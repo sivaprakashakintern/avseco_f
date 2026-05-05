@@ -148,8 +148,24 @@ const Turnover = () => {
       .map(name => ({ name, ProdQty: prodSizeMap[name] }))
       .sort((a, b) => (parseFloat(a.name) || 0) - (parseFloat(b.name) || 0));
 
+    // 6. Last Month Comparison (Fixed)
+    const now = new Date();
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const pmY = prevMonthDate.getFullYear();
+    const pmM = prevMonthDate.getMonth();
+
+    const lastMonthIncome = (salesHistory || []).filter(s => {
+      if (s.status && (s.status.toLowerCase().includes('cancel') || s.status.toLowerCase().includes('reject'))) return false;
+      const d = parseDate(s.date || s.createdAt);
+      return d && d.getFullYear() === pmY && d.getMonth() === pmM;
+    }).reduce((sum, s) => sum + Number(s.totalAmount || s.amount || 0), 0) +
+    (turnoverRecords || []).filter(t => {
+      const d = parseDate(t.date || t.createdAt);
+      return d && d.getFullYear() === pmY && d.getMonth() === pmM;
+    }).reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
     return {
-      financials: { totalIncome, totalExpenses, netProfit },
+      financials: { totalIncome, totalExpenses, netProfit, lastMonthIncome },
       charts: { expenseCatChart, monthlyIncomeData, monthlyProdData, salesSizeChart, prodSizeChart },
       manualRecords: filteredManualTurnover
     };
@@ -162,7 +178,7 @@ const Turnover = () => {
       {/* HEADER */}
       <div className="premium-header-green">
         <div className="header-left-group">
-          <h1>Turnover</h1>
+          <h1>Turnover Analytics</h1>
         </div>
       </div>
 
@@ -192,8 +208,15 @@ const Turnover = () => {
         <div className="stat-card">
           <div className="stat-icon icon-income"><span className="material-symbols-outlined">payments</span></div>
           <div className="stat-info">
-            <span className="stat-label">Total Turnover</span>
+            <span className="stat-label">Current {filterType} Turnover</span>
             <span className="stat-value income">₹{financials.totalIncome.toLocaleString('en-IN')}</span>
+          </div>
+        </div>
+        <div className="stat-card" style={{ borderLeft: '4px solid #f59e0b' }}>
+          <div className="stat-icon" style={{ background: '#fffbeb', color: '#d97706' }}><span className="material-symbols-outlined">history</span></div>
+          <div className="stat-info">
+            <span className="stat-label">Last Month Performance</span>
+            <span className="stat-value" style={{ color: '#d97706' }}>₹{financials.lastMonthIncome.toLocaleString('en-IN')}</span>
           </div>
         </div>
         <div className="stat-card">
@@ -312,14 +335,33 @@ const Turnover = () => {
               {charts.monthlyIncomeData.map((m, i) => {
                 const maxIncome = Math.max(...charts.monthlyIncomeData.map(d => d.Income), 1);
                 const heightPerc = (m.Income / maxIncome) * 100;
+                
+                // Professional Color Palette (Emerald to Blue to Purple)
+                const monthColors = [
+                  '#10b981', '#059669', '#0d9488', '#0891b2', 
+                  '#0284c7', '#2563eb', '#4f46e5', '#7c3aed', 
+                  '#9333ea', '#c026d3', '#db2777', '#e11d48'
+                ];
+
+                const currentMonth = new Date().getMonth();
+                const isPreviousMonth = i === (currentMonth === 0 ? 11 : currentMonth - 1);
+                const isCurrentMonth = i === currentMonth;
+
                 return (
                   <div key={i} className="trend-col">
                     <div className="col-bar-wrapper">
-                      <div className="col-bar" style={{ height: `${heightPerc}%` }}>
-                        {m.Income > 0 && <span className="bar-tip">₹{Math.round(m.Income/1000)}k</span>}
+                      <div 
+                        className={`col-bar ${isCurrentMonth ? 'current' : ''}`} 
+                        style={{ 
+                          height: m.Income > 0 ? `${heightPerc}%` : '2px',
+                          background: `linear-gradient(to top, ${monthColors[i]} 0%, ${monthColors[i]}dd 100%)`,
+                          opacity: m.Income > 0 ? 1 : 0.3
+                        }}
+                      >
+                        {m.Income > 0 && <span className="bar-tip" style={{ color: monthColors[i] }}>₹{Math.round(m.Income/1000)}k</span>}
                       </div>
                     </div>
-                    <span className="col-label">{m.name}</span>
+                    <span className="col-label" style={{ color: '#94a3b8', fontWeight: 700 }}>{m.name}</span>
                   </div>
                 );
               })}
@@ -338,15 +380,31 @@ const Turnover = () => {
             </div>
           </div>
           <div className="css-size-grid">
-            {charts.salesSizeChart.length > 0 ? charts.salesSizeChart.map((s, i) => (
-              <div key={i} className="size-stat-item">
-                <span className="s-lbl">{s.name}</span>
-                <div className="s-bar-group">
-                  <div className="s-bar sales" style={{ width: `${(s.SalesQty / Math.max(...charts.salesSizeChart.map(x => x.SalesQty), 1)) * 100}%` }}></div>
-                  <span className="s-qty">{s.SalesQty}</span>
+            {charts.salesSizeChart.length > 0 ? charts.salesSizeChart.map((s, i) => {
+              // Consistent Color Mapping by Size (Inches)
+              const sizeColorMap = {
+                '6': '#3b82f6', '7': '#10b981', '8': '#8b5cf6', '9': '#f59e0b',
+                '10': '#f43f5e', '11': '#06b6d4', '12': '#84cc16', '13': '#4f46e5',
+                '14': '#db2777', '15': '#14b8a6'
+              };
+              const barColor = sizeColorMap[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
+              
+              return (
+                <div key={i} className="size-stat-item">
+                  <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
+                  <div className="s-bar-group">
+                    <div 
+                      className="s-bar sales" 
+                      style={{ 
+                        width: `${(s.SalesQty / Math.max(...charts.salesSizeChart.map(x => x.SalesQty), 1)) * 100}%`,
+                        backgroundColor: barColor
+                      }}
+                    ></div>
+                    <span className="s-qty">{s.SalesQty}</span>
+                  </div>
                 </div>
-              </div>
-            )) : <div className="empty-chart-msg">No sales data</div>}
+              );
+            }) : <div className="empty-chart-msg">No sales data</div>}
           </div>
         </div>
 
@@ -358,15 +416,31 @@ const Turnover = () => {
             </div>
           </div>
           <div className="css-size-grid">
-            {charts.prodSizeChart.length > 0 ? charts.prodSizeChart.map((s, i) => (
-              <div key={i} className="size-stat-item">
-                <span className="s-lbl">{s.name}</span>
-                <div className="s-bar-group">
-                  <div className="s-bar prod" style={{ width: `${(s.ProdQty / Math.max(...charts.prodSizeChart.map(x => x.ProdQty), 1)) * 100}%` }}></div>
-                  <span className="s-qty">{s.ProdQty}</span>
+            {charts.prodSizeChart.length > 0 ? charts.prodSizeChart.map((s, i) => {
+              // Same Color Mapping for Consistency
+              const sizeColorMap = {
+                '6': '#3b82f6', '7': '#10b981', '8': '#8b5cf6', '9': '#f59e0b',
+                '10': '#f43f5e', '11': '#06b6d4', '12': '#84cc16', '13': '#4f46e5',
+                '14': '#db2777', '15': '#14b8a6'
+              };
+              const barColor = sizeColorMap[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
+
+              return (
+                <div key={i} className="size-stat-item">
+                  <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
+                  <div className="s-bar-group">
+                    <div 
+                      className="s-bar prod" 
+                      style={{ 
+                        width: `${(s.ProdQty / Math.max(...charts.prodSizeChart.map(x => x.ProdQty), 1)) * 100}%`,
+                        backgroundColor: barColor
+                      }}
+                    ></div>
+                    <span className="s-qty">{s.ProdQty}</span>
+                  </div>
                 </div>
-              </div>
-            )) : <div className="empty-chart-msg">No production data</div>}
+              );
+            }) : <div className="empty-chart-msg">No production data</div>}
           </div>
         </div>
       </div>
