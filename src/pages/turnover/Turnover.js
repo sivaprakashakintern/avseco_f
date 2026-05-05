@@ -2,6 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
 import './Turnover.css';
 
+// Centralized Color Map for Product Sizes (Inches)
+const SIZE_COLOR_MAP = {
+  '6': '#3b82f6', '7': '#10b981', '8': '#8b5cf6', '9': '#f59e0b',
+  '10': '#f43f5e', '11': '#06b6d4', '12': '#84cc16', '13': '#4f46e5',
+  '14': '#db2777', '15': '#14b8a6'
+};
+
 const Turnover = () => {
   const { 
     salesHistory = [], 
@@ -28,14 +35,10 @@ const Turnover = () => {
       if (info instanceof Date) return info;
       
       const dStr = String(info);
-      // Extract parts using regex to be format-agnostic
-      // Matches DD-MM-YYYY or YYYY-MM-DD, ignoring time/suffixes
       const match = dStr.match(/(\d{1,4})[-/](\d{1,2})[-/](\d{1,4})/);
       if (match) {
         const [, p1, p2, p3] = match;
-        // YYYY-MM-DD
         if (p1.length === 4) return new Date(Number(p1), Number(p2) - 1, Number(p3));
-        // DD-MM-YYYY
         if (p3.length === 4) return new Date(Number(p3), Number(p2) - 1, Number(p1));
       }
 
@@ -68,7 +71,6 @@ const Turnover = () => {
 
     // 1. Filtered Sets
     const filteredSales = (salesHistory || []).filter(s => {
-      // Exclude cancelled or rejected sales
       if (s.status && (s.status.toLowerCase().includes('cancel') || s.status.toLowerCase().includes('reject'))) return false;
       return isMatch(s.date || s.createdAt);
     });
@@ -77,9 +79,7 @@ const Turnover = () => {
     const filteredManualTurnover = (turnoverRecords || []).filter(t => isMatch(t.date || t.createdAt));
 
     // 2. Financial Metrics
-    const salesIncome = filteredSales.reduce((sum, s) => {
-      return sum + Number(s.totalAmount || s.amount || 0);
-    }, 0);
+    const salesIncome = filteredSales.reduce((sum, s) => sum + Number(s.totalAmount || s.amount || 0), 0);
     const manualIncome = filteredManualTurnover.reduce((sum, t) => sum + Number(t.amount || 0), 0);
     
     const totalIncome = salesIncome + manualIncome;
@@ -127,7 +127,6 @@ const Turnover = () => {
       if (s.saleItems && s.saleItems.length > 0) {
         s.saleItems.forEach(item => {
           const sz = (item.size || '').toString().trim() || 'Other';
-          // Fix: database uses 'qty', frontend was looking for 'quantity'
           salesSizeMap[sz] = (salesSizeMap[sz] || 0) + Number(item.qty || item.quantity || 0);
         });
       } else {
@@ -148,24 +147,8 @@ const Turnover = () => {
       .map(name => ({ name, ProdQty: prodSizeMap[name] }))
       .sort((a, b) => (parseFloat(a.name) || 0) - (parseFloat(b.name) || 0));
 
-    // 6. Last Month Comparison (Fixed)
-    const now = new Date();
-    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const pmY = prevMonthDate.getFullYear();
-    const pmM = prevMonthDate.getMonth();
-
-    const lastMonthIncome = (salesHistory || []).filter(s => {
-      if (s.status && (s.status.toLowerCase().includes('cancel') || s.status.toLowerCase().includes('reject'))) return false;
-      const d = parseDate(s.date || s.createdAt);
-      return d && d.getFullYear() === pmY && d.getMonth() === pmM;
-    }).reduce((sum, s) => sum + Number(s.totalAmount || s.amount || 0), 0) +
-    (turnoverRecords || []).filter(t => {
-      const d = parseDate(t.date || t.createdAt);
-      return d && d.getFullYear() === pmY && d.getMonth() === pmM;
-    }).reduce((sum, t) => sum + Number(t.amount || 0), 0);
-
     return {
-      financials: { totalIncome, totalExpenses, netProfit, lastMonthIncome },
+      financials: { totalIncome, totalExpenses, netProfit },
       charts: { expenseCatChart, monthlyIncomeData, monthlyProdData, salesSizeChart, prodSizeChart },
       manualRecords: filteredManualTurnover
     };
@@ -175,14 +158,12 @@ const Turnover = () => {
 
   return (
     <div className="turnover-container">
-      {/* HEADER */}
       <div className="premium-header-green">
         <div className="header-left-group">
           <h1>Turnover Analytics</h1>
         </div>
       </div>
 
-      {/* FILTERS */}
       <div className="filters-section">
         <div className="filter-type-buttons">
           {['daily', 'monthly', 'yearly', 'all'].map(t => (
@@ -203,7 +184,6 @@ const Turnover = () => {
         </div>
       </div>
 
-      {/* KPI GRID */}
       <div className="turnover-stats">
         <div className="stat-card">
           <div className="stat-icon icon-income"><span className="material-symbols-outlined">payments</span></div>
@@ -228,9 +208,7 @@ const Turnover = () => {
         </div>
       </div>
 
-      {/* PREMIUM CSS VISUALIZATIONS */}
       <div className="analytics-grid">
-        {/* INCOME VS EXPENSES BALANCER */}
         <div className="analytics-card">
           <div className="card-header-main">
             <div className="title-group">
@@ -280,7 +258,6 @@ const Turnover = () => {
           </div>
         </div>
 
-        {/* EXPENSE CATEGORY BARS */}
         <div className="analytics-card">
           <div className="card-header-main">
             <div className="title-group">
@@ -300,7 +277,7 @@ const Turnover = () => {
                     <div 
                       className="cat-fill" 
                       style={{ 
-                        width: `${(cat.Amount / financials.totalExpenses) * 100}%`,
+                        width: `${(cat.Amount / (financials.totalExpenses || 1)) * 100}%`,
                         backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#f43f5e'][i % 5]
                       }}
                     ></div>
@@ -314,7 +291,6 @@ const Turnover = () => {
         </div>
       </div>
 
-      {/* MONTHLY REVENUE TREND (CSS GRID) */}
       <div className="analytics-grid-full" style={{ marginBottom: '24px' }}>
         <div className="analytics-card">
           <div className="card-header-main">
@@ -329,7 +305,6 @@ const Turnover = () => {
                 const maxIncome = Math.max(...charts.monthlyIncomeData.map(d => d.Income), 1);
                 const heightPerc = (m.Income / maxIncome) * 100;
                 
-                // Professional Color Palette (Emerald to Blue to Purple)
                 const monthColors = [
                   '#10b981', '#059669', '#0d9488', '#0891b2', 
                   '#0284c7', '#2563eb', '#4f46e5', '#7c3aed', 
@@ -337,7 +312,6 @@ const Turnover = () => {
                 ];
 
                 const currentMonth = new Date().getMonth();
-                const isPreviousMonth = i === (currentMonth === 0 ? 11 : currentMonth - 1);
                 const isCurrentMonth = i === currentMonth;
 
                 return (
@@ -363,7 +337,6 @@ const Turnover = () => {
         </div>
       </div>
 
-      {/* SIZE ANALYSIS GRID */}
       <div className="analytics-grid">
         <div className="analytics-card">
           <div className="card-header-main">
@@ -374,14 +347,7 @@ const Turnover = () => {
           </div>
           <div className="css-size-grid">
             {charts.salesSizeChart.length > 0 ? charts.salesSizeChart.map((s, i) => {
-              // Consistent Color Mapping by Size (Inches)
-              const sizeColorMap = {
-                '6': '#3b82f6', '7': '#10b981', '8': '#8b5cf6', '9': '#f59e0b',
-                '10': '#f43f5e', '11': '#06b6d4', '12': '#84cc16', '13': '#4f46e5',
-                '14': '#db2777', '15': '#14b8a6'
-              };
-              const barColor = sizeColorMap[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
-              
+              const barColor = SIZE_COLOR_MAP[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
               return (
                 <div key={i} className="size-stat-item">
                   <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
@@ -410,14 +376,7 @@ const Turnover = () => {
           </div>
           <div className="css-size-grid">
             {charts.prodSizeChart.length > 0 ? charts.prodSizeChart.map((s, i) => {
-              // Same Color Mapping for Consistency
-              const sizeColorMap = {
-                '6': '#3b82f6', '7': '#10b981', '8': '#8b5cf6', '9': '#f59e0b',
-                '10': '#f43f5e', '11': '#06b6d4', '12': '#84cc16', '13': '#4f46e5',
-                '14': '#db2777', '15': '#14b8a6'
-              };
-              const barColor = sizeColorMap[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
-
+              const barColor = SIZE_COLOR_MAP[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
               return (
                 <div key={i} className="size-stat-item">
                   <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
@@ -437,7 +396,6 @@ const Turnover = () => {
           </div>
         </div>
       </div>
-
     </div>
   );
 };
