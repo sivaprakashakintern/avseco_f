@@ -44,6 +44,7 @@ const Production = () => {
   // Master Date State
   const [productionDate, setProductionDate] = useState(dayjs());
   const [showProductionDatePicker, setShowProductionDatePicker] = useState(false);
+  const [showSummaryDatePicker, setShowSummaryDatePicker] = useState(false);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -137,11 +138,14 @@ const Production = () => {
   }, [fetchTargets]);
 
 
+  // Removed auto-selection to allow "Select Operator" placeholder to show
+  /*
   useEffect(() => {
     if (operators.length > 0 && !formData.operator) {
       setFormData(prev => ({ ...prev, operator: operators[0] }));
     }
   }, [operators, formData.operator]);
+  */
 
   useEffect(() => {
     if (productOptions.length > 0 && !formData.product) {
@@ -371,8 +375,9 @@ const Production = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.date-picker-container')) {
+      if (!event.target.closest('.date-picker-wrapper-v2')) {
         setShowProductionDatePicker(false);
+        setShowSummaryDatePicker(false);
       }
     };
     document.addEventListener('click', handleClickOutside);
@@ -453,15 +458,16 @@ const Production = () => {
   return (
     <div className={`daily-production-page ${showHistoryOnly ? 'mobile-history-active' : ''}`}>
       {showNotification && (
-        <div className="notification-popup success">
-          <div className="notification-content">
-            <div className="notification-icon">
-              {notificationType === 'success' && <span className="material-symbols-outlined">check_circle</span>}
-              {notificationType === 'error' && <span className="material-symbols-outlined">error</span>}
-            </div>
-            <div className="notification-message">{notificationMessage}</div>
+        <div className={`premium-toast-new ${notificationType}`}>
+          <div className="toast-icon-new">
+            {notificationType === 'success' && <span className="material-symbols-outlined">check_circle</span>}
+            {notificationType === 'error' && <span className="material-symbols-outlined">error</span>}
+            {notificationType === 'warning' && <span className="material-symbols-outlined">warning</span>}
           </div>
-          <div className="notification-progress"></div>
+          <div className="toast-content-new">
+            <p>{notificationMessage}</p>
+          </div>
+          <div className="toast-progress-new"></div>
         </div>
       )}
 
@@ -502,37 +508,32 @@ const Production = () => {
               <div className="card-body">
                 <div className="entry-form-premium">
                   <div className="premium-form-row four-cols">
-                     <div className="premium-form-group">
-                       <label className="premium-label-new">Production Date</label>
-                       <div className="date-picker-wrapper-new">
-                         <span 
-                           className="material-symbols-outlined input-icon-new"
-                           style={{ cursor: 'pointer', pointerEvents: 'auto' }}
-                           onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}
-                         >
-                           calendar_month
-                         </span>
-                         <button 
-                           className="premium-date-btn-new" 
-                           disabled={!canModify}
-                           onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}
-                         >
-                           {formatDate(productionDate)}
-                         </button>
-                         {showProductionDatePicker && (
-                           <div className="date-picker-container">
-                             <CalendarPicker 
-                               selectedDate={productionDate}
-                               onDateChange={(date) => {
-                                 setProductionDate(date);
-                                 setShowProductionDatePicker(false);
-                               }}
-                               onClose={() => setShowProductionDatePicker(false)}
-                             />
-                           </div>
-                         )}
-                       </div>
-                     </div>
+                    <div className="premium-form-group">
+                      <label className="premium-label-new">Production Date</label>
+                      <div className="date-picker-wrapper-new date-picker-wrapper-v2">
+                        <span className="material-symbols-outlined input-icon-new">
+                          calendar_month
+                        </span>
+                        <button 
+                          className="premium-date-btn-new"
+                          onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}
+                        >
+                          {formatDate(productionDate)}
+                        </button>
+                        {showProductionDatePicker && (
+                          <div className="date-dropdown mui-calendar-dropdown left">
+                            <CalendarPicker 
+                              selectedDate={productionDate} 
+                              onDateChange={(date) => { 
+                                setProductionDate(date); 
+                                setShowProductionDatePicker(false); 
+                              }} 
+                              onClose={() => setShowProductionDatePicker(false)} 
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
                     <div className="premium-form-group">
                       <label className="premium-label-new">Product Type </label>
@@ -647,6 +648,14 @@ const Production = () => {
                         >
                           <span className="material-symbols-outlined dropdown-icon">person</span>
                           <span className="dropdown-selected-text">{formData.operator || "Select Operator"}</span>
+                          {formData.operator && (
+                            <span 
+                              className="material-symbols-outlined clear-selection-btn"
+                              onClick={(e) => { e.stopPropagation(); setFormData(prev => ({ ...prev, operator: "" })); }}
+                            >
+                              close
+                            </span>
+                          )}
                           <span className="material-symbols-outlined arrow-icon">
                             {openDropdown === 'operator' ? 'arrow_drop_up' : 'arrow_drop_down'}
                           </span>
@@ -692,23 +701,33 @@ const Production = () => {
                 <div className="header-left-title">
                   <h3><span className="material-symbols-outlined">analytics</span> Daily Summary</h3>
                 </div>
-                
-                <div className="summary-total-banner-premium header-total-mini">
-                   <div className="banner-content">
-                      <span className="banner-label">DAILY TOTAL</span>
-                      <span className="banner-value">{(summaryData.total || 0).toLocaleString()}</span>
-                   </div>
-                </div>
-
-                <div className="date-picker-container">
-                  <button className="date-summary-btn master-date-btn" onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}>
-                    <span className="material-symbols-outlined">calendar_month</span> {formatDate(productionDate)}
-                  </button>
-                  {showProductionDatePicker && (
-                    <div className="date-dropdown mui-calendar-dropdown right">
-                      <CalendarPicker selectedDate={productionDate} onDateChange={(date) => { setProductionDate(date); setShowProductionDatePicker(false); }} onClose={() => setShowProductionDatePicker(false)} />
-                    </div>
-                  )}
+                <div className="summary-header-actions">
+                  <div className="summary-total-mini-badge">
+                    <span className="mini-label">TOTAL:</span>
+                    <span className="mini-value">{(summaryData.total || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="date-picker-wrapper-v2">
+                    <button 
+                      className="summary-date-btn-compact" 
+                      onClick={() => setShowSummaryDatePicker(!showSummaryDatePicker)}
+                    >
+                      <span className="material-symbols-outlined">calendar_today</span>
+                      <span className="date-text">{formatDate(productionDate)}</span>
+                      <span className="material-symbols-outlined arrow">expand_more</span>
+                    </button>
+                    {showSummaryDatePicker && (
+                      <div className="date-dropdown mui-calendar-dropdown right">
+                        <CalendarPicker 
+                          selectedDate={productionDate} 
+                          onDateChange={(date) => { 
+                            setProductionDate(date); 
+                            setShowSummaryDatePicker(false); 
+                          }} 
+                          onClose={() => setShowSummaryDatePicker(false)} 
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="card-body">
