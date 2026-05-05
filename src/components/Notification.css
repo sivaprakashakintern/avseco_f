@@ -1,0 +1,50 @@
+.simple-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  border-left: 5px solid transparent;
+  animation: slideIn 0.3s ease-out;
+  min-width: 250px;
+  font-family: 'Inter', sans-serif;
+}
+
+.simple-notification.success {
+  border-left-color: #10b981;
+}
+
+.simple-notification.error {
+  border-left-color: #ef4444;
+}
+
+.notification-icon {
+  font-size: 18px;
+}
+
+.notification-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  opacity: 1;
+}

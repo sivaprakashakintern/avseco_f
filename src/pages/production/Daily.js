@@ -7,6 +7,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
 import './dailyprod.css?v=1.1'; // Force reload with versioning
+import Notification from '../../components/Notification.js';
 
 // Sizes will be derived dynamically below
 
@@ -65,7 +66,6 @@ const Production = () => {
     setNotificationMessage(message);
     setNotificationType(type);
     setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
   }, []);
 
   const {
@@ -333,11 +333,11 @@ const Production = () => {
     try {
       if (editingId) {
         await updateProduction(editingId, entryData);
-        showNotificationMessage(`✅ Production updated! 📦`, 'success');
+        showNotificationMessage("Product Updated Successfully", 'success');
         setEditingId(null);
       } else {
         await addProduction(entryData);
-        showNotificationMessage(`✅ Production added! 📦 +${quantity} plates`, 'success');
+        showNotificationMessage("Product Added Successfully", 'success');
       }
       
       // Auto-reset
@@ -440,36 +440,32 @@ const Production = () => {
   };
 
   const handleDeleteProduction = (record) => {
-    setProductionToDelete([record.id || record._id]);
+    setProductionToDelete(record);
     setShowDeleteConfirm(true);
   };
 
   const confirmDeleteProduction = async () => {
-    if (productionToDelete && productionToDelete.length > 0) {
-      for (const id of productionToDelete) {
-         await deleteProduction(id);
+    if (productionToDelete) {
+      try {
+        const id = productionToDelete.id || productionToDelete._id;
+        await deleteProduction(id);
+        showNotificationMessage("Product Deleted", 'error');
+        setShowDeleteConfirm(false);
+        setProductionToDelete(null);
+      } catch (err) {
+        showNotificationMessage("❌ Failed to delete record", "error");
       }
-      showNotificationMessage(`🗑️ Production record(s) deleted successfully`, 'warning');
-      setShowDeleteConfirm(false);
-      setProductionToDelete(null);
     }
   };
 
   return (
     <div className={`daily-production-page ${showHistoryOnly ? 'mobile-history-active' : ''}`}>
-      {showNotification && (
-        <div className={`premium-toast-new ${notificationType}`}>
-          <div className="toast-icon-new">
-            {notificationType === 'success' && <span className="material-symbols-outlined">check_circle</span>}
-            {notificationType === 'error' && <span className="material-symbols-outlined">error</span>}
-            {notificationType === 'warning' && <span className="material-symbols-outlined">warning</span>}
-          </div>
-          <div className="toast-content-new">
-            <p>{notificationMessage}</p>
-          </div>
-          <div className="toast-progress-new"></div>
-        </div>
-      )}
+      <Notification 
+        show={showNotification} 
+        message={notificationMessage} 
+        type={notificationType} 
+        onClose={() => setShowNotification(false)} 
+      />
 
       <div className="page-header premium-header">
         <div className="header-left">
@@ -935,20 +931,6 @@ const Production = () => {
         </div>
       )}
 
-      {showNotification && (
-        <div className={`premium-toast-new ${notificationType}`}>
-          <div className="toast-icon-new">
-            <span className="material-symbols-outlined">
-              {notificationType === 'success' ? 'check_circle' : 
-               notificationType === 'error' ? 'error' : 'warning'}
-            </span>
-          </div>
-          <div className="toast-content-new">
-            <p>{notificationMessage}</p>
-          </div>
-          <div className="toast-progress-new"></div>
-        </div>
-      )}
     </div>
   );
 };
