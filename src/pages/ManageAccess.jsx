@@ -52,7 +52,7 @@ const ManageAccess = () => {
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
     setMessage({ type: 'success', text: `${label} copied to clipboard!` });
-    setTimeout(() => setMessage({ type: '', text: '' }), 2000);
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
   };
 
   const generatePassword = () => {
@@ -63,6 +63,7 @@ const ManageAccess = () => {
     }
     setCredentials({ ...credentials, password: pass });
     setMessage({ type: 'success', text: `New password generated: ${pass}` });
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
   };
 
   const handleToggleModule = (moduleName) => {
@@ -107,8 +108,10 @@ const ManageAccess = () => {
       
       setInitialModules([...selectedEmployee.modules]); // Update initial state after save
       setMessage({ type: 'success', text: 'Permissions saved successfully!' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to save permissions' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } finally {
       setSaving(false);
     }
@@ -135,8 +138,10 @@ const ManageAccess = () => {
       setCredentials({ ...credentials, password: '' }); // Clear password for security
       
       setMessage({ type: 'success', text: 'Credentials updated successfully!' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to update credentials' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } finally {
       setSaving(false);
     }
@@ -174,6 +179,12 @@ const ManageAccess = () => {
   const hasPendingChanges = selectedEmployee && 
     JSON.stringify([...selectedEmployee.modules].sort()) !== JSON.stringify([...initialModules].sort());
 
+  // Calculate if credential changes are pending
+  const hasCredentialChanges = selectedEmployee && (
+    credentials.username !== (selectedEmployee.username || selectedEmployee.email || '') ||
+    credentials.password !== ''
+  );
+
   if (loading) return (
     <div className="admin-loading">
       <div className="spinner"></div>
@@ -186,10 +197,6 @@ const ManageAccess = () => {
       <header className="admin-header">
         <div className="admin-header-left">
           <h1>Security & Access</h1>
-          <p className="admin-status-text">
-            <span className="live-stat-dot"></span>
-            <strong>{user?.name ? 1 : 0} Members</strong> currently active
-          </p>
         </div>
       </header>
 
@@ -272,7 +279,7 @@ const ManageAccess = () => {
                     </div>
                   </div>
                   <div className="modules-grid">
-                    {availableModules.map(module => (
+                    {availableModules.filter(m => m.toLowerCase() !== 'dashboard').map(module => (
                       <div 
                         key={module}
                         onClick={() => handleToggleModule(module)}
@@ -369,11 +376,14 @@ const ManageAccess = () => {
                   <div className="tab-footer">
                     <button 
                       onClick={handleSaveCredentials}
-                      disabled={saving || !credentials.username}
-                      className="save-btn creds"
+                      disabled={saving || !credentials.username || !hasCredentialChanges}
+                      className={`save-btn creds ${hasCredentialChanges ? 'has-changes' : 'no-changes'}`}
                     >
                       {saving ? 'Updating...' : 'Set New Credentials'}
                     </button>
+                    {!hasCredentialChanges && selectedEmployee && (
+                       <span className="no-changes-hint">No pending changes</span>
+                    )}
                   </div>
                 </div>
               )}

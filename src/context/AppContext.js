@@ -239,6 +239,64 @@ export const AppProvider = ({ children }) => {
         return () => clearTimeout(timer);
     }, [stockData, notifications, user, lastNotifiedProducts, isAdmin]);
 
+    // Auto-accrue salaries on the 1st of each month
+    useEffect(() => {
+        if (employees.length === 0 || !hasFetched || !hasAccess('stock')) return;
+
+        const checkAndAddSalaries = async () => {
+            const now = new Date();
+            const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            
+            // Check if any salary expense exists for this month
+            const hasSalariesThisMonth = (expenses || []).some(ex => {
+                if (ex.category !== 'Salary') return false;
+                const dParts = ex.date.includes('-') ? ex.date.split('-') : [];
+                let d;
+                if (dParts.length === 3) {
+                    d = dParts[0].length === 4 ? new Date(ex.date) : new Date(dParts[2], dParts[1] - 1, dParts[0]);
+                } else {
+                    d = new Date(ex.date);
+                }
+                const monthYear = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                return monthYear === currentMonthYear;
+            });
+
+            if (!hasSalariesThisMonth) {
+                console.log("Accruing salaries for", currentMonthYear);
+                const salaryDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+                
+                let anyAdded = false;
+                for (const emp of employees) {
+                    if (emp.salary && Number(emp.salary) > 0) {
+                        try {
+                            await expenseApi.add({
+                                category: 'Salary',
+                                description: `Salary for ${emp.name}`,
+                                amount: Number(emp.salary),
+                                date: salaryDate,
+                                paymentMode: 'Bank Transfer'
+                            });
+                            anyAdded = true;
+                        } catch (e) {
+                            console.error("Failed to add auto-salary for", emp.name, e);
+                        }
+                    }
+                }
+                
+                if (anyAdded) {
+                    const updatedExpenses = await expenseApi.getAll();
+                    setExpenses(updatedExpenses.map(e => ({ ...e, id: e._id })).sort((a, b) => {
+                        const dateA = a.date.includes('-') ? new Date(a.date.split('-').reverse().join('-')) : new Date(a.date);
+                        const dateB = b.date.includes('-') ? new Date(b.date.split('-').reverse().join('-')) : new Date(b.date);
+                        return dateB - dateA;
+                    }));
+                }
+            }
+        };
+
+        checkAndAddSalaries();
+    }, [employees, hasFetched, hasAccess, expenses.length]);
+
     useEffect(() => {
         if (!user) return;
         

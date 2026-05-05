@@ -219,7 +219,7 @@ const ExpenseReport = () => {
                 <div className="header-actions">
                     <button className="btn-export-premium" onClick={exportToExcel}>
                         <span className="material-symbols-outlined">download</span>
-                        Export Report
+                        <span className="export-text">Export Report</span>
                     </button>
                 </div>
             </div>

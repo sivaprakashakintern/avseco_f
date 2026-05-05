@@ -82,12 +82,40 @@ const Expenses = () => {
     });
 
     // Stats derived from global state
-    const today = formatDate(new Date());
+    const todayDateObj = new Date();
+    const today = formatDate(todayDateObj);
+    const currentDay = todayDateObj.getDate();
+
+    // Stats Logic: Include today's expenses + Salary from day 1 if we are within day 1-5
+    const statsExpenses = (expenses || []).filter(ex => {
+        const exDateFormatted = formatDate(ex.date);
+        const isToday = exDateFormatted === today;
+        if (isToday) return true;
+
+        // If it's between day 1 and 5 of the month, include Salary expenses dated the 1st
+        if (currentDay >= 1 && currentDay <= 5 && ex.category === 'Salary') {
+            const dParts = ex.date.includes('-') ? ex.date.split('-') : [];
+            let d;
+            if (dParts.length === 3) {
+                // Handle DD-MM-YYYY or YYYY-MM-DD
+                d = dParts[0].length === 4 ? new Date(ex.date) : new Date(dParts[2], dParts[1] - 1, dParts[0]);
+            } else {
+                d = new Date(ex.date);
+            }
+            
+            const isFirstOfMonth = d.getDate() === 1 && 
+                                 d.getMonth() === todayDateObj.getMonth() && 
+                                 d.getFullYear() === todayDateObj.getFullYear();
+            return isFirstOfMonth;
+        }
+        return false;
+    });
+
     const todayExpenses = (expenses || []).filter(ex => formatDate(ex.date) === today);
 
-    const todayTotal = todayExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-    const todayMaintenanceTotal = todayExpenses.filter(e => ["Material", "Machine Maintenance", "Electricity", "Rent"].includes(e.category)).reduce((sum, e) => sum + Number(e.amount || 0), 0);
-    const todaySalaryTotal = todayExpenses.filter(e => e.category === "Salary").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const todayTotal = statsExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const todayMaintenanceTotal = statsExpenses.filter(e => ["Material", "Machine Maintenance", "Electricity", "Rent"].includes(e.category)).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const todaySalaryTotal = statsExpenses.filter(e => e.category === "Salary").reduce((sum, e) => sum + Number(e.amount || 0), 0);
     const todayOthersTotal = todayTotal - todayMaintenanceTotal - todaySalaryTotal;
 
     // --- Form Handlers ---
@@ -151,7 +179,7 @@ const Expenses = () => {
                 <div className="header-actions">
                     <button className="btn-export-premium" onClick={() => { setIsEditMode(false); setIsModalOpen(true); }}>
                         <span className="material-symbols-outlined">add</span>
-                        Add Expense
+                        <span className="export-text">Add Expense</span>
                     </button>
                 </div>
             </div>
@@ -163,7 +191,7 @@ const Expenses = () => {
                         <span className="material-symbols-outlined">payments</span>
                     </div>
                     <div className="stat-info">
-                        <span className="stat-label">Overall Expenses</span>
+                        <span className="stat-label">Today Overall Expenses</span>
                         <span className="stat-value" style={getDynamicFontSize(todayTotal)}>
                             {formatCurrency(todayTotal, true)}
                         </span>
@@ -376,7 +404,6 @@ const Expenses = () => {
                                         >
                                             <option value="Machine Maintenance">Machine Maintenance</option>
                                             <option value="Material">Material</option>
-                                            <option value="Salary">Salary</option>
                                             <option value="Electricity">Electricity</option>
                                             <option value="Transport">Transport</option>
                                             <option value="Rent">Rent</option>
@@ -484,7 +511,7 @@ const Expenses = () => {
                                     />
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                                <div className="modal-footer" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
                                     <button
                                         type="button"
                                         onClick={handleCloseModal}

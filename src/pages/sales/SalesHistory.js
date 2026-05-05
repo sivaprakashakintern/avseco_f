@@ -325,7 +325,7 @@ const SalesHistory = () => {
                 <div className="history-actions">
                     <button className="btn-export-premium" onClick={() => setShowExportModal(true)}>
                         <span className="material-symbols-outlined">download</span>
-                        Export History
+                        <span className="export-text">Export History</span>
                     </button>
                 </div>
             </div>
@@ -564,7 +564,7 @@ const SalesHistory = () => {
                     style={{
                         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                         backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        display: 'flex', justifyContent: window.innerWidth < 850 ? 'flex-start' : 'center', alignItems: window.innerWidth < 850 ? 'flex-start' : 'center',
                         padding: '20px', zIndex: 3000,
                         overflow: 'auto', backdropFilter: 'blur(6px)',
                         cursor: 'pointer', opacity: 1,
@@ -576,9 +576,9 @@ const SalesHistory = () => {
                         id="printable-bill"
                         onClick={(e) => e.stopPropagation()}
                         style={{
-                            padding: '0', background: '#ffffff', maxWidth: '850px', width: '850px',
-                            zoom: window.innerWidth < 850 ? (window.innerWidth - 40) / 850 : 1,
-                            margin: 'auto', boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
+                            padding: '0', background: '#ffffff', minWidth: '850px', width: '850px',
+                            
+                            margin: window.innerWidth < 850 ? '0' : 'auto', boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
                             border: 'none', borderRadius: '4px', position: 'relative', cursor: 'default'
                         }}
                     >
@@ -765,39 +765,39 @@ const SalesHistory = () => {
                             </button>
                         </div>
                         <div className="modal-body">
-                            <div className="export-options-grid">
-                                <div className="export-option-group">
-                                    <label className="export-label">Transaction Type</label>
-                                    <div className="export-selector">
-                                        <button 
-                                            className={`selector-btn ${exportType === 'all' ? 'active' : ''}`}
-                                            onClick={() => setExportType('all')}
-                                        >All</button>
-                                        <button 
-                                            className={`selector-btn ${exportType === 'paid' ? 'active' : ''}`}
-                                            onClick={() => setExportType('paid')}
-                                        >Paid</button>
-                                        <button 
-                                            className={`selector-btn ${exportType === 'unpaid' ? 'active' : ''}`}
-                                            onClick={() => setExportType('unpaid')}
-                                        >Unpaid</button>
-                                    </div>
-                                </div>
-                                <div className="export-option-group">
-                                    <label className="export-label">Format</label>
-                                    <div className="export-selector">
-                                        <button 
-                                            className={`selector-btn ${exportFormat === 'csv' ? 'active' : ''}`}
-                                            onClick={() => setExportFormat('csv')}
-                                        >CSV</button>
-                                        <button 
-                                            className={`selector-btn ${exportFormat === 'excel' ? 'active' : ''}`}
-                                            onClick={() => setExportFormat('excel')}
-                                        >Excel</button>
-                                    </div>
+                            <div className="export-section">
+                                <h4>Export Format</h4>
+                                <div className="export-format-options">
+                                    <label className={`format-option ${exportFormat === 'csv' ? 'active' : ''}`}>
+                                        <input type="radio" value="csv" checked={exportFormat === 'csv'} onChange={(e) => setExportFormat(e.target.value)} />
+                                        <span className="material-symbols-outlined">description</span>
+                                        <span className="format-name">CSV</span>
+                                    </label>
+                                    <label className={`format-option ${exportFormat === 'excel' ? 'active' : ''}`}>
+                                        <input type="radio" value="excel" checked={exportFormat === 'excel'} onChange={(e) => setExportFormat(e.target.value)} />
+                                        <span className="material-symbols-outlined">grid_on</span>
+                                        <span className="format-name">Excel</span>
+                                    </label>
                                 </div>
                             </div>
-                            <p className="export-note">This will export the currently filtered {filteredTransactions.length} records based on your search.</p>
+                            <div className="export-section">
+                                <h4>Report Type</h4>
+                                <div className="export-type-options">
+                                    <label className={`type-option ${exportType === 'all' ? 'active' : ''}`}>
+                                        <input type="radio" value="all" checked={exportType === 'all'} onChange={(e) => setExportType(e.target.value)} />
+                                        <span>All Sales</span>
+                                    </label>
+                                    <label className={`type-option ${exportType === 'paid' ? 'active' : ''}`}>
+                                        <input type="radio" value="paid" checked={exportType === 'paid'} onChange={(e) => setExportType(e.target.value)} />
+                                        <span>Paid Only</span>
+                                    </label>
+                                    <label className={`type-option ${exportType === 'unpaid' ? 'active' : ''}`}>
+                                        <input type="radio" value="unpaid" checked={exportType === 'unpaid'} onChange={(e) => setExportType(e.target.value)} />
+                                        <span>Unpaid Only</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <p className="export-note" style={{marginTop: '15px'}}>This will export the currently filtered {filteredTransactions.length} records based on your search.</p>
                         </div>
                         <div className="modal-footer">
                             <button className="modal-cancel" onClick={() => setShowExportModal(false)}>Cancel</button>

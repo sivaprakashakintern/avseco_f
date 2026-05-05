@@ -1388,15 +1388,16 @@
 
   /* --- Modals --- */
   .modal-overlay {
-    align-items: flex-end;
-    padding: 0;
+    align-items: flex-start !important;
+    padding: 40px 16px 60px 16px !important; /* Push from top and give bottom space */
   }
 
   .modal-content {
     width: 100% !important;
     max-width: 100% !important;
-    border-radius: 16px 16px 0 0;
-    max-height: 90vh;
+    border-radius: 20px !important;
+    max-height: 70vh !important; /* Slightly smaller to fit well */
+    margin-bottom: 40px !important; /* Pushes it up more */
   }
 }
 
@@ -1826,8 +1827,8 @@
   }
   
   .product-stats {
-      grid-template-columns: 1fr !important;
-      gap: 16px !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 12px !important;
   }
   
   .product-grid {
@@ -1850,8 +1851,11 @@
 
 @media screen and (max-width: 480px) {
   .modal-content.large {
-      width: 95% !important;
-      padding: 10px !important;
+      width: 100% !important;
+      border-radius: 20px !important;
+      padding: 16px !important;
+      max-height: 70vh !important;
+      margin-bottom: 40px !important;
   }
   
   .nested-table th, .nested-table td {
@@ -1903,6 +1907,7 @@
   border: 1px solid #e2e8f0;
   margin-bottom: 24px;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  overflow-x: auto;
 }
 
 .dark .variants-list {
@@ -1969,7 +1974,8 @@
 }
 
 .table-input {
-  width: 100%;
+  width: 120px;
+  min-width: 120px;
   padding: 10px 14px;
   border: 1.5px solid #e2e8f0;
   border-radius: 10px;
@@ -1977,6 +1983,7 @@
   color: #0f172a;
   transition: all 0.2s;
   background: white;
+  text-align: center;
 }
 
 .dark .table-input {
@@ -2036,8 +2043,15 @@
   max-width: 900px !important;
   display: flex !important;
   flex-direction: column !important;
-  max-height: 80vh !important; /* Reduced for extra safety */
+  max-height: 85vh !important;
   box-shadow: 0 32px 64px rgba(0, 55, 41, 0.4);
+}
+
+.modal-content.large .modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
 }
 
 .modal-footer {

@@ -436,7 +436,21 @@ const Production = () => {
       grade: record.grade || 'A',
       operator: record.operator
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Smooth scroll to the form section
+    setTimeout(() => {
+      const formElement = document.querySelector('.premium-entry-card');
+      const mainScrollArea = document.querySelector('.main-content') || document.querySelector('.dashboard-content');
+      
+      if (mainScrollArea) {
+        mainScrollArea.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 50);
   };
 
   const handleDeleteProduction = (record) => {

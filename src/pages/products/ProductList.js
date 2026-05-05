@@ -437,7 +437,7 @@ const ProductList = () => {
                       <th>HSN</th>
                       <th>Cost (₹)</th>
                       <th>Sell (₹)</th>
-                      <th style={{ width: '40px' }}>Action</th>
+                      <th style={{ width: '40px' }}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -601,7 +601,7 @@ const ProductList = () => {
                       <th>HSN</th>
                       <th>Cost (₹)</th>
                       <th>Sell (₹)</th>
-                      <th style={{ width: '40px' }}>Action</th>
+                      <th style={{ width: '40px' }}></th>
                     </tr>
                   </thead>
                   <tbody>

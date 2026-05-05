@@ -540,13 +540,174 @@
 }
 
 @media (max-width: 768px) {
-  .stock-stats.report-stats { grid-template-columns: 1fr; }
-  .page-header.premium-header { padding: 25px; flex-direction: column; gap: 20px; text-align: center; }
-  .month-navigation { margin-left: 0; width: 100%; justify-content: space-between; }
-  .selected-range { flex-direction: column; align-items: flex-start; }
-  .stock-table-container { border-radius: 0; margin-left: -20px; margin-right: -20px; }
-  .chart-card { padding: 20px; }
-  .bar { width: 35px; }
+  .stock-page {
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .page-header.premium-header {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    text-align: left;
+    gap: 12px;
+    padding: 16px !important;
+    border-radius: 0 !important;
+    margin-bottom: 0 !important;
+    border-bottom: 1px solid #eef5f0 !important;
+    background: linear-gradient(135deg, var(--primary-industrial) 0%, var(--primary-deep) 100%) !important;
+    box-shadow: none !important;
+  }
+
+  .page-header.premium-header .page-title {
+    white-space: nowrap !important;
+    font-size: 16px !important;
+    letter-spacing: -0.01em !important;
+    margin: 0 !important;
+  }
+
+  .date-range-selector {
+    padding: 16px !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    margin-bottom: 16px !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid #eef5f0 !important;
+  }
+
+  .preset-buttons {
+    gap: 8px !important;
+  }
+
+  .preset-btn {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .selected-range {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .month-navigation {
+    margin-left: 0 !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .stock-stats.report-stats {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    padding: 16px !important;
+  }
+
+  .stat-card {
+    padding: 16px !important;
+    border-radius: 16px !important;
+    gap: 12px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .stat-icon {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 20px !important;
+  }
+
+  .stat-info {
+    gap: 2px !important;
+  }
+
+  .stat-label {
+    font-size: 9px !important;
+    white-space: nowrap !important;
+  }
+
+  .stat-value {
+    font-size: 16px !important;
+  }
+
+  .chart-card {
+    padding: 20px !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    box-shadow: none !important;
+    margin-bottom: 16px !important;
+  }
+
+  .bar-chart {
+    gap: 16px !important;
+    padding: 40px 10px 10px !important;
+  }
+
+  .bar {
+    width: 30px !important;
+  }
+
+  .stock-table-container {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    box-shadow: none !important;
+    border-top: 1px solid #eef5f0 !important;
+  }
+
+  .table-header {
+    padding: 16px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .desktop-only-table {
+    display: none !important;
+  }
+
+  .mobile-history-cards {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 16px 20px !important;
+  }
+
+  .mobile-expense-card-minimal {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* Icon-only Export Button on Mobile */
+  .export-text {
+    display: none !important;
+  }
+
+  .btn-export-premium {
+    background: #ffffff !important;
+    color: var(--primary-industrial) !important;
+    border: none !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    width: 38px !important;
+    height: 38px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .btn-export-premium span {
+    margin: 0 !important;
+    font-size: 22px !important;
+    color: var(--primary-industrial) !important;
+  }
 }
 
 @keyframes slideDown {
