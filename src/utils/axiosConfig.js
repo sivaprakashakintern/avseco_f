@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-let apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5555/api';
+let apiBaseUrl = process.env.REACT_APP_API_URL;
+
+if (!apiBaseUrl) {
+  const hostname = window.location.hostname;
+  // If accessing via IP (like from a phone), use that IP for the API too
+  apiBaseUrl = hostname === 'localhost' || hostname === '127.0.0.1'
+    ? 'http://localhost:5555/api'
+    : `http://${hostname}:5555/api`;
+}
 
 const axiosInstance = axios.create({
   baseURL: apiBaseUrl,
