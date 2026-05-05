@@ -113,6 +113,8 @@ const Sales = () => {
     const [isDeliveryModeDropdownOpen, setIsDeliveryModeDropdownOpen] = useState(false);
     const [isLogging, setIsLogging] = useState(false);
     const [billItems, setBillItems] = useState([]);
+    const [hsnCode, setHsnCode] = useState("4602 19 19");
+    const [gstRate, setGstRate] = useState("5");
     const [exportLoading, setExportLoading] = useState(false);
 
     // Keyboard navigation focus refs
@@ -121,7 +123,8 @@ const Sales = () => {
         unitPrice: React.useRef(null),
         customerPhone: React.useRef(null),
         customerName: React.useRef(null),
-        companySearch: React.useRef(null)
+        companySearch: React.useRef(null),
+        hsnCode: React.useRef(null)
     };
 
 
@@ -161,8 +164,14 @@ const Sales = () => {
     useEffect(() => {
         if (selectedProductObj) {
             setUnitPrice(selectedProductObj.price.toString());
+            // Always set HSN code to 4602 19 19, ignoring any incorrect values in DB
+            setHsnCode("4602 19 19");
+        } else if (selectedBaseProduct) {
+            setHsnCode("4602 19 19");
+        } else if (!hsnCode) {
+            setHsnCode("4602 19 19");
         }
-    }, [selectedProductObj]);
+    }, [selectedProductObj, selectedBaseProduct, products, hsnCode]);
 
     // Auto-calculate Total Amount when Quantity or Unit Price change
     useEffect(() => {
@@ -215,10 +224,13 @@ const Sales = () => {
             if (existingItemIndex !== -1) {
                 const updatedItems = [...prevItems];
                 const item = updatedItems[existingItemIndex];
+                const newAmount = item.amount + (pricePerUnit * qtyToAdd);
                 updatedItems[existingItemIndex] = {
                     ...item,
                     qty: item.qty + qtyToAdd,
-                    amount: item.amount + (pricePerUnit * qtyToAdd)
+                    amount: newAmount,
+                    gstRate: parseFloat(gstRate) || item.gstRate || 0,
+                    gstAmount: newAmount * ((parseFloat(gstRate) || item.gstRate || 0) / 100)
                 };
                 return updatedItems;
             } else {
@@ -231,8 +243,11 @@ const Sales = () => {
                     qty: qtyToAdd,
                     rate: pricePerUnit,
                     amount: (pricePerUnit * qtyToAdd) || 0,
-                    unit: products.find(p => p.id === selectedProductId)?.unit || "pcs",
-                    hsn: products.find(p => p.id === selectedProductId)?.hsnCode || "-"
+                    gstRate: parseFloat(gstRate) || 0,
+                    gstAmount: ((pricePerUnit * qtyToAdd) * (parseFloat(gstRate) || 0)) / 100,
+                    unit: selectedProductObj?.unit || "pcs",
+                    mrp: parseFloat(selectedProductObj?.costPrice) || parseFloat(selectedProductObj?.price) || pricePerUnit,
+                    hsn: hsnCode || "4602 19 19"
                 };
                 return [...prevItems, newItem];
             }
@@ -270,16 +285,27 @@ const Sales = () => {
 
         // If there's something currently entered but not "Added", include it
         if (quantity && parseFloat(quantity) > 0) {
+            const baseAmount = (parseFloat(unitPrice) * parseFloat(quantity)) || 0;
             itemsToLog.push({
                 product: selectedProduct,
+                baseName: selectedBaseProduct,
+                size: selectedSize,
                 qty: parseFloat(quantity),
                 rate: parseFloat(unitPrice),
-                amount: (parseFloat(unitPrice) * parseFloat(quantity)) || 0,
-                unit: selectedProductObj?.unit || "pcs"
+                amount: baseAmount,
+                gstRate: parseFloat(gstRate) || 0,
+                gstAmount: (baseAmount * (parseFloat(gstRate) || 0)) / 100,
+                unit: selectedProductObj?.unit || "pcs",
+                mrp: parseFloat(selectedProductObj?.costPrice) || parseFloat(selectedProductObj?.price) || parseFloat(unitPrice),
+                hsn: hsnCode || "4602 19 19"
             });
         }
 
-        const totalBillAmount = itemsToLog.reduce((sum, item) => sum + item.amount, 0);
+        const totalBillAmount = itemsToLog.reduce((sum, item) => {
+            const itemBase = item.amount || (item.rate * item.qty);
+            const itemGst = item.gstAmount || (itemBase * (parseFloat(item.gstRate || 0) / 100));
+            return sum + itemBase + itemGst;
+        }, 0);
 
         const payload = {
             invoiceNo: editingTransactionId ? (salesHistory.find(s => s.id === editingTransactionId)?.invoiceNo || `INV-${Date.now().toString().slice(-6)}`) : `INV-${Date.now().toString().slice(-6)}`,
@@ -304,6 +330,8 @@ const Sales = () => {
                 qty: item.qty,
                 rate: item.rate,
                 amount: item.amount,
+                gstRate: item.gstRate,
+                gstAmount: item.gstAmount,
                 unit: item.unit || "pcs",
                 hsn: item.hsn
             }))
@@ -365,6 +393,8 @@ const Sales = () => {
         setPaymentMode("Cash");
         setPaidStatus("Paid");
         setAmountPaid("");
+        setHsnCode("4602 19 19");
+        setGstRate("5");
         setTimeout(() => setFeedbackMessage(""), 3000);
     }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, paidStatus, paymentMode, quantity, salesHistory, selectedProduct, selectedProductObj, setIsLogging, soldBy, updateSale, user?.name, unitPrice]);
 
@@ -397,6 +427,8 @@ const Sales = () => {
         setPaymentMode("Cash");
         setPaidStatus("Paid");
         setAmountPaid("");
+        setHsnCode("4602 19 19");
+        setGstRate("5");
     };
 
     // ─── Shared: Capture HTML preview & Send to WhatsApp ──────────────────
@@ -962,7 +994,6 @@ const Sales = () => {
                         </div>
                     </div>
 
-                    <div className="section-divider"></div>
                     <div className="table-header" style={{ padding: '14px 32px' }}>
                         <h3 className="section-title">Billing Details</h3>
                     </div>
@@ -1039,15 +1070,6 @@ const Sales = () => {
                                                     <span className="product-name-text">
                                                         <span className="keyboard-shortcut-tag">{idx + 1}</span> {product.size}
                                                     </span>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        <span style={{ fontSize: '11px', color: '#059669', background: '#f0fdf4', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                                                            {product.stock || 0} in stock
-                                                        </span>
-                                                        <span style={{ fontSize: '11px', color: '#1a6b3c', background: '#ecfdf5', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                                                            ₹{product.price}
-                                                        </span>
-                                                        <span className="product-sku-category">{product.sku}</span>
-                                                    </div>
                                                 </button>
                                             ))}
                                         </div>
@@ -1107,8 +1129,40 @@ const Sales = () => {
                                         ref={itemRefs.unitPrice}
                                         value={unitPrice}
                                         onChange={(e) => setUnitPrice(e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(e, 'hsnCode')}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="quick-entry-row">
+                            <div className="quick-entry-item two-col-item">
+                                <span className="quick-entry-label">HSN Code:</span>
+                                <div style={{ width: '100%' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter HSN code"
+                                        className="quick-entry-input"
+                                        ref={itemRefs.hsnCode}
+                                        value={hsnCode}
+                                        onChange={(e) => setHsnCode(e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(e, 'gstRate')}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="quick-entry-item two-col-item">
+                                <span className="quick-entry-label">GST Rate (%): <span className="shortcut-hint">G</span></span>
+                                <div className="amount-input-wrapper">
+                                    <input
+                                        type="number"
+                                        placeholder="5"
+                                        className="quick-entry-input amount-input"
+                                        value={gstRate}
+                                        onChange={(e) => setGstRate(e.target.value)}
                                         onKeyDown={(e) => handleKeyDown(e)}
                                     />
+                                    <span className="currency-prefix" style={{ left: 'auto', right: '12px' }}>%</span>
                                 </div>
                             </div>
                         </div>
@@ -1141,6 +1195,83 @@ const Sales = () => {
                             </div>
                         </div>
 
+                    {billItems.length > 0 && (
+                        <div className="bill-preview-section" style={{ marginTop: '24px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', padding: 0 }}>
+                            <div className="preview-header" style={{ padding: '16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
+                                <span style={{ fontWeight: 600, color: '#334155' }}>Items in Current Bill ({billItems.length})</span>
+                                <button className="clear-bill" onClick={() => setBillItems([])} style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Clear All</button>
+                            </div>
+
+                            <div className="preview-table-container" style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
+                                    <thead>
+                                        <tr style={{ background: '#fefefe', borderBottom: '1px solid #e2e8f0' }}>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', width: '5%' }}>S.NO</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '10%' }}>HSN CODE</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '25%' }}>PRODUCT NAME</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '10%' }}>QTY</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '12%' }}>RATE</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '12%' }}>GST</th>
+                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '16%' }}>AMOUNT</th>
+                                            <th style={{ padding: '12px 16px', width: '10%', textAlign: 'center' }}>ACTION</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {billItems.map((item, idx) => (
+                                            <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                <td style={{ padding: '16px', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>{idx + 1}</td>
+                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'left' }}>{item.hsn || "-"}</td>
+                                                <td style={{ padding: '16px', color: '#1e293b', fontSize: '0.9rem', textAlign: 'left' }}>{item.baseName} <span style={{ color: '#64748b', fontSize: '0.8rem' }}>({item.size})</span></td>
+                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>{item.qty}</td>
+                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>₹{item.rate?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', color: '#64748b', fontSize: '0.85rem', textAlign: 'right' }}>
+                                                    {item.gstRate}%
+                                                </td>
+                                                <td style={{ padding: '16px', color: '#1e293b', fontWeight: 500, fontSize: '0.9rem', textAlign: 'right' }}>
+                                                    ₹{item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td style={{ padding: '16px', textAlign: 'center' }}>
+                                                    <button
+                                                        onClick={() => setBillItems(billItems.filter(i => i.id !== item.id))}
+                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '4px', margin: '0 auto' }}
+                                                        title="Remove Item"
+                                                        onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                                    >
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                                            <td colSpan="6" style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: '#64748b', fontSize: '0.7rem' }}>SUBTOTAL</td>
+                                            <td style={{ padding: '10px 16px', fontWeight: 600, color: '#475569', fontSize: '0.9rem', textAlign: 'right' }}>
+                                                ₹{billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr style={{ background: '#f8fafc' }}>
+                                            <td colSpan="6" style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: '#64748b', fontSize: '0.7rem' }}>TOTAL GST</td>
+                                            <td style={{ padding: '10px 16px', fontWeight: 600, color: '#475569', fontSize: '0.9rem', textAlign: 'right' }}>
+                                                ₹{billItems.reduce((sum, item) => sum + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                        <tr style={{ background: '#f0fdf4' }}>
+                                            <td colSpan="6" style={{ padding: '16px', textAlign: 'right', fontWeight: 700, color: '#166534', fontSize: '0.8rem', textTransform: 'uppercase' }}>GRAND TOTAL</td>
+                                            <td style={{ padding: '16px', fontWeight: 800, color: '#10b981', fontSize: '1.2rem', textAlign: 'right' }}>
+                                                ₹{billItems.reduce((sum, item) => sum + item.amount + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
                         <div className="overall-bill-summary-fixed" style={{ marginTop: '28px', marginBottom: '42px', padding: '12px 32px', background: '#ffffff', borderRadius: '12px', border: '2px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{ background: '#334155', color: '#ffffff', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1151,11 +1282,28 @@ const Sales = () => {
                                     <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>Total Bill</span>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                <span style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A' }}>₹</span>
-                                <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.01em', lineHeight: 1 }}>
-                                    {billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                    <span style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A' }}>₹</span>
+                                    <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.01em', lineHeight: 1 }}>
+                                        {billItems.reduce((sum, item) => sum + item.amount + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                                {billItems.reduce((sum, item) => sum + (item.gstAmount || 0), 0) > 0 && (
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginTop: '4px' }}>
+                                        (Includes ₹{billItems.reduce((sum, item) => sum + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} GST)
+                                    </span>
+                                )}
+                                {paidStatus === 'Partial' && amountPaid && parseFloat(amountPaid) > 0 && (
+                                    <div style={{ marginTop: '8px', borderTop: '1px dashed #e2e8f0', paddingTop: '8px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#166534' }}>
+                                            Advance Paid: ₹{parseFloat(amountPaid).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </span>
+                                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ef4444' }}>
+                                            Balance Due: ₹{(billItems.reduce((sum, item) => sum + item.amount + (item.gstAmount || 0), 0) - parseFloat(amountPaid)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -1324,7 +1472,7 @@ const Sales = () => {
                                     </button>
                                     {isPaidStatusDropdownOpen && (
                                         <div className="product-dropdown-menu">
-                                            {['Paid', 'Unpaid', 'Advance', 'Pending'].map(status => (
+                                            {['Paid', 'Unpaid', 'Partial'].map(status => (
                                                 <button
                                                     key={status}
                                                     className={`product-dropdown-item ${paidStatus === status ? 'active' : ''}`}
@@ -1375,7 +1523,7 @@ const Sales = () => {
                                 </div>
                             </div>
                             <div className="quick-entry-item two-col-item">
-                                {(paidStatus === 'Pending' || paidStatus === 'Advance') ? (
+                                {(paidStatus === 'Partial') ? (
                                     <>
                                         <span className="quick-entry-label">Amount Paid:</span>
                                         <div className="amount-input-wrapper">
@@ -1395,7 +1543,7 @@ const Sales = () => {
                             </div>
                         </div>
 
-                        {(paidStatus === 'Pending' || paidStatus === 'Advance') && (
+                        {(paidStatus === 'Partial') && (
                             <div className="quick-entry-row">
                                 <div className="quick-entry-item two-col-item">
                                     <span className="quick-entry-label">Balance Amount:</span>
@@ -1405,7 +1553,7 @@ const Sales = () => {
                                             type="text"
                                             className="quick-entry-input amount-input"
                                             style={{ fontWeight: 600, color: '#e11d48' }}
-                                            value={(billItems.reduce((sum, item) => sum + item.amount, 0) - (parseFloat(amountPaid) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            value={(billItems.reduce((sum, item) => sum + item.amount + (item.gstAmount || 0), 0) - (parseFloat(amountPaid) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             readOnly
                                         />
                                     </div>
@@ -1414,63 +1562,6 @@ const Sales = () => {
                             </div>
                         )}
                     </div>
-
-                    {billItems.length > 0 && (
-                        <div className="bill-preview-section" style={{ marginTop: '24px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', padding: 0 }}>
-                            <div className="preview-header" style={{ padding: '16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
-                                <span style={{ fontWeight: 600, color: '#334155' }}>Items in Current Bill ({billItems.length})</span>
-                                <button className="clear-bill" onClick={() => setBillItems([])} style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Clear All</button>
-                            </div>
-
-                            <div className="preview-table-container" style={{ overflowX: 'auto' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
-                                    <thead>
-                                        <tr style={{ background: '#fefefe', borderBottom: '1px solid #e2e8f0' }}>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '20%' }}>PRODUCT NAME</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '12%' }}>SIZE</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '12%' }}>HSN</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '12%' }}>QTY</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '15%' }}>RATE</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '15%' }}>TOTAL</th>
-                                            <th style={{ padding: '12px 16px', width: '12%', textAlign: 'center' }}>ACTION</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {billItems.map(item => (
-                                            <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                                <td style={{ padding: '16px', color: '#1e293b', fontSize: '0.9rem', textAlign: 'left' }}>{item.baseName}</td>
-                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'left' }}>{item.size}</td>
-                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'left' }}>{item.hsn || "-"}</td>
-                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>{item.qty}</td>
-                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>₹{item.rate?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', color: '#1e293b', fontWeight: 500, fontSize: '0.9rem', textAlign: 'right' }}>₹{item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', textAlign: 'center' }}>
-                                                    <button
-                                                        onClick={() => setBillItems(billItems.filter(i => i.id !== item.id))}
-                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '4px', margin: '0 auto' }}
-                                                        title="Remove Item"
-                                                        onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
-                                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                                    >
-                                                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr style={{ background: '#f8fafc' }}>
-                                            <td colSpan="4" style={{ padding: '16px', textAlign: 'right', fontWeight: 600, color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>SUBTOTAL</td>
-                                            <td style={{ padding: '16px', fontWeight: 700, color: '#10b981', fontSize: '1.1rem', textAlign: 'right' }}>
-                                                ₹{billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
-                    )}
 
                     <div className="quick-entry-footer">
                         <div className="quick-entry-action-group">

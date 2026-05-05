@@ -111,12 +111,7 @@ const SalesHistory = () => {
     };
 
     const handleViewBill = (transaction, returnOnly = false) => {
-        const status = (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase();
-        if (status === 'unpaid' && !returnOnly) {
-            setFeedbackMessage("⚠️ Bill cannot be generated for Unpaid transactions");
-            setTimeout(() => setFeedbackMessage(""), 3000);
-            return;
-        }
+
 
         const clientInfo = clients?.find(c => c.companyName === transaction.company);
         const billData = {
@@ -135,6 +130,8 @@ const SalesHistory = () => {
                 qty: item.qty,
                 rate: item.rate || (item.qty > 0 ? (item.amount / item.qty) : 0),
                 amount: item.amount,
+                gstRate: item.gstRate || 0,
+                gstAmount: item.gstAmount || 0,
                 hsn: item.hsn || "-"
             })) || [
                 {
@@ -144,11 +141,14 @@ const SalesHistory = () => {
                     qty: Math.abs(transaction.quantity),
                     rate: transaction.amount / Math.abs(transaction.quantity) || 0,
                     amount: transaction.totalAmount || transaction.amount,
+                    gstRate: 0,
+                    gstAmount: 0,
                     hsn: "-"
                 }
             ],
             totalAmount: transaction.totalAmount || transaction.amount,
             paidStatus: transaction.paidStatus || transaction.paymentStatus || "Paid",
+            amountPaid: transaction.amountPaid || 0,
             paymentMode: transaction.paymentMode || "Cash",
             deliveryMode: transaction.deliveryMode || "Self Pickup",
             deliveredBy: transaction.deliveredBy || "N/A",
@@ -260,19 +260,27 @@ const SalesHistory = () => {
     };
 
     const exportToCSV = (data, fileName) => {
-        const headers = ["Date", "Customer", "Company", "Products", "Pieces", "Amount (₹)", "Status"];
+        const headers = ["Date", "Customer", "Company", "Products", "HSN Codes", "Pieces", "Subtotal", "Total GST", "Grand Total", "Status"];
         const csvData = data.map((item) => {
             const baseNames = [...new Set(item.saleItems?.map(si => si.baseName))].filter(Boolean);
+            const hsnCodes = [...new Set(item.saleItems?.map(si => si.hsn))].filter(Boolean);
             const products = baseNames.length > 0 ? baseNames.join('; ') : (item.product || "-");
+            const hsns = hsnCodes.length > 0 ? hsnCodes.join('; ') : "-";
             const totalPieces = item.saleItems?.reduce((sum, si) => sum + (Number(si.qty) || 0), 0) || Math.abs(item.quantity || 0);
+            const subtotal = item.saleItems?.reduce((sum, si) => sum + (Number(si.amount) || 0), 0) || (item.totalAmount || item.amount || 0);
+            const totalGst = item.saleItems?.reduce((sum, si) => sum + (Number(si.gstAmount) || 0), 0) || 0;
+            const grandTotal = item.totalAmount || item.amount || 0;
             
             return [
                 item.date?.split(', ')[0] || new Date(item.createdAt).toLocaleDateString(),
                 item.customer || "-",
                 item.company || "-",
                 products,
+                hsns,
                 totalPieces,
-                item.totalAmount || item.amount || 0,
+                subtotal,
+                totalGst,
+                grandTotal,
                 item.paidStatus || item.paymentStatus || "Paid"
             ];
         });
@@ -436,9 +444,8 @@ const SalesHistory = () => {
                                                     <button 
                                                         className="icon-action-btn" 
                                                         onClick={(e) => { e.stopPropagation(); handleViewBill(transaction); }} 
-                                                        title={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? "Bill not available for Unpaid" : "View Bill"}
-                                                        style={{ color: (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? '#94a3b8' : '#10b981', cursor: (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? 'not-allowed' : 'pointer' }}
-                                                        disabled={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid'}
+                                                        title="View Bill"
+                                                        style={{ color: '#10b981', cursor: 'pointer' }}
                                                     >
                                                         <span className="material-symbols-outlined">receipt_long</span>
                                                     </button>
@@ -593,8 +600,8 @@ const SalesHistory = () => {
                             .ci-billto { display: flex; justify-content: space-between; padding: 0 40px; margin-bottom: 30px; gap: 40px; }
                             .ci-billto-title { font-size: 12px; font-weight: 800; color: #045b54; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
                             .ci-billto-row { font-size: 13px; margin-bottom: 5px; color: #1e293b; line-height: 1.5; }
-                            .ci-section-title { background: #f8fafc; padding: 10px 40px; font-size: 12px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
-                            .ci-table-wrap { padding: 0 40px; flex-grow: 1; }
+                            .ci-section-title { background: #f8fafc; padding: 10px 40px 18px; font-size: 12px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-bottom: 0; }
+                            .ci-table-wrap { padding: 16px 40px 0; flex-grow: 1; }
                             .ci-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1.5px solid #045b54; }
                             .ci-tbl-head th { background: #045b54; color: #fff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.2); text-align: center; }
                             .ci-tbody td { padding: 14px 14px; font-size: 13px; color: #333; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; text-align: center; font-weight: 500; }
@@ -658,23 +665,29 @@ const SalesHistory = () => {
                             <table className="ci-table">
                                 <thead className="ci-tbl-head">
                                     <tr>
-                                        <th>Item</th>
-                                        <th>Product Name</th>
-                                        <th>Size</th>
-                                        <th>Qty</th>
-                                        <th>Rate</th>
-                                        <th>Amount</th>
+                                        <th>S.NO</th>
+                                        <th>HSN CODE</th>
+                                        <th>PRODUCT NAME</th>
+                                        <th>QTY</th>
+                                        <th>RATE</th>
+                                        <th>GST</th>
+                                        <th>AMOUNT</th>
                                     </tr>
                                 </thead>
                                 <tbody className="ci-tbody">
                                     {selectedBill.items.map((item, idx) => (
                                         <tr key={idx}>
                                             <td>{idx + 1}</td>
-                                            <td>{item.baseName}</td>
-                                            <td>{item.size}</td>
+                                            <td>{item.hsn}</td>
+                                            <td style={{ textAlign: 'left' }}>
+                                                <b>{item.baseName}</b> <span style={{ fontSize: '11px', color: '#64748b' }}>({item.size})</span>
+                                            </td>
                                             <td>{item.qty}</td>
                                             <td>₹{item.rate?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                            <td>₹{item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                            <td>
+                                                {item.gstRate || 0}%
+                                            </td>
+                                            <td>₹{(item.amount + (item.gstAmount || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -682,10 +695,30 @@ const SalesHistory = () => {
                         </div>
                         <div className="ci-summary">
                             <div className="ci-summary-box">
+                                <div className="ci-sum-row">
+                                    <span>Subtotal:</span>
+                                    <span>₹{selectedBill.items.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                </div>
+                                <div className="ci-sum-row">
+                                    <span>Total GST:</span>
+                                    <span>₹{selectedBill.items.reduce((sum, item) => sum + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                </div>
                                 <div className="ci-total-row">
-                                    <span>TOTAL:</span>
+                                    <span>GRAND TOTAL:</span>
                                     <span>₹{selectedBill.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                 </div>
+                                {selectedBill.paidStatus === 'Partial' && (
+                                    <>
+                                        <div className="ci-sum-row" style={{ background: '#f0fdf4', color: '#166534', fontWeight: 700, borderBottom: '1px solid #bbf7d0' }}>
+                                            <span>Advance Paid:</span>
+                                            <span>₹{selectedBill.amountPaid?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}</span>
+                                        </div>
+                                        <div className="ci-sum-row" style={{ background: '#fff1f2', color: '#be123c', fontWeight: 800, fontSize: '13.5px', borderBottom: 'none' }}>
+                                            <span>Balance Due:</span>
+                                            <span>₹{(selectedBill.totalAmount - (selectedBill.amountPaid || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="ci-payment">
