@@ -666,15 +666,12 @@ const Dashboard = () => {
                     </div>
                     <div className="item-value-info">
                       <span className="stock-value-pcs">{item.quantity.toLocaleString()} <small>PCS</small></span>
-                      <span className="stock-total-val">₹{item.totalValue.toLocaleString()}</span>
+                      <span className="stock-total-val" style={{ color: '#64748b', fontSize: '11px', fontWeight: 700 }}>₹{item.perPlateRate}/pcs</span>
                     </div>
                   </div>
 
-                  <div className="ila-item-details">
-                    <div className="ila-detail-row">
-                      <span>Rate/pcs</span>
-                      <span className="ila-val">₹{item.perPlateRate}</span>
-                    </div>
+                  <div className="ila-item-details" style={{ marginTop: '12px' }}>
+
                     {targetQty > 0 && (
                       <div className="ila-progress-box">
                         <div className="progress-text">
