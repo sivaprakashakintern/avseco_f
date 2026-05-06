@@ -1865,7 +1865,7 @@
   
   .nested-table-wrapper {
       margin: 10px -10px !important;
-      border-radius: 0 !important;
+      border-radius: 12px !important;
       border-left: none !important;
       border-right: none !important;
   }

@@ -31,6 +31,7 @@ const SalesHistory = () => {
     const [exportLoading, setExportLoading] = useState(false);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [statusUpdateTarget, setStatusUpdateTarget] = useState(null);
+    const [expandedCardId, setExpandedCardId] = useState(null);
 
     const fetchSales = useCallback(async () => {
         setLoading(true);
@@ -481,69 +482,92 @@ const SalesHistory = () => {
                             <p>Loading sales history...</p>
                         </div>
                     ) : filteredTransactions.length > 0 ? (
-                        filteredTransactions.map((transaction) => {
+                        filteredTransactions.map((transaction, index) => {
                             const baseNames = [...new Set(transaction.saleItems?.map(item => item.baseName))].filter(Boolean);
                             const baseProducts = baseNames.length > 0 ? baseNames.join(', ') : (transaction.product || "-");
                             const totalPieces = transaction.saleItems?.reduce((sum, item) => sum + (Number(item.qty) || 0), 0) || Math.abs(transaction.quantity || 0);
                             const displayAmount = transaction.totalAmount || transaction.amount || 0;
                             const formattedTime = getFormattedTime(transaction);
                             const datePart = transaction.date?.split(', ')[0] || new Date(transaction.createdAt).toLocaleDateString();
+                            
+                            const isExpanded = expandedCardId === (transaction.id || transaction._id);
+                            const status = (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase();
 
                             return (
-                                <div key={transaction.id || transaction._id} className="mobile-sale-card">
-                                    <div className="sale-card-header">
-                                        <div className="sale-date">
-                                            <span className="material-symbols-outlined">calendar_today</span>
-                                            {datePart} &bull; {formattedTime}
+                                <div 
+                                    key={transaction.id || transaction._id} 
+                                    className={`mobile-expense-card-minimal ${isExpanded ? 'expanded' : ''}`}
+                                    onClick={() => setExpandedCardId(isExpanded ? null : (transaction.id || transaction._id))}
+                                >
+                                    <div className="expense-card-main">
+                                        <div className="expense-sno">{index + 1}</div>
+                                        <div className="expense-category-lite">
+                                            <div className="category-marker" style={{ backgroundColor: status === 'paid' ? '#10b981' : '#ef4444' }} />
+                                            <div className="name-container" style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <span style={{ fontWeight: '700', fontSize: '14px', color: '#1e293b' }}>
+                                                    {transaction.company || transaction.customer || "Direct Sale"}
+                                                </span>
+                                                {!isExpanded && <span style={{ fontSize: '11px', color: '#94a3b8' }}>{datePart}</span>}
+                                            </div>
                                         </div>
-                                         <span 
-                                            className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}
-                                            onClick={(e) => { 
-                                                e.stopPropagation(); 
-                                                if ((transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid') {
-                                                    handleTogglePaymentStatus(transaction);
-                                                }
-                                            }}
-                                            style={{ cursor: (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? 'pointer' : 'default' }}
-                                        >
-                                            {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
+                                        <div className="expense-amount-lite" style={{ color: '#0f172a' }}>
+                                            ₹{displayAmount?.toLocaleString()}
+                                        </div>
+                                        <span className="material-symbols-outlined expand-icon">
+                                            {isExpanded ? 'expand_less' : 'expand_more'}
                                         </span>
                                     </div>
-                                    <div className="sale-card-body">
-                                        <div className="company-info">
-                                            <h4 className="sale-company">{transaction.company || "Direct Sale"}</h4>
-                                            <p className="sale-customer">{transaction.customer || "Walking Customer"}</p>
-                                        </div>
-                                        <div className="sale-details-grid">
-                                            <div className="detail-item">
-                                                <span className="detail-label">TOTAL AMOUNT</span>
-                                                <span className="detail-value amount">₹{displayAmount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+
+                                    {isExpanded && (
+                                        <div className="expense-card-details-expanded" onClick={(e) => e.stopPropagation()}>
+                                            <div className="expanded-info-grid">
+                                                <div className="info-row">
+                                                    <span className="expanded-info-label">Date & Time</span>
+                                                    <span className="expanded-info-value">{datePart} • {formattedTime}</span>
+                                                </div>
+                                                <div className="info-row">
+                                                    <span className="expanded-info-label">Customer</span>
+                                                    <span className="expanded-info-value">{transaction.customer || "Walking Customer"}</span>
+                                                </div>
+                                                <div className="info-row">
+                                                    <span className="expanded-info-label">Products</span>
+                                                    <span className="expanded-info-value">{baseProducts} ({totalPieces} pcs)</span>
+                                                </div>
+                                                <div className="info-row">
+                                                    <span className="expanded-info-label">Status</span>
+                                                    <span 
+                                                        className={`payment-badge ${status}`}
+                                                        style={{ fontSize: '10px', padding: '2px 8px' }}
+                                                    >
+                                                        {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
+                                                    </span>
+                                                </div>
+                                                <div className="info-row">
+                                                    <span className="expanded-info-label">Sold By</span>
+                                                    <span className="expanded-info-value">{transaction.soldBy || "-"}</span>
+                                                </div>
                                             </div>
-                                            <div className="detail-item">
-                                                <span className="detail-label">SOLD BY</span>
-                                                <span className="detail-value">{transaction.soldBy || "-"}</span>
+                                            
+                                            <div className="expense-action-buttons" style={{ marginTop: '16px' }}>
+                                                <button 
+                                                    className="expense-mini-btn" 
+                                                    onClick={() => handleViewBill(transaction)}
+                                                    disabled={status === 'unpaid'}
+                                                    style={{ color: '#10b981', opacity: status === 'unpaid' ? 0.5 : 1 }}
+                                                >
+                                                    <span className="material-symbols-outlined">receipt_long</span>
+                                                    Bill
+                                                </button>
+                                                <button 
+                                                    className="expense-mini-btn delete" 
+                                                    onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}
+                                                >
+                                                    <span className="material-symbols-outlined">delete</span>
+                                                    Delete
+                                                </button>
                                             </div>
                                         </div>
-                                        <div className="sale-product-line">
-                                            <span className="material-symbols-outlined">inventory_2</span>
-                                            {baseProducts} ({totalPieces} pcs)
-                                        </div>
-                                    </div>
-                                    <div className="sale-card-actions" onClick={(e) => e.stopPropagation()}>
-                                        <button 
-                                            className="sale-action-btn view" 
-                                            onClick={() => handleViewBill(transaction)}
-                                            disabled={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid'}
-                                            style={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                                        >
-                                            <span className="material-symbols-outlined">receipt_long</span>
-                                            View Bill
-                                        </button>
-                                        <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}>
-                                            <span className="material-symbols-outlined">delete</span>
-                                            Delete
-                                        </button>
-                                    </div>
+                                    )}
                                 </div>
                             );
                         })

@@ -15,10 +15,10 @@
   align-items: center;
   margin-bottom: 32px;
   background: linear-gradient(135deg, #006A4E 0%, #004d39 100%);
-  padding: 32px 48px;
-  border-radius: 20px;
+  padding: 32px 40px;
+  border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 40px -12px rgba(0, 71, 52, 0.35);
+  box-shadow: 0 15px 35px -12px rgba(0, 71, 52, 0.3);
   position: relative;
   overflow: hidden;
   animation: slideFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
@@ -37,12 +37,24 @@
 }
 
 .page-header.premium-header .page-title {
-  font-size: 34px;
+  font-size: 32px;
   font-weight: 800;
   color: #ffffff !important;
   margin: 0;
-  letter-spacing: -0.015em;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-header.premium-header .page-title::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 28px;
+  background: #10b981;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
 }
 
 .page-header.premium-header .page-subtitle {
@@ -3038,19 +3050,22 @@ textarea.quick-entry-input {
 
 @media (max-width: 768px) {
   .stock-page {
-    padding: 0 !important;
+    padding: 16px !important; /* Standardized padding to prevent cut-off */
     background: #ffffff !important;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
   
   .page-header.premium-header {
-    border-radius: 0 !important;
-    margin-bottom: 0 !important;
-    padding: 16px !important;
-    border-bottom: 1px solid #eef5f0 !important;
+    border-radius: 16px !important;
+    margin-bottom: 20px !important;
+    padding: 20px !important;
+    border: 1px solid rgba(0, 106, 78, 0.1) !important;
   }
   
   .stock-table-container.quick-entry-card {
-    border-radius: 0 !important;
+    border-radius: 12px !important;
     margin-bottom: 0 !important;
     box-shadow: none !important;
     border: none !important;
@@ -3078,9 +3093,16 @@ textarea.quick-entry-input {
   }
 
   .page-header.premium-header .page-title {
-    white-space: nowrap !important;
-    font-size: 16px !important;
+    white-space: normal !important;
+    font-size: 18px !important;
     letter-spacing: -0.01em !important;
+    gap: 10px !important;
+    line-height: 1.2 !important;
+  }
+
+  .page-header.premium-header .page-title::before {
+    height: 18px !important;
+    width: 3px !important;
   }
 
   /* Icon-only Export Button on Mobile */

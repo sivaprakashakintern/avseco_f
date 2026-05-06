@@ -598,16 +598,16 @@ const ExpenseReport = () => {
                                         <div className="expense-card-details-expanded">
                                             <div className="expanded-info-grid">
                                                 <div className="info-row">
-                                                    <span className="info-label">Description</span>
-                                                    <span className="info-value">{ex.description}</span>
+                                                    <span className="expanded-info-label">Description</span>
+                                                    <span className="expanded-info-value">{ex.description}</span>
                                                 </div>
                                                 <div className="info-row">
-                                                    <span className="info-label">Date</span>
-                                                    <span className="info-value">{formatDate(ex.date)}</span>
+                                                    <span className="expanded-info-label">Date</span>
+                                                    <span className="expanded-info-value">{formatDate(ex.date)}</span>
                                                 </div>
                                                 <div className="info-row">
-                                                    <span className="info-label">Payment</span>
-                                                    <span className="info-value">{ex.paymentMode}</span>
+                                                    <span className="expanded-info-label">Payment</span>
+                                                    <span className="expanded-info-value">{ex.paymentMode}</span>
                                                 </div>
                                             </div>
                                         </div>

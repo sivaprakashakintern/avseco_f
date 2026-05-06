@@ -438,68 +438,23 @@ const Employees = () => {
       )}
 
       {/* ===== PAGE HEADER (Expense Style) ===== */}
-      <div className="page-header premium-header">
+      <div className="page-header premium-header employees-header-standard">
         <div className="header-content">
           <div className="header-text">
             <h1 className="page-title">Employees</h1>
           </div>
           <div className="header-actions">
             {isAdmin && (
-              <button className="add-employee-btn" onClick={handleAddEmployee}>
-                <span className="material-symbols-outlined">person_add</span>
-                Add Employee
+              <button className="btn-add-circle-premium" onClick={handleAddEmployee} title="Add Employee">
+                <span className="material-symbols-outlined">add_circle</span>
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* ===== STATS CARDS (ENHANCED) ===== */}
-      <div className="employee-stats">
-        <div className="stat-card total-card">
-          <div className="stat-content">
-            <div className="stat-icon total">
-              <span className="material-symbols-outlined">group</span>
-            </div>
-            <div className="stat-info">
-              <p className="stat-label">Total Workforce</p>
-              <h2 className="stat-number">{stats.totalEmployees}</h2>
-              <p className="stat-subtext">Active Personnel</p>
-            </div>
-          </div>
-          <div className="stat-visual">
-            <div className="mini-chart">
-              {[40, 70, 45, 90, 65, 80].map((h, i) => (
-                <div key={i} className="bar" style={{ height: `${h}%` }}></div>
-              ))}
-            </div>
-          </div>
-        </div>
 
-        <div className="stat-card dept-card">
-          <div className="stat-content">
-            <div className="stat-icon department">
-              <span className="material-symbols-outlined">corporate_fare</span>
-            </div>
-            <div className="stat-info">
-              <p className="stat-label">Departments</p>
-              <h2 className="stat-number">{stats.departmentsCount}</h2>
-              <p className="stat-subtext">Largest: {stats.topDept[0]}</p>
-            </div>
-          </div>
-          <div className="dept-distribution">
-            {Object.entries(employees.reduce((acc, curr) => {
-              acc[curr.department] = (acc[curr.department] || 0) + 1;
-              return acc;
-            }, {})).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name, count]) => (
-              <div key={name} className="dept-pill">
-                <span className="dept-name">{name}</span>
-                <span className="dept-count">{count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+
 
 
 
@@ -798,39 +753,19 @@ const Employees = () => {
               </div>
               <form onSubmit={confirmAddEmployee}>
                 <div className="modal-body">
-                  <div className="modal-form-group">
-                    <label>Full Name *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder="Enter full name"
-                      className="modal-input"
-                      required
-                    />
-                  </div>
-
                   <div className="modal-row">
-                    {/* Avatar Upload (Optional) */}
                     <div className="modal-form-group">
-                        <label>Profile Image (Optional)</label>
-                        <div className="file-upload-wrapper">
-                        <input
-                            type="file"
-                            name="avatar"
-                            accept="image/*"
-                            onChange={handleInputChange}
-                            className="modal-file-input"
-                            id="avatar-upload"
-                        />
-                        <label htmlFor="avatar-upload" className="file-upload-label">
-                            <span className="material-symbols-outlined">cloud_upload</span>
-                            <span>{formData.avatar ? formData.avatar.name : "Choose an image file"}</span>
-                        </label>
-                        </div>
+                      <label>Full Name *</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="Enter full name"
+                        className="modal-input"
+                        required
+                      />
                     </div>
-
                     <div className="modal-form-group">
                       <label>Department *</label>
                       <select
@@ -850,7 +785,26 @@ const Employees = () => {
                       </select>
                     </div>
                   </div>
+
                   <div className="modal-row">
+                    {/* Avatar Upload (Optional) */}
+                    <div className="modal-form-group">
+                        <label>Profile Image (Optional)</label>
+                        <div className="file-upload-wrapper">
+                        <input
+                            type="file"
+                            name="avatar"
+                            accept="image/*"
+                            onChange={handleInputChange}
+                            className="modal-file-input"
+                            id="avatar-upload"
+                        />
+                        <label htmlFor="avatar-upload" className="file-upload-label">
+                            <span className="material-symbols-outlined">cloud_upload</span>
+                            <span>{formData.avatar ? formData.avatar.name : "Choose file"}</span>
+                        </label>
+                        </div>
+                    </div>
                     <div className="modal-form-group">
                       <label>Email Address</label>
                       <input
@@ -862,6 +816,9 @@ const Employees = () => {
                         className="modal-input"
                       />
                     </div>
+                  </div>
+
+                  <div className="modal-row">
                     <div className="modal-form-group">
                       <label>Phone Number *</label>
                       <input
@@ -874,9 +831,6 @@ const Employees = () => {
                         required
                       />
                     </div>
-                  </div>
-
-                  <div className="modal-row">
                     <div className="modal-form-group">
                       <label>Date of Birth *</label>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -888,11 +842,17 @@ const Employees = () => {
                             textField: {
                               fullWidth: true,
                               className: 'modal-mui-input'
+                            },
+                            popper: {
+                              sx: { zIndex: 9999 }
                             }
                           }}
                         />
                       </LocalizationProvider>
                     </div>
+                  </div>
+
+                  <div className="modal-row">
                     <div className="modal-form-group">
                       <label>PAN Number *</label>
                       <input
@@ -905,9 +865,6 @@ const Employees = () => {
                         required
                       />
                     </div>
-                  </div>
-
-                  <div className="modal-row">
                     <div className="modal-form-group">
                       <label>Aadhar Number *</label>
                       <input
@@ -920,6 +877,23 @@ const Employees = () => {
                         required
                       />
                     </div>
+                  </div>
+
+                  <div className="modal-form-group full-width" style={{ marginBottom: '20px' }}>
+                    <label>Full Address *</label>
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="Enter full residential address"
+                      className="modal-input"
+                      rows="3"
+                      style={{ resize: "vertical", minHeight: '80px' }}
+                      required
+                    ></textarea>
+                  </div>
+
+                  <div className="modal-row">
                     <div className="modal-form-group">
                       <label>Join Date *</label>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -931,38 +905,26 @@ const Employees = () => {
                             textField: {
                               fullWidth: true,
                               className: 'modal-mui-input'
+                            },
+                            popper: {
+                              sx: { zIndex: 9999 }
                             }
                           }}
                         />
                       </LocalizationProvider>
                     </div>
-                  </div>
-
-                  <div className="modal-form-group">
-                    <label>Full Address *</label>
-                    <textarea
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      placeholder="Enter full residential address"
-                      className="modal-input"
-                      rows="4"
-                      style={{ resize: "vertical", minHeight: '100px' }}
-                      required
-                    ></textarea>
-                  </div>
-
-                  <div className="modal-form-group">
-                    <label>Default Salary (Monthly) *</label>
-                    <input
-                      type="number"
-                      name="salary"
-                      value={formData.salary}
-                      onChange={handleInputChange}
-                      placeholder="Enter monthly salary"
-                      className="modal-input"
-                      required
-                    />
+                    <div className="modal-form-group">
+                      <label>Default Salary (Monthly) *</label>
+                      <input
+                        type="number"
+                        name="salary"
+                        value={formData.salary}
+                        onChange={handleInputChange}
+                        placeholder="Enter monthly salary"
+                        className="modal-input"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="modal-footer">

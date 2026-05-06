@@ -129,6 +129,7 @@ const Sales = () => {
 
 
     // Filtered employees for delivery
+    // eslint-disable-next-line no-unused-vars
     const deliveryEmployees = React.useMemo(() => {
         return (employees || []).filter(emp =>
             emp.department?.toLowerCase().includes("delivery") ||
@@ -137,6 +138,7 @@ const Sales = () => {
     }, [employees]);
 
     // Filtered employees for sales
+    // eslint-disable-next-line no-unused-vars
     const salesEmployees = React.useMemo(() => {
         return (employees || []).filter(emp =>
             emp.department?.toLowerCase().includes("sales") ||
@@ -439,6 +441,7 @@ const Sales = () => {
 
 
     // Export Handler
+    // eslint-disable-next-line no-unused-vars
     const handleExport = () => {
         setShowExportModal(true);
     };

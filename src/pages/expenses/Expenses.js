@@ -171,15 +171,13 @@ const Expenses = () => {
 
     return (
         <div className="stock-page">
-            <div className="page-header premium-header">
-                <div>
-                    <h1 className="page-title">Expense Details</h1>
-                    <p className="page-subtitle">Daily Summary for {today}</p>
+            <div className="page-header premium-header expenses-header-standard">
+                <div className="header-left-group">
+                    <h1 className="page-title-white">Expense Details</h1>
                 </div>
-                <div className="header-actions">
-                    <button className="btn-export-premium" onClick={() => { setIsEditMode(false); setIsModalOpen(true); }}>
-                        <span className="material-symbols-outlined">add</span>
-                        <span className="export-text">Add Expense</span>
+                <div className="header-right-group">
+                    <button className="btn-add-circle-premium" onClick={() => { setIsEditMode(false); setIsModalOpen(true); }} title="Add New Expense">
+                        <span className="material-symbols-outlined">add_circle</span>
                     </button>
                 </div>
             </div>
@@ -320,7 +318,16 @@ const Expenses = () => {
                                         <div className="expense-sno">{index + 1}</div>
                                         <div className="expense-category-lite">
                                             <div className="category-marker" style={{ backgroundColor: cfg.color }} />
-                                            {ex.category}
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <span style={{ fontWeight: '700', color: '#1e293b' }}>
+                                                    {ex.category === "Salary" ? (ex.description.replace('Salary for ', '')) : ex.category}
+                                                </span>
+                                                {ex.category !== "Salary" && ex.description && (
+                                                    <span style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>
+                                                        {ex.description}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="expense-amount-lite">₹{Number(ex.amount).toLocaleString()}</div>
                                         <span className="material-symbols-outlined expand-icon">
@@ -332,12 +339,12 @@ const Expenses = () => {
                                         <div className="expense-card-details-expanded">
                                             <div className="expanded-info-grid">
                                                 <div className="info-row">
-                                                    <span className="info-label">Date</span>
-                                                    <span className="info-value">{formatDate(ex.date)}</span>
+                                                    <span className="expanded-info-label">Date</span>
+                                                    <span className="expanded-info-value">{formatDate(ex.date)}</span>
                                                 </div>
                                                 <div className="info-row">
-                                                    <span className="info-label">Payment</span>
-                                                    <span className="info-value">{ex.paymentMode}</span>
+                                                    <span className="expanded-info-label">Payment</span>
+                                                    <span className="expanded-info-value">{ex.paymentMode}</span>
                                                 </div>
                                             </div>
                                             {isWithinLast2Days(ex.date) && (
@@ -388,27 +395,47 @@ const Expenses = () => {
 
                         <div className="modal-body">
                             <form onSubmit={handleSubmit}>
-                                <div className="perfect-input-group">
-                                    <label className="perfect-label">Category</label>
-                                    <div className="dropdown-container">
-                                        <select
-                                            name="category"
-                                            value={newExpense.category}
-                                            onChange={(e) => {
-                                                handleInputChange(e);
-                                                if (e.target.value === 'Salary') {
-                                                    setEmployeeSearch("");
-                                                }
-                                            }}
-                                            className="perfect-input perfect-select"
-                                        >
-                                            <option value="Machine Maintenance">Machine Maintenance</option>
-                                            <option value="Material">Material</option>
-                                            <option value="Electricity">Electricity</option>
-                                            <option value="Transport">Transport</option>
-                                            <option value="Rent">Rent</option>
-                                            <option value="Others">Others</option>
-                                        </select>
+                                <div className="modal-row-grid">
+                                    <div className="perfect-input-group">
+                                        <label className="perfect-label">Category</label>
+                                        <div className="dropdown-container">
+                                            <select
+                                                name="category"
+                                                value={newExpense.category}
+                                                onChange={(e) => {
+                                                    handleInputChange(e);
+                                                    if (e.target.value === 'Salary') {
+                                                        setEmployeeSearch("");
+                                                    }
+                                                }}
+                                                className="perfect-input perfect-select"
+                                            >
+                                                <option value="Machine Maintenance">Machine Maintenance</option>
+                                                <option value="Material">Material</option>
+                                                <option value="Electricity">Electricity</option>
+                                                <option value="Transport">Transport</option>
+                                                <option value="Rent">Rent</option>
+                                                <option value="Others">Others</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="perfect-input-group">
+                                        <label className="perfect-label">Payment Method</label>
+                                        <div className="dropdown-container">
+                                            <select
+                                                name="paymentMode"
+                                                value={newExpense.paymentMode}
+                                                onChange={handleInputChange}
+                                                className="perfect-input perfect-select"
+                                            >
+                                                <option value="Cash">Cash</option>
+                                                <option value="UPI">UPI</option>
+                                                <option value="Bank Transfer">Bank Transfer</option>
+                                                <option value="Cheque">Cheque</option>
+                                                <option value="Card">Card</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -465,50 +492,45 @@ const Expenses = () => {
                                     </div>
                                 )}
 
-                                <div className="perfect-input-group">
-                                    <label className="perfect-label">Payment Method</label>
-                                    <div className="dropdown-container">
-                                        <select
-                                            name="paymentMode"
-                                            value={newExpense.paymentMode}
-                                            onChange={handleInputChange}
-                                            className="perfect-input perfect-select"
-                                        >
-                                            <option value="Cash">Cash</option>
-                                            <option value="UPI">UPI</option>
-                                            <option value="Bank Transfer">Bank Transfer</option>
-                                            <option value="Cheque">Cheque</option>
-                                            <option value="Card">Card</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {newExpense.category === 'Others' && (
+                                <div className="modal-row-grid" style={{ marginBottom: '32px' }}>
                                     <div className="perfect-input-group">
-                                        <label className="perfect-label">Description *</label>
+                                        <label className="perfect-label">Amount (₹)</label>
                                         <input
-                                            type="text"
-                                            name="description"
+                                            type="number"
+                                            name="amount"
                                             required
-                                            placeholder="Enter expense details"
-                                            value={newExpense.description}
+                                            placeholder="0.00"
+                                            value={newExpense.amount}
                                             onChange={handleInputChange}
                                             className="perfect-input"
                                         />
                                     </div>
-                                )}
-
-                                <div className="perfect-input-group" style={{ marginBottom: '32px' }}>
-                                    <label className="perfect-label">Amount (₹)</label>
-                                    <input
-                                        type="number"
-                                        name="amount"
-                                        required
-                                        placeholder="0.00"
-                                        value={newExpense.amount}
-                                        onChange={handleInputChange}
-                                        className="perfect-input"
-                                    />
+                                    {newExpense.category === 'Others' ? (
+                                        <div className="perfect-input-group">
+                                            <label className="perfect-label">Description *</label>
+                                            <input
+                                                type="text"
+                                                name="description"
+                                                required
+                                                placeholder="Details"
+                                                value={newExpense.description}
+                                                onChange={handleInputChange}
+                                                className="perfect-input"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="perfect-input-group">
+                                            <label className="perfect-label">Remarks (Optional)</label>
+                                            <input
+                                                type="text"
+                                                name="description"
+                                                placeholder="Remarks"
+                                                value={newExpense.description}
+                                                onChange={handleInputChange}
+                                                className="perfect-input"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="modal-footer" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>

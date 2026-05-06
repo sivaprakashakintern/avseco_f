@@ -481,9 +481,9 @@ const Production = () => {
         onClose={() => setShowNotification(false)} 
       />
 
-      <div className="page-header premium-header">
-        <div className="header-left">
-          <h1 className="page-title">Daily Production</h1>
+      <div className="premium-header-green att-header">
+        <div className="header-left-group">
+          <h1 className="page-title-white">Daily Production</h1>
         </div>
         <div className="header-actions">
           <button 
@@ -764,15 +764,6 @@ const Production = () => {
                         
                         <div className="stat-value-badge-new">
                           {quantity.toLocaleString()} <span className="qty-unit">plates</span>
-                          {isAdmin && totalTgt > 0 && progress < 100 && (
-                            <button 
-                              className="nudge-btn-mini" 
-                              onClick={() => handleSendReminder(size, totalProducedTillNow, totalTgt)}
-                              title="Nudge Operators"
-                            >
-                              <span className="material-symbols-outlined">campaign</span>
-                            </button>
-                          )}
                         </div>
                         
                         {totalTgt > 0 && (

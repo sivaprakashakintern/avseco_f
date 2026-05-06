@@ -158,9 +158,9 @@ const Turnover = () => {
 
   return (
     <div className="turnover-container">
-      <div className="premium-header-green">
+      <div className="premium-header-green att-header">
         <div className="header-left-group">
-          <h1>Turnover Analytics</h1>
+          <h1 className="page-title-white">Turnover Analytics</h1>
         </div>
       </div>
 

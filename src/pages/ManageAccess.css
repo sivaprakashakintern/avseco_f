@@ -24,44 +24,41 @@
   color: var(--avs-text-dark);
 }
 
-.admin-header {
-  padding: 30px 45px;
-  border-radius: 30px;
-  margin-bottom: 35px;
-  box-shadow: 0 20px 40px -15px rgba(0, 106, 78, 0.3);
+/* Header - Premium Industrial Style */
+.premium-header-green.att-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--avs-primary-gradient) !important;
+  margin-bottom: 24px;
+  background: #006A4E;
+  padding: 16px 32px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 106, 78, 0.15);
+  color: white;
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  animation: slideInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
 }
 
-.admin-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
-  pointer-events: none;
-}
-
-.admin-header-left {
-  z-index: 2;
-}
-
-.admin-header h1 {
+.page-title-white {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 750;
+  color: #ffffff;
   margin: 0;
-  font-size: 32px;
-  font-weight: 850;
-  color: white;
-  line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.2px;
+}
+
+.page-title-white::before {
+  content: '';
+  display: block;
+  width: 3.5px;
+  height: 22px;
+  background: #00e676;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .admin-status-text {
@@ -719,46 +716,37 @@
 
 /* Mobile Responsive */
 @media (max-width: 992px) {
-  .admin-layout {
-    grid-template-columns: 1fr;
-    height: auto;
-    gap: 24px;
-    padding: 24px 0;
-  }
-  
-  .employee-sidebar-card,
-  .management-content-card {
-    height: auto;
-    min-height: 500px;
-    padding: 24px;
+  .premium-header-green.att-header {
+    padding: 12px 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
   }
 
-  .admin-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 28px;
+  .page-title-white {
+    font-size: 16px; 
+    gap: 8px;
+  }
+  
+  .page-title-white::before {
+    height: 18px;
+    width: 3px;
   }
 }
 
-@media (max-width: 576px) {
-  .admin-header h1 {
-    font-size: 24px;
+@media (max-width: 480px) {
+  .premium-header-green.att-header {
+    padding: 10px 14px;
+    margin-bottom: 12px;
   }
 
-  .credential-tab-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  .page-title-white {
+    font-size: 15px; 
+    gap: 6px;
   }
-
-  .input-with-actions {
-    flex-wrap: wrap;
-  }
-
-  .icon-action-btn {
-    width: 40px;
-    height: 40px;
+  
+  .page-title-white::before {
+    height: 16px;
+    width: 3px;
   }
 }
 

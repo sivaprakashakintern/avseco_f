@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import axios from '../utils/axiosConfig.js';
 import './ManageAccess.css';
@@ -14,6 +14,7 @@ const ManageAccess = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [activeTab, setActiveTab] = useState('permissions'); // 'permissions' or 'credentials'
   const [initialModules, setInitialModules] = useState([]); // Track original state for 'changes' button color logic
+  const managementCardRef = useRef(null);
 
   // Credential editing state
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -47,6 +48,16 @@ const ManageAccess = () => {
       password: '' 
     });
     setMessage({ type: '', text: '' });
+
+    // Auto-scroll to management card on mobile
+    if (window.innerWidth <= 992) {
+      setTimeout(() => {
+        managementCardRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 100);
+    }
   };
 
   const copyToClipboard = (text, label) => {
@@ -194,11 +205,11 @@ const ManageAccess = () => {
 
   return (
     <div className="admin-container">
-      <header className="admin-header">
-        <div className="admin-header-left">
-          <h1>Security & Access</h1>
+      <div className="premium-header-green att-header">
+        <div className="header-left-group">
+          <h1 className="page-title-white">Security & Access</h1>
         </div>
-      </header>
+      </div>
 
       <div className="admin-layout">
         {/* Left: Employee Directory */}
@@ -239,7 +250,7 @@ const ManageAccess = () => {
         </div>
 
         {/* Right: Management Content */}
-        <div className="management-content-card">
+        <div className="management-content-card" ref={managementCardRef}>
           {selectedEmployee ? (
             <div className="management-wrapper">
               <div className="management-top-bar">
