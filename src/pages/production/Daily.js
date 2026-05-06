@@ -6,7 +6,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
-import './dailyprod.css'; 
+import './dailyprod.css?v=1.8'; 
 import Notification from '../../components/Notification.js';
 
 // Sizes will be derived dynamically below
@@ -737,15 +737,6 @@ const Production = () => {
 
                         <div className="stat-value-badge-new">
                           {quantity.toLocaleString()} <span className="qty-unit">plates</span>
-                          {isAdmin && totalTgt > 0 && progress < 100 && (
-                            <button
-                              className="nudge-btn-mini"
-                              onClick={() => handleSendReminder(size, totalProducedTillNow, totalTgt)}
-                              title="Nudge Operators"
-                            >
-                              <span className="material-symbols-outlined">campaign</span>
-                            </button>
-                          )}
                         </div>
 
                         {totalTgt > 0 && (
@@ -817,13 +808,7 @@ const Production = () => {
                   {paginatedHistory.map((record, idx) => (
                     <tr
                       key={record.id || record._id || idx}
-                      onClick={(e) => {
-                        // Only open detail view on mobile (width <= 768) and if not clicking an action button
-                        if (window.innerWidth <= 768 && !e.target.closest('button')) {
-                          setSelectedRecord(record);
-                        }
-                      }}
-                      className="clickable-row"
+                      className="daily-row-premium"
                     >
                       <td className="col-sno">{((currentPage - 1) * itemsPerPage) + idx + 1}</td>
                       <td className="col-time">{record.time}</td>
