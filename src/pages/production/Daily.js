@@ -61,6 +61,7 @@ const Production = () => {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
   const [editingId, setEditingId] = useState(null);
+  const [selectedRecord, setSelectedRecord] = useState(null); // Detail view state for mobile
 
   const showNotificationMessage = React.useCallback((message, type = 'success') => {
     setNotificationMessage(message);
@@ -466,23 +467,9 @@ const Production = () => {
         type={notificationType} 
         onClose={() => setShowNotification(false)} 
       />
-
       <div className="page-header premium-header">
         <div className="header-left">
           <h1 className="page-title">Daily Production</h1>
-        </div>
-        <div className="header-actions">
-          <button 
-            className={`clear-all-btn-premium ${!canModify ? 'disabled-btn' : ''}`}
-            disabled={!canModify}
-            onClick={() => {
-              setDateToClear(formatDate(productionDate));
-              setShowClearConfirm(true);
-            }}
-          >
-            <span className="material-symbols-outlined">{canModify ? 'delete_sweep' : 'lock'}</span>
-            {canModify ? `Clear ${isToday ? "Today's" : "Yesterday's"} Records` : "Records Locked"}
-          </button>
         </div>
       </div>
 
@@ -828,14 +815,26 @@ const Production = () => {
                 </thead>
                 <tbody>
                   {paginatedHistory.map((record, idx) => (
-                    <tr key={record.id || record._id || idx}>
-                      <td>{((currentPage - 1) * itemsPerPage) + idx + 1}</td>
-                      <td>{record.time}</td>
-                      <td>{record.operator}</td>
-                      <td>{record.product}</td>
-                      <td>{record.size}: {record.quantity}</td>
-                      <td>{record.grade}</td>
-                      <td>
+                    <tr 
+                      key={record.id || record._id || idx}
+                      onClick={(e) => {
+                        // Only open detail view on mobile (width <= 768) and if not clicking an action button
+                        if (window.innerWidth <= 768 && !e.target.closest('button')) {
+                          setSelectedRecord(record);
+                        }
+                      }}
+                      className="clickable-row"
+                    >
+                      <td className="col-sno">{((currentPage - 1) * itemsPerPage) + idx + 1}</td>
+                      <td className="col-time">{record.time}</td>
+                      <td className="col-operator">{record.operator}</td>
+                      <td className="col-product">{record.product}</td>
+                      <td className="col-size-qty">
+                        <span className="mobile-only-label">Size: </span>{record.size} 
+                        <span className="mobile-only-label"> | Qty: </span> {record.quantity}
+                      </td>
+                      <td className="col-grade">{record.grade}</td>
+                      <td className="col-actions">
                         <div style={{ opacity: canModify ? 1 : 0.4, display: 'flex', gap: '8px' }}>
                           <button onClick={canModify ? () => handleEditProduction(record) : null} disabled={!canModify} className="btn-edit-premium">
                             <span className="material-symbols-outlined">{canModify ? 'edit' : 'lock'}</span>
@@ -926,6 +925,56 @@ const Production = () => {
                   showNotificationMessage("❌ Failed to clear.", "error");
                 }
               }}>Clear All</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* MOBILE DETAIL MODAL */}
+      {selectedRecord && (
+        <div className="modal-overlay" onClick={() => setSelectedRecord(null)}>
+          <div className="modal-content production-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header detail-header-premium">
+              <h3>
+                <span className="material-symbols-outlined">description</span>
+                Production Details
+              </h3>
+              <button className="modal-close" onClick={() => setSelectedRecord(null)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body detail-body-premium">
+              <div className="detail-hero-section">
+                <div className="hero-product-badge">{selectedRecord.product}</div>
+                <div className="hero-qty-badge">{selectedRecord.quantity} <span>PCS</span></div>
+              </div>
+
+              <div className="detail-info-grid">
+                <div className="detail-info-item">
+                  <span className="item-label">Size</span>
+                  <span className="item-value">{selectedRecord.size}</span>
+                </div>
+                <div className="detail-info-item">
+                  <span className="item-label">Operator</span>
+                  <span className="item-value">{selectedRecord.operator}</span>
+                </div>
+                <div className="detail-info-item">
+                  <span className="item-label">Grade</span>
+                  <span className="item-value">{selectedRecord.grade}</span>
+                </div>
+                <div className="detail-info-item">
+                  <span className="item-label">Time</span>
+                  <span className="item-value">{selectedRecord.time}</span>
+                </div>
+                <div className="detail-info-item">
+                  <span className="item-label">Date</span>
+                  <span className="item-value">{selectedRecord.date}</span>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer detail-footer-premium">
+              <button className="detail-close-btn" onClick={() => setSelectedRecord(null)}>CLOSE VIEW</button>
             </div>
           </div>
         </div>

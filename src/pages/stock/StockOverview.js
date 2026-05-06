@@ -6,18 +6,18 @@ import "./Stock.css";
 import plate8 from "../../assets/plate8.png";
 
 const StockOverview = () => {
-    const { stockData, productionTargets } = useAppContext();
-    const navigate = useNavigate();
+  const { stockData, productionTargets } = useAppContext();
+  const navigate = useNavigate();
   const [filterType, setFilterType] = useState("All"); // All, Low Stock, Out of Stock
   const [confirmModal, setConfirmModal] = useState({
-      isOpen: false,
-      title: '',
-      message: '',
-      onConfirm: null
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null
   });
 
   // ========== CALCULATIONS ==========
-  
+
   // Group and sort stock data alphabetically by name and numerically by size
   const groupedProducts = useMemo(() => {
     const grouped = stockData.reduce((acc, item) => {
@@ -30,16 +30,16 @@ const StockOverview = () => {
           totalQuantity: 0
         };
       }
-      
+
       // Sum up ALL targets for this specific product + size combination
-      const relevantTargets = (productionTargets || []).filter(t => 
-        (t.productName === name || t.product === name) && 
+      const relevantTargets = (productionTargets || []).filter(t =>
+        (t.productName === name || t.product === name) &&
         (t.productSize === item.size || t.size === item.size)
       );
-      
+
       const totalTgt = relevantTargets.reduce((sum, t) => sum + (Number(t.targetQty) || 0), 0);
       const totalDone = relevantTargets.reduce((sum, t) => sum + (Number(t.producedQty) || 0), 0);
-      
+
       const variant = {
         ...item,
         status: item.quantity <= 0 ? "Out of Stock" : (item.quantity < 2000 ? "Low Stock" : "In Stock"),
@@ -47,10 +47,10 @@ const StockOverview = () => {
         targetQty: totalTgt,
         producedQty: totalDone
       };
-      
+
       acc[name].variants.push(variant);
       acc[name].totalQuantity += (item.quantity || 0);
-      
+
       return acc;
     }, {});
 
@@ -74,7 +74,7 @@ const StockOverview = () => {
     const total = stockData.reduce((sum, item) => sum + (item.quantity || 0), 0);
     const lowStockCount = stockData.filter(item => item.quantity > 0 && item.quantity < 2000).length;
     const outOfStockCount = stockData.filter(item => item.quantity <= 0).length;
-    
+
     return {
       totalStock: total,
       lowStock: lowStockCount,
@@ -85,16 +85,16 @@ const StockOverview = () => {
   // Filtering logic
   const filteredGroups = useMemo(() => {
     if (filterType === "All") return groupedItems;
-    
+
     return groupedItems.map(group => {
       const filteredVariants = group.variants.filter(v => {
         if (filterType === "Low Stock") return v.quantity > 0 && v.quantity < 2000;
         if (filterType === "Out of Stock") return v.quantity <= 0;
         return true;
       });
-      
+
       if (filteredVariants.length === 0) return null;
-      
+
       return {
         ...group,
         variants: filteredVariants
@@ -111,9 +111,9 @@ const StockOverview = () => {
   const [exportType, setExportType] = useState('All'); // All, Low Stock, Out of Stock
 
   // Handlers
-  
 
-  
+
+
   const confirmExport = () => {
     setExportLoading(true);
     setShowExportModal(false);
@@ -148,7 +148,7 @@ const StockOverview = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${fileName}.${exportFormat === 'excel' ? 'xlsx' : 'csv'}`; 
+        a.download = `${fileName}.${exportFormat === 'excel' ? 'xlsx' : 'csv'}`;
         a.click();
         URL.revokeObjectURL(url);
       } else if (exportFormat === "pdf") {
@@ -166,7 +166,7 @@ const StockOverview = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${fileName}.csv`; 
+        a.download = `${fileName}.csv`;
         a.click();
       }
 
@@ -233,20 +233,20 @@ const StockOverview = () => {
 
       {/* ===== FILTER TABS ===== */}
       <div className="filter-tabs-new">
-        <button 
+        <button
           className={`tab-new ${filterType === "All" ? "active" : ""}`}
           onClick={() => setFilterType("All")}
         >
           <span className="dot-new"></span>
           All
         </button>
-        <button 
+        <button
           className={`tab-new ${filterType === "Low Stock" ? "active" : ""}`}
           onClick={() => setFilterType("Low Stock")}
         >
           Low Stock
         </button>
-        <button 
+        <button
           className={`tab-new ${filterType === "Out of Stock" ? "active" : ""}`}
           onClick={() => setFilterType("Out of Stock")}
         >
@@ -271,7 +271,7 @@ const StockOverview = () => {
                     </div>
 
                     <div className={`status-badge-inline-new ${v.quantity <= 0 ? 'red pulse' : (v.quantity < 2000 ? 'yellow' : 'green')}`}>
-                      {v.size} 
+                      {v.size}
                       <span className="status-badge-text-new">
                         {v.quantity <= 0 ? 'OUT OF STOCK' : (v.quantity < 2000 ? 'LOW STOCK' : 'IN STOCK')}
                       </span>
@@ -284,7 +284,7 @@ const StockOverview = () => {
                     {/* PRODUCTION PROGRESS BAR */}
 
 
-                    <div 
+                    <div
                       className={`footer-status-btn-new ${v.quantity < 2000 ? (v.quantity <= 0 ? 'red' : 'yellow') : 'green disabled'}`}
                       style={{ cursor: v.quantity < 2000 ? 'pointer' : 'not-allowed', opacity: v.quantity < 2000 ? 1 : 0.6 }}
                       onClick={() => {
@@ -293,10 +293,10 @@ const StockOverview = () => {
                         }
                       }}
                     >
-                       <span className="material-symbols-outlined icon-small-new">
-                         {v.quantity <= 0 ? 'close' : (v.quantity < 2000 ? 'warning' : 'check_circle')}
-                       </span>
-                       {v.quantity < 2000 ? 'Manage Item' : 'Stock Full'}
+                      <span className="material-symbols-outlined icon-small-new">
+                        {v.quantity <= 0 ? 'close' : (v.quantity < 2000 ? 'warning' : 'check_circle')}
+                      </span>
+                      {v.quantity < 2000 ? 'Manage Item' : 'Stock Full'}
                     </div>
                   </div>
                 ))}
@@ -321,7 +321,7 @@ const StockOverview = () => {
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            
+
             <div className="modal-body">
               <div className="export-section">
                 <h4>Export Format</h4>
@@ -374,7 +374,7 @@ const StockOverview = () => {
       )}
 
       {/* ===== CONFIRMATION MODAL ===== */}
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
         message={confirmModal.message}

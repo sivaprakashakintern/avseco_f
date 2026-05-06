@@ -670,27 +670,7 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <div className="ila-item-details" style={{ marginTop: '12px' }}>
 
-                    {targetQty > 0 && (
-                      <div className="ila-progress-box">
-                        <div className="progress-text">
-                          <span>Target Progress</span>
-                          <span>{progress.toFixed(0)}%</span>
-                        </div>
-                        <div className="progress-bar-container">
-                          <div 
-                            className="progress-bar-fill" 
-                            style={{ width: `${progress}%` }}
-                          ></div>
-                        </div>
-                        <div className="progress-counts">
-                          {producedThisMonth.toLocaleString()} / {targetQty.toLocaleString()}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
                   <div className="ila-card-footer">
                     <span className="material-symbols-outlined">analytics</span>
                     <span>View Analysis</span>

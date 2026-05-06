@@ -128,24 +128,6 @@ const Sales = () => {
     };
 
 
-    // Filtered employees for delivery
-    const deliveryEmployees = React.useMemo(() => {
-        return (employees || []).filter(emp =>
-            emp.department?.toLowerCase().includes("delivery") ||
-            emp.department?.toLowerCase().includes("driver")
-        );
-    }, [employees]);
-
-    // Filtered employees for sales
-    const salesEmployees = React.useMemo(() => {
-        return (employees || []).filter(emp =>
-            emp.department?.toLowerCase().includes("sales") ||
-            emp.department?.toLowerCase().includes("admin") ||
-            emp.department?.toLowerCase().includes("office") ||
-            emp.department?.toLowerCase().includes("ceo") ||
-            emp.department?.toLowerCase().includes("hr")
-        );
-    }, [employees]);
 
     // Derived selected product
     const selectedProductObj = products.find(p => p.baseName === selectedBaseProduct && p.size === selectedSize);
@@ -397,6 +379,9 @@ const Sales = () => {
         setHsnCode("4602 19 19");
         setGstRate("5");
         setTimeout(() => setFeedbackMessage(""), 3000);
+
+        // Scroll back to the top (Customer Details section) on mobile
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, gstRate, hsnCode, paidStatus, paymentMode, quantity, salesHistory, selectedBaseProduct, selectedProduct, selectedProductObj, selectedSize, setIsLogging, soldBy, updateSale, user?.name, unitPrice]);
 
 
@@ -435,10 +420,6 @@ const Sales = () => {
     // ─── Shared: Capture HTML preview & Send to WhatsApp ──────────────────
 
 
-    // Export Handler
-    const handleExport = () => {
-        setShowExportModal(true);
-    };
 
     const confirmExport = () => {
         setExportLoading(true);
@@ -702,21 +683,13 @@ const Sales = () => {
                 <div>
                     <h1 className="page-title">Sale</h1>
                 </div>
-                <div className="header-actions">
-                    <button className="btn-export-premium" onClick={handleExport} disabled={exportLoading}>
-                        <span className="material-symbols-outlined">
-                            {exportLoading ? "hourglass_empty" : "download"}
-                        </span>
-                        {exportLoading ? "Exporting..." : "Export Report"}
-                    </button>
-                </div>
             </div>
 
             {/* Quick Sales Entry Card */}
             <div className={`desktop-view-section ${viewMode !== 'entry' ? 'mobile-hidden' : ''}`}>
                 <div className="stock-table-container quick-entry-card">
-                    <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 32px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                    <div className="table-header customer-details-header">
+                        <div className="customer-header-title-wrap">
                             <h3 className="section-title">{editingTransactionId ? "Edit Sales Record" : "Customer Details"}</h3>
                             <div className="client-type-toggle-mini">
                                 <button
@@ -809,13 +782,29 @@ const Sales = () => {
                                                                     setIsClientDropdownOpen(false);
                                                                     // Remove focus after selection
                                                                     if (document.activeElement) document.activeElement.blur();
+
+                                                                    // Auto scroll to Billing Details
+                                                                    setTimeout(() => {
+                                                                        const billingDetailsElement = document.getElementById('billing-details-section');
+                                                                        if (billingDetailsElement) {
+                                                                            billingDetailsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                                        }
+                                                                    }, 100);
                                                                 }}
                                                                 className={`product-dropdown-item ${companyName === client.companyName ? 'active' : ''}`}
                                                             >
-                                                                <span className="product-name-text">
-                                                                    <span className="keyboard-shortcut-tag">{idx + 1}</span> {client.companyName}
-                                                                </span>
-                                                                <span className="product-sku-category">{client.contactPerson}</span>
+                                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', gap: '2px' }}>
+                                                                    <div className="client-option-main" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                        <span className="product-name-text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                            <span className="keyboard-shortcut-tag">{idx + 1}</span>
+                                                                            <span>{client.companyName}</span>
+                                                                        </span>
+                                                                        {client.clientType && <span className="type-tag">{client.clientType}</span>}
+                                                                    </div>
+                                                                    <div className="client-option-sub" style={{ paddingLeft: '32px', textAlign: 'left', fontSize: '11px', color: '#64748b' }}>
+                                                                        {client.contactPerson} {client.phone && <span>• {client.phone}</span>}
+                                                                    </div>
+                                                                </div>
                                                             </button>
                                                         ))}
                                                     <div className="dropdown-divider"></div>
@@ -859,7 +848,7 @@ const Sales = () => {
                                         <input
                                             type="text"
                                             ref={itemRefs.customerName}
-                                            placeholder={clientType === 'Individual' ? "Enter or search person name..." : "Enter or search customer name..."}
+                                            placeholder={clientType === 'Individual' ? "Search person name..." : "Search customer name..."}
                                             className="quick-entry-input dropdown-search-input"
                                             style={{ width: '100%' }}
                                             value={customerName}
@@ -883,8 +872,8 @@ const Sales = () => {
                                                     return clientType === 'Company' ? isCompany : isPersonal;
                                                 })
                                                 .filter(c =>
-                                                    (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) ||
-                                                        c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
+                                                (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) ||
+                                                    c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
                                                 ).length > 0 ? (
                                                 clients
                                                     .filter(c => {
@@ -893,8 +882,8 @@ const Sales = () => {
                                                         return clientType === 'Company' ? isCompany : isPersonal;
                                                     })
                                                     .filter(c =>
-                                                        (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) ||
-                                                            c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
+                                                    (c.contactPerson?.toLowerCase().includes(customerName.toLowerCase()) ||
+                                                        c.companyName?.toLowerCase().includes(customerName.toLowerCase()))
                                                     )
                                                     .map((client, idx) => (
                                                         <button
@@ -909,18 +898,27 @@ const Sales = () => {
                                                                 setIsCustomerDropdownOpen(false);
                                                                 // Remove focus after selection
                                                                 if (document.activeElement) document.activeElement.blur();
+
+                                                                // Auto scroll to Billing Details
+                                                                setTimeout(() => {
+                                                                    const billingDetailsElement = document.getElementById('billing-details-section');
+                                                                    if (billingDetailsElement) {
+                                                                        billingDetailsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                                    }
+                                                                }, 100);
                                                             }}
                                                             className="product-dropdown-item"
                                                         >
-                                                            <div className="client-option-main">
-                                                                <span className="product-name-text">
-                                                                    <span className="keyboard-shortcut-tag">{idx + 1}</span> {client.companyName || client.contactPerson}
+                                                            <div className="client-option-main" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                <span className="product-name-text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    <span className="keyboard-shortcut-tag">{idx + 1}</span>
+                                                                    <span>{client.companyName || client.contactPerson}</span>
                                                                 </span>
                                                                 <span className="type-tag">{client.clientType || 'Personal'}</span>
                                                             </div>
-                                                            <div className="client-option-sub">
+                                                            <div className="client-option-sub" style={{ paddingLeft: '32px', textAlign: 'left', fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
                                                                 <span>{client.phone}</span>
-                                                                {client.gst && <span> | {client.gst}</span>}
+                                                                {client.gst && <span> • {client.gst}</span>}
                                                             </div>
                                                         </button>
                                                     ))
@@ -965,7 +963,7 @@ const Sales = () => {
                         <div className="quick-entry-row">
                             <div className="quick-entry-item two-col-item" style={clientType === 'Individual' ? { opacity: 0.6 } : {}}>
                                 <span className="quick-entry-label">GSTIN No:</span>
-                                <div className="input-with-icon">
+                                <div className="input-with-icon" style={{ width: '100%' }}>
                                     <span className="material-symbols-outlined input-icon">receipt</span>
                                     <input
                                         type="text"
@@ -974,7 +972,7 @@ const Sales = () => {
                                         value={clientType === 'Individual' ? "" : customerGstin}
                                         disabled={clientType === 'Individual'}
                                         onChange={(e) => setCustomerGstin(e.target.value.toUpperCase())}
-                                        style={clientType === 'Individual' ? { cursor: 'not-allowed' } : {}}
+                                        style={{ width: '100%', ...(clientType === 'Individual' ? { cursor: 'not-allowed' } : {}) }}
                                     />
                                 </div>
                             </div>
@@ -982,20 +980,20 @@ const Sales = () => {
                             <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">Address *:</span>
                                 <div style={{ width: '100%' }}>
-                                    <input
-                                        type="text"
+                                    <textarea
                                         placeholder="Enter mandatory address"
                                         className="quick-entry-input"
-                                        style={{ borderLeft: '3px solid #10b981' }}
+                                        style={{ borderLeft: '3px solid #10b981', minHeight: '80px', paddingTop: '10px', resize: 'vertical' }}
                                         value={customerAddress}
                                         onChange={(e) => setCustomerAddress(e.target.value)}
+                                        rows="3"
                                     />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="table-header" style={{ padding: '14px 32px' }}>
+                    <div id="billing-details-section" className="table-header" style={{ padding: '14px 32px' }}>
                         <h3 className="section-title">Billing Details</h3>
                     </div>
                     <div className="quick-entry-grid" style={{ paddingTop: 0 }}>
@@ -1084,7 +1082,7 @@ const Sales = () => {
                                 <span className="quick-entry-label">Total Pieces: <span className="shortcut-hint">Q</span></span>
                                 <div style={{ width: '100%', position: 'relative' }}>
                                     {selectedBaseProduct && selectedSize && (
-                                        <div style={{ position: 'absolute', top: '-14px', right: '10px', zIndex: 10 }}>
+                                        <div className="stock-badge-wrapper" style={{ position: 'absolute', top: '-14px', right: '10px', zIndex: 10 }}>
                                             {(() => {
                                                 const product = products.find(p =>
                                                     (p.baseName || "").toLowerCase().trim() === (selectedBaseProduct || "").toLowerCase().trim() &&
@@ -1130,13 +1128,13 @@ const Sales = () => {
                                         ref={itemRefs.unitPrice}
                                         value={unitPrice}
                                         onChange={(e) => setUnitPrice(e.target.value)}
-                                        onKeyDown={(e) => handleKeyDown(e, 'hsnCode')}
+                                        onKeyDown={(e) => handleKeyDown(e)}
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="quick-entry-row">
+                        <div className="quick-entry-row hsn-gst-row">
                             <div className="quick-entry-item two-col-item">
                                 <span className="quick-entry-label">HSN Code:</span>
                                 <div style={{ width: '100%' }}>
@@ -1153,7 +1151,7 @@ const Sales = () => {
                             </div>
 
                             <div className="quick-entry-item two-col-item">
-                                <span className="quick-entry-label">GST Rate (%): <span className="shortcut-hint">G</span></span>
+                                <span className="quick-entry-label">GST Rate (%):</span>
                                 <div className="amount-input-wrapper">
                                     <input
                                         type="number"
@@ -1196,82 +1194,82 @@ const Sales = () => {
                             </div>
                         </div>
 
-                    {billItems.length > 0 && (
-                        <div className="bill-preview-section" style={{ marginTop: '24px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', padding: 0 }}>
-                            <div className="preview-header" style={{ padding: '16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
-                                <span style={{ fontWeight: 600, color: '#334155' }}>Items in Current Bill ({billItems.length})</span>
-                                <button className="clear-bill" onClick={() => setBillItems([])} style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Clear All</button>
-                            </div>
+                        {billItems.length > 0 && (
+                            <div className="bill-preview-section" style={{ marginTop: '24px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', padding: 0 }}>
+                                <div className="preview-header" style={{ padding: '16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
+                                    <span style={{ fontWeight: 600, color: '#334155' }}>Items in Current Bill ({billItems.length})</span>
+                                    <button className="clear-bill" onClick={() => setBillItems([])} style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Clear All</button>
+                                </div>
 
-                            <div className="preview-table-container" style={{ overflowX: 'auto' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
-                                    <thead>
-                                        <tr style={{ background: '#fefefe', borderBottom: '1px solid #e2e8f0' }}>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', width: '5%' }}>S.NO</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '10%' }}>HSN CODE</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '25%' }}>PRODUCT NAME</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '10%' }}>QTY</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '12%' }}>RATE</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '12%' }}>GST</th>
-                                            <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '16%' }}>AMOUNT</th>
-                                            <th style={{ padding: '12px 16px', width: '10%', textAlign: 'center' }}>ACTION</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {billItems.map((item, idx) => (
-                                            <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                                <td style={{ padding: '16px', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>{idx + 1}</td>
-                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'left' }}>{item.hsn || "-"}</td>
-                                                <td style={{ padding: '16px', color: '#1e293b', fontSize: '0.9rem', textAlign: 'left' }}>{item.baseName} <span style={{ color: '#64748b', fontSize: '0.8rem' }}>({item.size})</span></td>
-                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>{item.qty}</td>
-                                                <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>₹{item.rate?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', color: '#64748b', fontSize: '0.85rem', textAlign: 'right' }}>
-                                                    {item.gstRate}%
-                                                </td>
-                                                <td style={{ padding: '16px', color: '#1e293b', fontWeight: 500, fontSize: '0.9rem', textAlign: 'right' }}>
-                                                    ₹{item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                </td>
-                                                <td style={{ padding: '16px', textAlign: 'center' }}>
-                                                    <button
-                                                        onClick={() => setBillItems(billItems.filter(i => i.id !== item.id))}
-                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '4px', margin: '0 auto' }}
-                                                        title="Remove Item"
-                                                        onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
-                                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                                    >
-                                                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
-                                                    </button>
-                                                </td>
+                                <div className="preview-table-container" style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
+                                        <thead>
+                                            <tr style={{ background: '#fefefe', borderBottom: '1px solid #e2e8f0' }}>
+                                                <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', width: '5%' }}>S.NO</th>
+                                                <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '10%' }}>HSN CODE</th>
+                                                <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '25%' }}>PRODUCT NAME</th>
+                                                <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '10%' }}>QTY</th>
+                                                <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '12%' }}>RATE</th>
+                                                <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '12%' }}>GST</th>
+                                                <th style={{ padding: '12px 16px', fontSize: '0.73rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', width: '16%' }}>AMOUNT</th>
+                                                <th style={{ padding: '12px 16px', width: '10%', textAlign: 'center' }}>ACTION</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-                                            <td colSpan="6" style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: '#64748b', fontSize: '0.7rem' }}>SUBTOTAL</td>
-                                            <td style={{ padding: '10px 16px', fontWeight: 600, color: '#475569', fontSize: '0.9rem', textAlign: 'right' }}>
-                                                ₹{billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td></td>
-                                        </tr>
-                                        <tr style={{ background: '#f8fafc' }}>
-                                            <td colSpan="6" style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: '#64748b', fontSize: '0.7rem' }}>TOTAL GST</td>
-                                            <td style={{ padding: '10px 16px', fontWeight: 600, color: '#475569', fontSize: '0.9rem', textAlign: 'right' }}>
-                                                ₹{billItems.reduce((sum, item) => sum + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td></td>
-                                        </tr>
-                                        <tr style={{ background: '#f0fdf4' }}>
-                                            <td colSpan="6" style={{ padding: '16px', textAlign: 'right', fontWeight: 700, color: '#166534', fontSize: '0.8rem', textTransform: 'uppercase' }}>GRAND TOTAL</td>
-                                            <td style={{ padding: '16px', fontWeight: 800, color: '#10b981', fontSize: '1.2rem', textAlign: 'right' }}>
-                                                ₹{billItems.reduce((sum, item) => sum + item.amount + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {billItems.map((item, idx) => (
+                                                <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                    <td style={{ padding: '16px', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>{idx + 1}</td>
+                                                    <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'left' }}>{item.hsn || "-"}</td>
+                                                    <td style={{ padding: '16px', color: '#1e293b', fontSize: '0.9rem', textAlign: 'left' }}>{item.baseName} <span style={{ color: '#64748b', fontSize: '0.8rem' }}>({item.size})</span></td>
+                                                    <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>{item.qty}</td>
+                                                    <td style={{ padding: '16px', color: '#334155', fontSize: '0.9rem', textAlign: 'right' }}>₹{item.rate?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                    <td style={{ padding: '16px', color: '#64748b', fontSize: '0.85rem', textAlign: 'right' }}>
+                                                        {item.gstRate}%
+                                                    </td>
+                                                    <td style={{ padding: '16px', color: '#1e293b', fontWeight: 500, fontSize: '0.9rem', textAlign: 'right' }}>
+                                                        ₹{item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                    </td>
+                                                    <td style={{ padding: '16px', textAlign: 'center' }}>
+                                                        <button
+                                                            onClick={() => setBillItems(billItems.filter(i => i.id !== item.id))}
+                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '4px', margin: '0 auto' }}
+                                                            title="Remove Item"
+                                                            onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                                        >
+                                                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                                                <td colSpan="6" style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: '#64748b', fontSize: '0.7rem' }}>SUBTOTAL</td>
+                                                <td style={{ padding: '10px 16px', fontWeight: 600, color: '#475569', fontSize: '0.9rem', textAlign: 'right' }}>
+                                                    ₹{billItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                            <tr style={{ background: '#f8fafc' }}>
+                                                <td colSpan="6" style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: '#64748b', fontSize: '0.7rem' }}>TOTAL GST</td>
+                                                <td style={{ padding: '10px 16px', fontWeight: 600, color: '#475569', fontSize: '0.9rem', textAlign: 'right' }}>
+                                                    ₹{billItems.reduce((sum, item) => sum + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                            <tr style={{ background: '#f0fdf4' }}>
+                                                <td colSpan="6" style={{ padding: '16px', textAlign: 'right', fontWeight: 700, color: '#166534', fontSize: '0.8rem', textTransform: 'uppercase' }}>GRAND TOTAL</td>
+                                                <td style={{ padding: '16px', fontWeight: 800, color: '#10b981', fontSize: '1.2rem', textAlign: 'right' }}>
+                                                    ₹{billItems.reduce((sum, item) => sum + item.amount + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
                         <div className="overall-bill-summary-fixed" style={{ marginTop: '28px', marginBottom: '42px', padding: '12px 32px', background: '#ffffff', borderRadius: '12px', border: '2px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1371,30 +1369,29 @@ const Sales = () => {
                                                     className="dropdown-search-input"
                                                     autoFocus
                                                     onClick={(e) => e.stopPropagation()}
-                                                    onChange={(e) => setDeliveryEmployee(e.target.value)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.toLowerCase();
+                                                        const items = e.target.closest('.product-dropdown-menu').querySelectorAll('.product-dropdown-item');
+                                                        items.forEach(item => {
+                                                            if (item.textContent.toLowerCase().includes(val)) item.style.display = 'flex';
+                                                            else item.style.display = 'none';
+                                                        });
+                                                    }}
                                                 />
                                             </div>
-                                            {deliveryEmployees.filter(emp =>
-                                                emp.name.toLowerCase().includes((deliveryEmployee || "").toLowerCase())
-                                            ).length > 0 ? (
-                                                deliveryEmployees
-                                                    .filter(emp => emp.name.toLowerCase().includes((deliveryEmployee || "").toLowerCase()))
-                                                    .map((emp) => (
-                                                        <button
-                                                            key={emp.id}
-                                                            onClick={() => {
-                                                                setDeliveryEmployee(emp.name);
-                                                                setIsEmployeeDropdownOpen(false);
-                                                            }}
-                                                            className={`product-dropdown-item ${deliveryEmployee === emp.name ? 'active' : ''}`}
-                                                        >
-                                                            <span className="product-name-text">{emp.name}</span>
-                                                            <span className="product-sku-category">{emp.department}</span>
-                                                        </button>
-                                                    ))
-                                            ) : (
-                                                <div className="no-clients-found">No delivery staff found matching "{deliveryEmployee}"</div>
-                                            )}
+                                            {employees.map((emp) => (
+                                                <button
+                                                    key={emp.id}
+                                                    onClick={() => {
+                                                        setDeliveryEmployee(emp.name);
+                                                        setIsEmployeeDropdownOpen(false);
+                                                    }}
+                                                    className={`product-dropdown-item ${deliveryEmployee === emp.name ? 'active' : ''}`}
+                                                >
+                                                    <span className="product-name-text">{emp.name}</span>
+                                                    <span className="product-sku-category">{emp.department}</span>
+                                                </button>
+                                            ))}
                                         </div>
                                     )}
                                 </div>
@@ -1426,34 +1423,33 @@ const Sales = () => {
                                             <div className="dropdown-search-wrapper">
                                                 <input
                                                     type="text"
-                                                    placeholder="Search sales staff..."
+                                                    placeholder="Search employees..."
                                                     className="dropdown-search-input"
                                                     autoFocus
                                                     onClick={(e) => e.stopPropagation()}
-                                                    onChange={(e) => setSoldBy(e.target.value)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.toLowerCase();
+                                                        const items = e.target.closest('.product-dropdown-menu').querySelectorAll('.product-dropdown-item');
+                                                        items.forEach(item => {
+                                                            if (item.textContent.toLowerCase().includes(val)) item.style.display = 'flex';
+                                                            else item.style.display = 'none';
+                                                        });
+                                                    }}
                                                 />
                                             </div>
-                                            {(salesEmployees.length > 0 ? salesEmployees : employees).filter(emp =>
-                                                emp.name.toLowerCase().includes((soldBy || "").toLowerCase())
-                                            ).length > 0 ? (
-                                                (salesEmployees.length > 0 ? salesEmployees : employees)
-                                                    .filter(emp => emp.name.toLowerCase().includes((soldBy || "").toLowerCase()))
-                                                    .map((emp) => (
-                                                        <button
-                                                            key={emp.id}
-                                                            onClick={() => {
-                                                                setSoldBy(emp.name);
-                                                                setIsSoldByDropdownOpen(false);
-                                                            }}
-                                                            className={`product-dropdown-item ${soldBy === emp.name ? 'active' : ''}`}
-                                                        >
-                                                            <span className="product-name-text">{emp.name}</span>
-                                                            <span className="product-sku-category">{emp.department}</span>
-                                                        </button>
-                                                    ))
-                                            ) : (
-                                                <div className="no-clients-found">No sales staff found matching "{soldBy}"</div>
-                                            )}
+                                            {employees.map((emp) => (
+                                                <button
+                                                    key={emp.id}
+                                                    onClick={() => {
+                                                        setSoldBy(emp.name);
+                                                        setIsSoldByDropdownOpen(false);
+                                                    }}
+                                                    className={`product-dropdown-item ${soldBy === emp.name ? 'active' : ''}`}
+                                                >
+                                                    <span className="product-name-text">{emp.name}</span>
+                                                    <span className="product-sku-category">{emp.department}</span>
+                                                </button>
+                                            ))}
                                         </div>
                                     )}
                                 </div>

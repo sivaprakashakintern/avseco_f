@@ -749,7 +749,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           <div className="premium-table-header-new">
             <div className="header-left">
               <span className="material-symbols-outlined header-icon">format_list_bulleted</span>
-              <h3>Production Items by Size ({filteredData.length})</h3>
+              <h3>Production Items</h3>
             </div>
             <button className="premium-export-btn-new" onClick={handleExportClick}>
               <span className="material-symbols-outlined">download</span>
@@ -896,9 +896,15 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                const isMaster = item.productSize === 'All Sizes';
 
                return (
-                 <div key={`m-${item.id}`} className={`mobile-row-card-new ${isMaster ? 'master' : ''}`}>
+                 <div 
+                   key={`m-${item.id}`} 
+                   className={`mobile-row-card-new ${isMaster ? 'master' : ''}`}
+                 >
                     <div className="card-header-mob">
-                      <span className="mob-size">{item.productSize}</span>
+                      <div className="mob-product-info">
+                        <span className="mob-product-name">{item.productName}</span>
+                        <span className="mob-size">{item.productSize}</span>
+                      </div>
                       <button className="mob-delete" onClick={() => handleDeleteTarget(item.id)}>
                         <span className="material-symbols-outlined">delete</span>
                       </button>
@@ -997,6 +1003,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
             </div>
           </div>
         )}
+
 
         {showClearModal && (
           <div className="modal-overlay" onClick={() => setShowClearModal(false)}>

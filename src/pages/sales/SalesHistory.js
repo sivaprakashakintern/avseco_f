@@ -564,11 +564,12 @@ const SalesHistory = () => {
                     style={{
                         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                         backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        display: 'block', /* Changed to block for natural scrolling */
                         padding: '20px', zIndex: 3000,
-                        overflow: 'auto', backdropFilter: 'blur(6px)',
+                        overflowX: 'auto', overflowY: 'auto', backdropFilter: 'blur(6px)',
                         cursor: 'pointer', opacity: 1,
-                        pointerEvents: 'auto'
+                        pointerEvents: 'auto',
+                        WebkitOverflowScrolling: 'touch' /* Smooth scroll on iOS */
                     }}
                 >
                     <div
@@ -576,9 +577,8 @@ const SalesHistory = () => {
                         id="printable-bill"
                         onClick={(e) => e.stopPropagation()}
                         style={{
-                            padding: '0', background: '#ffffff', maxWidth: '850px', width: '850px',
-                            zoom: window.innerWidth < 850 ? (window.innerWidth - 40) / 850 : 1,
-                            margin: 'auto', boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
+                            padding: '0', background: '#ffffff', minWidth: '850px', width: '850px',
+                            margin: '40px auto', boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
                             border: 'none', borderRadius: '4px', position: 'relative', cursor: 'default'
                         }}
                     >
@@ -613,23 +613,6 @@ const SalesHistory = () => {
                             .ci-payment { display: grid; grid-template-columns: 1fr 1fr; padding: 24px 40px; border-top: 2px solid #045b54; margin-top: 40px; background: #fcfdfe; }
                             .ci-pay-title { font-size: 13px; font-weight: 800; color: #045b54; margin-bottom: 10px; text-transform: uppercase; }
                             .ci-footer { border-top: 2px solid #045b54; margin-top: auto; padding: 20px 40px; text-align: center; font-size: 12px; color: #64748b; font-weight: 500; }
-                            
-                            /* MOBILE RESPONSIVE INVOICE */
-                            @media screen and (max-width: 600px) {
-                                .ci-header { flex-direction: column; text-align: center; gap: 20px; padding: 0 20px 20px; }
-                                .ci-logo-area { flex-direction: column; gap: 10px; }
-                                .ci-invoice-title { text-align: center; font-size: 24px; }
-                                .ci-invoice-meta { text-align: center; align-items: center; }
-                                .ci-billto { flex-direction: column; gap: 25px; padding: 0 20px; }
-                                .ci-billto-right { text-align: left !important; }
-                                .ci-table-wrap { padding: 0 10px; overflow-x: auto; }
-                                .ci-table th, .ci-table td { padding: 10px 8px; font-size: 11px; }
-                                .ci-summary { padding: 0 20px; }
-                                .ci-summary-box { width: 100%; }
-                                .ci-payment { grid-template-columns: 1fr; gap: 20px; padding: 20px; }
-                                .ci-footer { padding: 15px 20px; }
-                                .bill-modal-content { width: 95% !important; max-width: 95% !important; zoom: 1 !important; }
-                            }
                         `}</style>
                         <div className="ci-container" id="printable-invoice">
                         <div className="ci-header">
