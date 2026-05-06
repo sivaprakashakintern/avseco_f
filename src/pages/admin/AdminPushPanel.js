@@ -40,77 +40,100 @@ const AdminPushPanel = () => {
 
     return (
         <div className="admin-push-container">
-            <div className="push-banner">
-                <div className="push-banner-info">
-                    <h1 className="push-banner-title">Broadcast Center</h1>
+            <div className="premium-header-green att-header">
+                <div className="header-left-group">
+                    <h1 className="page-title-white">Broadcast Center</h1>
                 </div>
             </div>
 
-            <div className="push-card">
-                <form className="push-form" onSubmit={handleSend}>
-                    <div className="push-form-row">
-                        <div className="form-group">
-                            <label>Target Audience</label>
-                            <select 
-                                value={recipientId} 
-                                onChange={(e) => setRecipientId(e.target.value)}
-                                className="push-select"
-                            >
-                                <option value="all">All Employees</option>
-                                {employees.filter(e => e.role !== 'admin').map(emp => (
-                                    <option key={emp.id} value={emp.id}>{emp.name} ({emp.department})</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="form-group">
-                            <label>Notification Title</label>
-                            <input 
-                                type="text" 
-                                placeholder="e.g., Attendance Reminder" 
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className="push-input"
-                            />
+            <div className="push-main-content">
+                <div className="push-card-premium">
+                    <div className="push-card-header-new">
+                        <span className="material-symbols-outlined header-icon">campaign</span>
+                        <div className="header-text">
+                            <h2>Draft Notification</h2>
+                            <p>Send a global alert or private message</p>
                         </div>
                     </div>
 
-                    {status && (
-                        <div className={`push-status ${status.type}`}>
-                            <span className="material-symbols-outlined">
-                                {status.type === 'success' ? 'check_circle' : 'error'}
-                            </span>
-                            {status.msg}
-                        </div>
-                    )}
+                    <form className="push-form-refined" onSubmit={handleSend}>
+                        <div className="form-grid-new">
+                            <div className="form-group-refined">
+                                <label>Target Audience</label>
+                                <div className="input-with-icon">
+                                    <span className="material-symbols-outlined input-icon">group</span>
+                                    <select 
+                                        value={recipientId} 
+                                        onChange={(e) => setRecipientId(e.target.value)}
+                                        className="push-select-refined"
+                                    >
+                                        <option value="all">All Employees</option>
+                                        {employees.filter(e => e.role !== 'admin').map(emp => (
+                                            <option key={emp.id} value={emp.id}>{emp.name} ({emp.department})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
 
-                    <div className="form-group flex-1">
-                        <label>Message Content</label>
-                        <div className="push-form-msg-row-unified">
-                            <textarea 
-                                placeholder="Write your message here..." 
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                className="push-textarea-compact"
-                                rows="1"
-                            />
+                            <div className="form-group-refined">
+                                <label>Notification Title</label>
+                                <div className="input-with-icon">
+                                    <span className="material-symbols-outlined input-icon">label</span>
+                                    <input 
+                                        type="text" 
+                                        placeholder="e.g., General Announcement" 
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        className="push-input-refined"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="form-group-refined full-width">
+                            <label>Message Content</label>
+                            <div className="textarea-with-icon">
+                                <span className="material-symbols-outlined input-icon">chat_bubble</span>
+                                <textarea 
+                                    placeholder="Type your message here..." 
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    className="push-textarea-refined"
+                                    rows="4"
+                                />
+                            </div>
+                        </div>
+
+                        {status && (
+                            <div className={`push-status-refined ${status.type}`}>
+                                <span className="material-symbols-outlined">
+                                    {status.type === 'success' ? 'check_circle' : 'error'}
+                                </span>
+                                {status.msg}
+                            </div>
+                        )}
+
+                        <div className="push-footer-refined">
                             <button 
                                 type="submit" 
-                                className="btn-send-push-inline" 
+                                className="btn-send-push-premium" 
                                 disabled={isSending}
                             >
                                 {isSending ? (
-                                    <span className="material-symbols-outlined spinning">sync</span>
+                                    <>
+                                        <span className="material-symbols-outlined spinning">sync</span>
+                                        Sending...
+                                    </>
                                 ) : (
                                     <>
                                         <span className="material-symbols-outlined">send</span>
-                                        Send
+                                        Dispatch Notification
                                     </>
                                 )}
                             </button>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     );

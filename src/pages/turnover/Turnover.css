@@ -14,23 +14,39 @@
 }
 
 /* ===== MODERN HEADER ===== */
-.premium-header-green {
+.premium-header-green.att-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-  background: linear-gradient(135deg, #006A4E 0%, #004d39 100%);
-  padding: 28px 32px;
-  border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(0, 106, 78, 0.12);
+  background: #006A4E;
+  padding: 16px 32px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 106, 78, 0.15);
   color: white;
+  position: relative;
+  overflow: hidden;
 }
 
-.header-left-group h1 {
-  font-size: 28px;
-  font-weight: 800;
+.page-title-white {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px; 
+  font-weight: 750;
+  color: #ffffff;
   margin: 0;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.2px;
+}
+
+.page-title-white::before {
+  content: '';
+  display: block;
+  width: 3.5px;
+  height: 22px;
+  background: #00e676; 
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .subtitle-slim {
@@ -599,4 +615,142 @@
 
 .analytics-grid-full {
   display: block;
+}
+
+/* ── Mobile Responsiveness ────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .turnover-container {
+    padding: 16px;
+  }
+  
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .trend-grid {
+    gap: 6px;
+  }
+  
+  .col-label {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .premium-header-green.att-header {
+    padding: 12px 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+  }
+
+  .page-title-white {
+    font-size: 16px; /* INCREASED */
+    gap: 8px;
+  }
+  
+  .page-title-white::before {
+    height: 18px;
+    width: 3px;
+  }
+
+  .filters-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .filter-type-buttons {
+    width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+  
+  .filter-btn {
+    flex: 1;
+    white-space: nowrap;
+    padding: 8px 12px;
+  }
+
+  /* Stats: Horizontal scrollable row */
+  .turnover-stats {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .turnover-stats::-webkit-scrollbar {
+    display: none;
+  }
+
+  .stat-card {
+    padding: 10px 12px;
+    border-radius: 12px;
+    min-width: 140px;
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .stat-icon {
+    display: none; /* Hide icon to save space and match user screenshot */
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+  
+  .css-trend-chart {
+    height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .premium-header-green.att-header {
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
+
+  .page-title-white {
+    font-size: 15px; /* INCREASED from 12px */
+    gap: 6px;
+  }
+  
+  .page-title-white::before {
+    height: 14px;
+    width: 2.5px;
+  }
+
+  .stat-card {
+    padding: 6px 8px;
+    min-width: unset;
+    width: fit-content;
+  }
+
+  .stat-value {
+    font-size: 15px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+  }
+  
+  .analytics-card {
+    padding: 16px;
+  }
+  
+  .gauge-circle {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .gauge-center .perc {
+    font-size: 18px;
+  }
 }

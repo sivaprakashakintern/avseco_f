@@ -251,10 +251,22 @@ const AttendanceLog = () => {
       {/* ── TOAST ─────────────────────────────────────────────────────────────── */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* ── PAGE HEADER BANNER ─────────────────────────────────────────────── */}
-      <div className="att-banner-header">
-        <div className="att-banner-left">
-          <h1 className="att-banner-title">Attendance Management</h1>
+      <div className="premium-header-green att-header">
+        <div className="header-left-group">
+          <h1 className="page-title-white">Attendance Management</h1>
+        </div>
+        <div className="header-right-group">
+          {!isMobile && (
+            <button 
+              className="btn-add-premium-pill" 
+              onClick={handleSaveAttendance} 
+              disabled={saveLoading || isSunday || !isToday}
+              title="Save Attendance"
+            >
+              <span className="material-symbols-outlined">{saveLoading ? "hourglass_top" : "save"}</span>
+              <span className="btn-text">{saveLoading ? "Saving…" : "Save Attendance"}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -282,16 +294,6 @@ const AttendanceLog = () => {
             <span className="material-symbols-outlined">warning</span>
             Work Stoppage
           </button>
-          {!isMobile && (
-            <button 
-              className="att-btn att-btn-primary" 
-              onClick={handleSaveAttendance} 
-              disabled={saveLoading || isSunday || !isToday}
-            >
-              <span className="material-symbols-outlined">{saveLoading ? "hourglass_top" : "save"}</span>
-              {saveLoading ? "Saving…" : "Save Attendance"}
-            </button>
-          )}
         </div>
       </div>
 
@@ -325,7 +327,6 @@ const AttendanceLog = () => {
             <h3 className="att-stat-number">{stats.half}</h3>
           </div>
         </div>
-
       </div>
 
       {/* ── FILTERS + BULK ACTIONS ────────────────────────────────────────────── */}
@@ -369,29 +370,28 @@ const AttendanceLog = () => {
 
         <div className="att-filter-spacer" />
 
-        <button 
-          className="att-btn att-btn-success-outline" 
-          onClick={handleMarkAllPresent}
-          disabled={isSunday || !isToday}
-        >
-          <span className="material-symbols-outlined">done_all</span>
-          Mark All Present
-        </button>
-      </div>
-
-      {isMobile && (
-        <div style={{ padding: '0 14px', marginBottom: '20px' }}>
+        <div className="att-action-group">
           <button 
-            className="att-btn att-btn-primary" 
-            style={{ width: '100%', justifyContent: 'center', height: '50px', borderRadius: '14px' }}
-            onClick={handleSaveAttendance} 
-            disabled={saveLoading || isSunday || !isToday}
+            className="att-btn att-btn-success-outline att-mark-all-btn" 
+            onClick={handleMarkAllPresent}
+            disabled={isSunday || !isToday}
           >
-            <span className="material-symbols-outlined">{saveLoading ? "hourglass_top" : "save"}</span>
-            {saveLoading ? "Saving…" : "Save Attendance"}
+            <span className="material-symbols-outlined">done_all</span>
+            Mark All Present
           </button>
+
+          {isMobile && (
+            <button 
+              className="att-btn att-btn-primary att-mobile-save-btn" 
+              onClick={handleSaveAttendance} 
+              disabled={saveLoading || isSunday || !isToday}
+            >
+              <span className="material-symbols-outlined">{saveLoading ? "hourglass_top" : "save"}</span>
+              {saveLoading ? "Save" : "Save"}
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       {/* ── TABLE ─────────────────────────────────────────────────────────────── */}
       <div className="att-table-card">
@@ -466,11 +466,6 @@ const AttendanceLog = () => {
             {paginatedEmployees.length > 0 ? (
               paginatedEmployees.map((emp, index) => (
                 <div key={emp.id} className="att-mobile-row">
-                  {/* S.NO */}
-                  <span className="att-mobile-sno">
-                    #{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
-                  </span>
-
                   {/* Avatar */}
                   <div className={`att-avatar att-avatar-${emp.status} att-mobile-avatar`}>
                     {getInitials(emp.name)}

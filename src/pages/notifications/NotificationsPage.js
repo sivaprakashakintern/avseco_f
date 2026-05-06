@@ -62,9 +62,9 @@ const NotificationsPage = () => {
     return (
         <div className="ntp-container">
             {/* ── Banner Header ───────────────────────────────────── */}
-            <div className="ntp-banner">
-                <div className="ntp-banner-info">
-                    <h1 className="ntp-banner-title">Notifications Center</h1>
+            <div className="premium-header-green att-header">
+                <div className="header-left-group">
+                    <h1 className="page-title-white">Notifications Center</h1>
                 </div>
             </div>
 

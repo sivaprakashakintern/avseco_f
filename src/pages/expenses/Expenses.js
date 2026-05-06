@@ -102,10 +102,17 @@ const Expenses = () => {
             } else {
                 d = new Date(ex.date);
             }
+<<<<<<< HEAD
 
             const isFirstOfMonth = d.getDate() === 1 &&
                 d.getMonth() === todayDateObj.getMonth() &&
                 d.getFullYear() === todayDateObj.getFullYear();
+=======
+            
+            const isFirstOfMonth = d.getDate() === 1 && 
+                                 d.getMonth() === todayDateObj.getMonth() && 
+                                 d.getFullYear() === todayDateObj.getFullYear();
+>>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
             return isFirstOfMonth;
         }
         return false;

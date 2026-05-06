@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
-import { useAuth } from '../../context/AuthContext.js';
-import { notificationApi } from '../../utils/api.js';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
@@ -80,7 +78,6 @@ const Production = () => {
     productionTargets,
     fetchTargets
   } = useAppContext();
-  const { isAdmin } = useAuth();
 
   // Production Entry Form State
   const isToday = productionDate.isSame(dayjs(), 'day');
@@ -410,18 +407,6 @@ const Production = () => {
     const totalPages = Math.ceil(allFilteredItems.length / itemsPerPage);
     const paginatedHistory = allFilteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    const handleSendReminder = async (size, produced, target) => {
-        try {
-            await notificationApi.sendPush({
-                title: "Production Status",
-                message: `Target status for ${size}: ${produced.toLocaleString()} / ${target.toLocaleString()} plates produced. Please ensure targets are met.`,
-                targetAudience: "All Employees"
-            });
-            showNotificationMessage("Operators notified successfully!");
-        } catch (err) {
-            showNotificationMessage("Failed to send notification", "error");
-        }
-    };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -437,7 +422,21 @@ const Production = () => {
       grade: record.grade || 'A',
       operator: record.operator
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Smooth scroll to the form section
+    setTimeout(() => {
+      const formElement = document.querySelector('.premium-entry-card');
+      const mainScrollArea = document.querySelector('.main-content') || document.querySelector('.dashboard-content');
+      
+      if (mainScrollArea) {
+        mainScrollArea.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 50);
   };
 
   const handleDeleteProduction = (record) => {
@@ -467,9 +466,16 @@ const Production = () => {
         type={notificationType} 
         onClose={() => setShowNotification(false)} 
       />
+<<<<<<< HEAD
       <div className="page-header premium-header">
         <div className="header-left">
           <h1 className="page-title">Daily Production</h1>
+=======
+
+      <div className="premium-header-green att-header">
+        <div className="header-left-group">
+          <h1 className="page-title-white">Daily Production</h1>
+>>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
         </div>
       </div>
 
@@ -737,15 +743,6 @@ const Production = () => {
                         
                         <div className="stat-value-badge-new">
                           {quantity.toLocaleString()} <span className="qty-unit">plates</span>
-                          {isAdmin && totalTgt > 0 && progress < 100 && (
-                            <button 
-                              className="nudge-btn-mini" 
-                              onClick={() => handleSendReminder(size, totalProducedTillNow, totalTgt)}
-                              title="Nudge Operators"
-                            >
-                              <span className="material-symbols-outlined">campaign</span>
-                            </button>
-                          )}
                         </div>
                         
                         {totalTgt > 0 && (

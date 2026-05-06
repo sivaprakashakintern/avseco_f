@@ -702,7 +702,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                 onClick={handleAddTarget}
               >
                 <span className="material-symbols-outlined">add_task</span>
-                Add / Update Target
+                Add / Update <span className="hide-mobile">Target</span>
               </button>
             </div>
           </div>
@@ -767,8 +767,8 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                   <th className="text-right">Produced</th>
                   <th className="text-right">Daily Target</th>
                   <th className="text-right">Balance</th>
-                  <th className="hide-mobile">Progress</th>
-                  <th className="hide-mobile">Status</th>
+                  <th>Progress</th>
+                  <th>Status</th>
                   <th className="text-center">Action</th>
                 </tr>
               </thead>
@@ -827,7 +827,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                           ) : '-'}
                         </td>
                         <td className="text-right text-warning-new font-bold">{displayRemaining.toLocaleString()}</td>
-                        <td className="hide-mobile">
+                        <td>
                           <div className="progress-container-new">
                             <div className="progress-bar-new">
                               <div className="progress-fill-new" style={{ width: `${progress}%` }}></div>
@@ -835,7 +835,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                             <span className="progress-text-new">{progress}%</span>
                           </div>
                         </td>
-                        <td className="hide-mobile">
+                        <td>
                           <div className={`status-tag-new ${statusClass}`}>
                             <span className="status-dot-new"></span>
                             {statusClass === 'status-completed' ? 'Completed' : 

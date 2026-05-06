@@ -16,47 +16,49 @@
 .admin-container {
   padding: 24px;
   background-color: var(--avs-bg);
-  min-height: 100vh;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   color: var(--avs-text-dark);
 }
 
-.admin-header {
-  padding: 30px 45px;
-  border-radius: 30px;
-  margin-bottom: 35px;
-  box-shadow: 0 20px 40px -15px rgba(0, 106, 78, 0.3);
+/* Header - Premium Industrial Style */
+.premium-header-green.att-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--avs-primary-gradient) !important;
+  margin-bottom: 24px;
+  background: #006A4E;
+  padding: 16px 32px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 106, 78, 0.15);
+  color: white;
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  animation: slideInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
 }
 
-.admin-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
-  pointer-events: none;
-}
-
-.admin-header-left {
-  z-index: 2;
-}
-
-.admin-header h1 {
+.page-title-white {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 750;
+  color: #ffffff;
   margin: 0;
-  font-size: 32px;
-  font-weight: 850;
-  color: white;
-  line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.2px;
+}
+
+.page-title-white::before {
+  content: '';
+  display: block;
+  width: 3.5px;
+  height: 22px;
+  background: #00e676;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .admin-status-text {
@@ -104,8 +106,61 @@
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 20px;
-  height: calc(100vh - 200px);
-  min-height: 550px;
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 992px) {
+  .admin-layout {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+  }
+
+  .admin-container {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+    padding: 12px !important;
+  }
+
+  .employee-sidebar-card {
+    height: auto !important;
+    min-height: 400px;
+    max-height: 600px;
+  }
+
+  .desktop-only-panel {
+    display: none !important;
+  }
+
+  .mobile-inline-management {
+    display: block !important;
+    background: white;
+    border-top: 1px solid #f1f5f9;
+    padding: 15px;
+    animation: slideDown 0.3s ease;
+  }
+
+  .mobile-inline-management .management-wrapper {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .mobile-inline-management .management-top-bar {
+    padding: 15px 0 !important;
+  }
+
+  .mobile-inline-management .permissions-tab,
+  .mobile-inline-management .credentials-tab {
+    padding: 15px 0 !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
 }
 
 /* Employee Sidebar */
@@ -262,6 +317,20 @@
   text-transform: uppercase;
 }
 
+@media (max-width: 480px) {
+  .employee-item {
+    padding: 12px;
+  }
+  
+  .emp-name {
+    font-size: 0.85rem;
+  }
+  
+  .emp-dept {
+    font-size: 0.75rem;
+  }
+}
+
 /* Management Card */
 .management-content-card {
   background: white;
@@ -323,14 +392,42 @@
   box-shadow: 0 4px 12px rgba(0, 106, 78, 0.12);
 }
 
+@media (max-width: 576px) {
+  .selected-user-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 15px;
+  }
+  
+  .tabs {
+    width: 100%;
+  }
+  
+  .tabs button {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+}
+
 .status-message {
-  margin: 20px 30px 0;
-  padding: 12px 20px;
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  z-index: 99999;
+  padding: 16px 24px;
   border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-weight: 500;
+  gap: 12px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(50px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .status-message.success {
@@ -409,6 +506,21 @@
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 15px;
   flex: 1;
+}
+
+@media (max-width: 480px) {
+  .modules-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .module-card {
+    padding: 12px 8px;
+  }
+  
+  .module-name {
+    font-size: 0.75rem;
+  }
 }
 
 .module-card {
@@ -704,46 +816,37 @@
 
 /* Mobile Responsive */
 @media (max-width: 992px) {
-  .admin-layout {
-    grid-template-columns: 1fr;
-    height: auto;
-    gap: 24px;
-    padding: 24px 0;
-  }
-  
-  .employee-sidebar-card,
-  .management-content-card {
-    height: auto;
-    min-height: 500px;
-    padding: 24px;
+  .premium-header-green.att-header {
+    padding: 12px 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
   }
 
-  .admin-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 28px;
+  .page-title-white {
+    font-size: 16px; 
+    gap: 8px;
+  }
+  
+  .page-title-white::before {
+    height: 18px;
+    width: 3px;
   }
 }
 
-@media (max-width: 576px) {
-  .admin-header h1 {
-    font-size: 24px;
+@media (max-width: 480px) {
+  .premium-header-green.att-header {
+    padding: 10px 14px;
+    margin-bottom: 12px;
   }
 
-  .credential-tab-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  .page-title-white {
+    font-size: 15px; 
+    gap: 6px;
   }
-
-  .input-with-actions {
-    flex-wrap: wrap;
-  }
-
-  .icon-action-btn {
-    width: 40px;
-    height: 40px;
+  
+  .page-title-white::before {
+    height: 16px;
+    width: 3px;
   }
 }
 
