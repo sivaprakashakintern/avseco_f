@@ -79,7 +79,6 @@ const Production = () => {
     productionTargets,
     fetchTargets
   } = useAppContext();
-  const { isAdmin } = useAuth();
 
   // Production Entry Form State
   const isToday = productionDate.isSame(dayjs(), 'day');
@@ -409,18 +408,6 @@ const Production = () => {
     const totalPages = Math.ceil(allFilteredItems.length / itemsPerPage);
     const paginatedHistory = allFilteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    const handleSendReminder = async (size, produced, target) => {
-        try {
-            await notificationApi.sendPush({
-                title: "Production Status",
-                message: `Target status for ${size}: ${produced.toLocaleString()} / ${target.toLocaleString()} plates produced. Please ensure targets are met.`,
-                targetAudience: "All Employees"
-            });
-            showNotificationMessage("Operators notified successfully!");
-        } catch (err) {
-            showNotificationMessage("Failed to send notification", "error");
-        }
-    };
 
   useEffect(() => {
     setCurrentPage(1);

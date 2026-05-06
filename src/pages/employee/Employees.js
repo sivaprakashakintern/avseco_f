@@ -61,18 +61,6 @@ const Employees = () => {
   });
 
   // Calculate stats - Strictly for staff (excludes admins)
-  const stats = useMemo(() => {
-    const staffOnly = employees.filter(e => e.role !== 'admin');
-    const totalEmployees = staffOnly.length;
-    const deptCounts = {};
-    staffOnly.forEach(emp => {
-      deptCounts[emp.department] = (deptCounts[emp.department] || 0) + 1;
-    });
-
-    const topDept = Object.entries(deptCounts).sort((a, b) => b[1] - a[1])[0] || ["N/A", 0];
-
-    return { totalEmployees, departmentsCount: Object.keys(deptCounts).length, topDept };
-  }, [employees]);
 
 
   // Filter employees
