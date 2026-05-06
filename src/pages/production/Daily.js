@@ -6,7 +6,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
-import './dailyprod.css?v=1.9'; 
+import './dailyprod.css?v=2.0'; 
 import Notification from '../../components/Notification.js';
 
 // Sizes will be derived dynamically below
