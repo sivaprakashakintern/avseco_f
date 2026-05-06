@@ -128,26 +128,6 @@ const Sales = () => {
     };
 
 
-    // Filtered employees for delivery
-    // eslint-disable-next-line no-unused-vars
-    const deliveryEmployees = React.useMemo(() => {
-        return (employees || []).filter(emp =>
-            emp.department?.toLowerCase().includes("delivery") ||
-            emp.department?.toLowerCase().includes("driver")
-        );
-    }, [employees]);
-
-    // Filtered employees for sales
-    // eslint-disable-next-line no-unused-vars
-    const salesEmployees = React.useMemo(() => {
-        return (employees || []).filter(emp =>
-            emp.department?.toLowerCase().includes("sales") ||
-            emp.department?.toLowerCase().includes("admin") ||
-            emp.department?.toLowerCase().includes("office") ||
-            emp.department?.toLowerCase().includes("ceo") ||
-            emp.department?.toLowerCase().includes("hr")
-        );
-    }, [employees]);
 
     // Derived selected product
     const selectedProductObj = products.find(p => p.baseName === selectedBaseProduct && p.size === selectedSize);
@@ -440,11 +420,6 @@ const Sales = () => {
     // ─── Shared: Capture HTML preview & Send to WhatsApp ──────────────────
 
 
-    // Export Handler
-    // eslint-disable-next-line no-unused-vars
-    const handleExport = () => {
-        setShowExportModal(true);
-    };
 
     const confirmExport = () => {
         setExportLoading(true);

@@ -295,7 +295,7 @@ export const AppProvider = ({ children }) => {
         };
 
         checkAndAddSalaries();
-    }, [employees, hasFetched, hasAccess, expenses, expenses.length]);
+    }, [employees, hasFetched, hasAccess, expenses]);
 
     useEffect(() => {
         if (!user) return;
