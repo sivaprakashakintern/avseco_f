@@ -110,6 +110,59 @@
   min-height: 0;
 }
 
+@media (max-width: 992px) {
+  .admin-layout {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+  }
+
+  .admin-container {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+    padding: 12px !important;
+  }
+
+  .employee-sidebar-card {
+    height: auto !important;
+    min-height: 400px;
+    max-height: 600px;
+  }
+
+  .desktop-only-panel {
+    display: none !important;
+  }
+
+  .mobile-inline-management {
+    display: block !important;
+    background: white;
+    border-top: 1px solid #f1f5f9;
+    padding: 15px;
+    animation: slideDown 0.3s ease;
+  }
+
+  .mobile-inline-management .management-wrapper {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .mobile-inline-management .management-top-bar {
+    padding: 15px 0 !important;
+  }
+
+  .mobile-inline-management .permissions-tab,
+  .mobile-inline-management .credentials-tab {
+    padding: 15px 0 !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+}
+
 /* Employee Sidebar */
 .employee-sidebar-card {
   background: white;
@@ -264,6 +317,20 @@
   text-transform: uppercase;
 }
 
+@media (max-width: 480px) {
+  .employee-item {
+    padding: 12px;
+  }
+  
+  .emp-name {
+    font-size: 0.85rem;
+  }
+  
+  .emp-dept {
+    font-size: 0.75rem;
+  }
+}
+
 /* Management Card */
 .management-content-card {
   background: white;
@@ -323,6 +390,24 @@
   background: white;
   color: var(--avs-green);
   box-shadow: 0 4px 12px rgba(0, 106, 78, 0.12);
+}
+
+@media (max-width: 576px) {
+  .selected-user-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 15px;
+  }
+  
+  .tabs {
+    width: 100%;
+  }
+  
+  .tabs button {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
 }
 
 .status-message {
@@ -421,6 +506,21 @@
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 15px;
   flex: 1;
+}
+
+@media (max-width: 480px) {
+  .modules-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .module-card {
+    padding: 12px 8px;
+  }
+  
+  .module-name {
+    font-size: 0.75rem;
+  }
 }
 
 .module-card {

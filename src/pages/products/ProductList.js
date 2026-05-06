@@ -25,6 +25,8 @@ const ProductList = () => {
     hsn: "",
     category: "Plates",
   });
+
+  const [expandedGroup, setExpandedGroup] = useState(null);
   
   const [variants, setVariants] = useState([]);
   const [newSize, setNewSize] = useState({ size: "", hsn: "", cost: "", sell: "" });
@@ -119,6 +121,12 @@ const ProductList = () => {
 
   // Edit Product
   const handleEditProduct = (name) => {
+    // On mobile, we toggle expansion instead of opening modal
+    if (window.innerWidth <= 768) {
+      setExpandedGroup(prev => prev === name ? null : name);
+      return;
+    }
+
     const group = productGroups[name] || [];
     if (group.length === 0) return;
 
@@ -299,7 +307,7 @@ const ProductList = () => {
 
   const stats = {
     totalProducts: uniqueProductNames.length,
-    totalVariants: new Set(products.map(p => p.size)).size
+    totalVariants: products.length
   };
 
   return (
@@ -356,7 +364,12 @@ const ProductList = () => {
       <div className="product-grid">
         {uniqueProductNames.length > 0 ? (
           uniqueProductNames.map((name) => (
-            <div key={name} className="product-card" onClick={() => handleEditProduct(name)} style={{ cursor: "pointer" }}>
+            <div 
+              key={name} 
+              className={`product-card ${expandedGroup === name ? 'mobile-expanded' : ''}`} 
+              onClick={() => handleEditProduct(name)} 
+              style={{ cursor: "pointer" }}
+            >
               <div className="product-card-text-container">
                 <span className="product-card-text-badge">{getAbbr(name)}</span>
               </div>
@@ -365,7 +378,7 @@ const ProductList = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <h3 className="product-card-title">{name}</h3>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <div style={{ textAlign: 'right' }}>
+                    <div className="mobile-hidden" style={{ textAlign: 'right' }}>
                       <span className="product-card-text-badge" style={{ padding: '2px 8px', fontSize: '10px', display: 'block', marginBottom: '4px' }}>{productGroups[name].length} Sizes</span>
                     </div>
                     <button 
@@ -379,8 +392,59 @@ const ProductList = () => {
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
                     </button>
+                    <div className="desktop-hidden">
+                       <span className="material-symbols-outlined expand-chevron" style={{ 
+                         transform: expandedGroup === name ? 'rotate(180deg)' : 'rotate(0)',
+                         transition: 'transform 0.3s ease'
+                       }}>
+                         expand_more
+                       </span>
+                    </div>
                   </div>
                 </div>
+
+                {/* Mobile Expanded Details */}
+                {expandedGroup === name && (
+                  <div className="mobile-product-details" onClick={(e) => e.stopPropagation()}>
+                    <div className="details-header">
+                      <span>{productGroups[name].length} Sizes Available</span>
+                      <button className="edit-btn-mini" onClick={() => {
+                        // Trigger desktop edit logic even on mobile if they click this button
+                        const group = productGroups[name];
+                        setFormData({
+                          name: name,
+                          hsn: group[0]?.sku || "", 
+                          category: group[0]?.category || "Plates",
+                        });
+                        const variantsFromDefault = DEFAULT_SIZES.map(s => {
+                          const match = group.find(v => v.size === s);
+                          return match ? 
+                            { ...match, checked: true, cost: match.costPrice, sell: match.sellPrice, hsn: match.hsnCode || match.sku, isExisting: true } : 
+                            { size: s, cost: "", sell: "", hsn: group[0]?.hsnCode || group[0]?.sku || "", checked: false, isNew: true };
+                        });
+                        const customVariants = group
+                          .filter(v => !DEFAULT_SIZES.includes(v.size))
+                          .map(v => ({ ...v, checked: true, cost: v.costPrice, sell: v.sellPrice, hsn: v.sku, isExisting: true }));
+                        setVariants([...variantsFromDefault, ...customVariants]);
+                        setShowEditModal(true);
+                      }}>
+                        <span className="material-symbols-outlined">edit</span>
+                        Edit All
+                      </button>
+                    </div>
+                    <div className="mobile-variants-stack">
+                      {productGroups[name].sort((a, b) => (parseInt(a.size) || 0) - (parseInt(b.size) || 0)).map((v, vIdx) => (
+                        <div key={v._id || vIdx} className="mobile-variant-item">
+                          <div className="v-name">{v.size}</div>
+                          <div className="v-prices">
+                            <div className="v-price-chip cost">₹{v.costPrice} <small>Cost</small></div>
+                            <div className="v-price-chip sell">₹{v.sellPrice} <small>Sell</small></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))

@@ -2176,14 +2176,15 @@ body,
   }
 
   .stat-card {
-    padding: 16px 12px;
+    padding: 10px 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 4px;
+    gap: 2px;
     justify-content: center !important;
-    border-radius: 16px !important;
+    border-radius: 12px !important;
+    min-height: 70px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
   }
 
