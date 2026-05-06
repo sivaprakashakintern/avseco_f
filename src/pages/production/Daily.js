@@ -6,7 +6,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
-import './dailyprod.css?v=1.1'; // Force reload with versioning
+import './dailyprod.css'; 
 import Notification from '../../components/Notification.js';
 
 // Sizes will be derived dynamically below
@@ -55,7 +55,7 @@ const Production = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [productionToDelete, setProductionToDelete] = useState(null);
-  const [dateToClear, setDateToClear] = useState('');
+  const [dateToClear] = useState(''); // setDateToClear unused, removing for build
   const [openDropdown, setOpenDropdown] = useState(null); // 'product', 'size', 'operator' or null
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
