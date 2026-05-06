@@ -782,11 +782,7 @@ const Sales = () => {
                                                                     setIsClientDropdownOpen(false);
                                                                     // Remove focus after selection
                                                                     if (document.activeElement) document.activeElement.blur();
-<<<<<<< HEAD
 
-=======
-                                                                    
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
                                                                     // Auto scroll to Billing Details
                                                                     setTimeout(() => {
                                                                         const billingDetailsElement = document.getElementById('billing-details-section');
@@ -800,11 +796,7 @@ const Sales = () => {
                                                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', gap: '2px' }}>
                                                                     <div className="client-option-main" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                         <span className="product-name-text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-<<<<<<< HEAD
                                                                             <span className="keyboard-shortcut-tag">{idx + 1}</span>
-=======
-                                                                            <span className="keyboard-shortcut-tag">{idx + 1}</span> 
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
                                                                             <span>{client.companyName}</span>
                                                                         </span>
                                                                         {client.clientType && <span className="type-tag">{client.clientType}</span>}
@@ -919,11 +911,7 @@ const Sales = () => {
                                                         >
                                                             <div className="client-option-main" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                 <span className="product-name-text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-<<<<<<< HEAD
                                                                     <span className="keyboard-shortcut-tag">{idx + 1}</span>
-=======
-                                                                    <span className="keyboard-shortcut-tag">{idx + 1}</span> 
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
                                                                     <span>{client.companyName || client.contactPerson}</span>
                                                                 </span>
                                                                 <span className="type-tag">{client.clientType || 'Personal'}</span>

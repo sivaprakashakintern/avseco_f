@@ -27,11 +27,7 @@ const ProductList = () => {
   });
 
   const [expandedGroup, setExpandedGroup] = useState(null);
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
   const [variants, setVariants] = useState([]);
   const [newSize, setNewSize] = useState({ size: "", hsn: "", cost: "", sell: "" });
 
@@ -368,17 +364,10 @@ const ProductList = () => {
       <div className="product-grid">
         {uniqueProductNames.length > 0 ? (
           uniqueProductNames.map((name) => (
-<<<<<<< HEAD
             <div
               key={name}
               className={`product-card ${expandedGroup === name ? 'mobile-expanded' : ''}`}
               onClick={() => handleEditProduct(name)}
-=======
-            <div 
-              key={name} 
-              className={`product-card ${expandedGroup === name ? 'mobile-expanded' : ''}`} 
-              onClick={() => handleEditProduct(name)} 
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
               style={{ cursor: "pointer" }}
             >
               <div className="product-card-text-container">
@@ -404,21 +393,12 @@ const ProductList = () => {
                       <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
                     </button>
                     <div className="desktop-hidden">
-<<<<<<< HEAD
                       <span className="material-symbols-outlined expand-chevron" style={{
                         transform: expandedGroup === name ? 'rotate(180deg)' : 'rotate(0)',
                         transition: 'transform 0.3s ease'
                       }}>
                         expand_more
                       </span>
-=======
-                       <span className="material-symbols-outlined expand-chevron" style={{ 
-                         transform: expandedGroup === name ? 'rotate(180deg)' : 'rotate(0)',
-                         transition: 'transform 0.3s ease'
-                       }}>
-                         expand_more
-                       </span>
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
                     </div>
                   </div>
                 </div>
@@ -433,22 +413,13 @@ const ProductList = () => {
                         const group = productGroups[name];
                         setFormData({
                           name: name,
-<<<<<<< HEAD
                           hsn: group[0]?.sku || "",
-=======
-                          hsn: group[0]?.sku || "", 
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
                           category: group[0]?.category || "Plates",
                         });
                         const variantsFromDefault = DEFAULT_SIZES.map(s => {
                           const match = group.find(v => v.size === s);
-<<<<<<< HEAD
                           return match ?
                             { ...match, checked: true, cost: match.costPrice, sell: match.sellPrice, hsn: match.hsnCode || match.sku, isExisting: true } :
-=======
-                          return match ? 
-                            { ...match, checked: true, cost: match.costPrice, sell: match.sellPrice, hsn: match.hsnCode || match.sku, isExisting: true } : 
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
                             { size: s, cost: "", sell: "", hsn: group[0]?.hsnCode || group[0]?.sku || "", checked: false, isNew: true };
                         });
                         const customVariants = group

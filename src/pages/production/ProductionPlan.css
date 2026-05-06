@@ -3697,7 +3697,6 @@ body,
 }
 
 @media (max-width: 768px) {
-<<<<<<< HEAD
   /* Spaced Out Premium Layout - Masterpiece */
   .premium-dashboard-main-new { 
     padding: 10px; /* Reduced padding for wider look */
@@ -3955,52 +3954,6 @@ body,
 
   .text-success { color: #10b981 !important; }
   .text-warning { color: #f59e0b !important; }
-=======
-  .premium-dashboard-main-new { padding: 16px; }
-  .premium-header-new { flex-direction: column; align-items: center; gap: 16px; padding: 16px; }
-  .header-actions-new { width: 100%; flex-direction: column; gap: 12px; }
-  .header-toggle-group-new { width: 100%; display: flex; }
-  .header-toggle-btn-new { flex: 1; text-align: center; justify-content: center; }
-  .premium-date-display-new, .month-picker-wrapper-new { width: 100%; justify-content: center; }
-  .premium-month-select-new { width: auto; }
-  
-  .premium-form-row-new { grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
-  
-  /* Prevent text cutoff */
-  .premium-select-new, .premium-input-new {
-    padding: 0 8px 0 32px !important;
-    font-size: 12px !important;
-    height: 44px !important;
-  }
-  .input-icon-new {
-    font-size: 18px !important;
-    left: 8px !important;
-  }
-  .premium-submit-btn-new {
-    height: 48px !important;
-    width: 100%;
-    justify-content: center;
-  }
-
-  /* Hide search, filter, and clear all on mobile */
-  .table-controls-row-new { display: none !important; }
-  
-  /* Hide Export button on mobile */
-  .premium-export-btn-new { display: none !important; }
-  
-  .hide-mobile { display: none; }
-  
-  /* Show desktop table with horizontal scroll instead of cards */
-  .premium-table-wrapper-new { 
-    display: block !important; 
-    overflow-x: auto !important; 
-    -webkit-overflow-scrolling: touch !important; 
-  }
-  .premium-data-table-new th, .premium-data-table-new td { 
-    white-space: nowrap !important; 
-  }
-  .mobile-cards-container-new { display: none !important; }
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
 }
 
 /* LOADING & TOAST */

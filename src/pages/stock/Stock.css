@@ -3428,11 +3428,11 @@
 /* ===== MOBILE RESPONSIVE UPDATES ===== */
 @media (max-width: 768px) {
   .stock-unified-hero-row {
-<<<<<<< HEAD
     flex-direction: column !important;
     gap: 16px !important;
     margin-bottom: 24px !important;
-    margin-top: 24px !important; /* Forces gap between header and cards */
+    margin-top: 24px !important;
+    /* Forces gap between header and cards */
   }
 
   .hero-stat-item {
@@ -3443,28 +3443,6 @@
     border-radius: 14px !important;
     min-height: auto !important;
     gap: 16px !important;
-=======
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    padding-bottom: 12px !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
-  }
-  
-  .stock-unified-hero-row::-webkit-scrollbar {
-    display: none !important;
-  }
-
-  .hero-stat-item {
-    min-width: 150px !important;
-    flex: 0 0 auto !important;
-    justify-content: center !important;
-    text-align: center !important;
-    padding: 10px 8px !important;
-    border-radius: 12px !important;
-    min-height: 70px !important;
-    gap: 4px !important;
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
   }
 
   .page-header.premium-header {
@@ -3475,11 +3453,8 @@
     gap: 12px !important;
     padding: 16px 20px !important;
     border-radius: 12px !important;
-<<<<<<< HEAD
-    margin-bottom: 32px !important; /* Increased gap */
-=======
-    margin-bottom: 16px !important;
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
+    margin-bottom: 32px !important;
+    /* Increased gap */
     background: linear-gradient(135deg, #006A4E 0%, #004d39 100%) !important;
     box-shadow: 0 4px 12px rgba(0, 106, 78, 0.15) !important;
   }
@@ -3514,11 +3489,7 @@
   .product-grid-new {
     justify-content: center !important;
   }
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
   .main-quantity-new {
     justify-content: center !important;
     text-align: center !important;
@@ -3527,9 +3498,4 @@
   .empty-state-new {
     text-align: center !important;
   }
-<<<<<<< HEAD
 }
-=======
-}
-
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860

@@ -31,7 +31,6 @@ const SalesHistory = () => {
     const [exportLoading, setExportLoading] = useState(false);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [statusUpdateTarget, setStatusUpdateTarget] = useState(null);
-    const [expandedCardId, setExpandedCardId] = useState(null);
 
     const fetchSales = useCallback(async () => {
         setLoading(true);
@@ -87,18 +86,18 @@ const SalesHistory = () => {
 
     const confirmStatusUpdate = async () => {
         if (!statusUpdateTarget) return;
-        
+
         try {
             const updatedData = { paidStatus: 'Paid', paymentMode: 'Cash' };
             const response = await axios.put(`/sales/${statusUpdateTarget.id || statusUpdateTarget._id}`, updatedData);
-            
+
             if (response.data) {
-                setTransactions(prev => prev.map(t => 
-                    (t.id || t._id) === (statusUpdateTarget.id || statusUpdateTarget._id) 
-                    ? { ...t, paidStatus: 'Paid', paymentMode: 'Cash' } 
-                    : t
+                setTransactions(prev => prev.map(t =>
+                    (t.id || t._id) === (statusUpdateTarget.id || statusUpdateTarget._id)
+                        ? { ...t, paidStatus: 'Paid', paymentMode: 'Cash' }
+                        : t
                 ));
-                
+
                 setFeedbackMessage("✅ Status updated to PAID");
                 setTimeout(() => setFeedbackMessage(""), 3000);
             }
@@ -135,18 +134,18 @@ const SalesHistory = () => {
                 gstAmount: item.gstAmount || 0,
                 hsn: item.hsn || "-"
             })) || [
-                {
-                    product: transaction.product,
-                    baseName: transaction.product,
-                    size: transaction.size || "—",
-                    qty: Math.abs(transaction.quantity),
-                    rate: transaction.amount / Math.abs(transaction.quantity) || 0,
-                    amount: transaction.totalAmount || transaction.amount,
-                    gstRate: 0,
-                    gstAmount: 0,
-                    hsn: "-"
-                }
-            ],
+                    {
+                        product: transaction.product,
+                        baseName: transaction.product,
+                        size: transaction.size || "—",
+                        qty: Math.abs(transaction.quantity),
+                        rate: transaction.amount / Math.abs(transaction.quantity) || 0,
+                        amount: transaction.totalAmount || transaction.amount,
+                        gstRate: 0,
+                        gstAmount: 0,
+                        hsn: "-"
+                    }
+                ],
             totalAmount: transaction.totalAmount || transaction.amount,
             paidStatus: transaction.paidStatus || transaction.paymentStatus || "Paid",
             amountPaid: transaction.amountPaid || 0,
@@ -271,7 +270,7 @@ const SalesHistory = () => {
             const subtotal = item.saleItems?.reduce((sum, si) => sum + (Number(si.amount) || 0), 0) || (item.totalAmount || item.amount || 0);
             const totalGst = item.saleItems?.reduce((sum, si) => sum + (Number(si.gstAmount) || 0), 0) || 0;
             const grandTotal = item.totalAmount || item.amount || 0;
-            
+
             return [
                 item.date?.split(', ')[0] || new Date(item.createdAt).toLocaleDateString(),
                 item.customer || "-",
@@ -298,11 +297,11 @@ const SalesHistory = () => {
 
     const confirmExport = () => {
         setExportLoading(true);
-        
+
         setTimeout(() => {
             let dataToExport = filteredTransactions;
             if (exportType !== 'all') {
-                dataToExport = filteredTransactions.filter(t => 
+                dataToExport = filteredTransactions.filter(t =>
                     (t.paidStatus || t.paymentStatus || 'Paid').toLowerCase() === exportType.toLowerCase()
                 );
             }
@@ -326,7 +325,7 @@ const SalesHistory = () => {
                 <div className="history-actions">
                     <button className="btn-export-premium" onClick={() => setShowExportModal(true)}>
                         <span className="material-symbols-outlined">download</span>
-                        <span className="export-text">Export History</span>
+                        Export History
                     </button>
                 </div>
             </div>
@@ -395,7 +394,7 @@ const SalesHistory = () => {
                                     const datePart = transaction.date?.split(', ')[0] || new Date(transaction.createdAt).toLocaleDateString();
 
                                     return (
-                                        <tr 
+                                        <tr
                                             key={transaction.id || transaction._id}
                                             style={{ transition: 'background 0.2s' }}
                                             onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
@@ -420,15 +419,15 @@ const SalesHistory = () => {
                                                 ₹{displayAmount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
                                             <td style={{ textAlign: 'center' }}>
-                                                <span 
+                                                <span
                                                     className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}
-                                                    onClick={(e) => { 
-                                                        e.stopPropagation(); 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         if ((transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid') {
                                                             handleTogglePaymentStatus(transaction);
                                                         }
                                                     }}
-                                                    style={{ 
+                                                    style={{
                                                         cursor: (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? 'pointer' : 'default',
                                                         transition: 'all 0.2s'
                                                     }}
@@ -442,18 +441,18 @@ const SalesHistory = () => {
                                             </td>
                                             <td style={{ textAlign: 'center' }}>
                                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                                    <button 
-                                                        className="icon-action-btn" 
-                                                        onClick={(e) => { e.stopPropagation(); handleViewBill(transaction); }} 
+                                                    <button
+                                                        className="icon-action-btn"
+                                                        onClick={(e) => { e.stopPropagation(); handleViewBill(transaction); }}
                                                         title="View Bill"
                                                         style={{ color: '#10b981', cursor: 'pointer' }}
                                                     >
                                                         <span className="material-symbols-outlined">receipt_long</span>
                                                     </button>
-                                                    <button 
-                                                        className="icon-action-btn" 
-                                                        onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(transaction.id || transaction._id); }} 
-                                                        title="Delete" 
+                                                    <button
+                                                        className="icon-action-btn"
+                                                        onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(transaction.id || transaction._id); }}
+                                                        title="Delete"
                                                         style={{ color: '#ef4444' }}
                                                     >
                                                         <span className="material-symbols-outlined">delete</span>
@@ -482,92 +481,69 @@ const SalesHistory = () => {
                             <p>Loading sales history...</p>
                         </div>
                     ) : filteredTransactions.length > 0 ? (
-                        filteredTransactions.map((transaction, index) => {
+                        filteredTransactions.map((transaction) => {
                             const baseNames = [...new Set(transaction.saleItems?.map(item => item.baseName))].filter(Boolean);
                             const baseProducts = baseNames.length > 0 ? baseNames.join(', ') : (transaction.product || "-");
                             const totalPieces = transaction.saleItems?.reduce((sum, item) => sum + (Number(item.qty) || 0), 0) || Math.abs(transaction.quantity || 0);
                             const displayAmount = transaction.totalAmount || transaction.amount || 0;
                             const formattedTime = getFormattedTime(transaction);
                             const datePart = transaction.date?.split(', ')[0] || new Date(transaction.createdAt).toLocaleDateString();
-                            
-                            const isExpanded = expandedCardId === (transaction.id || transaction._id);
-                            const status = (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase();
 
                             return (
-                                <div 
-                                    key={transaction.id || transaction._id} 
-                                    className={`mobile-expense-card-minimal ${isExpanded ? 'expanded' : ''}`}
-                                    onClick={() => setExpandedCardId(isExpanded ? null : (transaction.id || transaction._id))}
-                                >
-                                    <div className="expense-card-main">
-                                        <div className="expense-sno">{index + 1}</div>
-                                        <div className="expense-category-lite">
-                                            <div className="category-marker" style={{ backgroundColor: status === 'paid' ? '#10b981' : '#ef4444' }} />
-                                            <div className="name-container" style={{ display: 'flex', flexDirection: 'column' }}>
-                                                <span style={{ fontWeight: '700', fontSize: '14px', color: '#1e293b' }}>
-                                                    {transaction.company || transaction.customer || "Direct Sale"}
-                                                </span>
-                                                {!isExpanded && <span style={{ fontSize: '11px', color: '#94a3b8' }}>{datePart}</span>}
-                                            </div>
+                                <div key={transaction.id || transaction._id} className="mobile-sale-card">
+                                    <div className="sale-card-header">
+                                        <div className="sale-date">
+                                            <span className="material-symbols-outlined">calendar_today</span>
+                                            {datePart} &bull; {formattedTime}
                                         </div>
-                                        <div className="expense-amount-lite" style={{ color: '#0f172a' }}>
-                                            ₹{displayAmount?.toLocaleString()}
-                                        </div>
-                                        <span className="material-symbols-outlined expand-icon">
-                                            {isExpanded ? 'expand_less' : 'expand_more'}
+                                        <span
+                                            className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if ((transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid') {
+                                                    handleTogglePaymentStatus(transaction);
+                                                }
+                                            }}
+                                            style={{ cursor: (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? 'pointer' : 'default' }}
+                                        >
+                                            {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
                                         </span>
                                     </div>
-
-                                    {isExpanded && (
-                                        <div className="expense-card-details-expanded" onClick={(e) => e.stopPropagation()}>
-                                            <div className="expanded-info-grid">
-                                                <div className="info-row">
-                                                    <span className="expanded-info-label">Date & Time</span>
-                                                    <span className="expanded-info-value">{datePart} • {formattedTime}</span>
-                                                </div>
-                                                <div className="info-row">
-                                                    <span className="expanded-info-label">Customer</span>
-                                                    <span className="expanded-info-value">{transaction.customer || "Walking Customer"}</span>
-                                                </div>
-                                                <div className="info-row">
-                                                    <span className="expanded-info-label">Products</span>
-                                                    <span className="expanded-info-value">{baseProducts} ({totalPieces} pcs)</span>
-                                                </div>
-                                                <div className="info-row">
-                                                    <span className="expanded-info-label">Status</span>
-                                                    <span 
-                                                        className={`payment-badge ${status}`}
-                                                        style={{ fontSize: '10px', padding: '2px 8px' }}
-                                                    >
-                                                        {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
-                                                    </span>
-                                                </div>
-                                                <div className="info-row">
-                                                    <span className="expanded-info-label">Sold By</span>
-                                                    <span className="expanded-info-value">{transaction.soldBy || "-"}</span>
-                                                </div>
+                                    <div className="sale-card-body">
+                                        <div className="company-info">
+                                            <h4 className="sale-company">{transaction.company || "Direct Sale"}</h4>
+                                            <p className="sale-customer">{transaction.customer || "Walking Customer"}</p>
+                                        </div>
+                                        <div className="sale-details-grid">
+                                            <div className="detail-item">
+                                                <span className="detail-label">TOTAL AMOUNT</span>
+                                                <span className="detail-value amount">₹{displayAmount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                             </div>
-                                            
-                                            <div className="expense-action-buttons" style={{ marginTop: '16px' }}>
-                                                <button 
-                                                    className="expense-mini-btn" 
-                                                    onClick={() => handleViewBill(transaction)}
-                                                    disabled={status === 'unpaid'}
-                                                    style={{ color: '#10b981', opacity: status === 'unpaid' ? 0.5 : 1 }}
-                                                >
-                                                    <span className="material-symbols-outlined">receipt_long</span>
-                                                    Bill
-                                                </button>
-                                                <button 
-                                                    className="expense-mini-btn delete" 
-                                                    onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}
-                                                >
-                                                    <span className="material-symbols-outlined">delete</span>
-                                                    Delete
-                                                </button>
+                                            <div className="detail-item">
+                                                <span className="detail-label">SOLD BY</span>
+                                                <span className="detail-value">{transaction.soldBy || "-"}</span>
                                             </div>
                                         </div>
-                                    )}
+                                        <div className="sale-product-line">
+                                            <span className="material-symbols-outlined">inventory_2</span>
+                                            {baseProducts} ({totalPieces} pcs)
+                                        </div>
+                                    </div>
+                                    <div className="sale-card-actions" onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                            className="sale-action-btn view"
+                                            onClick={() => handleViewBill(transaction)}
+                                            disabled={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid'}
+                                            style={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                        >
+                                            <span className="material-symbols-outlined">receipt_long</span>
+                                            View Bill
+                                        </button>
+                                        <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}>
+                                            <span className="material-symbols-outlined">delete</span>
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
                             );
                         })
@@ -588,11 +564,7 @@ const SalesHistory = () => {
                     style={{
                         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                         backgroundColor: 'rgba(0, 0, 0, 0.85)',
-<<<<<<< HEAD
                         display: 'block', /* Changed to block for natural scrolling */
-=======
-                        display: 'flex', justifyContent: window.innerWidth < 850 ? 'flex-start' : 'center', alignItems: window.innerWidth < 850 ? 'flex-start' : 'center',
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
                         padding: '20px', zIndex: 3000,
                         overflowX: 'auto', overflowY: 'auto', backdropFilter: 'blur(6px)',
                         cursor: 'pointer', opacity: 1,
@@ -606,12 +578,7 @@ const SalesHistory = () => {
                         onClick={(e) => e.stopPropagation()}
                         style={{
                             padding: '0', background: '#ffffff', minWidth: '850px', width: '850px',
-<<<<<<< HEAD
                             margin: '40px auto', boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
-=======
-                            
-                            margin: window.innerWidth < 850 ? '0' : 'auto', boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
                             border: 'none', borderRadius: '4px', position: 'relative', cursor: 'default'
                         }}
                     >
@@ -648,106 +615,106 @@ const SalesHistory = () => {
                             .ci-footer { border-top: 2px solid #045b54; margin-top: auto; padding: 20px 40px; text-align: center; font-size: 12px; color: #64748b; font-weight: 500; }
                         `}</style>
                         <div className="ci-container" id="printable-invoice">
-                        <div className="ci-header">
-                            <div className="ci-logo-area">
-                                <img src={logo} alt="Logo" className="ci-logo-img" />
+                            <div className="ci-header">
+                                <div className="ci-logo-area">
+                                    <img src={logo} alt="Logo" className="ci-logo-img" />
+                                    <div>
+                                        <div className="ci-company-name">AVS ECO INDUSTRIES</div>
+                                        <div className="ci-company-addr">Tiruttani, Thiruvallur (Dt) - 631210</div>
+                                    </div>
+                                </div>
                                 <div>
-                                    <div className="ci-company-name">AVS ECO INDUSTRIES</div>
-                                    <div className="ci-company-addr">Tiruttani, Thiruvallur (Dt) - 631210</div>
+                                    <div className="ci-invoice-title">INVOICE</div>
+                                    <div className="ci-invoice-meta">
+                                        <div><b>Invoice Number:</b> AVS-{selectedBill.invoiceNo}</div>
+                                        <div><b>Date:</b> {selectedBill.date}</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <div className="ci-invoice-title">INVOICE</div>
-                                <div className="ci-invoice-meta">
-                                    <div><b>Invoice Number:</b> AVS-{selectedBill.invoiceNo}</div>
-                                    <div><b>Date:</b> {selectedBill.date}</div>
+                            <div className="ci-billto">
+                                <div className="ci-billto-left">
+                                    <div className="ci-billto-title">Bill To</div>
+                                    <div className="ci-billto-row"><b>Company:</b> {selectedBill.company}</div>
+                                    <div className="ci-billto-row"><b>Contact:</b> {selectedBill.customer}</div>
+                                    <div className="ci-billto-row"><b>Phone:</b> {selectedBill.phone}</div>
+                                </div>
+                                <div className="ci-billto-right" style={{ textAlign: 'right' }}>
+                                    <div className="ci-billto-title">Project Address</div>
+                                    <div className="ci-billto-row">{selectedBill.address}</div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="ci-billto">
-                            <div className="ci-billto-left">
-                                <div className="ci-billto-title">Bill To</div>
-                                <div className="ci-billto-row"><b>Company:</b> {selectedBill.company}</div>
-                                <div className="ci-billto-row"><b>Contact:</b> {selectedBill.customer}</div>
-                                <div className="ci-billto-row"><b>Phone:</b> {selectedBill.phone}</div>
-                            </div>
-                            <div className="ci-billto-right" style={{ textAlign: 'right' }}>
-                                <div className="ci-billto-title">Project Address</div>
-                                <div className="ci-billto-row">{selectedBill.address}</div>
-                            </div>
-                        </div>
-                        <div className="ci-section-title">Billing Details</div>
-                        <div className="ci-table-wrap">
-                            <table className="ci-table">
-                                <thead className="ci-tbl-head">
-                                    <tr>
-                                        <th>S.NO</th>
-                                        <th>HSN CODE</th>
-                                        <th>PRODUCT NAME</th>
-                                        <th>QTY</th>
-                                        <th>RATE</th>
-                                        <th>GST</th>
-                                        <th>AMOUNT</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="ci-tbody">
-                                    {selectedBill.items.map((item, idx) => (
-                                        <tr key={idx}>
-                                            <td>{idx + 1}</td>
-                                            <td>{item.hsn}</td>
-                                            <td style={{ textAlign: 'left' }}>
-                                                <b>{item.baseName}</b> <span style={{ fontSize: '11px', color: '#64748b' }}>({item.size})</span>
-                                            </td>
-                                            <td>{item.qty}</td>
-                                            <td>₹{item.rate?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                            <td>
-                                                {item.gstRate || 0}%
-                                            </td>
-                                            <td>₹{(item.amount + (item.gstAmount || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                            <div className="ci-section-title">Billing Details</div>
+                            <div className="ci-table-wrap">
+                                <table className="ci-table">
+                                    <thead className="ci-tbl-head">
+                                        <tr>
+                                            <th>S.NO</th>
+                                            <th>HSN CODE</th>
+                                            <th>PRODUCT NAME</th>
+                                            <th>QTY</th>
+                                            <th>RATE</th>
+                                            <th>GST</th>
+                                            <th>AMOUNT</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div className="ci-summary">
-                            <div className="ci-summary-box">
-                                <div className="ci-sum-row">
-                                    <span>Subtotal:</span>
-                                    <span>₹{selectedBill.items.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                                </div>
-                                <div className="ci-sum-row">
-                                    <span>Total GST:</span>
-                                    <span>₹{selectedBill.items.reduce((sum, item) => sum + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                                </div>
-                                <div className="ci-total-row">
-                                    <span>GRAND TOTAL:</span>
-                                    <span>₹{selectedBill.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                                </div>
-                                {selectedBill.paidStatus === 'Partial' && (
-                                    <>
-                                        <div className="ci-sum-row" style={{ background: '#f0fdf4', color: '#166534', fontWeight: 700, borderBottom: '1px solid #bbf7d0' }}>
-                                            <span>Advance Paid:</span>
-                                            <span>₹{selectedBill.amountPaid?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}</span>
-                                        </div>
-                                        <div className="ci-sum-row" style={{ background: '#fff1f2', color: '#be123c', fontWeight: 800, fontSize: '13.5px', borderBottom: 'none' }}>
-                                            <span>Balance Due:</span>
-                                            <span>₹{(selectedBill.totalAmount - (selectedBill.amountPaid || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                                        </div>
-                                    </>
-                                )}
+                                    </thead>
+                                    <tbody className="ci-tbody">
+                                        {selectedBill.items.map((item, idx) => (
+                                            <tr key={idx}>
+                                                <td>{idx + 1}</td>
+                                                <td>{item.hsn}</td>
+                                                <td style={{ textAlign: 'left' }}>
+                                                    <b>{item.baseName}</b> <span style={{ fontSize: '11px', color: '#64748b' }}>({item.size})</span>
+                                                </td>
+                                                <td>{item.qty}</td>
+                                                <td>₹{item.rate?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td>
+                                                    {item.gstRate || 0}%
+                                                </td>
+                                                <td>₹{(item.amount + (item.gstAmount || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
-                        </div>
-                        <div className="ci-payment">
-                            <div>
-                                <div className="ci-pay-title">PAYMENT:</div>
-                                <div>Status: {selectedBill.paidStatus}</div>
-                                <div>Mode: {selectedBill.paymentMode}</div>
+                            <div className="ci-summary">
+                                <div className="ci-summary-box">
+                                    <div className="ci-sum-row">
+                                        <span>Subtotal:</span>
+                                        <span>₹{selectedBill.items.reduce((sum, item) => sum + item.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                    <div className="ci-sum-row">
+                                        <span>Total GST:</span>
+                                        <span>₹{selectedBill.items.reduce((sum, item) => sum + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                    <div className="ci-total-row">
+                                        <span>GRAND TOTAL:</span>
+                                        <span>₹{selectedBill.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                    {selectedBill.paidStatus === 'Partial' && (
+                                        <>
+                                            <div className="ci-sum-row" style={{ background: '#f0fdf4', color: '#166534', fontWeight: 700, borderBottom: '1px solid #bbf7d0' }}>
+                                                <span>Advance Paid:</span>
+                                                <span>₹{selectedBill.amountPaid?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}</span>
+                                            </div>
+                                            <div className="ci-sum-row" style={{ background: '#fff1f2', color: '#be123c', fontWeight: 800, fontSize: '13.5px', borderBottom: 'none' }}>
+                                                <span>Balance Due:</span>
+                                                <span>₹{(selectedBill.totalAmount - (selectedBill.amountPaid || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                            <div>
-                                <div className="ci-pay-title">DELIVERY:</div>
-                                <div>By: {selectedBill.deliveredBy}</div>
+                            <div className="ci-payment">
+                                <div>
+                                    <div className="ci-pay-title">PAYMENT:</div>
+                                    <div>Status: {selectedBill.paidStatus}</div>
+                                    <div>Mode: {selectedBill.paymentMode}</div>
+                                </div>
+                                <div>
+                                    <div className="ci-pay-title">DELIVERY:</div>
+                                    <div>By: {selectedBill.deliveredBy}</div>
+                                </div>
                             </div>
-                        </div>
                         </div>
                         <div className="bill-modal-footer no-print">
                             <button className="bill-btn bill-btn-close" onClick={() => setShowBillModal(false)}>
@@ -781,44 +748,44 @@ const SalesHistory = () => {
                             </button>
                         </div>
                         <div className="modal-body">
-                            <div className="export-section">
-                                <h4>Export Format</h4>
-                                <div className="export-format-options">
-                                    <label className={`format-option ${exportFormat === 'csv' ? 'active' : ''}`}>
-                                        <input type="radio" value="csv" checked={exportFormat === 'csv'} onChange={(e) => setExportFormat(e.target.value)} />
-                                        <span className="material-symbols-outlined">description</span>
-                                        <span className="format-name">CSV</span>
-                                    </label>
-                                    <label className={`format-option ${exportFormat === 'excel' ? 'active' : ''}`}>
-                                        <input type="radio" value="excel" checked={exportFormat === 'excel'} onChange={(e) => setExportFormat(e.target.value)} />
-                                        <span className="material-symbols-outlined">grid_on</span>
-                                        <span className="format-name">Excel</span>
-                                    </label>
+                            <div className="export-options-grid">
+                                <div className="export-option-group">
+                                    <label className="export-label">Transaction Type</label>
+                                    <div className="export-selector">
+                                        <button
+                                            className={`selector-btn ${exportType === 'all' ? 'active' : ''}`}
+                                            onClick={() => setExportType('all')}
+                                        >All</button>
+                                        <button
+                                            className={`selector-btn ${exportType === 'paid' ? 'active' : ''}`}
+                                            onClick={() => setExportType('paid')}
+                                        >Paid</button>
+                                        <button
+                                            className={`selector-btn ${exportType === 'unpaid' ? 'active' : ''}`}
+                                            onClick={() => setExportType('unpaid')}
+                                        >Unpaid</button>
+                                    </div>
+                                </div>
+                                <div className="export-option-group">
+                                    <label className="export-label">Format</label>
+                                    <div className="export-selector">
+                                        <button
+                                            className={`selector-btn ${exportFormat === 'csv' ? 'active' : ''}`}
+                                            onClick={() => setExportFormat('csv')}
+                                        >CSV</button>
+                                        <button
+                                            className={`selector-btn ${exportFormat === 'excel' ? 'active' : ''}`}
+                                            onClick={() => setExportFormat('excel')}
+                                        >Excel</button>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="export-section">
-                                <h4>Report Type</h4>
-                                <div className="export-type-options">
-                                    <label className={`type-option ${exportType === 'all' ? 'active' : ''}`}>
-                                        <input type="radio" value="all" checked={exportType === 'all'} onChange={(e) => setExportType(e.target.value)} />
-                                        <span>All Sales</span>
-                                    </label>
-                                    <label className={`type-option ${exportType === 'paid' ? 'active' : ''}`}>
-                                        <input type="radio" value="paid" checked={exportType === 'paid'} onChange={(e) => setExportType(e.target.value)} />
-                                        <span>Paid Only</span>
-                                    </label>
-                                    <label className={`type-option ${exportType === 'unpaid' ? 'active' : ''}`}>
-                                        <input type="radio" value="unpaid" checked={exportType === 'unpaid'} onChange={(e) => setExportType(e.target.value)} />
-                                        <span>Unpaid Only</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <p className="export-note" style={{marginTop: '15px'}}>This will export the currently filtered {filteredTransactions.length} records based on your search.</p>
+                            <p className="export-note">This will export the currently filtered {filteredTransactions.length} records based on your search.</p>
                         </div>
                         <div className="modal-footer">
                             <button className="modal-cancel" onClick={() => setShowExportModal(false)}>Cancel</button>
-                            <button 
-                                className="modal-confirm premium-btn" 
+                            <button
+                                className="modal-confirm premium-btn"
                                 onClick={confirmExport}
                                 disabled={exportLoading}
                             >

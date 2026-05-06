@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
+import { useAuth } from '../../context/AuthContext.js';
+import { notificationApi } from '../../utils/api.js';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
@@ -73,11 +75,12 @@ const Production = () => {
     deleteProduction,
     updateProduction,
     clearAllProduction,
-    products: dbProducts, 
+    products: dbProducts,
     employees,
     productionTargets,
     fetchTargets
   } = useAppContext();
+  const { isAdmin } = useAuth();
 
   // Production Entry Form State
   const isToday = productionDate.isSame(dayjs(), 'day');
@@ -106,7 +109,7 @@ const Production = () => {
       if (!unique[p.name]) unique[p.name] = { name: p.name, sizes: [] };
       if (!unique[p.name].sizes.includes(p.size)) unique[p.name].sizes.push(p.size);
     });
-    
+
     return Object.values(unique).map(p => ({
       ...p,
       sizes: p.sizes.sort((a, b) => {
@@ -148,16 +151,16 @@ const Production = () => {
   useEffect(() => {
     if (productOptions.length > 0 && !formData.product) {
       const firstProd = productOptions[0];
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData(prev => ({
+        ...prev,
         product: firstProd.name,
         size: firstProd.sizes[0] || ""
       }));
     }
   }, [productOptions, formData.product]);
-  
+
   const getSizesForProduct = React.useCallback(() => {
-    const product = productOptions.find(p => 
+    const product = productOptions.find(p =>
       (p.name || "").toLowerCase().trim() === (formData.product || "").toLowerCase().trim()
     );
     return product ? product.sizes : [];
@@ -206,43 +209,43 @@ const Production = () => {
       const key = e.key.toLowerCase();
 
       if (!isInput) {
-        if (key === 'p') { 
-          e.preventDefault(); 
+        if (key === 'p') {
+          e.preventDefault();
           setOpenDropdown(prev => prev === 'product' ? null : 'product');
         }
-        if (key === 's') { 
-          e.preventDefault(); 
+        if (key === 's') {
+          e.preventDefault();
           setOpenDropdown(prev => prev === 'size' ? null : 'size');
         }
-        if (key === 'q') { 
-          e.preventDefault(); 
+        if (key === 'q') {
+          e.preventDefault();
           setOpenDropdown(null);
-          inputRefs.quantity.current?.focus(); 
+          inputRefs.quantity.current?.focus();
         }
-        if (key === 'm') { 
-          e.preventDefault(); 
+        if (key === 'm') {
+          e.preventDefault();
           setOpenDropdown(prev => prev === 'operator' ? null : 'operator');
         }
 
         // NUMBER SHORTCUTS (1-9) for selecting items in an open dropdown
         if (openDropdown && /^[1-9]$/.test(e.key)) {
-            e.preventDefault();
-            const index = parseInt(e.key) - 1;
-            let options = [];
-            let name = "";
-            
-            if (openDropdown === 'product') { options = productOptions.map(p => p.name); name = 'product'; }
-            if (openDropdown === 'size') { options = getSizesForProduct(); name = 'size'; }
-            if (openDropdown === 'operator') { options = operators; name = 'operator'; }
+          e.preventDefault();
+          const index = parseInt(e.key) - 1;
+          let options = [];
+          let name = "";
 
-            if (options[index]) {
-                handleInputChange({ target: { name, value: options[index] } });
-            }
+          if (openDropdown === 'product') { options = productOptions.map(p => p.name); name = 'product'; }
+          if (openDropdown === 'size') { options = getSizesForProduct(); name = 'size'; }
+          if (openDropdown === 'operator') { options = operators; name = 'operator'; }
+
+          if (options[index]) {
+            handleInputChange({ target: { name, value: options[index] } });
+          }
         }
       }
 
       if (e.key === 'Escape') {
-          setOpenDropdown(null);
+        setOpenDropdown(null);
       }
 
       if (e.key === 'Enter' && e.shiftKey) {
@@ -253,7 +256,7 @@ const Production = () => {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData, openDropdown, productOptions, operators, getSizesForProduct]);
 
   useEffect(() => {
@@ -337,7 +340,7 @@ const Production = () => {
         await addProduction(entryData);
         showNotificationMessage("Product Added Successfully", 'success');
       }
-      
+
       // Auto-reset
       setFormData(prev => ({ ...prev, quantity: "" }));
       if (document.activeElement instanceof HTMLElement) {
@@ -350,13 +353,13 @@ const Production = () => {
 
   const getSizeTargetInfo = (size) => {
     if (!productionTargets || !formData.product || !size) return null;
-    let target = productionTargets.find(t => 
-      (t.operator === formData.operator) && 
+    let target = productionTargets.find(t =>
+      (t.operator === formData.operator) &&
       (t.productName === formData.product || t.product === formData.product) &&
       (t.productSize === size || t.size === size)
     );
     if (!target) {
-      target = productionTargets.find(t => 
+      target = productionTargets.find(t =>
         (t.productName === formData.product || t.product === formData.product) &&
         (t.productSize === size || t.size === size)
       );
@@ -385,7 +388,7 @@ const Production = () => {
   const getFilteredHistory = () => {
     let list = (productionHistory || []).filter(item => {
       if (item.date !== formatDate(productionDate)) return false;
-      
+
       const productActive = (dbProducts || []).some(p => p.name === item.product);
       if (!productActive) return false;
 
@@ -397,16 +400,28 @@ const Production = () => {
     });
 
     return list.sort((a, b) => {
-       const dtA = dayjs(`${a.date} ${a.time}`, 'DD-MM-YYYY hh:mm A').unix();
-       const dtB = dayjs(`${b.date} ${b.time}`, 'DD-MM-YYYY hh:mm A').unix();
-       return dtB - dtA;
+      const dtA = dayjs(`${a.date} ${a.time}`, 'DD-MM-YYYY hh:mm A').unix();
+      const dtB = dayjs(`${b.date} ${b.time}`, 'DD-MM-YYYY hh:mm A').unix();
+      return dtB - dtA;
     });
   };
 
-    const allFilteredItems = getFilteredHistory();
-    const totalPages = Math.ceil(allFilteredItems.length / itemsPerPage);
-    const paginatedHistory = allFilteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const allFilteredItems = getFilteredHistory();
+  const totalPages = Math.ceil(allFilteredItems.length / itemsPerPage);
+  const paginatedHistory = allFilteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  const handleSendReminder = async (size, produced, target) => {
+    try {
+      await notificationApi.sendPush({
+        title: "Production Status",
+        message: `Target status for ${size}: ${produced.toLocaleString()} / ${target.toLocaleString()} plates produced. Please ensure targets are met.`,
+        targetAudience: "All Employees"
+      });
+      showNotificationMessage("Operators notified successfully!");
+    } catch (err) {
+      showNotificationMessage("Failed to send notification", "error");
+    }
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -422,21 +437,7 @@ const Production = () => {
       grade: record.grade || 'A',
       operator: record.operator
     });
-    
-    // Smooth scroll to the form section
-    setTimeout(() => {
-      const formElement = document.querySelector('.premium-entry-card');
-      const mainScrollArea = document.querySelector('.main-content') || document.querySelector('.dashboard-content');
-      
-      if (mainScrollArea) {
-        mainScrollArea.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-      if (formElement) {
-        formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }, 50);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteProduction = (record) => {
@@ -460,22 +461,15 @@ const Production = () => {
 
   return (
     <div className={`daily-production-page ${showHistoryOnly ? 'mobile-history-active' : ''}`}>
-      <Notification 
-        show={showNotification} 
-        message={notificationMessage} 
-        type={notificationType} 
-        onClose={() => setShowNotification(false)} 
+      <Notification
+        show={showNotification}
+        message={notificationMessage}
+        type={notificationType}
+        onClose={() => setShowNotification(false)}
       />
-<<<<<<< HEAD
       <div className="page-header premium-header">
         <div className="header-left">
           <h1 className="page-title">Daily Production</h1>
-=======
-
-      <div className="premium-header-green att-header">
-        <div className="header-left-group">
-          <h1 className="page-title-white">Daily Production</h1>
->>>>>>> 170fdeddd4162c1e234b39624033850ecd3df860
         </div>
       </div>
 
@@ -485,7 +479,7 @@ const Production = () => {
             <div className={`premium-entry-card ${editingId ? 'edit-mode-active' : ''}`}>
               <div className={`card-header entry-header ${editingId ? 'edit-mode-header' : ''}`}>
                 <h3>
-                  <span className="material-symbols-outlined">{editingId ? 'edit_note' : 'add_circle'}</span> 
+                  <span className="material-symbols-outlined">{editingId ? 'edit_note' : 'add_circle'}</span>
                   {editingId ? "Update Production Entry" : "New Production Entry"}
                 </h3>
                 {editingId && (
@@ -503,7 +497,7 @@ const Production = () => {
                         <span className="material-symbols-outlined input-icon-new">
                           calendar_month
                         </span>
-                        <button 
+                        <button
                           className="premium-date-btn-new"
                           onClick={() => setShowProductionDatePicker(!showProductionDatePicker)}
                         >
@@ -511,13 +505,13 @@ const Production = () => {
                         </button>
                         {showProductionDatePicker && (
                           <div className="date-dropdown mui-calendar-dropdown left">
-                            <CalendarPicker 
-                              selectedDate={productionDate} 
-                              onDateChange={(date) => { 
-                                setProductionDate(date); 
-                                setShowProductionDatePicker(false); 
-                              }} 
-                              onClose={() => setShowProductionDatePicker(false)} 
+                            <CalendarPicker
+                              selectedDate={productionDate}
+                              onDateChange={(date) => {
+                                setProductionDate(date);
+                                setShowProductionDatePicker(false);
+                              }}
+                              onClose={() => setShowProductionDatePicker(false)}
                             />
                           </div>
                         )}
@@ -527,7 +521,7 @@ const Production = () => {
                     <div className="premium-form-group">
                       <label className="premium-label-new">Product Type </label>
                       <div className={`custom-dropdown-premium ${openDropdown === 'product' ? 'active' : ''}`}>
-                        <div 
+                        <div
                           className="custom-dropdown-toggle"
                           onClick={() => setOpenDropdown(prev => prev === 'product' ? null : 'product')}
                         >
@@ -540,8 +534,8 @@ const Production = () => {
                         {openDropdown === 'product' && (
                           <div className="custom-dropdown-menu">
                             {productOptions.map((p, idx) => (
-                              <div 
-                                key={p.name} 
+                              <div
+                                key={p.name}
                                 className={`custom-dropdown-item ${formData.product === p.name ? 'active' : ''}`}
                                 onClick={() => handleInputChange({ target: { name: 'product', value: p.name } })}
                               >
@@ -557,7 +551,7 @@ const Production = () => {
                     <div className="premium-form-group">
                       <label className="premium-label-new">Size </label>
                       <div className={`custom-dropdown-premium ${openDropdown === 'size' ? 'active' : ''}`}>
-                        <div 
+                        <div
                           className="custom-dropdown-toggle"
                           onClick={() => setOpenDropdown(prev => prev === 'size' ? null : 'size')}
                         >
@@ -575,8 +569,8 @@ const Production = () => {
                                 const info = getSizeTargetInfo(s);
                                 let statusClass = info?.remaining <= 0 ? 'completed' : (info?.producedQty > 0 ? 'partial' : 'pending');
                                 return (
-                                  <div 
-                                    key={s} 
+                                  <div
+                                    key={s}
                                     className={`custom-dropdown-item ${formData.size === s ? 'active' : ''} ${statusClass}`}
                                     onClick={() => handleInputChange({ target: { name: 'size', value: s } })}
                                   >
@@ -595,15 +589,15 @@ const Production = () => {
                       <label className="premium-label-new">Quantity (PCS) </label>
                       <div className="input-wrapper-new">
                         <span className="material-symbols-outlined input-icon-new">production_quantity_limits</span>
-                        <input 
-                          type="number" 
-                          name="quantity" 
+                        <input
+                          type="number"
+                          name="quantity"
                           ref={inputRefs.quantity}
-                          value={formData.quantity} 
-                          onChange={handleInputChange} 
+                          value={formData.quantity}
+                          onChange={handleInputChange}
                           onKeyDown={handleKeyDown}
-                          className="premium-input-new" 
-                          placeholder="0" 
+                          className="premium-input-new"
+                          placeholder="0"
                         />
                       </div>
                     </div>
@@ -631,14 +625,14 @@ const Production = () => {
                     <div className="premium-form-group operator-group-new">
                       <label className="premium-label-new">Machine Operator </label>
                       <div className={`custom-dropdown-premium ${openDropdown === 'operator' ? 'active' : ''}`}>
-                        <div 
+                        <div
                           className="custom-dropdown-toggle"
                           onClick={() => setOpenDropdown(prev => prev === 'operator' ? null : 'operator')}
                         >
                           <span className="material-symbols-outlined dropdown-icon">person</span>
                           <span className="dropdown-selected-text">{formData.operator || "Select Operator"}</span>
                           {formData.operator && (
-                            <span 
+                            <span
                               className="material-symbols-outlined clear-selection-btn"
                               onClick={(e) => { e.stopPropagation(); setFormData(prev => ({ ...prev, operator: "" })); }}
                             >
@@ -652,8 +646,8 @@ const Production = () => {
                         {openDropdown === 'operator' && (
                           <div className="custom-dropdown-menu">
                             {operators.map((o, idx) => (
-                              <div 
-                                key={o} 
+                              <div
+                                key={o}
                                 className={`custom-dropdown-item ${formData.operator === o ? 'active' : ''}`}
                                 onClick={() => handleInputChange({ target: { name: 'operator', value: o } })}
                               >
@@ -668,8 +662,8 @@ const Production = () => {
 
                     <div className="submit-action-group-new">
                       <label className="premium-label-new">&nbsp;</label>
-                      <button 
-                        className={`premium-submit-btn-new super-action-btn ${!canModify ? 'locked' : ''}`} 
+                      <button
+                        className={`premium-submit-btn-new super-action-btn ${!canModify ? 'locked' : ''}`}
                         onClick={canModify ? handleAddProduction : null}
                         disabled={!canModify}
                       >
@@ -696,8 +690,8 @@ const Production = () => {
                     <span className="mini-value">{(summaryData.total || 0).toLocaleString()}</span>
                   </div>
                   <div className="date-picker-wrapper-v2">
-                    <button 
-                      className="summary-date-btn-compact" 
+                    <button
+                      className="summary-date-btn-compact"
                       onClick={() => setShowSummaryDatePicker(!showSummaryDatePicker)}
                     >
                       <span className="material-symbols-outlined">calendar_today</span>
@@ -706,13 +700,13 @@ const Production = () => {
                     </button>
                     {showSummaryDatePicker && (
                       <div className="date-dropdown mui-calendar-dropdown right">
-                        <CalendarPicker 
-                          selectedDate={productionDate} 
-                          onDateChange={(date) => { 
-                            setProductionDate(date); 
-                            setShowSummaryDatePicker(false); 
-                          }} 
-                          onClose={() => setShowSummaryDatePicker(false)} 
+                        <CalendarPicker
+                          selectedDate={productionDate}
+                          onDateChange={(date) => {
+                            setProductionDate(date);
+                            setShowSummaryDatePicker(false);
+                          }}
+                          onClose={() => setShowSummaryDatePicker(false)}
                         />
                       </div>
                     )}
@@ -723,14 +717,14 @@ const Production = () => {
                 <div className="dashboard-grid-mini-new">
                   {(summaryData.sizes || []).map(size => {
                     const quantity = summaryData.bySize[size] || 0;
-                    
+
                     // Find combined target for this size on the current date
-                    const relevantTargets = (productionTargets || []).filter(t => 
-                      (t.date === formatDate(productionDate)) && 
+                    const relevantTargets = (productionTargets || []).filter(t =>
+                      (t.date === formatDate(productionDate)) &&
                       (t.productName === formData.product || t.product === formData.product) &&
                       (t.productSize === size || t.size === size)
                     );
-                    
+
                     const totalTgt = relevantTargets.reduce((sum, t) => sum + (Number(t.targetQty) || 0), 0);
                     const totalProducedTillNow = relevantTargets.reduce((sum, t) => sum + (Number(t.producedQty) || 0), 0);
                     const progress = totalTgt > 0 ? Math.min(100, (totalProducedTillNow / totalTgt) * 100) : 0;
@@ -740,16 +734,25 @@ const Production = () => {
                         <div className="stat-header-new">
                           <span className="size-pill">{size}</span>
                         </div>
-                        
+
                         <div className="stat-value-badge-new">
                           {quantity.toLocaleString()} <span className="qty-unit">plates</span>
+                          {isAdmin && totalTgt > 0 && progress < 100 && (
+                            <button
+                              className="nudge-btn-mini"
+                              onClick={() => handleSendReminder(size, totalProducedTillNow, totalTgt)}
+                              title="Nudge Operators"
+                            >
+                              <span className="material-symbols-outlined">campaign</span>
+                            </button>
+                          )}
                         </div>
-                        
+
                         {totalTgt > 0 && (
                           <>
                             <div className="stat-progress-bar-new">
-                              <div 
-                                className="progress-bar-fill" 
+                              <div
+                                className="progress-bar-fill"
                                 style={{ width: `${progress}%` }}
                               ></div>
                             </div>
@@ -773,13 +776,13 @@ const Production = () => {
           <div className="premium-card">
             <div className="card-header table-header">
               <h3>
-                <span className="material-symbols-outlined">history</span> 
+                <span className="material-symbols-outlined">history</span>
                 {isToday ? "Today" : (isYesterday ? "Yesterday" : formatDate(productionDate))} Production
               </h3>
               <div className="table-actions">
-                <select 
+                <select
                   className="custom-select-premium"
-                  value={historySizeFilter} 
+                  value={historySizeFilter}
                   onChange={(e) => setHistorySizeFilter(e.target.value)}
                 >
                   <option value="all">All Sizes</option>
@@ -788,11 +791,11 @@ const Production = () => {
 
                 <div className="search-box">
                   <span className="material-symbols-outlined search-icon">search</span>
-                  <input 
-                    type="text" 
-                    placeholder="Search history..." 
-                    value={historySearch} 
-                    onChange={(e) => setHistorySearch(e.target.value)} 
+                  <input
+                    type="text"
+                    placeholder="Search history..."
+                    value={historySearch}
+                    onChange={(e) => setHistorySearch(e.target.value)}
                   />
                 </div>
               </div>
@@ -812,7 +815,7 @@ const Production = () => {
                 </thead>
                 <tbody>
                   {paginatedHistory.map((record, idx) => (
-                    <tr 
+                    <tr
                       key={record.id || record._id || idx}
                       onClick={(e) => {
                         // Only open detail view on mobile (width <= 768) and if not clicking an action button
@@ -827,7 +830,7 @@ const Production = () => {
                       <td className="col-operator">{record.operator}</td>
                       <td className="col-product">{record.product}</td>
                       <td className="col-size-qty">
-                        <span className="mobile-only-label">Size: </span>{record.size} 
+                        <span className="mobile-only-label">Size: </span>{record.size}
                         <span className="mobile-only-label"> | Qty: </span> {record.quantity}
                       </td>
                       <td className="col-grade">{record.grade}</td>
@@ -850,15 +853,15 @@ const Production = () => {
             {totalPages > 1 && (
               <div className="table-pagination-premium">
                 <button className="page-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>
-                   <span className="material-symbols-outlined">navigate_before</span>
-                   Prev
+                  <span className="material-symbols-outlined">navigate_before</span>
+                  Prev
                 </button>
                 <div className="page-info">
                   <span>Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong></span>
                 </div>
                 <button className="page-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>
-                   Next
-                   <span className="material-symbols-outlined">navigate_next</span>
+                  Next
+                  <span className="material-symbols-outlined">navigate_next</span>
                 </button>
               </div>
             )}
@@ -907,7 +910,7 @@ const Production = () => {
               </div>
               <p className="modal-title">Clear All Records?</p>
               <p className="modal-desc">
-                Are you sure you want to clear <strong>ALL</strong> production records for <strong>{dateToClear}</strong>? 
+                Are you sure you want to clear <strong>ALL</strong> production records for <strong>{dateToClear}</strong>?
                 This will permanently delete today's progress.
               </p>
             </div>
