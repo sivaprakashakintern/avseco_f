@@ -6,7 +6,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
-import './dailyprod.css?v=1.8'; 
+import './dailyprod.css?v=1.9'; 
 import Notification from '../../components/Notification.js';
 
 // Sizes will be derived dynamically below
@@ -38,7 +38,7 @@ const Production = () => {
 
 
   // ========== STATE MANAGEMENT ==========
-  const [showHistoryOnly] = useState(false);
+  const [showHistoryOnly, setShowHistoryOnly] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
   const [historySizeFilter, setHistorySizeFilter] = useState('all');
 
@@ -965,6 +965,23 @@ const Production = () => {
         </div>
       )}
 
+      {/* MOBILE BOTTOM NAVIGATION */}
+      <div className="mobile-bottom-nav">
+        <button
+          className={`mobile-nav-item ${!showHistoryOnly ? 'active' : ''}`}
+          onClick={() => setShowHistoryOnly(false)}
+        >
+          <span className="material-symbols-outlined">add_circle</span>
+          <label>Entry Form</label>
+        </button>
+        <button
+          className={`mobile-nav-item ${showHistoryOnly ? 'active' : ''}`}
+          onClick={() => setShowHistoryOnly(true)}
+        >
+          <span className="material-symbols-outlined">history</span>
+          <label>History</label>
+        </button>
+      </div>
     </div>
   );
 };
