@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
-import { useAuth } from '../../context/AuthContext.js';
-import { notificationApi } from '../../utils/api.js';
+// import { useAuth } from '../../context/AuthContext.js';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
@@ -80,7 +79,7 @@ const Production = () => {
     productionTargets,
     fetchTargets
   } = useAppContext();
-  const { isAdmin } = useAuth();
+  // const { isAdmin } = useAuth(); // Commented out as it's unused and causing build errors
 
   // Production Entry Form State
   const isToday = productionDate.isSame(dayjs(), 'day');
@@ -410,6 +409,7 @@ const Production = () => {
   const totalPages = Math.ceil(allFilteredItems.length / itemsPerPage);
   const paginatedHistory = allFilteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  /*
   const handleSendReminder = async (size, produced, target) => {
     try {
       await notificationApi.sendPush({
@@ -422,6 +422,7 @@ const Production = () => {
       showNotificationMessage("Failed to send notification", "error");
     }
   };
+  */
 
   useEffect(() => {
     setCurrentPage(1);
