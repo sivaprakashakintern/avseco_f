@@ -6,7 +6,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs from 'dayjs';
-import './dailyprod.css?v=2.1'; 
+import './dailyprod.css?v=2.1';
 import Notification from '../../components/Notification.js';
 
 // Sizes will be derived dynamically below
@@ -38,7 +38,6 @@ const Production = () => {
 
 
   // ========== STATE MANAGEMENT ==========
-  const [showHistoryOnly, setShowHistoryOnly] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
   const [historySizeFilter, setHistorySizeFilter] = useState('all');
 
@@ -55,13 +54,14 @@ const Production = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [productionToDelete, setProductionToDelete] = useState(null);
-  const dateToClear = formatDate(productionDate); 
+  const dateToClear = formatDate(productionDate);
   const [openDropdown, setOpenDropdown] = useState(null); // 'product', 'size', 'operator' or null
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
   const [editingId, setEditingId] = useState(null);
   const [selectedRecord, setSelectedRecord] = useState(null); // Detail view state for mobile
+  const formRef = React.useRef(null);
 
   const showNotificationMessage = React.useCallback((message, type = 'success') => {
     setNotificationMessage(message);
@@ -437,7 +437,13 @@ const Production = () => {
       grade: record.grade || 'A',
       operator: record.operator
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Auto-scroll to form on mobile
+    if (window.innerWidth <= 768) {
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
   };
 
   const handleDeleteProduction = (record) => {
@@ -460,7 +466,7 @@ const Production = () => {
   };
 
   return (
-    <div className={`daily-production-page ${showHistoryOnly ? 'mobile-history-active' : ''}`}>
+    <div className="daily-production-page">
       <Notification
         show={showNotification}
         message={notificationMessage}
@@ -473,9 +479,9 @@ const Production = () => {
         </div>
       </div>
 
-      <div className="dashboard-content-main" style={{ display: showHistoryOnly ? 'none' : 'block' }}>
+      <div className="dashboard-content-main">
         <div className="production-main-grid">
-          <div className="production-form-section">
+          <div className="production-form-section" ref={formRef}>
             <div className={`premium-entry-card ${editingId ? 'edit-mode-active' : ''}`}>
               <div className={`card-header entry-header ${editingId ? 'edit-mode-header' : ''}`}>
                 <h3>
@@ -762,24 +768,26 @@ const Production = () => {
         </div>
       </div>
 
-      <div className={`history-full-view ${showHistoryOnly ? 'show' : ''}`}>
+      <div className="history-full-view">
         <div className="history-section">
           <div className="premium-card">
             <div className="card-header table-header">
               <h3>
                 <span className="material-symbols-outlined">history</span>
-                {isToday ? "Today" : (isYesterday ? "Yesterday" : formatDate(productionDate))} Production
+                Production History
+                <div className="table-actions kutty-filter">
+                  <select
+                    className="custom-select-premium"
+                    value={historySizeFilter}
+                    onChange={(e) => setHistorySizeFilter(e.target.value)}
+                  >
+                    <option value="all">All Sizes</option>
+                    {availableSizes.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
               </h3>
-              <div className="table-actions">
-                <select
-                  className="custom-select-premium"
-                  value={historySizeFilter}
-                  onChange={(e) => setHistorySizeFilter(e.target.value)}
-                >
-                  <option value="all">All Sizes</option>
-                  {availableSizes.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
 
+              <div className="table-search-desktop-only">
                 <div className="search-box">
                   <span className="material-symbols-outlined search-icon">search</span>
                   <input
@@ -965,23 +973,6 @@ const Production = () => {
         </div>
       )}
 
-      {/* MOBILE BOTTOM NAVIGATION */}
-      <div className="mobile-bottom-nav">
-        <button
-          className={`mobile-nav-item ${!showHistoryOnly ? 'active' : ''}`}
-          onClick={() => setShowHistoryOnly(false)}
-        >
-          <span className="material-symbols-outlined">add_circle</span>
-          <label>Entry Form</label>
-        </button>
-        <button
-          className={`mobile-nav-item ${showHistoryOnly ? 'active' : ''}`}
-          onClick={() => setShowHistoryOnly(true)}
-        >
-          <span className="material-symbols-outlined">history</span>
-          <label>History</label>
-        </button>
-      </div>
     </div>
   );
 };

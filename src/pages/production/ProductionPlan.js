@@ -21,9 +21,9 @@ const getWorkingDaysLeftInMonth = (monthStr) => {
   const now = dayjs();
   const targetMonth = dayjs(monthStr, 'YYYY-MM');
   const isCurrentMonth = now.format('YYYY-MM') === monthStr;
-  
+
   if (now.isAfter(targetMonth.endOf('month'))) return 0;
-  
+
   const startDay = isCurrentMonth ? now.date() : 1;
   const daysInMonth = targetMonth.daysInMonth();
   let count = 0;
@@ -35,17 +35,17 @@ const getWorkingDaysLeftInMonth = (monthStr) => {
 
 const ProductionPlan = ({ onNavigate, currentPage }) => {
 
-  const { 
-    products: dbProducts, 
-    productionTargets, 
+  const {
+    products: dbProducts,
+    productionTargets,
     productionHistory,
-    fetchTargets, 
+    fetchTargets,
     saveProductionTarget,
     deleteProductionTarget
   } = useAppContext();
   const { isAdmin } = useAuth();
 
-  
+
   // ===== TARGET ENTRY FORM STATE =====
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
@@ -54,7 +54,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   const [selectedMonth, setSelectedMonth] = useState(dayjs().format('YYYY-MM'));
 
 
-  
+
 
 
   // ===== DYNAMIC PRODUCT DATA FROM DATABASE =====
@@ -62,7 +62,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     const products = dbProducts || [];
     const unique = [];
     const names = new Set();
-    
+
     products.forEach(p => {
       if (!names.has(p.name)) {
         names.add(p.name);
@@ -74,12 +74,12 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     if (unique.length === 0) {
       return [];
     }
-    
+
     return unique.map(p => {
       const sizes = (dbProducts || [])
         .filter(dp => dp.name === p.name)
         .map(dp => dp.size);
-      
+
       const uniqueSizes = [...new Set(sizes)].sort((a, b) => {
         const numA = parseInt(a) || 0;
         const numB = parseInt(b) || 0;
@@ -99,7 +99,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   // ===== DYNAMIC SIZES FOR SELECTED PRODUCT =====
   const availableSizes = React.useMemo(() => {
     if (!selectedProduct) return [];
-    
+
     // Find the product object that matches the selectedProduct ID or name
     const product = uniqueProducts.find(p => p.id === selectedProduct || p.name === selectedProduct);
     const productSizes = product ? product.sizes : [];
@@ -123,8 +123,8 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     const targetDateStr = targetType === 'daily' ? today : selectedMonth;
 
     // 1. Check if a target already exists for THIS date
-    const existingTargetNow = productionTargets.find(t => 
-      t.productName === productName && 
+    const existingTargetNow = productionTargets.find(t =>
+      t.productName === productName &&
       t.productSize === selectedSize &&
       t.date === targetDateStr
     );
@@ -138,8 +138,8 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     // POINT 2: For daily targets, if no target exists yet, carry over balance from yesterday
     if (targetType === 'daily') {
       const yesterday = dayjs().subtract(1, 'day').format('DD-MM-YYYY');
-      const yesterdayTarget = (productionTargets || []).find(t => 
-        t.productName === productName && 
+      const yesterdayTarget = (productionTargets || []).find(t =>
+        t.productName === productName &&
         t.productSize === selectedSize &&
         t.date === yesterday
       );
@@ -253,31 +253,31 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
     const product = getProductDetailsForSize(selectedSize);
     if (!product) {
-        showToast('Product definition not found. Please try again.', 'error');
-        return;
+      showToast('Product definition not found. Please try again.', 'error');
+      return;
     }
 
     const isMonthly = targetType === 'monthly';
     const targetQuantity = parseInt(targetQty);
-    
+
     const finalTargetQty = targetQuantity;
 
     // VALIDATION: New target cannot be less than already produced quantity
     const targetDate = isMonthly ? selectedMonth : today;
     const prodHistory = (productionHistory || []).filter(h => {
-        if (h.product !== product.name) return false;
-        if (selectedSize !== 'All Sizes' && h.size !== selectedSize) return false;
+      if (h.product !== product.name) return false;
+      if (selectedSize !== 'All Sizes' && h.size !== selectedSize) return false;
 
-        const hDate = h.date;
-        if (!hDate) return false;
-        const parts = hDate.split('-');
-        if (isMonthly) {
-            const hMonth = parts[0].length === 4 ? `${parts[0]}-${parts[1]}` : `${parts[2]}-${parts[1]}`;
-            return hMonth === targetDate;
-        } else {
-            const formattedHDate = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : hDate;
-            return formattedHDate === targetDate;
-        }
+      const hDate = h.date;
+      if (!hDate) return false;
+      const parts = hDate.split('-');
+      if (isMonthly) {
+        const hMonth = parts[0].length === 4 ? `${parts[0]}-${parts[1]}` : `${parts[2]}-${parts[1]}`;
+        return hMonth === targetDate;
+      } else {
+        const formattedHDate = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : hDate;
+        return formattedHDate === targetDate;
+      }
     });
     const alreadyProduced = prodHistory.reduce((sum, h) => sum + (h.quantity || 0), 0);
 
@@ -303,7 +303,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       // Use localized save function for instant UI update
       await saveProductionTarget(targetPayload);
       showToast(`Target saved for ${selectedSize} Areca Plate`, 'success');
-      
+
       // Clear form for next entry while keeping product selected
       setSelectedSize('');
       setTargetQty('');
@@ -374,7 +374,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       (productSize?.toLowerCase() || "").includes(searchTerm?.toLowerCase() || "") ||
       (sku?.toLowerCase() || "").includes(searchTerm?.toLowerCase() || "");
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    
+
     // Filter by active view mode (Daily or Monthly)
     const matchesType = (item.date && item.date.length === 7) ? (targetType === 'monthly') : (targetType === 'daily');
     const matchesDate = targetType === 'monthly' ? (item.date === selectedMonth) : (item.date === today);
@@ -386,12 +386,12 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     const bIsAll = b.productSize === 'All Sizes';
     if (aIsAll && !bIsAll) return 1;
     if (!aIsAll && bIsAll) return -1;
-    
+
     // 2. Otherwise sort by numeric size ascending
     const aSize = parseInt(a.productSize) || 0;
     const bSize = parseInt(b.productSize) || 0;
     if (aSize !== bSize) return aSize - bSize;
-    
+
     // 3. Last fallback: product name
     return (a.productName || '').localeCompare(b.productName || '');
   });
@@ -592,7 +592,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
   return (
     <div className="premium-dashboard-main-new">
       <div className="premium-dashboard-container-new">
-        
+
         {/* PREMIUM HEADER SECTION */}
         <div className="premium-header-new">
           <div className="header-left-new">
@@ -602,13 +602,13 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           <div className="header-actions-new">
             {/* Unified Daily/Monthly Toggle moved to Action side */}
             <div className="header-toggle-group-new">
-              <button 
+              <button
                 className={`header-toggle-btn-new ${targetType === 'daily' ? 'active' : ''}`}
                 onClick={() => setTargetType('daily')}
               >
                 Daily
               </button>
-              <button 
+              <button
                 className={`header-toggle-btn-new ${targetType === 'monthly' ? 'active' : ''}`}
                 onClick={() => setTargetType('monthly')}
               >
@@ -623,8 +623,8 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
               </div>
             ) : (
               <div className="month-picker-wrapper-new">
-                <input 
-                  type="month" 
+                <input
+                  type="month"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
                   className="premium-month-select-new"
@@ -650,7 +650,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
               <label className="premium-label-new">Product Name</label>
               <div className="select-wrapper-new">
                 <span className="material-symbols-outlined input-icon-new">inventory_2</span>
-                <select 
+                <select
                   className="premium-select-new"
                   value={selectedProduct}
                   onChange={handleProductChange}
@@ -667,7 +667,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
               <label className="premium-label-new">Size / Dimensions</label>
               <div className="select-wrapper-new">
                 <span className="material-symbols-outlined input-icon-new">straighten</span>
-                <select 
+                <select
                   className="premium-select-new"
                   value={selectedSize}
                   onChange={(e) => setSelectedSize(e.target.value)}
@@ -685,7 +685,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
               <label className="premium-label-new">Target Quantity (Pcs)</label>
               <div className="select-wrapper-new">
                 <span className="material-symbols-outlined input-icon-new">track_changes</span>
-                <input 
+                <input
                   type="number"
                   className="premium-input-new"
                   placeholder="Enter target..."
@@ -697,7 +697,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
             {/* Add Button */}
             <div className="form-group-new btn-container-new">
-              <button 
+              <button
                 className="premium-submit-btn-new"
                 onClick={handleAddTarget}
               >
@@ -712,8 +712,8 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
         <div className="table-controls-row-new">
           <div className="search-group-new">
             <span className="material-symbols-outlined search-icon-new">search</span>
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="premium-search-input-new"
               placeholder="Search by size or product..."
               value={searchTerm}
@@ -723,7 +723,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
 
           <div className="global-actions-new">
             <div className="status-filter-wrapper-new">
-              <select 
+              <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="premium-filter-select-new"
@@ -779,22 +779,22 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                     let displayProduced = 0;
                     let displayTarget = item.targetQty || 0;
                     const targetDate = item.date;
-                    
+
                     const relevantHistory = (productionHistory || []).filter(h => {
-                       if (h.product !== item.productName) return false;
-                       const isAllSizes = item.productSize === 'All Sizes';
-                       if (!isAllSizes && h.size !== item.productSize) return false;
-                       
-                       const hDate = h.date;
-                       if (!hDate) return false;
-                       const parts = hDate.split('-');
-                       if (targetDate.length === 7) { 
-                         const hMonth = parts[0].length === 4 ? `${parts[0]}-${parts[1]}` : `${parts[2]}-${parts[1]}`;
-                         return hMonth === targetDate;
-                       } else {
-                         const formattedHDate = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : hDate;
-                         return formattedHDate === targetDate;
-                       }
+                      if (h.product !== item.productName) return false;
+                      const isAllSizes = item.productSize === 'All Sizes';
+                      if (!isAllSizes && h.size !== item.productSize) return false;
+
+                      const hDate = h.date;
+                      if (!hDate) return false;
+                      const parts = hDate.split('-');
+                      if (targetDate.length === 7) {
+                        const hMonth = parts[0].length === 4 ? `${parts[0]}-${parts[1]}` : `${parts[2]}-${parts[1]}`;
+                        return hMonth === targetDate;
+                      } else {
+                        const formattedHDate = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : hDate;
+                        return formattedHDate === targetDate;
+                      }
                     });
 
                     displayProduced = relevantHistory.reduce((sum, h) => sum + (h.quantity || 0), 0);
@@ -819,10 +819,10 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                         <td className="text-right">
                           {item.date.length === 7 ? (
                             <div className="recalc-target-box">
-                               <span className="recalc-value">
-                                 {Math.ceil(displayRemaining / Math.max(1, getWorkingDaysLeftInMonth(item.date))).toLocaleString()}
-                               </span>
-                               <span className="recalc-unit">/ day</span>
+                              <span className="recalc-value">
+                                {Math.ceil(displayRemaining / Math.max(1, getWorkingDaysLeftInMonth(item.date))).toLocaleString()}
+                              </span>
+                              <span className="recalc-unit">/ day</span>
                             </div>
                           ) : '-'}
                         </td>
@@ -838,15 +838,15 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                         <td>
                           <div className={`status-tag-new ${statusClass}`}>
                             <span className="status-dot-new"></span>
-                            {statusClass === 'status-completed' ? 'Completed' : 
-                             statusClass === 'status-progress' ? 'In Progress' : 'Pending'}
+                            {statusClass === 'status-completed' ? 'Completed' :
+                              statusClass === 'status-progress' ? 'In Progress' : 'Pending'}
                           </div>
                         </td>
                         <td className="text-center">
                           <div className="action-btns-new">
                             {isAdmin && displayRemaining > 0 && (
-                              <button 
-                                className="remind-btn-new" 
+                              <button
+                                className="remind-btn-new"
                                 title="Send Reminder"
                                 onClick={() => handleSendReminder(item, displayProduced, displayRemaining)}
                               >
@@ -873,58 +873,69 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
           {/* MOBILE CARD VIEW (Responsive Replacement) */}
           <div className="mobile-cards-container-new">
             {filteredData.map(item => {
-               // Reuse history logic for mobile
-               let displayProduced = 0;
-               const targetDate = item.date;
-               const relevantHistory = (productionHistory || []).filter(h => {
-                  if (h.product !== item.productName) return false;
-                  const isAllSizes = item.productSize === 'All Sizes';
-                  if (!isAllSizes && h.size !== item.productSize) return false;
-                  const hDate = h.date;
-                  if (!hDate) return false;
-                  const parts = hDate.split('-');
-                  if (targetDate.length === 7) { 
-                    const hMonth = parts[0].length === 4 ? `${parts[0]}-${parts[1]}` : `${parts[2]}-${parts[1]}`;
-                    return hMonth === targetDate;
-                  } else {
-                    const formattedHDate = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : hDate;
-                    return formattedHDate === targetDate;
-                  }
-               });
-               displayProduced = relevantHistory.reduce((sum, h) => sum + (h.quantity || 0), 0);
-               const displayRemaining = Math.max(0, item.targetQty - displayProduced);
-               const isMaster = item.productSize === 'All Sizes';
+              // Reuse history logic for mobile
+              let displayProduced = 0;
+              const targetDate = item.date;
+              const relevantHistory = (productionHistory || []).filter(h => {
+                if (h.product !== item.productName) return false;
+                const isAllSizes = item.productSize === 'All Sizes';
+                if (!isAllSizes && h.size !== item.productSize) return false;
+                const hDate = h.date;
+                if (!hDate) return false;
+                const parts = hDate.split('-');
+                if (targetDate.length === 7) {
+                  const hMonth = parts[0].length === 4 ? `${parts[0]}-${parts[1]}` : `${parts[2]}-${parts[1]}`;
+                  return hMonth === targetDate;
+                } else {
+                  const formattedHDate = parts[0].length === 4 ? `${parts[2]}-${parts[1]}-${parts[0]}` : hDate;
+                  return formattedHDate === targetDate;
+                }
+              });
+              displayProduced = relevantHistory.reduce((sum, h) => sum + (h.quantity || 0), 0);
+              const displayRemaining = Math.max(0, item.targetQty - displayProduced);
+              const isMaster = item.productSize === 'All Sizes';
 
-               return (
-                 <div 
-                   key={`m-${item.id}`} 
-                   className={`mobile-row-card-new ${isMaster ? 'master' : ''}`}
-                 >
-                    <div className="card-header-mob">
-                      <div className="mob-product-info">
-                        <span className="mob-product-name">{item.productName}</span>
-                        <span className="mob-size">{item.productSize}</span>
-                      </div>
+              return (
+                <div
+                  key={`m-${item.id}`}
+                  className={`mobile-row-card-new ${isMaster ? 'master' : ''}`}
+                >
+                  <div className="card-header-mob">
+                    <div className="mob-product-info">
+                      <span className="mob-product-name">{item.productName}</span>
+                      <span className="mob-size">{item.productSize}</span>
+                    </div>
+                    <div className="mob-card-actions">
+                      {displayRemaining > 0 && (
+                        <button 
+                          className="mob-remind" 
+                          title="Send Reminder"
+                          onClick={() => handleSendReminder(item, displayProduced, displayRemaining)}
+                        >
+                          <span className="material-symbols-outlined">campaign</span>
+                        </button>
+                      )}
                       <button className="mob-delete" onClick={() => handleDeleteTarget(item.id)}>
                         <span className="material-symbols-outlined">delete</span>
                       </button>
                     </div>
-                    <div className="card-stats-grid-mob">
-                      <div className="stat-item">
-                        <span className="stat-label">Target</span>
-                        <span className="stat-value">{item.targetQty.toLocaleString()}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Prod</span>
-                        <span className="stat-value text-success">{displayProduced.toLocaleString()}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Balance</span>
-                        <span className="stat-value text-warning">{displayRemaining.toLocaleString()}</span>
-                      </div>
+                  </div>
+                  <div className="card-stats-grid-mob">
+                    <div className="stat-item">
+                      <span className="stat-label">Target</span>
+                      <span className="stat-value">{item.targetQty.toLocaleString()}</span>
                     </div>
-                 </div>
-               );
+                    <div className="stat-item">
+                      <span className="stat-label">Prod</span>
+                      <span className="stat-value text-success">{displayProduced.toLocaleString()}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">Balance</span>
+                      <span className="stat-value text-warning">{displayRemaining.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              );
             })}
           </div>
         </div>
@@ -964,8 +975,8 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                   <label className="section-label-new">SELECT FORMAT</label>
                   <div className="format-grid-new">
                     {['excel', 'pdf', 'csv'].map(fmt => (
-                      <button 
-                        key={fmt} 
+                      <button
+                        key={fmt}
                         className={`format-tile-new ${selectedFormat === fmt ? 'active' : ''}`}
                         onClick={() => setSelectedFormat(fmt)}
                       >

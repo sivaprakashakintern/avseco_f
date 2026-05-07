@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAppContext } from '../../context/AppContext.js';
 import { formatDate, isWithinLast2Days } from '../../utils/dateUtils.js';
 import { formatCurrency, getDynamicFontSize } from '../../utils/formatUtils.js';
@@ -33,6 +33,8 @@ const Expenses = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [detailCategory, setDetailCategory] = useState("");
     const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
+    const [isLoading, setIsLoading] = useState(false);
+    const formRef = useRef(null);
 
     // ── Toggle Expansion ──
     const toggleExpenseExpansion = (id) => {
@@ -70,6 +72,11 @@ const Expenses = () => {
             setIsEditMode(true);
             setCurrentExpenseId(id);
             setIsModalOpen(true);
+            
+            // Scroll to form
+            setTimeout(() => {
+                formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
         }
     };
 
@@ -134,6 +141,7 @@ const Expenses = () => {
             date: isEditMode ? expenses.find(e => e.id === currentExpenseId).date : formatDate(new Date()),
         };
 
+        setIsLoading(true);
         try {
             if (isEditMode) {
                 await ctxUpdateExpense(currentExpenseId, expenseData);
@@ -143,6 +151,8 @@ const Expenses = () => {
             handleCloseModal();
         } catch (error) {
             console.error("Failed to save expense:", error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -176,11 +186,152 @@ const Expenses = () => {
                     <h1 className="page-title-white">Expense Details</h1>
                 </div>
                 <div className="header-right-group">
-                    <button className="btn-add-circle-premium" onClick={() => { setIsEditMode(false); setIsModalOpen(true); }} title="Add New Expense">
+                    <button className="btn-add-circle-premium" onClick={() => { 
+                        setIsEditMode(false); 
+                        setIsModalOpen(true); 
+                        setTimeout(() => {
+                            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                    }} title="Add New Expense">
                         <span className="material-symbols-outlined">add_circle</span>
                     </button>
                 </div>
             </div>
+
+            {/* Inline Add Expense Form - Appears directly below Top Bar */}
+            {isModalOpen && (
+                <div 
+                    className="inline-add-form-container" 
+                    ref={formRef}
+                    onClick={(e) => { if (window.innerWidth > 768) handleCloseModal(); }}
+                >
+                    <div className="inline-form-card" onClick={(e) => e.stopPropagation()}>
+                        <div className="form-header-minimal">
+                            <h3>{isEditMode ? "Edit Expense Details" : "New Expense Entry"}</h3>
+                            <button className="form-close-lite" onClick={handleCloseModal}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="premium-inline-form">
+                            <div className="form-row-grid">
+                                <div className="perfect-input-group">
+                                    <label className="perfect-label">Category</label>
+                                    <div className="dropdown-container">
+                                        <select
+                                            name="category"
+                                            value={newExpense.category}
+                                            onChange={(e) => {
+                                                handleInputChange(e);
+                                                if (e.target.value === 'Salary') {
+                                                    setEmployeeSearch("");
+                                                }
+                                            }}
+                                            className="perfect-input perfect-select"
+                                        >
+                                            <option value="Machine Maintenance">Machine Maintenance</option>
+                                            <option value="Material">Material</option>
+                                            <option value="Electricity">Electricity</option>
+                                            <option value="Transport">Transport</option>
+                                            <option value="Rent">Rent</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="perfect-input-group">
+                                    <label className="perfect-label">Payment Method</label>
+                                    <div className="dropdown-container">
+                                        <select
+                                            name="paymentMode"
+                                            value={newExpense.paymentMode}
+                                            onChange={handleInputChange}
+                                            className="perfect-input perfect-select"
+                                        >
+                                            <option value="Cash">Cash</option>
+                                            <option value="UPI">UPI</option>
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                            <option value="Cheque">Cheque</option>
+                                            <option value="Card">Card</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {newExpense.category === 'Salary' && (
+                                <div className="perfect-input-group" style={{ position: 'relative', marginBottom: '24px' }}>
+                                    <label className="perfect-label">Select Employee</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Search by name"
+                                            value={employeeSearch}
+                                            onChange={(e) => {
+                                                setEmployeeSearch(e.target.value);
+                                                setShowEmployeeDropdown(true);
+                                            }}
+                                            onFocus={() => setShowEmployeeDropdown(true)}
+                                            className="perfect-input"
+                                        />
+                                        {showEmployeeDropdown && filteredEmployees.length > 0 && (
+                                            <div className="employee-dropdown-inline">
+                                                {filteredEmployees.map(emp => (
+                                                    <div
+                                                        key={emp.id}
+                                                        onClick={() => handleEmployeeSelect(emp)}
+                                                        className="employee-option-lite"
+                                                    >
+                                                        <strong>{emp.name}</strong>
+                                                        <span>{emp.department}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="form-row-grid">
+                                <div className="perfect-input-group">
+                                    <label className="perfect-label">Amount (₹)</label>
+                                    <input
+                                        type="number"
+                                        name="amount"
+                                        required
+                                        placeholder="0.00"
+                                        value={newExpense.amount}
+                                        onChange={handleInputChange}
+                                        className="perfect-input"
+                                    />
+                                </div>
+                                <div className="perfect-input-group">
+                                    <label className="perfect-label">
+                                        {newExpense.category === 'Others' ? 'Description *' : 'Remarks (Optional)'}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="description"
+                                        required={newExpense.category === 'Others'}
+                                        placeholder={newExpense.category === 'Others' ? "Details" : "Remarks"}
+                                        value={newExpense.description}
+                                        onChange={handleInputChange}
+                                        className="perfect-input"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-actions-inline">
+                                <button type="button" onClick={handleCloseModal} className="btn-cancel-lite">
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn-save-lite" disabled={isLoading}>
+                                    {isLoading ? "Saving..." : (isEditMode ? "Update Expense" : "Save Expense")}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Stats Cards - Daily */}
             <div className="stock-stats">
@@ -318,12 +469,12 @@ const Expenses = () => {
                                         <div className="expense-sno">{index + 1}</div>
                                         <div className="expense-category-lite">
                                             <div className="category-marker" style={{ backgroundColor: cfg.color }} />
-                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                <span style={{ fontWeight: '700', color: '#1e293b' }}>
+                                            <div className="category-details-wrapper">
+                                                <span className="category-name-text">
                                                     {ex.category === "Salary" ? (ex.description.replace('Salary for ', '')) : ex.category}
                                                 </span>
                                                 {ex.category !== "Salary" && ex.description && (
-                                                    <span style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>
+                                                    <span className="description-text-lite">
                                                         {ex.description}
                                                     </span>
                                                 )}
@@ -379,182 +530,6 @@ const Expenses = () => {
                 </div>
             </div>
 
-            {/* Add Expense Modal */}
-            {isModalOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h3>{isEditMode ? "Edit Expense" : "Add New Expense"}</h3>
-                            <button
-                                className="modal-close"
-                                onClick={handleCloseModal}
-                            >
-                                <span className="material-symbols-outlined">close</span>
-                            </button>
-                        </div>
-
-                        <div className="modal-body">
-                            <form onSubmit={handleSubmit}>
-                                <div className="modal-row-grid">
-                                    <div className="perfect-input-group">
-                                        <label className="perfect-label">Category</label>
-                                        <div className="dropdown-container">
-                                            <select
-                                                name="category"
-                                                value={newExpense.category}
-                                                onChange={(e) => {
-                                                    handleInputChange(e);
-                                                    if (e.target.value === 'Salary') {
-                                                        setEmployeeSearch("");
-                                                    }
-                                                }}
-                                                className="perfect-input perfect-select"
-                                            >
-                                                <option value="Machine Maintenance">Machine Maintenance</option>
-                                                <option value="Material">Material</option>
-                                                <option value="Electricity">Electricity</option>
-                                                <option value="Transport">Transport</option>
-                                                <option value="Rent">Rent</option>
-                                                <option value="Others">Others</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div className="perfect-input-group">
-                                        <label className="perfect-label">Payment Method</label>
-                                        <div className="dropdown-container">
-                                            <select
-                                                name="paymentMode"
-                                                value={newExpense.paymentMode}
-                                                onChange={handleInputChange}
-                                                className="perfect-input perfect-select"
-                                            >
-                                                <option value="Cash">Cash</option>
-                                                <option value="UPI">UPI</option>
-                                                <option value="Bank Transfer">Bank Transfer</option>
-                                                <option value="Cheque">Cheque</option>
-                                                <option value="Card">Card</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {newExpense.category === 'Salary' && (
-                                    <div className="perfect-input-group" style={{ position: 'relative' }}>
-                                        <label className="perfect-label">Select Employee</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <input
-                                                type="text"
-                                                placeholder="Search by name"
-                                                value={employeeSearch}
-                                                onChange={(e) => {
-                                                    setEmployeeSearch(e.target.value);
-                                                    setShowEmployeeDropdown(true);
-                                                }}
-                                                onFocus={() => setShowEmployeeDropdown(true)}
-                                                className="perfect-input"
-                                            />
-                                            {showEmployeeDropdown && filteredEmployees.length > 0 && (
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    top: '100%',
-                                                    left: 0,
-                                                    right: 0,
-                                                    backgroundColor: 'white',
-                                                    border: '1px solid #e2e8f0',
-                                                    borderRadius: '16px',
-                                                    marginTop: '8px',
-                                                    maxHeight: '200px',
-                                                    overflowY: 'auto',
-                                                    zIndex: 1000,
-                                                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
-                                                }}>
-                                                    {filteredEmployees.map(emp => (
-                                                        <div
-                                                            key={emp.id}
-                                                            onClick={() => handleEmployeeSelect(emp)}
-                                                            style={{
-                                                                padding: '10px 12px',
-                                                                cursor: 'pointer',
-                                                                borderBottom: '1px solid #f1f5f9',
-                                                                fontSize: '14px'
-                                                            }}
-                                                            onMouseOver={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                                                            onMouseOut={(e) => e.target.style.backgroundColor = 'white'}
-                                                        >
-                                                            <strong>{emp.name}</strong>
-                                                            <div style={{ fontSize: '12px', color: '#64748b' }}>{emp.department}</div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="modal-row-grid" style={{ marginBottom: '32px' }}>
-                                    <div className="perfect-input-group">
-                                        <label className="perfect-label">Amount (₹)</label>
-                                        <input
-                                            type="number"
-                                            name="amount"
-                                            required
-                                            placeholder="0.00"
-                                            value={newExpense.amount}
-                                            onChange={handleInputChange}
-                                            className="perfect-input"
-                                        />
-                                    </div>
-                                    {newExpense.category === 'Others' ? (
-                                        <div className="perfect-input-group">
-                                            <label className="perfect-label">Description *</label>
-                                            <input
-                                                type="text"
-                                                name="description"
-                                                required
-                                                placeholder="Details"
-                                                value={newExpense.description}
-                                                onChange={handleInputChange}
-                                                className="perfect-input"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="perfect-input-group">
-                                            <label className="perfect-label">Remarks (Optional)</label>
-                                            <input
-                                                type="text"
-                                                name="description"
-                                                placeholder="Remarks"
-                                                value={newExpense.description}
-                                                onChange={handleInputChange}
-                                                className="perfect-input"
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="modal-footer" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
-                                    <button
-                                        type="button"
-                                        onClick={handleCloseModal}
-                                        className="btn-outline"
-                                        style={{ justifyContent: 'center' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="btn-primary"
-                                        style={{ justifyContent: 'center' }}
-                                    >
-                                        {isEditMode ? "Update Expense" : "Save Expense"}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
             {/* Detail Breakdown Modal */}
             {showDetailModal && (
                 <div className="modal-overlay" onClick={() => setShowDetailModal(false)} style={{ zIndex: 1100 }}>
@@ -571,12 +546,12 @@ const Expenses = () => {
                             </button>
                         </div>
                         <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto', padding: '0' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <table className="desktop-only-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f8fafc', zIndex: 1 }}>
                                     <tr>
-                                        <th style={{ textAlign: 'center', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>DETAILS</th>
-                                        <th style={{ textAlign: 'center', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>CATEGORY</th>
-                                        <th style={{ textAlign: 'center', padding: '12px 20px', fontSize: '12px', color: '#64748b' }}>AMOUNT (₹)</th>
+                                        <th style={{ textAlign: 'center', padding: '12px 20px', fontSize: '11px', color: '#64748b', fontWeight: '800', textTransform: 'uppercase' }}>DETAILS</th>
+                                        <th style={{ textAlign: 'center', padding: '12px 20px', fontSize: '11px', color: '#64748b', fontWeight: '800', textTransform: 'uppercase' }}>CATEGORY</th>
+                                        <th style={{ textAlign: 'center', padding: '12px 20px', fontSize: '11px', color: '#64748b', fontWeight: '800', textTransform: 'uppercase' }}>AMOUNT</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -618,6 +593,35 @@ const Expenses = () => {
                                         ))}
                                 </tbody>
                             </table>
+
+                            {/* Mobile-only Card View for Breakdown */}
+                            <div className="mobile-only-item" style={{ display: 'none', flexDirection: 'column', gap: '12px', padding: '16px' }}>
+                                {todayExpenses
+                                    .filter(e => {
+                                        if (detailCategory === "All Expenses") return true;
+                                        if (detailCategory === "Maintenance") return ["Material", "Machine Maintenance", "Electricity", "Rent"].includes(e.category);
+                                        if (detailCategory === "Salary") return e.category === "Salary";
+                                        if (detailCategory === "Others") return !["Material", "Machine Maintenance", "Electricity", "Rent", "Salary"].includes(e.category);
+                                        return e.category === detailCategory;
+                                    })
+                                    .sort((a, b) => b.amount - a.amount)
+                                    .map((exp, idx) => (
+                                        <div key={idx} style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                <div style={{ fontWeight: '700', color: '#1e293b', fontSize: '14px' }}>
+                                                    {exp.category === "Salary" ? (exp.description.replace('Salary for ', '')) : exp.description}
+                                                </div>
+                                                <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '700' }}>
+                                                    {exp.category}
+                                                </div>
+                                            </div>
+                                            <div style={{ fontWeight: '800', color: '#006A4E', fontSize: '15px' }}>
+                                                ₹{Number(exp.amount).toLocaleString()}
+                                            </div>
+                                        </div>
+                                    ))}
+                            </div>
+
                             {todayExpenses.filter(e => {
                                 if (detailCategory === "All Expenses") return true;
                                 if (detailCategory === "Maintenance") return ["Material", "Machine Maintenance", "Electricity", "Rent"].includes(e.category);

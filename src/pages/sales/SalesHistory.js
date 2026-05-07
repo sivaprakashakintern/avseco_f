@@ -325,7 +325,7 @@ const SalesHistory = () => {
                 <div className="history-actions">
                     <button className="btn-export-premium" onClick={() => setShowExportModal(true)}>
                         <span className="material-symbols-outlined">download</span>
-                        Export History
+                        <span className="export-text">Export History</span>
                     </button>
                 </div>
             </div>
@@ -340,27 +340,28 @@ const SalesHistory = () => {
             )}
 
             <div className="history-filters-wrapper">
-                <div className="search-box" style={{ maxWidth: '100%' }}>
-                    <span className="material-symbols-outlined search-icon">search</span>
-                    <input
-                        type="text"
-                        placeholder="Search by company, customer, or product..."
-                        className="search-input"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ borderRadius: '12px' }}
-                    />
-                    {searchTerm && (
-                        <button className="clear-search" onClick={() => setSearchTerm('')}>
-                            <span className="material-symbols-outlined">close</span>
-                        </button>
-                    )}
+                <div className="search-box-container">
+                    <div className="search-box">
+                        <span className="material-symbols-outlined search-icon">search</span>
+                        <input
+                            type="text"
+                            placeholder="Search company, customer..."
+                            className="search-input"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        {searchTerm && (
+                            <button className="clear-search" onClick={() => setSearchTerm('')}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
             <div className="stock-table-container">
                 <div className="table-header">
-                    <h3 className="section-title">Sales Records</h3>
+                    <h3 className="section-title">Sales Records ({filteredTransactions.length})</h3>
                 </div>
                 <div className="table-responsive desktop-only-table">
                     <table className="stock-table">
@@ -573,14 +574,9 @@ const SalesHistory = () => {
                     }}
                 >
                     <div
-                        className="bill-modal-content"
+                        className="bill-modal-content responsive-bill-modal"
                         id="printable-bill"
                         onClick={(e) => e.stopPropagation()}
-                        style={{
-                            padding: '0', background: '#ffffff', minWidth: '850px', width: '850px',
-                            margin: '40px auto', boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
-                            border: 'none', borderRadius: '4px', position: 'relative', cursor: 'default'
-                        }}
                     >
                         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
                         <style>{`

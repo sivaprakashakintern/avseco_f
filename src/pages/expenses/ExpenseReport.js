@@ -47,15 +47,15 @@ const ExpenseReport = () => {
             case "thisMonth":
                 start = new Date(today.getFullYear(), today.getMonth(), 1);
                 end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                setViewType("monthly"); break;
-            case "lastMonth":
-                start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                end = new Date(today.getFullYear(), today.getMonth(), 0);
-                setViewType("lastMonth"); break;
+                setViewType("monthly");
+                setShowCustomRange(false);
+                break;
             case "thisYear":
                 start = new Date(today.getFullYear(), 0, 1);
                 end = new Date(today.getFullYear(), 11, 31);
-                setViewType("yearly"); break;
+                setViewType("yearly");
+                setShowCustomRange(false);
+                break;
             default: return;
         }
         setDateRange({ startDate: start, endDate: end });
@@ -229,19 +229,18 @@ const ExpenseReport = () => {
                 <div className="preset-buttons">
                     {[
                         { key: "thisMonth", label: "This Month", type: "monthly" },
-                        { key: "lastMonth", label: "Last Month", type: "lastMonth" },
                         { key: "thisYear", label: "This Year", type: "yearly" },
                     ].map((p) => (
                         <button
                             key={p.key}
-                            className={`preset-btn ${viewType === p.type ? "active" : ""}`}
+                            className={`preset-btn ${!showCustomRange && viewType === p.type ? "active" : ""}`}
                             onClick={() => handlePreset(p.key)}
                         >
                             {p.label}
                         </button>
                     ))}
                     <button
-                        className={`preset-btn ${viewType === "custom" ? "active" : ""}`}
+                        className={`preset-btn ${viewType === "custom" || showCustomRange ? "active" : ""}`}
                         onClick={() => setShowCustomRange(!showCustomRange)}
                     >
                         Custom Range
@@ -336,6 +335,134 @@ const ExpenseReport = () => {
                 </div>
             </div>
 
+            {/* ── Transaction Table (Moved Above Charts) ── */}
+            <div className="stock-table-container">
+                <div className="table-header">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span className="material-symbols-outlined header-icon-accent">table_chart</span>
+                            Detailed Transaction List
+                        </h3>
+                        <span className="records-count-lite">
+                            {filteredExpenses.length} records · {formatPeriod()}
+                        </span>
+                    </div>
+                </div>
+                <div className="table-responsive desktop-only-table">
+                    <table className="stock-table">
+                        <thead>
+                            <tr>
+                                <th className="text-center">Date</th>
+                                <th className="text-center">Category</th>
+                                <th className="text-center">Description</th>
+                                <th className="text-center">Payment Mode</th>
+                                <th className="text-center">Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredExpenses.length > 0 ? (
+                                filteredExpenses.map((ex) => (
+                                    <tr key={ex.id}>
+                                        <td className="date-cell text-center">{formatDate(ex.date)}</td>
+                                        <td className="text-center">
+                                            <span className={`status-badge-lite ${ex.category === 'Machine Maintenance' ? 'low' :
+                                                ex.category === 'Material' ? 'normal' :
+                                                    ex.category === 'Salary' ? 'critical' : 'normal'
+                                                }`}>
+                                                {ex.category}
+                                            </span>
+                                        </td>
+                                        <td className="description-cell text-center">{ex.description}</td>
+                                        <td className="text-center">
+                                            <span className="payment-badge-lite">
+                                                {ex.paymentMode}
+                                            </span>
+                                        </td>
+                                        <td className="amount-cell">
+                                            ₹{Number(ex.amount).toLocaleString()}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" className="no-data">No expense records found for the selected period</td>
+                                </tr>
+                            )}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colSpan="4" className="footer-label-cell">Total:</td>
+                                <td className="amount-cell footer-value-cell">
+                                    ₹{totalExpense.toLocaleString()}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div className="mobile-history-cards">
+                    {filteredExpenses.length > 0 ? (
+                        filteredExpenses.map((ex, index) => {
+                            const cfg = CATEGORY_CONFIG[ex.category] || { icon: "payments", color: "#006A4E" };
+                            const isExpanded = expandedExpenseId === ex.id;
+
+                            return (
+                                <div
+                                    key={ex.id}
+                                    className={`mobile-expense-card-minimal ${isExpanded ? 'expanded' : ''}`}
+                                    onClick={() => toggleExpenseExpansion(ex.id)}
+                                >
+                                    <div className="expense-card-main">
+                                        <div className="expense-sno">{index + 1}</div>
+                                        <div className="expense-category-lite">
+                                            <div className="category-marker" style={{ backgroundColor: cfg.color }} />
+                                            <div className="category-details-wrapper">
+                                                <span className="category-name-text">
+                                                    {ex.category === "Salary" ? (ex.description.replace('Salary for ', '')) : ex.category}
+                                                </span>
+                                                {ex.category !== "Salary" && ex.description && (
+                                                    <span className="description-text-lite">
+                                                        {ex.description}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="expense-amount-lite">₹{Number(ex.amount).toLocaleString()}</div>
+                                        <span className="material-symbols-outlined expand-icon">
+                                            {isExpanded ? 'expand_less' : 'expand_more'}
+                                        </span>
+                                    </div>
+
+                                    {isExpanded && (
+                                        <div className="expense-card-details-expanded">
+                                            <div className="expanded-info-grid">
+                                                <div className="info-row">
+                                                    <span className="expanded-info-label">Description</span>
+                                                    <span className="expanded-info-value">{ex.description}</span>
+                                                </div>
+                                                <div className="info-row">
+                                                    <span className="expanded-info-label">Date</span>
+                                                    <span className="expanded-info-value">{formatDate(ex.date)}</span>
+                                                </div>
+                                                <div className="info-row">
+                                                    <span className="expanded-info-label">Payment</span>
+                                                    <span className="expanded-info-value">{ex.paymentMode}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="no-data-mobile">
+                            <span className="material-symbols-outlined">search_off</span>
+                            <p>No expense records found</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {/* ── Chart Selector ── */}
             <div className="chart-selector">
                 {[
@@ -382,7 +509,6 @@ const ExpenseReport = () => {
                                                     <div className="category-stats">
                                                         <span className="category-amount">₹{data.total.toLocaleString()}</span>
                                                         <span className="category-percentage">{pct}%</span>
-                                                        <span className="category-count">{data.count} entries</span>
                                                     </div>
                                                 </div>
                                                 <div className="progress-bar-container">
@@ -397,8 +523,6 @@ const ExpenseReport = () => {
                         )}
                     </div>
                 )}
-
-
 
                 {/* Monthly Trend */}
                 {selectedChart === "trend" && (
@@ -503,125 +627,6 @@ const ExpenseReport = () => {
                         )}
                     </div>
                 )}
-
-
-            </div>
-
-            {/* ── Transaction Table ── */}
-            <div className="stock-table-container">
-                <div className="table-header">
-                    <h3>
-                        <span className="material-symbols-outlined header-icon-accent">table_chart</span>
-                        Detailed Transaction List
-                    </h3>
-                    <span className="records-count-lite">
-                        {filteredExpenses.length} records · {formatPeriod()}
-                    </span>
-                </div>
-                <div className="table-responsive desktop-only-table">
-                    <table className="stock-table">
-                        <thead>
-                            <tr>
-                                <th className="text-center">Date</th>
-                                <th className="text-center">Category</th>
-                                <th className="text-center">Description</th>
-                                <th className="text-center">Payment Mode</th>
-                                <th className="text-center">Amount (₹)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredExpenses.length > 0 ? (
-                                filteredExpenses.map((ex) => (
-                                    <tr key={ex.id}>
-                                        <td className="date-cell text-center">{formatDate(ex.date)}</td>
-                                        <td className="text-center">
-                                            <span className={`status-badge-lite ${ex.category === 'Machine Maintenance' ? 'low' :
-                                                ex.category === 'Material' ? 'normal' :
-                                                    ex.category === 'Salary' ? 'critical' : 'normal'
-                                                }`}>
-                                                {ex.category}
-                                            </span>
-                                        </td>
-                                        <td className="description-cell text-center">{ex.description}</td>
-                                        <td className="text-center">
-                                            <span className="payment-badge-lite">
-                                                {ex.paymentMode}
-                                            </span>
-                                        </td>
-                                        <td className="amount-cell">
-                                            ₹{Number(ex.amount).toLocaleString()}
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="5" className="no-data">No expense records found for the selected period</td>
-                                </tr>
-                            )}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colSpan="4" className="footer-label-cell">Total:</td>
-                                <td className="amount-cell footer-value-cell">
-                                    ₹{totalExpense.toLocaleString()}
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-
-                <div className="mobile-history-cards">
-                    {filteredExpenses.length > 0 ? (
-                        filteredExpenses.map((ex, index) => {
-                            const cfg = CATEGORY_CONFIG[ex.category] || { icon: "payments", color: "#006A4E" };
-                            const isExpanded = expandedExpenseId === ex.id;
-
-                            return (
-                                <div
-                                    key={ex.id}
-                                    className={`mobile-expense-card-minimal ${isExpanded ? 'expanded' : ''}`}
-                                    onClick={() => toggleExpenseExpansion(ex.id)}
-                                >
-                                    <div className="expense-card-main">
-                                        <div className="expense-sno">{index + 1}</div>
-                                        <div className="expense-category-lite">
-                                            <div className="category-marker" style={{ backgroundColor: cfg.color }} />
-                                            {ex.category}
-                                        </div>
-                                        <div className="expense-amount-lite">₹{Number(ex.amount).toLocaleString()}</div>
-                                        <span className="material-symbols-outlined expand-icon">
-                                            {isExpanded ? 'expand_less' : 'expand_more'}
-                                        </span>
-                                    </div>
-
-                                    {isExpanded && (
-                                        <div className="expense-card-details-expanded">
-                                            <div className="expanded-info-grid">
-                                                <div className="info-row">
-                                                    <span className="expanded-info-label">Description</span>
-                                                    <span className="expanded-info-value">{ex.description}</span>
-                                                </div>
-                                                <div className="info-row">
-                                                    <span className="expanded-info-label">Date</span>
-                                                    <span className="expanded-info-value">{formatDate(ex.date)}</span>
-                                                </div>
-                                                <div className="info-row">
-                                                    <span className="expanded-info-label">Payment</span>
-                                                    <span className="expanded-info-value">{ex.paymentMode}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })
-                    ) : (
-                        <div className="no-data-mobile">
-                            <span className="material-symbols-outlined">search_off</span>
-                            <p>No expense records found</p>
-                        </div>
-                    )}
-                </div>
             </div>
 
         </div>

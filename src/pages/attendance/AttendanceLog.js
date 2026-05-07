@@ -170,9 +170,8 @@ const AttendanceLog = () => {
       setAbsentReason(emp.note || "");
       setShowHalfDayModal(true);
     } else if (newStatus === "absent") {
-      setSelectedEmployee(emp);
-      setAbsentReason(emp.note || "");
-      setShowAbsentModal(true);
+      patchAttendance(empId, { status: "absent", note: "", halfDayTime: null });
+      showToast(`${emp.name} marked as Absent`);
     }
   };
 
@@ -253,10 +252,18 @@ const AttendanceLog = () => {
 
       <div className="premium-header-green att-header">
         <div className="header-left-group">
-          <h1 className="page-title-white">Attendance Management</h1>
+          <h1 className="page-title-white">Attendance</h1>
         </div>
         <div className="header-right-group">
-          {!isMobile && (
+          {isMobile ? (
+             <button 
+                className="mobile-save-header-btn" 
+                onClick={handleSaveAttendance} 
+                disabled={saveLoading || isSunday || !isToday}
+              >
+                {saveLoading ? <span className="material-symbols-outlined rotating">sync</span> : "Save"}
+             </button>
+          ) : (
             <button 
               className="btn-add-premium-pill" 
               onClick={handleSaveAttendance} 
@@ -271,7 +278,7 @@ const AttendanceLog = () => {
       </div>
 
       {/* ── DATE NAVIGATOR ────────────────────────────────────────────────────── */}
-      <div className="att-date-nav">
+      <div className={isMobile ? "att-mobile-header-stack" : "att-date-nav"}>
         <div className="att-date-controls">
           <button className="att-date-btn" onClick={goToPreviousDay}>
             <span className="material-symbols-outlined">chevron_left</span>
@@ -287,7 +294,7 @@ const AttendanceLog = () => {
         </div>
         <div className="att-date-actions">
           <button 
-            className="att-btn att-btn-outline" 
+            className="att-btn att-btn-outline att-stoppage-btn" 
             onClick={() => setShowStoppageModal(true)}
             disabled={isSunday || !isToday}
           >
@@ -336,15 +343,10 @@ const AttendanceLog = () => {
           <span className="material-symbols-outlined">search</span>
           <input
             type="text"
-            placeholder="Search by name, dept, or ID…"
+            placeholder={isMobile ? "Search employees..." : "Search by name, dept, or ID…"}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
-          {searchTerm && (
-            <button className="att-search-clear" onClick={() => setSearchTerm("")}>
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          )}
         </div>
 
         {/* Department Filter */}
@@ -364,7 +366,7 @@ const AttendanceLog = () => {
         {(searchTerm || selectedDept !== "All Departments" || statusFilter !== "all") && (
           <button className="att-btn att-btn-ghost" onClick={clearFilters}>
             <span className="material-symbols-outlined">filter_list_off</span>
-            Clear
+            {!isMobile && "Clear"}
           </button>
         )}
 
@@ -377,19 +379,8 @@ const AttendanceLog = () => {
             disabled={isSunday || !isToday}
           >
             <span className="material-symbols-outlined">done_all</span>
-            Mark All Present
+            <span className="btn-text">{isMobile ? "All Present" : "Mark All Present"}</span>
           </button>
-
-          {isMobile && (
-            <button 
-              className="att-btn att-btn-primary att-mobile-save-btn" 
-              onClick={handleSaveAttendance} 
-              disabled={saveLoading || isSunday || !isToday}
-            >
-              <span className="material-symbols-outlined">{saveLoading ? "hourglass_top" : "save"}</span>
-              {saveLoading ? "Save" : "Save"}
-            </button>
-          )}
         </div>
       </div>
 
@@ -465,21 +456,19 @@ const AttendanceLog = () => {
           <div className="att-mobile-list">
             {paginatedEmployees.length > 0 ? (
               paginatedEmployees.map((emp, index) => (
-                <div key={emp.id} className="att-mobile-row">
-                  {/* Avatar */}
-                  <div className={`att-avatar att-avatar-${emp.status} att-mobile-avatar`}>
-                    {getInitials(emp.name)}
+                <div key={emp.id} className="att-mobile-row-premium">
+                  <div className="att-mobile-row-left">
+                    <div className={`att-avatar att-avatar-${emp.status} att-mobile-avatar-small`}>
+                      {getInitials(emp.name)}
+                    </div>
+                    <div className="att-mobile-info-compact">
+                      <span className="att-mobile-name-bold">{emp.name}</span>
+                      <span className="att-mobile-dept-sub">{emp.department}</span>
+                    </div>
                   </div>
 
-                  {/* Name + Dept */}
-                  <div className="att-mobile-info">
-                    <span className="att-mobile-name">{emp.name}</span>
-                    <span className="att-mobile-dept">{emp.department}</span>
-                  </div>
-
-                  {/* P / H / A */}
-                  <div className="att-mobile-right">
-                    <div className="att-toggle-group att-mobile-toggle">
+                  <div className="att-mobile-row-right">
+                    <div className="att-toggle-group att-mobile-toggle-compact">
                       <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => !isSunday && isToday && handleStatusChange(emp.id, "present")} disabled={isSunday || !isToday}>P</button>
                       <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => !isSunday && isToday && handleStatusChange(emp.id, "half")} disabled={isSunday || !isToday}>H</button>
                       <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => !isSunday && isToday && handleStatusChange(emp.id, "absent")} disabled={isSunday || !isToday}>A</button>
@@ -488,9 +477,10 @@ const AttendanceLog = () => {
                 </div>
               ))
             ) : (
-              <div className="att-empty" style={{ padding: '40px 20px', textAlign: 'center' }}>
-                <span className="material-symbols-outlined">search_off</span>
-                <p>No employees match the current filters</p>
+              <div className="att-empty-state">
+                <span className="material-symbols-outlined">person_off</span>
+                <p>No employees found</p>
+                <button className="att-btn att-btn-ghost" onClick={clearFilters}>Reset Filters</button>
               </div>
             )}
           </div>
@@ -612,46 +602,6 @@ const AttendanceLog = () => {
         </div>
       )}
 
-      {/* ── ABSENT MODAL ──────────────────────────────────────────────────────── */}
-      {showAbsentModal && selectedEmployee && (
-        <div className="att-modal-overlay" onClick={() => setShowAbsentModal(false)}>
-          <div className="att-modal" onClick={e => e.stopPropagation()}>
-            <div className="att-modal-header att-modal-header-red">
-              <div>
-                <h3>Mark Absent – {selectedEmployee.name}</h3>
-                <p className="att-modal-sub">Provide an optional reason for absence</p>
-              </div>
-              <button className="att-modal-close" onClick={() => setShowAbsentModal(false)}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <div className="att-modal-body">
-              <div className="att-modal-emp-row">
-                <div className="att-avatar att-avatar-absent">{getInitials(selectedEmployee.name)}</div>
-                <div>
-                  <strong>{selectedEmployee.name}</strong>
-                  <p className="att-modal-sub">{selectedEmployee.department} • Marking Absent</p>
-                </div>
-              </div>
-              <label className="att-field-label">Reason for Absence <span className="att-optional">(optional)</span></label>
-              <textarea
-                className="att-textarea"
-                rows={4}
-                placeholder="Enter reason for leave, sick day, etc…"
-                value={absentReason}
-                onChange={e => setAbsentReason(e.target.value)}
-              />
-            </div>
-            <div className="att-modal-footer">
-              <button className="att-btn att-btn-ghost" onClick={() => setShowAbsentModal(false)}>Cancel</button>
-              <button className="att-btn att-btn-danger" onClick={handleSaveAbsent}>
-                <span className="material-symbols-outlined">cancel</span>
-                Confirm Absent
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── WORK STOPPAGE MODAL ───────────────────────────────────────────────── */}
       {showStoppageModal && (

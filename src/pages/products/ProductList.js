@@ -18,6 +18,13 @@ const ProductList = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [variantToDelete, setVariantToDelete] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Form state for add/edit
   const [formData, setFormData] = useState({
@@ -38,13 +45,14 @@ const ProductList = () => {
       hsn: "",
       category: "Plates",
     });
-    setVariants(DEFAULT_SIZES.map(s => ({
-      size: s,
+    setVariants([{
+      size: "",
       cost: "",
       sell: "",
+      hsn: "",
       checked: true,
       isNew: true
-    })));
+    }]);
     setShowAddModal(true);
   }, []);
 
@@ -225,10 +233,7 @@ const ProductList = () => {
   };
 
   const handleAddCustomSize = () => {
-    if (!newSize.size.trim()) return;
-    const sizeHsn = newSize.hsn ? newSize.hsn.trim() : formData.hsn.trim();
-    setVariants([...variants, { ...newSize, hsn: sizeHsn, checked: true, isNew: true }]);
-    setNewSize({ size: "", hsn: "", cost: "", sell: "" });
+    setVariants([...variants, { size: "", hsn: "", cost: "", sell: "", checked: true, isNew: true }]);
   };
 
 
@@ -492,132 +497,175 @@ const ProductList = () => {
                 <p>Tick the sizes you want to add and enter their prices</p>
               </div>
 
-              <div className="variants-list">
-                <table className="variant-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '40px' }}>Tick</th>
-                      <th>Size</th>
-                      <th>HSN</th>
-                      <th>Cost (₹)</th>
-                      <th>Sell (₹)</th>
-                      <th style={{ width: '40px' }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <div className="variants-list-container">
+                {!isMobile ? (
+                  <div className="variants-list">
+                    <table className="variant-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '40px' }}>Tick</th>
+                          <th>Size</th>
+                          <th>HSN</th>
+                          <th>Cost (₹)</th>
+                          <th>Sell (₹)</th>
+                          <th style={{ width: '40px' }}></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {variants.map((v, idx) => (
+                          <tr key={idx} className={v.checked ? "active-row" : "inactive-row"}>
+                            <td>
+                              <input
+                                type="checkbox"
+                                checked={v.checked}
+                                onChange={(e) => handleVariantChange(idx, 'checked', e.target.checked)}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="text"
+                                value={v.size}
+                                onChange={(e) => handleVariantChange(idx, 'size', e.target.value)}
+                                onKeyDown={(e) => handleModalKeyDown(e, 'add')}
+                                placeholder="Size"
+                                className="table-input"
+                                style={{ fontWeight: 700 }}
+                              />
+                            </td>
+                            <td>
+                              {v.checked && (
+                                <input
+                                  type="text"
+                                  value={v.hsn || ""}
+                                  onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
+                                  onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
+                                  placeholder="HSN"
+                                  className="table-input"
+                                  style={{ fontSize: '12px' }}
+                                />
+                              )}
+                            </td>
+                            <td>
+                              {v.checked && (
+                                <input
+                                  type="number"
+                                  value={v.cost}
+                                  onChange={(e) => handleVariantChange(idx, 'cost', e.target.value)}
+                                  onKeyDown={(e) => handleModalKeyDown(e, 'add')}
+                                  placeholder="0"
+                                  className="table-input"
+                                />
+                              )}
+                            </td>
+                            <td>
+                              {v.checked && (
+                                <input
+                                  type="number"
+                                  value={v.sell}
+                                  onChange={(e) => handleVariantChange(idx, 'sell', e.target.value)}
+                                  onKeyDown={(e) => handleModalKeyDown(e, 'add')}
+                                  placeholder="0"
+                                  className="table-input"
+                                />
+                              )}
+                            </td>
+                            <td>
+                              <button
+                                className="action-btn delete small"
+                                onClick={() => {
+                                  const next = [...variants];
+                                  next.splice(idx, 1);
+                                  setVariants(next);
+                                }}
+                                title="Remove size"
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        <tr>
+                          <td colSpan="6" style={{ textAlign: 'center', padding: '12px' }}>
+                            <button className="add-row-btn" onClick={handleAddCustomSize}>
+                              <span className="material-symbols-outlined">add</span>
+                              Add Another Size
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  /* Mobile Variant Boxes */
+                  <div className="mobile-variants-container">
                     {variants.map((v, idx) => (
-                      <tr key={idx} className={v.checked ? "active-row" : "inactive-row"}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={v.checked}
-                            onChange={(e) => handleVariantChange(idx, 'checked', e.target.checked)}
-                          />
-                        </td>
-                        <td><strong>{v.size}</strong></td>
-                        <td>
-                          {v.checked && (
+                      <div key={idx} className="mobile-variant-card">
+                        <div className="mobile-variant-header">
+                          <div className="mobile-checkbox-group">
+                            <input
+                              type="checkbox"
+                              checked={v.checked}
+                              onChange={(e) => handleVariantChange(idx, 'checked', e.target.checked)}
+                            />
+                            <span>Include Size</span>
+                          </div>
+                          <button className="mobile-delete-btn" onClick={() => {
+                            const next = [...variants];
+                            next.splice(idx, 1);
+                            setVariants(next);
+                          }}>
+                            <span className="material-symbols-outlined">delete</span>
+                          </button>
+                        </div>
+                        
+                        <div className="mobile-card-inputs">
+                          <div className="mobile-input-group">
+                            <label>Size</label>
+                            <input
+                              type="text"
+                              value={v.size}
+                              onChange={(e) => handleVariantChange(idx, 'size', e.target.value)}
+                              placeholder="e.g. 14-inch"
+                            />
+                          </div>
+                          <div className="mobile-input-group">
+                            <label>HSN Code</label>
                             <input
                               type="text"
                               value={v.hsn || ""}
                               onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
-                              onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
                               placeholder="HSN"
-                              className="table-input"
-                              style={{ fontSize: '12px' }}
                             />
-                          )}
-                        </td>
-                        <td>
-                          {v.checked && (
-                            <input
-                              type="number"
-                              value={v.cost}
-                              onChange={(e) => handleVariantChange(idx, 'cost', e.target.value)}
-                              onKeyDown={(e) => handleModalKeyDown(e, 'add')}
-                              placeholder="0"
-                              className="table-input"
-                            />
-                          )}
-                        </td>
-                        <td>
-                          {v.checked && (
-                            <input
-                              type="number"
-                              value={v.sell}
-                              onChange={(e) => handleVariantChange(idx, 'sell', e.target.value)}
-                              onKeyDown={(e) => handleModalKeyDown(e, 'add')}
-                              placeholder="0"
-                              className="table-input"
-                            />
-                          )}
-                        </td>
-                        <td>
-                          {!DEFAULT_SIZES.includes(v.size) && (
-                            <button
-                              className="action-btn delete small"
-                              onClick={() => {
-                                const next = [...variants];
-                                next.splice(idx, 1);
-                                setVariants(next);
-                              }}
-                              title="Remove custom size"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span>
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {/* Add Custom Row */}
-                    <tr className="add-custom-row">
-                      <td><span className="material-symbols-outlined">add</span></td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Size (e.g. 14-inch)"
-                          value={newSize.size}
-                          onChange={(e) => setNewSize({ ...newSize, size: e.target.value })}
-                          onKeyDown={(e) => handleModalKeyDown(e, 'add')}
-                          className="table-input"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="HSN"
-                          value={newSize.hsn || ""}
-                          onChange={(e) => setNewSize({ ...newSize, hsn: e.target.value })}
-                          className="table-input"
-                          style={{ fontSize: '12px' }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Cost"
-                          value={newSize.cost}
-                          onChange={(e) => setNewSize({ ...newSize, cost: e.target.value })}
-                          onKeyDown={(e) => handleModalKeyDown(e, 'add')}
-                          className="table-input"
-                        />
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <input
-                            type="number"
-                            placeholder="Sell"
-                            value={newSize.sell}
-                            onChange={(e) => setNewSize({ ...newSize, sell: e.target.value })}
-                            className="table-input"
-                          />
-                          <button className="add-row-btn" onClick={handleAddCustomSize}>Add</button>
+                          </div>
+                          <div className="mobile-price-row">
+                            <div className="mobile-input-group">
+                              <label>Cost (₹)</label>
+                              <input
+                                type="number"
+                                value={v.cost}
+                                onChange={(e) => handleVariantChange(idx, 'cost', e.target.value)}
+                                placeholder="0"
+                              />
+                            </div>
+                            <div className="mobile-input-group">
+                              <label>Sell (₹)</label>
+                              <input
+                                type="number"
+                                value={v.sell}
+                                onChange={(e) => handleVariantChange(idx, 'sell', e.target.value)}
+                                placeholder="0"
+                              />
+                            </div>
+                          </div>
                         </div>
-                      </td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
+                      </div>
+                    ))}
+                    <button className="mobile-add-row-btn" onClick={handleAddCustomSize}>
+                      <span className="material-symbols-outlined">add</span>
+                      Add Another Size
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="modal-footer">
@@ -656,128 +704,195 @@ const ProductList = () => {
                 <p>Update prices for existing sizes or tick new ones to add them</p>
               </div>
 
-              <div className="variants-list">
-                <table className="variant-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '40px' }}>Tick</th>
-                      <th>Size</th>
-                      <th>HSN</th>
-                      <th>Cost (₹)</th>
-                      <th>Sell (₹)</th>
-                      <th style={{ width: '40px' }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <div className="variants-list-container">
+                {!isMobile ? (
+                  <div className="variants-list">
+                    <table className="variant-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '40px' }}>Tick</th>
+                          <th>Size</th>
+                          <th>HSN</th>
+                          <th>Cost (₹)</th>
+                          <th>Sell (₹)</th>
+                          <th style={{ width: '40px' }}></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {variants.map((v, idx) => (
+                          <tr key={idx} className={v.checked ? "active-row" : "inactive-row"}>
+                            <td>
+                              <input
+                                type="checkbox"
+                                checked={v.checked}
+                                onChange={(e) => handleVariantChange(idx, 'checked', e.target.checked)}
+                                disabled={v.isExisting}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="text"
+                                value={v.size}
+                                onChange={(e) => handleVariantChange(idx, 'size', e.target.value)}
+                                onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
+                                placeholder="Size"
+                                className="table-input"
+                                style={{ fontWeight: 700 }}
+                                disabled={v.isExisting}
+                              />
+                            </td>
+                            <td>
+                              {v.checked && (
+                                <input
+                                  type="text"
+                                  value={v.hsn || ""}
+                                  onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
+                                  onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
+                                  placeholder="HSN"
+                                  className="table-input"
+                                  style={{ fontSize: '12px' }}
+                                />
+                              )}
+                            </td>
+                            <td>
+                              {v.checked && (
+                                <input
+                                  type="number"
+                                  value={v.cost}
+                                  onChange={(e) => handleVariantChange(idx, 'cost', e.target.value)}
+                                  onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
+                                  placeholder="0"
+                                  className="table-input"
+                                />
+                              )}
+                            </td>
+                            <td>
+                              {v.checked && (
+                                <input
+                                  type="number"
+                                  value={v.sell}
+                                  onChange={(e) => handleVariantChange(idx, 'sell', e.target.value)}
+                                  onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
+                                  placeholder="0"
+                                  className="table-input"
+                                />
+                              )}
+                            </td>
+                            <td>
+                              {v.isExisting ? (
+                                <button
+                                  className="action-btn delete small"
+                                  onClick={() => handleIndividualDelete(v._id || v.id, idx, v.size)}
+                                  title="Delete this size"
+                                >
+                                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                                </button>
+                              ) : (
+                                <button
+                                  className="action-btn delete small"
+                                  onClick={() => {
+                                    const next = [...variants];
+                                    next.splice(idx, 1);
+                                    setVariants(next);
+                                  }}
+                                  title="Remove new size"
+                                >
+                                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span>
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                        <tr>
+                          <td colSpan="6" style={{ textAlign: 'center', padding: '12px' }}>
+                            <button className="add-row-btn" onClick={handleAddCustomSize}>
+                              <span className="material-symbols-outlined">add</span>
+                              Add Another Size
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  /* Mobile Variant Boxes */
+                  <div className="mobile-variants-container">
                     {variants.map((v, idx) => (
-                      <tr key={idx} className={v.checked ? "active-row" : "inactive-row"}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={v.checked}
-                            onChange={(e) => handleVariantChange(idx, 'checked', e.target.checked)}
-                            disabled={v.isExisting}
-                          />
-                        </td>
-                        <td><strong>{v.size}</strong></td>
-                        <td>
-                          {v.checked && (
+                      <div key={idx} className="mobile-variant-card">
+                        <div className="mobile-variant-header">
+                          <div className="mobile-checkbox-group">
+                            <input
+                              type="checkbox"
+                              checked={v.checked}
+                              onChange={(e) => handleVariantChange(idx, 'checked', e.target.checked)}
+                              disabled={v.isExisting}
+                            />
+                            <span>{v.isExisting ? "Existing Size" : "New Size"}</span>
+                          </div>
+                          {v.isExisting ? (
+                            <button className="mobile-delete-btn" onClick={() => handleIndividualDelete(v._id || v.id, idx, v.size)}>
+                              <span className="material-symbols-outlined">delete</span>
+                            </button>
+                          ) : (
+                            <button className="mobile-delete-btn" onClick={() => {
+                              const next = [...variants];
+                              next.splice(idx, 1);
+                              setVariants(next);
+                            }}>
+                              <span className="material-symbols-outlined">close</span>
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div className="mobile-card-inputs">
+                          <div className="mobile-input-group">
+                            <label>Size</label>
+                            <input
+                              type="text"
+                              value={v.size}
+                              onChange={(e) => handleVariantChange(idx, 'size', e.target.value)}
+                              placeholder="e.g. 14-inch"
+                              disabled={v.isExisting}
+                            />
+                          </div>
+                          <div className="mobile-input-group">
+                            <label>HSN Code</label>
                             <input
                               type="text"
                               value={v.hsn || ""}
                               onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
-                              onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
                               placeholder="HSN"
-                              className="table-input"
-                              style={{ fontSize: '12px' }}
                             />
-                          )}
-                        </td>
-                        <td>
-                          {v.checked && (
-                            <input
-                              type="number"
-                              value={v.cost}
-                              onChange={(e) => handleVariantChange(idx, 'cost', e.target.value)}
-                              onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
-                              placeholder="0"
-                              className="table-input"
-                            />
-                          )}
-                        </td>
-                        <td>
-                          {v.checked && (
-                            <input
-                              type="number"
-                              value={v.sell}
-                              onChange={(e) => handleVariantChange(idx, 'sell', e.target.value)}
-                              onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
-                              placeholder="0"
-                              className="table-input"
-                            />
-                          )}
-                        </td>
-                        <td>
-                          {v.isExisting && (
-                            <button
-                              className="action-btn delete small"
-                              onClick={() => handleIndividualDelete(v._id || v.id, idx, v.size)}
-                              title="Delete this size"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {/* Add Custom Row */}
-                    <tr className="add-custom-row">
-                      <td><span className="material-symbols-outlined">add</span></td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Custom Size"
-                          value={newSize.size}
-                          onChange={(e) => setNewSize({ ...newSize, size: e.target.value })}
-                          onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
-                          className="table-input"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="HSN"
-                          value={newSize.hsn || ""}
-                          onChange={(e) => setNewSize({ ...newSize, hsn: e.target.value })}
-                          className="table-input"
-                          style={{ fontSize: '12px' }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Cost"
-                          value={newSize.cost}
-                          onChange={(e) => setNewSize({ ...newSize, cost: e.target.value })}
-                          className="table-input"
-                        />
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <input
-                            type="number"
-                            placeholder="Sell"
-                            value={newSize.sell}
-                            onChange={(e) => setNewSize({ ...newSize, sell: e.target.value })}
-                            className="table-input"
-                          />
-                          <button className="add-row-btn" onClick={handleAddCustomSize}>Add</button>
+                          </div>
+                          <div className="mobile-price-row">
+                            <div className="mobile-input-group">
+                              <label>Cost (₹)</label>
+                              <input
+                                type="number"
+                                value={v.cost}
+                                onChange={(e) => handleVariantChange(idx, 'cost', e.target.value)}
+                                placeholder="0"
+                              />
+                            </div>
+                            <div className="mobile-input-group">
+                              <label>Sell (₹)</label>
+                              <input
+                                type="number"
+                                value={v.sell}
+                                onChange={(e) => handleVariantChange(idx, 'sell', e.target.value)}
+                                placeholder="0"
+                              />
+                            </div>
+                          </div>
                         </div>
-                      </td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
+                      </div>
+                    ))}
+                    <button className="mobile-add-row-btn" onClick={handleAddCustomSize}>
+                      <span className="material-symbols-outlined">add</span>
+                      Add Another Size
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="modal-footer">

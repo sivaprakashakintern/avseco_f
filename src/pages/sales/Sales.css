@@ -1594,7 +1594,7 @@
 
   /* ---- Page Container ---- */
   .stock-page {
-    padding: 12px;
+    padding: 8px 8px;
     background: #f4f9f6;
   }
 
@@ -1605,9 +1605,9 @@
     justify-content: space-between !important;
     text-align: left;
     gap: 12px;
-    padding: 14px 16px;
-    border-radius: 18px;
-    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    margin-bottom: 0px !important;
   }
 
   .page-header.premium-header .page-title {
@@ -1641,7 +1641,22 @@
     font-size: 16px;
   }
 
-  /* ---- Stats Cards: hidden on mobile (they don't exist in Sales layout) ---- */
+  .history-filters-wrapper {
+    margin-top: -8px !important;
+    margin-bottom: -10px !important;
+  }
+
+  .history-filters {
+    margin-bottom: 0px !important;
+    gap: 8px !important;
+  }
+
+  .stock-table-container {
+    margin-top: -18px !important;
+    margin-bottom: 12px !important;
+    border-radius: 12px !important;
+  }
+
   .stock-stats {
     grid-template-columns: 1fr;
     gap: 10px;
@@ -1657,7 +1672,7 @@
   }
 
   .table-header {
-    padding: 12px 14px;
+    padding: 6px 12px;
     border-bottom: 1px solid #eef5f0;
     background: linear-gradient(135deg, #f8fdfa, #f0f9f5);
   }
@@ -2277,12 +2292,15 @@
   .bill-modal-content {
     border-radius: 4px !important;
     margin: auto !important;
+    width: 95% !important;
+    max-width: 500px !important;
+    background: white !important;
+    padding: 20px !important;
   }
 
   .bill-modal-content::before {
     display: none !important;
   }
-
 
   .bill-header {
     flex-direction: row;
@@ -2314,6 +2332,7 @@
   .bill-actions {
     flex-direction: row;
     gap: 10px;
+    margin-top: 15px;
   }
 
   .bill-actions button {
@@ -3086,6 +3105,24 @@ textarea.quick-entry-input {
   display: block;
 }
 
+/* Responsive Bill Modal Styles */
+.responsive-bill-modal {
+  padding: 0;
+  background: #ffffff;
+  min-width: 850px;
+  width: 850px;
+  margin: 40px auto;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.3);
+  border: none;
+  border-radius: 4px;
+  position: relative;
+  cursor: default;
+}
+
+.search-box-container {
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .stock-page {
     padding: 24px 20px 40px 20px !important;
@@ -3152,10 +3189,66 @@ textarea.quick-entry-input {
     color: #0f172a !important;
   }
 
-  /* Hide Desktop Table and Search in History on Mobile */
-  .history-filters-wrapper,
+  /* Show Search in History on Mobile with better styling */
+  .history-filters-wrapper {
+    display: block !important;
+    padding: 0 !important;
+    margin-bottom: 20px !important;
+  }
+
+  .search-box-container {
+    width: 100% !important;
+  }
+
+  .search-box {
+    max-width: 100% !important;
+  }
+
+  .search-input {
+    height: 44px !important;
+    font-size: 13px !important;
+    padding: 0 40px !important;
+  }
+
+  .search-icon {
+    left: 12px !important;
+    font-size: 18px !important;
+  }
+
   .desktop-only-table {
     display: none !important;
+  }
+
+  /* Responsive Bill Modal Overrides - Keep PC Layout but allow scroll */
+  .responsive-bill-modal {
+    min-width: 850px !important; /* Force PC width */
+    width: 850px !important;
+    margin: 20px auto !important;
+    transform-origin: top center;
+  }
+
+  .bill-modal-overlay {
+    padding: 10px !important;
+    display: block !important; /* Allow natural scrolling */
+    overflow-x: auto !important;
+  }
+
+  .bill-modal-footer {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    width: 850px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
+    padding: 15px !important;
+    z-index: 10;
+  }
+
+  .bill-btn {
+    flex: 1;
+    min-width: 120px;
   }
 
   .mobile-history-cards {
@@ -3165,10 +3258,140 @@ textarea.quick-entry-input {
   }
 
   .mobile-sale-card {
+    background: #ffffff !important;
     border-radius: 16px !important;
     border: 1px solid #e2e8f0 !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
     margin-bottom: 16px !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sale-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .sale-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  .sale-date span {
+    font-size: 16px;
+  }
+
+  .sale-card-body {
+    padding: 16px;
+  }
+
+  .company-info {
+    margin-bottom: 16px;
+  }
+
+  .sale-company {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 4px 0;
+  }
+
+  .sale-customer {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+  }
+
+  .sale-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .detail-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .detail-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .detail-value.amount {
+    color: #006A4E;
+    font-weight: 800;
+    font-size: 15px;
+  }
+
+  .sale-product-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px dashed #e2e8f0;
+    font-size: 12px;
+    color: #475569;
+    font-weight: 500;
+  }
+
+  .sale-product-line span {
+    font-size: 16px;
+    color: #006A4E;
+  }
+
+  .sale-card-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    border-top: 1px solid #f1f5f9 !important;
+    background: #fff !important;
+  }
+
+  .sale-action-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 12px !important;
+    border: none !important;
+    background: transparent !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+  }
+
+  .sale-action-btn.view {
+    color: #006A4E !important;
+    border-right: 1px solid #f1f5f9 !important;
+  }
+
+  .sale-action-btn.delete {
+    color: #ef4444 !important;
+  }
+
+  .sale-action-btn:active {
+    background: #f8fafc !important;
   }
 
   .page-header.premium-header .page-title {

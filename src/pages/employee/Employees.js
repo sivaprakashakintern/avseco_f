@@ -138,13 +138,13 @@ const Employees = () => {
   };
 
   // Function to convert dd/mm/yyyy UI string to yyyy-mm-dd for backend
-    const toBackendDate = (ddmmyyyy) => {
-        if (typeof ddmmyyyy !== 'string') return ddmmyyyy;
-        if (!ddmmyyyy || !ddmmyyyy.includes("/")) return ddmmyyyy;
-        const [d, m, y] = ddmmyyyy.split("/");
-        if (!d || !m || !y || y.length !== 4) return ddmmyyyy;
-        return `${y}-${m}-${d}`;
-    };
+  const toBackendDate = (ddmmyyyy) => {
+    if (typeof ddmmyyyy !== 'string') return ddmmyyyy;
+    if (!ddmmyyyy || !ddmmyyyy.includes("/")) return ddmmyyyy;
+    const [d, m, y] = ddmmyyyy.split("/");
+    if (!d || !m || !y || y.length !== 4) return ddmmyyyy;
+    return `${y}-${m}-${d}`;
+  };
 
   const confirmAddEmployee = async (e) => {
     e.preventDefault();
@@ -171,14 +171,14 @@ const Employees = () => {
     }
 
     if (!formData.joinDate || !dayjs(formData.joinDate).isValid()) {
-        setFeedbackMessage("❌ Please enter a valid Join Date");
-        setTimeout(() => setFeedbackMessage(""), 3000);
-        return;
+      setFeedbackMessage("❌ Please enter a valid Join Date");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
     }
     if (formData.dob && !dayjs(formData.dob).isValid()) {
-        setFeedbackMessage("❌ Please enter a valid Date of Birth");
-        setTimeout(() => setFeedbackMessage(""), 3000);
-        return;
+      setFeedbackMessage("❌ Please enter a valid Date of Birth");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
     }
 
     // Aadhar validation
@@ -223,7 +223,7 @@ const Employees = () => {
       };
 
       await ctxAddEmployee(newEmployee);
-      
+
       setShowAddModal(false);
       setFeedbackMessage("Employee added successfully! ✅");
       setTimeout(() => setFeedbackMessage(""), 3000);
@@ -285,14 +285,14 @@ const Employees = () => {
     }
 
     if (!formData.joinDate || !dayjs(formData.joinDate).isValid()) {
-        setFeedbackMessage("❌ Please enter a valid Join Date");
-        setTimeout(() => setFeedbackMessage(""), 3000);
-        return;
+      setFeedbackMessage("❌ Please enter a valid Join Date");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
     }
     if (formData.dob && !dayjs(formData.dob).isValid()) {
-        setFeedbackMessage("❌ Please enter a valid Date of Birth");
-        setTimeout(() => setFeedbackMessage(""), 3000);
-        return;
+      setFeedbackMessage("❌ Please enter a valid Date of Birth");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      return;
     }
 
     // Uniqueness check (excluding current employee)
@@ -307,9 +307,9 @@ const Employees = () => {
     });
 
     if (isDuplicate) {
-        setFeedbackMessage("❌ Another employee already has this Mobile or Aadhar number");
-        setTimeout(() => setFeedbackMessage(""), 4000);
-        return;
+      setFeedbackMessage("❌ Another employee already has this Mobile or Aadhar number");
+      setTimeout(() => setFeedbackMessage(""), 4000);
+      return;
     }
 
     try {
@@ -382,17 +382,17 @@ const Employees = () => {
         aadhar: formatted,
       });
     } else if (name === "phone") {
-        // Always maintain '+91 ' and limit to 10 digits
-        if (!value.startsWith("+91 ")) {
-          value = "+91 " + value.replace(/^\+91\s*/, "");
-        }
-        let digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
-        value = "+91 " + digits;
-        setFormData({ ...formData, phone: value });
+      // Always maintain '+91 ' and limit to 10 digits
+      if (!value.startsWith("+91 ")) {
+        value = "+91 " + value.replace(/^\+91\s*/, "");
+      }
+      let digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
+      value = "+91 " + digits;
+      setFormData({ ...formData, phone: value });
     } else if (name === "pan") {
-        // PAN is 10 characters (ABCDE1234F)
-        let val = value.toUpperCase().substring(0, 10);
-        setFormData({ ...formData, pan: val });
+      // PAN is 10 characters (ABCDE1234F)
+      let val = value.toUpperCase().substring(0, 10);
+      setFormData({ ...formData, pan: val });
     } else {
       setFormData({
         ...formData,
@@ -777,21 +777,21 @@ const Employees = () => {
                   <div className="modal-row">
                     {/* Avatar Upload (Optional) */}
                     <div className="modal-form-group">
-                        <label>Profile Image (Optional)</label>
-                        <div className="file-upload-wrapper">
+                      <label>Profile Image (Optional)</label>
+                      <div className="file-upload-wrapper">
                         <input
-                            type="file"
-                            name="avatar"
-                            accept="image/*"
-                            onChange={handleInputChange}
-                            className="modal-file-input"
-                            id="avatar-upload"
+                          type="file"
+                          name="avatar"
+                          accept="image/*"
+                          onChange={handleInputChange}
+                          className="modal-file-input"
+                          id="avatar-upload"
                         />
                         <label htmlFor="avatar-upload" className="file-upload-label">
-                            <span className="material-symbols-outlined">cloud_upload</span>
-                            <span>{formData.avatar ? formData.avatar.name : "Choose file"}</span>
+                          <span className="material-symbols-outlined">cloud_upload</span>
+                          <span>{formData.avatar ? formData.avatar.name : "Choose file"}</span>
                         </label>
-                        </div>
+                      </div>
                     </div>
                     <div className="modal-form-group">
                       <label>Email Address</label>

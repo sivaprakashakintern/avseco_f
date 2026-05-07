@@ -9,6 +9,7 @@ const Clients = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewClient, setViewClient] = useState(null);
   const [expandedClientId, setExpandedClientId] = useState(null); // ACCORDION STATE
+  const [activeDropdownId, setActiveDropdownId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [clientToDelete, setClientToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,7 +59,7 @@ const Clients = () => {
 
     const totalOrders = clientSales.length;
     const totalSpentValue = clientSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
-    
+
     return {
       ...client,
       totalOrders,
@@ -85,7 +86,7 @@ const Clients = () => {
 
   const handleInputChange = (e) => {
     let { name, value } = e.target;
-    
+
     if (name === "phone") {
       // Always maintain '+91 ' and limit to 10 digits
       if (!value.startsWith("+91 ")) {
@@ -94,7 +95,7 @@ const Clients = () => {
       const digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
       value = "+91 " + digits;
     }
-    
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -118,7 +119,7 @@ const Clients = () => {
       setTimeout(() => setFeedbackMessage(""), 2500);
       return;
     }
-    
+
     if (isCompany && !formData.companyName) {
       setFeedbackMessage("Company name is required for Company clients");
       setTimeout(() => setFeedbackMessage(""), 2500);
@@ -283,7 +284,7 @@ const Clients = () => {
                       <button className="action-btn" title="View" onClick={() => { setViewClient(client); setShowViewModal(true); }} style={{ color: '#10b981' }}>
                         <span className="material-symbols-outlined">visibility</span>
                       </button>
-                      <button className="action-btn" title="Edit" onClick={() => { 
+                      <button className="action-btn" title="Edit" onClick={() => {
                         setSelectedClient(client);
                         setFormData({
                           clientType: client.clientType || "Company",
@@ -295,7 +296,7 @@ const Clients = () => {
                           gst: client.gst || ""
                         });
                         setShowEditModal(true);
-                       }}><span className="material-symbols-outlined">edit</span></button>
+                      }}><span className="material-symbols-outlined">edit</span></button>
                       <button
                         className="action-btn delete-btn"
                         title="Delete"
@@ -311,83 +312,129 @@ const Clients = () => {
           </table>
         </div>
 
+        {/* MOBILE VIEW - Modern Strip Cards */}
         <div className="mobile-client-cards">
-          {paginatedClients.map((client, index) => {
-            const isExpanded = expandedClientId === client.id;
-            return (
-              <div key={client.id} className={`mobile-client-accordion ${isExpanded ? 'active' : ''}`}>
-                {/* COLLAPSED HEADER */}
-                <div className="accordion-header" onClick={() => setExpandedClientId(isExpanded ? null : client.id)}>
-                  <div className="header-left">
-                    <span className="client-index">{startIndex + index + 1}</span>
-                    <div className={`status-dot ${client.totalOrders > 0 ? 'active' : 'inactive'}`}></div>
-                    <div className="name-date">
-                      <span className="client-name">{client.companyName || client.contactPerson}</span>
-                      <span className="client-date">{client.createdAt ? new Date(client.createdAt).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'}).replace(/\//g, '-') : '05-05-2026'}</span>
-                    </div>
-                  </div>
-                  <div className="header-right">
-                    <span className="client-amount">₹{(client.totalSpentValue || 0).toLocaleString('en-IN')}</span>
-                    <span className="material-symbols-outlined expand-icon">
-                      {isExpanded ? 'expand_less' : 'expand_more'}
+          {paginatedClients.length > 0 ? (
+            paginatedClients.map((client, index) => (
+              <div key={client.id} className="mobile-client-strip-card">
+                <div className="card-top">
+                  <div className="card-avatar">
+                    <span className="material-symbols-outlined">
+                      {client.clientType === 'Personal' ? 'person' : 'apartment'}
                     </span>
+                  </div>
+                  <div className="card-main-info">
+                    <div className="name-row">
+                      <span className="client-name">{client.companyName || client.contactPerson}</span>
+                      <span className={`type-tag ${client.clientType?.toLowerCase()}`}>
+                        {client.clientType === "Personal" ? "P" : "C"}
+                      </span>
+                    </div>
+                    <span className="client-meta-info">
+                      {client.phone} • {client.totalOrders || 0} Orders
+                    </span>
+                  </div>
+
+                  {/* Dropdown Action Menu */}
+                  <div className="card-action-container">
+                    <button
+                      className={`btn-more-actions ${activeDropdownId === client.id ? 'active' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveDropdownId(activeDropdownId === client.id ? null : client.id);
+                      }}
+                    >
+                      <span className="material-symbols-outlined">more_vert</span>
+                    </button>
+
+                    {activeDropdownId === client.id && (
+                      <div className="mobile-action-dropdown" onClick={e => e.stopPropagation()}>
+                        <button className="dropdown-item" onClick={() => { setViewClient(client); setShowViewModal(true); setActiveDropdownId(null); }}>
+                          <span className="material-symbols-outlined">visibility</span>
+                          View Portfolio
+                        </button>
+                        <button className="dropdown-item" onClick={() => {
+                          setSelectedClient(client);
+                          setFormData({
+                            clientType: client.clientType || "Company",
+                            companyName: client.companyName || "",
+                            contactPerson: client.contactPerson || "",
+                            email: client.email || "",
+                            phone: client.phone || "",
+                            address: client.address || "",
+                            gst: client.gst || ""
+                          });
+                          setShowEditModal(true);
+                          setActiveDropdownId(null);
+                        }}>
+                          <span className="material-symbols-outlined">edit_note</span>
+                          Edit Details
+                        </button>
+                        <button className="dropdown-item delete" onClick={() => { setClientToDelete(client); setShowDeleteModal(true); setActiveDropdownId(null); }}>
+                          <span className="material-symbols-outlined">delete</span>
+                          Delete Client
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* EXPANDED CONTENT */}
-                {isExpanded && (
-                  <div className="accordion-content">
-                    <div className="mobile-client-meta">
-                      <div className="meta-item">
-                        <span className="meta-label">ORDERS</span>
-                        <span className="meta-value">{client.totalOrders || 0}</span>
-                      </div>
-                      <div className="meta-item">
-                        <span className="meta-label">TOTAL SPENT</span>
-                        <span className="meta-value">₹{(client.totalSpentValue || 0).toLocaleString('en-IN')}</span>
-                      </div>
-                    </div>
-
-                    <div className="mobile-client-actions">
-                      <button className="mobile-action-btn view" onClick={() => { setViewClient(client); setShowViewModal(true); }}>
-                        <span className="material-symbols-outlined">visibility</span>
-                      </button>
-                      <button className="mobile-action-btn edit" onClick={() => { setSelectedClient(client); setFormData({...client}); setShowEditModal(true); }}>
-                        <span className="material-symbols-outlined">edit</span>
-                      </button>
-                      <button className="mobile-action-btn delete" onClick={() => { setClientToDelete(client); setShowDeleteModal(true); }}>
-                        <span className="material-symbols-outlined">delete</span>
-                      </button>
-                    </div>
+                <div className="card-bottom-row">
+                  <div className="card-amount-info">
+                    <span className="amount-label">Revenue Generated</span>
+                    <span className="amount-value">₹{(client.totalSpentValue || 0).toLocaleString('en-IN')}</span>
                   </div>
-                )}
+                </div>
               </div>
-            );
-          })}
-        </div>
-     </div>
-
-        {/* PAGINATION */}
-        {filteredClients.length > itemsPerPage && (
-          <div className="pagination">
-            <p className="pagination-info">Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredClients.length)} of {filteredClients.length}</p>
-            <div className="pagination-controls">
-              <button className="pagination-btn" onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1}>Prev</button>
-              <button className="pagination-btn active">{currentPage}</button>
-              <button className="pagination-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage === totalPages}>Next</button>
+            ))
+          ) : (
+            <div className="empty-mobile-state">
+              <span className="material-symbols-outlined">group_off</span>
+              <p>No clients found matching your search</p>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* PAGINATION */}
+      {filteredClients.length > itemsPerPage && (
+        <div className="pagination">
+          <p className="pagination-info">Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredClients.length)} of {filteredClients.length}</p>
+          <div className="pagination-controls">
+            <button className="pagination-btn" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</button>
+            <button className="pagination-btn active">{currentPage}</button>
+            <button className="pagination-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</button>
           </div>
-        )}
+        </div>
+      )}
 
       {/* MODALS (Add/Edit/View) */}
       {(showAddModal || showEditModal) && (
-        <div className="modal-overlay" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{showAddModal ? "New Client Portfolio" : "Update Profile"}</h2>
-              <button className="modal-close" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
+        <div className="modal-overlay view-modal-overlay" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>
+          <div className="modal-content view-modal-frame" onClick={e => e.stopPropagation()}>
+            {/* Modal Drag Handle - Hidden for Full Screen */}
+            <div className="modal-drag-handle view-modal-hide-handle"></div>
+
+            <div className="modal-header view-modal-header">
+              <div className="header-left-with-back">
+                <button className="mobile-back-btn" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>
+                  <span className="material-symbols-outlined">arrow_back</span>
+                </button>
+                <h2>{showAddModal ? "New Client" : "Edit Profile"}</h2>
+              </div>
+
+              {/* Mobile Header Actions */}
+              <div className="mobile-header-actions">
+                <button type="button" className="mobile-cancel-header-btn" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>
+                  Cancel
+                </button>
+                <button type="button" className="mobile-save-btn" onClick={showAddModal ? confirmAddClient : confirmEditClient}>
+                  {showAddModal ? "Save" : "Update"}
+                </button>
+                <button type="button" className="modal-close desktop-only-close" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
             </div>
             <form onSubmit={showAddModal ? confirmAddClient : confirmEditClient}>
               <div className="modal-body">
@@ -396,24 +443,24 @@ const Clients = () => {
                   <label>Client Portfolio Type</label>
                   <div className="client-type-selector">
                     <label className={`type-option ${formData.clientType === 'Company' ? 'active' : ''}`}>
-                      <input 
-                        type="radio" 
-                        name="clientType" 
-                        value="Company" 
-                        checked={formData.clientType === 'Company'} 
-                        onChange={handleInputChange} 
+                      <input
+                        type="radio"
+                        name="clientType"
+                        value="Company"
+                        checked={formData.clientType === 'Company'}
+                        onChange={handleInputChange}
                         style={{ position: 'absolute', opacity: 0 }}
                       />
                       <span className="material-symbols-outlined">apartment</span>
                       Business / Company
                     </label>
                     <label className={`type-option ${formData.clientType === 'Personal' ? 'active' : ''}`}>
-                      <input 
-                        type="radio" 
-                        name="clientType" 
-                        value="Personal" 
-                        checked={formData.clientType === 'Personal'} 
-                        onChange={handleInputChange} 
+                      <input
+                        type="radio"
+                        name="clientType"
+                        value="Personal"
+                        checked={formData.clientType === 'Personal'}
+                        onChange={handleInputChange}
                         style={{ position: 'absolute', opacity: 0 }}
                       />
                       <span className="material-symbols-outlined">person</span>
@@ -501,7 +548,7 @@ const Clients = () => {
                 style={{ background: '#dc2626' }}
                 onClick={handleDeleteClient}
               >
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px', verticalAlign: 'middle', marginRight: '6px' }}>delete</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', verticalAlign: 'middle', marginRight: '6px' }}>delete</span>
                 Delete Client
               </button>
             </div>
@@ -509,17 +556,45 @@ const Clients = () => {
         </div>
       )}
 
-      {/* VIEW CLIENT MODAL - PERFECTED VERSION */}
+      {/* VIEW CLIENT MODAL */}
       {showViewModal && viewClient && (
-        <div className="modal-overlay" onClick={() => { setShowViewModal(false); setViewClient(null); }}>
-          <div className="modal-content" style={{ maxWidth: '560px', padding: 0, border: 'none', background: '#f8fafc', boxShadow: '0 25px 70px rgba(0,0,0,0.15)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
-            
-            {/* TOP ACTION BAR */}
-            <div style={{ padding: '16px 24px', background: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #edf2f7' }}>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Client Portfolio</span>
-              <button onClick={() => { setShowViewModal(false); setViewClient(null); }} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
-              </button>
+        <div className="modal-overlay view-modal-overlay" onClick={() => { setShowViewModal(false); setViewClient(null); }}>
+          <div className="modal-content view-modal-frame" onClick={e => e.stopPropagation()}>
+            {/* Modal Drag Handle - Hidden for Full Screen View */}
+            <div className="modal-drag-handle view-modal-hide-handle"></div>
+
+            <div className="modal-header view-modal-header">
+              <div className="header-left-with-back">
+                <button className="mobile-back-btn" onClick={() => { setShowViewModal(false); setViewClient(null); }}>
+                  <span className="material-symbols-outlined">arrow_back</span>
+                </button>
+                <h2>Profile</h2>
+              </div>
+
+              {/* Mobile Header Actions */}
+              <div className="mobile-header-actions">
+                <button className="mobile-edit-header-btn" onClick={() => {
+                  setShowViewModal(false);
+                  setSelectedClient(viewClient);
+                  setFormData({
+                    clientType: viewClient.clientType || "Company",
+                    companyName: viewClient.companyName || "",
+                    contactPerson: viewClient.contactPerson || "",
+                    email: viewClient.email || "",
+                    phone: viewClient.phone || "",
+                    address: viewClient.address || "",
+                    gst: viewClient.gst || ""
+                  });
+                  setViewClient(null);
+                  setShowEditModal(true);
+                }}>
+                  <span className="material-symbols-outlined">edit</span>
+                  Edit
+                </button>
+                <button className="modal-close desktop-only-close" onClick={() => { setShowViewModal(false); setViewClient(null); }}>
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
             </div>
 
             <div className="modal-body client-view-body">
@@ -585,27 +660,32 @@ const Clients = () => {
                 <div className="item-value-long">{viewClient.address || 'No address provided'}</div>
               </div>
 
-              {/* REVENUE & ENGAGEMENT STATS */}
+              {/* ORDER SUMMARY */}
               <div className="view-stats-row">
-                <div className="view-stat-box neutral">
-                  <div className="stat-box-label">Total Orders</div>
-                  <div className="stat-box-value">{viewClient.totalOrders || 0}</div>
-                </div>
                 <div className="view-stat-box success">
-                  <div className="stat-box-label">Total Revenue</div>
-                  <div className="stat-box-value">₹{(viewClient.totalSpentValue || 0).toLocaleString('en-IN')}</div>
+                  <span className="stat-box-label">Total Spent</span>
+                  <span className="stat-box-value">₹{(viewClient.totalSpentValue || 0).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="view-stat-box neutral">
+                  <span className="stat-box-label">Orders</span>
+                  <span className="stat-box-value">{viewClient.totalOrders || 0}</span>
                 </div>
               </div>
+
+              <button className="btn-view-history-pill">
+                <span className="material-symbols-outlined">history</span>
+                View Order History
+              </button>
             </div>
-            
+
             <div className="modal-footer client-view-footer">
-              <button 
+              <button
                 className="btn-view-close"
                 onClick={() => { setShowViewModal(false); setViewClient(null); }}
               >
                 Close Profile
               </button>
-              <button 
+              <button
                 className="btn-view-edit"
                 onClick={() => {
                   setShowViewModal(false);
