@@ -1373,13 +1373,25 @@
     }
 
     .premium-header-green {
-        padding: 20px;
-        margin-bottom: 20px;
-        border-radius: 20px;
+        padding: 50px 24px;
+        margin-bottom: 24px;
+        border-radius: 24px;
+        height: auto;
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 15px 40px rgba(0, 106, 78, 0.25);
     }
 
     .page-title-white {
-        font-size: 20px;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+    }
+
+    .page-title-white::before {
+        height: 40px;
+        width: 7px;
     }
 
     .desktop-only-export {
@@ -1387,31 +1399,32 @@
     }
 
     .report-filters-row {
-        gap: 16px;
+        gap: 10px;
         margin-bottom: 20px;
+        justify-content: flex-start;
     }
 
     .filter-item {
-        gap: 8px;
+        gap: 6px;
     }
 
     .filter-label {
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .report-select, .month-nav-group {
-        height: 40px;
-        font-size: 14px;
+        height: 44px;
+        font-size: 15px;
     }
 
     .nav-arrow-btn {
-        width: 30px;
-        height: 30px;
+        width: 32px;
+        height: 32px;
     }
 
     .month-display-select {
-        min-width: 100px;
-        font-size: 14px;
+        min-width: 90px;
+        font-size: 15px;
     }
 
     .matrix-scroll-wrapper {

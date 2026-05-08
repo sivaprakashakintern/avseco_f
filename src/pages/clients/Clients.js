@@ -195,44 +195,27 @@ const Clients = () => {
     <div className="clients-container">
       {feedbackMessage && <div className="feedback-toast"><span>{feedbackMessage}</span></div>}
 
-      <div className="premium-header-green client-header">
-        <div className="header-left-group">
-          <h1 className="page-title-white">Client Details</h1>
-        </div>
-        <div className="header-right-group">
-          <button className="btn-add-premium-pill" onClick={() => { resetForm(); setShowAddModal(true); }} title="New Client">
-            <span className="material-symbols-outlined">add_circle</span>
-            <span className="btn-text">New Client</span>
+      <div className="page-header premium-header client-header">
+        <div className="header-content">
+          <h1 className="page-title client-page-title">Client Details</h1>
+          <button
+            className="btn-add-circle-premium"
+            onClick={() => { resetForm(); setShowAddModal(true); }}
+            title="New Client"
+          >
+            <span className="material-symbols-outlined">add</span>
           </button>
         </div>
       </div>
 
-      <div className="clients-stats">
-        <div className="stat-card">
-          <div className="stat-icon blue"><span className="material-symbols-outlined">groups</span></div>
-          <div className="stat-info">
-            <span className="stat-label">Network Strength</span>
-            <span className="stat-value">{filteredClients.length} <small>Partners</small></span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon purple"><span className="material-symbols-outlined">currency_rupee</span></div>
-          <div className="stat-info">
-            <span className="stat-label">Portfolio Revenue</span>
-            <span className="stat-value">₹{processedClients.reduce((s, c) => s + c.totalSpentValue, 0).toLocaleString('en-IN')}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="filters-section">
-        <div className="search-box">
-          <span className="material-symbols-outlined search-icon">search</span>
+      <div className="search-filter-area">
+        <div className="premium-search-bar">
+          <span className="material-symbols-outlined">search</span>
           <input
             type="text"
-            placeholder="Search by name, company, or GST..."
+            placeholder="Search by name, company, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
           />
         </div>
         <button className="btn-export-premium" onClick={handleExport} disabled={exportLoading}>
@@ -422,18 +405,10 @@ const Clients = () => {
                 <h2>{showAddModal ? "New Client" : "Edit Profile"}</h2>
               </div>
 
-              {/* Mobile Header Actions */}
-              <div className="mobile-header-actions">
-                <button type="button" className="mobile-cancel-header-btn" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>
-                  Cancel
-                </button>
-                <button type="button" className="mobile-save-btn" onClick={showAddModal ? confirmAddClient : confirmEditClient}>
-                  {showAddModal ? "Save" : "Update"}
-                </button>
-                <button type="button" className="modal-close desktop-only-close" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
+              {/* Standard Close Button */}
+              <button type="button" className="modal-close" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
             </div>
             <form onSubmit={showAddModal ? confirmAddClient : confirmEditClient}>
               <div className="modal-body">
@@ -559,151 +534,73 @@ const Clients = () => {
       {showViewModal && viewClient && (
         <div className="modal-overlay view-modal-overlay" onClick={() => { setShowViewModal(false); setViewClient(null); }}>
           <div className="modal-content view-modal-frame" onClick={e => e.stopPropagation()}>
-            {/* Modal Drag Handle - Hidden for Full Screen View */}
-            <div className="modal-drag-handle view-modal-hide-handle"></div>
-
-            <div className="modal-header view-modal-header">
-              <div className="header-left-with-back">
-                <button className="mobile-back-btn" onClick={() => { setShowViewModal(false); setViewClient(null); }}>
-                  <span className="material-symbols-outlined">arrow_back</span>
-                </button>
-                <h2>Profile</h2>
-              </div>
-
-              {/* Mobile Header Actions */}
-              <div className="mobile-header-actions">
-                <button className="mobile-edit-header-btn" onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedClient(viewClient);
-                  setFormData({
-                    clientType: viewClient.clientType || "Company",
-                    companyName: viewClient.companyName || "",
-                    contactPerson: viewClient.contactPerson || "",
-                    email: viewClient.email || "",
-                    phone: viewClient.phone || "",
-                    address: viewClient.address || "",
-                    gst: viewClient.gst || ""
-                  });
-                  setViewClient(null);
-                  setShowEditModal(true);
-                }}>
-                  <span className="material-symbols-outlined">edit</span>
-                  Edit
-                </button>
-                <button className="modal-close desktop-only-close" onClick={() => { setShowViewModal(false); setViewClient(null); }}>
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
+            <div className="modal-header view-modal-header centered-header">
+              <h2>Client Details</h2>
+              <button className="modal-close-circle" onClick={() => { setShowViewModal(false); setViewClient(null); }}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
             </div>
 
-            <div className="modal-body client-view-body">
-              {/* PROFILE IDENTITY CARD */}
-              <div className="view-profile-card">
-                <div className="view-avatar-box">
+            <div className="modal-body client-view-body centered-body">
+              {/* PROFILE IDENTITY CARD - CENTERED */}
+              <div className="view-profile-section-centered">
+                <div className="view-avatar-centered">
                   <span className="material-symbols-outlined">
                     {viewClient.clientType === 'Personal' ? 'person' : 'apartment'}
                   </span>
                 </div>
-                <div className="view-profile-info">
-                  <h3 className="view-profile-name">
-                    {viewClient.companyName || viewClient.contactPerson}
-                  </h3>
-                  <div className="view-profile-badges">
-                    <span className="badge-type">{viewClient.clientType || 'Corporate'}</span>
-                    <span className="badge-id">ID: CL-{viewClient._id?.substring(20).toUpperCase() || 'NEW'}</span>
-                  </div>
+                <h3 className="view-name-centered">
+                  {viewClient.companyName || viewClient.contactPerson}
+                </h3>
+                <div className="view-badge-centered">
+                  {viewClient.clientType || 'Corporate'}
                 </div>
               </div>
 
-              {/* CORE INFO GRID */}
-              <div className="view-info-grid">
-                <div className="view-info-item">
-                  <div className="item-label-group">
-                    <span className="material-symbols-outlined">person</span>
-                    <span className="item-label">Contact Person</span>
-                  </div>
-                  <div className="item-value">{viewClient.contactPerson || '—'}</div>
+              {/* CORE INFO GRID - CARD STYLE */}
+              <div className="view-info-grid-cards">
+                <div className="view-card-item">
+                  <span className="card-label">Contact Person</span>
+                  <span className="card-value">{viewClient.contactPerson || '—'}</span>
                 </div>
 
-                <div className="view-info-item">
-                  <div className="item-label-group">
-                    <span className="material-symbols-outlined">call</span>
-                    <span className="item-label">Phone Number</span>
-                  </div>
-                  <div className="item-value">{viewClient.phone || '—'}</div>
+                <div className="view-card-item">
+                  <span className="card-label">Email Address</span>
+                  <span className="card-value">{viewClient.email || '—'}</span>
                 </div>
 
-                <div className="view-info-item">
-                  <div className="item-label-group">
-                    <span className="material-symbols-outlined">mail</span>
-                    <span className="item-label">Email Address</span>
-                  </div>
-                  <div className="item-value">{viewClient.email || '—'}</div>
+                <div className="view-card-item">
+                  <span className="card-label">Phone Number</span>
+                  <span className="card-value">{viewClient.phone || '—'}</span>
                 </div>
 
-                <div className="view-info-item">
-                  <div className="item-label-group">
-                    <span className="material-symbols-outlined">verified_user</span>
-                    <span className="item-label">GSTIN Number</span>
-                  </div>
-                  <div className="item-value">{viewClient.gst || '—'}</div>
+                <div className="view-card-item">
+                  <span className="card-label">GSTIN Number</span>
+                  <span className="card-value">{viewClient.gst || '—'}</span>
                 </div>
               </div>
 
-              {/* ADDRESS CARD */}
-              <div className="view-address-card">
-                <div className="item-label-group">
-                  <span className="material-symbols-outlined">location_on</span>
-                  <span className="item-label">Official Billing Address</span>
-                </div>
-                <div className="item-value-long">{viewClient.address || 'No address provided'}</div>
+              {/* ADDRESS CARD - FULL WIDTH */}
+              <div className="view-card-item full-width">
+                <span className="card-label">Billing Address</span>
+                <span className="card-value-long">{viewClient.address || 'No address provided'}</span>
               </div>
 
               {/* ORDER SUMMARY */}
-              <div className="view-stats-row">
-                <div className="view-stat-box success">
-                  <span className="stat-box-label">Total Spent</span>
-                  <span className="stat-box-value">₹{(viewClient.totalSpentValue || 0).toLocaleString('en-IN')}</span>
+              <div className="view-stats-row-compact">
+                <div className="stat-pill success">
+                  <span className="pill-label">Total Spent:</span>
+                  <span className="pill-value">₹{(viewClient.totalSpentValue || 0).toLocaleString('en-IN')}</span>
                 </div>
-                <div className="view-stat-box neutral">
-                  <span className="stat-box-label">Orders</span>
-                  <span className="stat-box-value">{viewClient.totalOrders || 0}</span>
+                <div className="stat-pill neutral">
+                  <span className="pill-label">Orders:</span>
+                  <span className="pill-value">{viewClient.totalOrders || 0}</span>
                 </div>
               </div>
 
-              <button className="btn-view-history-pill">
+              <button className="btn-view-history-pill-compact" onClick={() => {/* handle history view */}}>
                 <span className="material-symbols-outlined">history</span>
                 View Order History
-              </button>
-            </div>
-
-            <div className="modal-footer client-view-footer">
-              <button
-                className="btn-view-close"
-                onClick={() => { setShowViewModal(false); setViewClient(null); }}
-              >
-                Close Profile
-              </button>
-              <button
-                className="btn-view-edit"
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedClient(viewClient);
-                  setFormData({
-                    clientType: viewClient.clientType || "Company",
-                    companyName: viewClient.companyName || "",
-                    contactPerson: viewClient.contactPerson || "",
-                    email: viewClient.email || "",
-                    phone: viewClient.phone || "",
-                    address: viewClient.address || "",
-                    gst: viewClient.gst || ""
-                  });
-                  setViewClient(null);
-                  setShowEditModal(true);
-                }}
-              >
-                <span className="material-symbols-outlined">edit_note</span>
-                Edit Account Details
               </button>
             </div>
           </div>

@@ -1525,7 +1525,20 @@ body,
   margin: 0;
   font-size: 18px;
   color: #0f172a;
-  font-weight: 800;
+  font-weight: 850;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-header h3::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 20px;
+  background: #10b981;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
 }
 
 .modal-close {
@@ -1552,30 +1565,27 @@ body,
 .modal-section-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 20px 0 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f1f5f9;
+  gap: 12px;
+  margin: 24px 0 16px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 12px;
   color: #006A4E;
-}
-
-.modal-section-header:first-of-type {
-  margin-top: 0;
+  border-left: 4px solid #006A4E;
 }
 
 .modal-section-header .material-symbols-outlined {
   font-size: 20px;
-  background: #f0fdf4;
-  padding: 6px;
-  border-radius: 8px;
+  color: #006A4E;
 }
 
 .modal-section-header h4 {
   margin: 0;
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 850;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
+  color: #0f172a;
 }
 
 .modal-form-group {
@@ -1585,11 +1595,12 @@ body,
 .modal-form-group label {
   display: block;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   color: #64748b;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
+  padding-left: 2px;
 }
 
 .modal-input,
@@ -1696,15 +1707,15 @@ body,
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 12px;
-  height: 42px;
+  padding: 0 16px;
+  height: 48px;
   background: #f8fafc;
   border: 1.5px dashed #cbd5e1;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
   color: #475569;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 13px;
 }
 
@@ -1728,14 +1739,35 @@ body,
   border-radius: 0 0 20px 20px;
 }
 
+.modal-confirm {
+  padding: 0 32px;
+  height: 48px;
+  background: #006A4E;
+  border: none;
+  border-radius: 40px;
+  color: white;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 106, 78, 0.3);
+}
+
+.modal-confirm:hover {
+  background: #004d39;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 106, 78, 0.4);
+}
+
 .modal-cancel {
-  padding: 0 24px;
-  height: 46px;
+  padding: 0 28px;
+  height: 48px;
   background: white;
   border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 40px;
   color: #64748b;
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -1744,25 +1776,7 @@ body,
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #0f172a;
-}
-
-.modal-confirm {
-  padding: 0 32px;
-  height: 46px;
-  background: #006A4E;
-  border: none;
-  border-radius: 12px;
-  color: white;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 106, 78, 0.2);
-}
-
-.modal-confirm:hover {
-  background: #005a42;
   transform: translateY(-1px);
-  box-shadow: 0 6px 15px rgba(0, 106, 78, 0.25);
 }
 
 .modal-confirm.delete {
@@ -2594,7 +2608,13 @@ body,
   }
 
   .modal-header h3 {
-    font-size: 16px !important;
+    font-size: 18px !important;
+    font-weight: 900 !important;
+  }
+
+  .modal-header h3::before {
+    height: 24px !important;
+    width: 5px !important;
   }
 
   .modal-body {
@@ -2605,9 +2625,9 @@ body,
   }
 
   .modal-row {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 12px !important;
-    margin-bottom: 8px !important;
+    grid-template-columns: 1fr !important; /* ONE BY ONE AS REQUESTED */
+    gap: 8px !important;
+    margin-bottom: 0px !important;
   }
 
   .modal-form-group.full-width {
@@ -2615,15 +2635,20 @@ body,
   }
 
   .modal-form-group {
-    margin-bottom: 12px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .modal-section-header {
+    margin: 16px 0 10px !important;
+    padding: 8px 12px !important;
   }
 
   .modal-form-group label {
-    font-size: 12px !important;
-    margin-bottom: 6px !important;
+    font-size: 11px !important;
+    margin-bottom: 4px !important;
     color: #006A4E !important;
     text-transform: uppercase !important;
-    font-weight: 800 !important;
+    font-weight: 850 !important;
   }
 
   .modal-input,

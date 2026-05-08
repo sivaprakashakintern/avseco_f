@@ -3112,7 +3112,7 @@ textarea.quick-entry-input {
   min-width: 850px;
   width: 850px;
   margin: 40px auto;
-  box-shadow: 0 40px 80px rgba(0,0,0,0.3);
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.3);
   border: none;
   border-radius: 4px;
   position: relative;
@@ -3221,7 +3221,8 @@ textarea.quick-entry-input {
 
   /* Responsive Bill Modal Overrides - Keep PC Layout but allow scroll */
   .responsive-bill-modal {
-    min-width: 850px !important; /* Force PC width */
+    min-width: 850px !important;
+    /* Force PC width */
     width: 850px !important;
     margin: 20px auto !important;
     transform-origin: top center;
@@ -3229,7 +3230,8 @@ textarea.quick-entry-input {
 
   .bill-modal-overlay {
     padding: 10px !important;
-    display: block !important; /* Allow natural scrolling */
+    display: block !important;
+    /* Allow natural scrolling */
     overflow-x: auto !important;
   }
 
@@ -3413,20 +3415,6 @@ textarea.quick-entry-input {
     display: none !important;
   }
 
-  .btn-export-premium {
-    background: rgba(255, 255, 255, 0.15) !important;
-    color: white !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    padding: 0 !important;
-    border-radius: 12px !important;
-    width: 42px !important;
-    height: 42px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-shadow: none !important;
-    flex-shrink: 0 !important;
-  }
 
   .btn-export-premium span.material-symbols-outlined {
     margin: 0 !important;
