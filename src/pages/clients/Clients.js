@@ -8,7 +8,6 @@ const Clients = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewClient, setViewClient] = useState(null);
-  const [expandedClientId, setExpandedClientId] = useState(null); // ACCORDION STATE
   const [activeDropdownId, setActiveDropdownId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [clientToDelete, setClientToDelete] = useState(null);

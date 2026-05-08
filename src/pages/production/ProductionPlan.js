@@ -594,13 +594,15 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
       <div className="premium-dashboard-container-new">
 
         {/* PREMIUM HEADER SECTION */}
-        <div className="premium-header-new">
-          <div className="header-left-new">
-            <h1 className="header-title-mini">Production Plan</h1>
+        <div className="page-header premium-header">
+          <div className="header-left">
+            <h1 className="page-title">Production Plan</h1>
           </div>
+        </div>
 
-          <div className="header-actions-new">
-            {/* Unified Daily/Monthly Toggle moved to Action side */}
+        {/* PLAN CONTROLS SECTION */}
+        <div className="plan-controls-container-new">
+          <div className="plan-toggle-section">
             <div className="header-toggle-group-new">
               <button
                 className={`header-toggle-btn-new ${targetType === 'daily' ? 'active' : ''}`}
@@ -615,7 +617,9 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                 Monthly
               </button>
             </div>
+          </div>
 
+          <div className="plan-date-section">
             {targetType === 'daily' ? (
               <div className="premium-date-display-new">
                 <span className="material-symbols-outlined">calendar_today</span>

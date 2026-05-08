@@ -473,10 +473,67 @@
 /* Comparison View */
 .comparison-chart { display: flex; flex-direction: column; gap: 35px; }
 
-.change { padding: 8px 16px; border-radius: 12px; font-size: 14px; font-weight: 800; }
+.comparison-item {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
-.change.positive { background: #fee2e2; color: #ef4444; }
-.change.negative { background: #dcfce7; color: #16a34a; }
+.comparison-months {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comparison-months span:first-child {
+  font-weight: 700;
+  color: var(--slate-600);
+  font-size: 14px;
+}
+
+.change { 
+  padding: 6px 14px; 
+  border-radius: 8px; 
+  font-size: 13px; 
+  font-weight: 800; 
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.change.positive { background: #dcfce7; color: #16a34a; }
+.change.negative { background: #fee2e2; color: #ef4444; }
+
+.comparison-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prev-bar, .current-bar {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 13px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 80px;
+  white-space: nowrap;
+}
+
+.prev-bar {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.current-bar {
+  background: linear-gradient(90deg, var(--primary-industrial), #10b981);
+  color: white;
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
 
 /* ===== INDUSTRIAL TABLE ===== */
 .stock-table-container {

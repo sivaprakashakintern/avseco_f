@@ -324,12 +324,12 @@ const AttendanceReport = () => {
 
     return (
         <div className="attendance-report-page" onClick={() => { setShowYearDropdown(false); setShowMonthDropdown(false); setShowExportDropdown(false); }}>
-            <div className="ar-banner-header">
-                <div className="ar-banner-left">
-                    <h1 className="ar-banner-title">Monthly Attendance</h1>
+            <div className="attendance-header premium-header-green">
+                <div className="header-left-group">
+                    <h1 className="page-title-white">Monthly Attendance</h1>
                 </div>
 
-                <div className="ar-banner-right">
+                <div className="ar-banner-right desktop-only-export">
                     <div className="custom-dropdown" onClick={(e) => e.stopPropagation()}>
                         <button className="ar-export-btn" onClick={() => setShowExportDropdown(!showExportDropdown)}>
                             <span className="material-symbols-outlined">download</span>

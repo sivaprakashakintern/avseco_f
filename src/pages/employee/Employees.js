@@ -546,11 +546,11 @@ const Employees = () => {
             <table className="employee-table">
               <thead>
                 <tr>
-                  <th className="sticky-col-no" style={{ textAlign: 'center' }}>S.No</th>
-                  <th className="sticky-col" style={{ textAlign: 'center' }}>Employee</th>
-                  <th className="col-dept" style={{ textAlign: 'center' }}>Department</th>
-                  <th className="col-contact" style={{ textAlign: 'center' }}>Contact</th>
-                  <th className="col-date" style={{ textAlign: 'center' }}>Join Date</th>
+                  <th className="sticky-col-no">S.No</th>
+                  <th className="sticky-col">Employee</th>
+                  <th className="col-dept">Department</th>
+                  <th className="col-contact">Contact</th>
+                  <th className="col-date">Join Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -560,12 +560,10 @@ const Employees = () => {
                       key={employee.id}
                       className="employee-row clickable-row"
                       onClick={() => handleViewEmployee(employee)}
-                      style={{ cursor: "pointer", textAlign: 'center' }}
-                      title="Click to view full employee details"
                     >
-                      <td className="sticky-col-no" style={{ textAlign: 'center' }}>{startIndex + index + 1}</td>
-                      <td className="sticky-col" style={{ textAlign: 'center' }}>
-                        <div className="employee-info" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      <td className="sticky-col-no">{startIndex + index + 1}</td>
+                      <td className="sticky-col">
+                        <div className="employee-info">
                           <div className="employee-avatar">
                             {employee.avatar ? (
                               <div className="avatar-image" style={{ backgroundImage: `url("${employee.avatar}")` }}></div>
@@ -582,15 +580,15 @@ const Employees = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="col-dept" style={{ textAlign: 'center' }}>
-                        <span className="department-badge pill-badge" title={employee.department} style={{ minWidth: '120px', display: 'inline-block', borderRadius: '20px' }}>
+                      <td className="col-dept">
+                        <span className="department-badge pill-badge" title={employee.department}>
                           {employee.department}
                         </span>
                       </td>
-                      <td className="col-contact" style={{ textAlign: 'center' }}>
+                      <td className="col-contact">
                         <p className="employee-phone">{employee.phone}</p>
                       </td>
-                      <td className="col-date" style={{ textAlign: 'center' }}>{formatDate(employee.joinDate)}</td>
+                      <td className="col-date">{formatDate(employee.joinDate)}</td>
                     </tr>
                   ))
                 ) : (
@@ -741,6 +739,11 @@ const Employees = () => {
               </div>
               <form onSubmit={confirmAddEmployee}>
                 <div className="modal-body">
+                  {/* SECTION 1: BASIC INFORMATION */}
+                  <div className="modal-section-header">
+                    <span className="material-symbols-outlined">person</span>
+                    <h4>Basic Information</h4>
+                  </div>
                   <div className="modal-row">
                     <div className="modal-form-group">
                       <label>Full Name *</label>
@@ -749,7 +752,7 @@ const Employees = () => {
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
-                        placeholder="Enter full name"
+                        placeholder="e.g. John Doe"
                         className="modal-input"
                         required
                       />
@@ -775,7 +778,6 @@ const Employees = () => {
                   </div>
 
                   <div className="modal-row">
-                    {/* Avatar Upload (Optional) */}
                     <div className="modal-form-group">
                       <label>Profile Image (Optional)</label>
                       <div className="file-upload-wrapper">
@@ -788,36 +790,10 @@ const Employees = () => {
                           id="avatar-upload"
                         />
                         <label htmlFor="avatar-upload" className="file-upload-label">
-                          <span className="material-symbols-outlined">cloud_upload</span>
-                          <span>{formData.avatar ? formData.avatar.name : "Choose file"}</span>
+                          <span className="material-symbols-outlined">add_a_photo</span>
+                          <span>{formData.avatar ? formData.avatar.name : "Upload Photo"}</span>
                         </label>
                       </div>
-                    </div>
-                    <div className="modal-form-group">
-                      <label>Email Address</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        placeholder="jofra@avseco.in"
-                        className="modal-input"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="modal-row">
-                    <div className="modal-form-group">
-                      <label>Phone Number *</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        placeholder="+91 00000 00000"
-                        className="modal-input"
-                        required
-                      />
                     </div>
                     <div className="modal-form-group">
                       <label>Date of Birth *</label>
@@ -840,6 +816,56 @@ const Employees = () => {
                     </div>
                   </div>
 
+                  {/* SECTION 2: CONTACT DETAILS */}
+                  <div className="modal-section-header">
+                    <span className="material-symbols-outlined">contact_page</span>
+                    <h4>Contact Details</h4>
+                  </div>
+                  <div className="modal-row">
+                    <div className="modal-form-group">
+                      <label>Email Address</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        placeholder="name@company.com"
+                        className="modal-input"
+                      />
+                    </div>
+                    <div className="modal-form-group">
+                      <label>Phone Number *</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        placeholder="+91 00000 00000"
+                        className="modal-input"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="modal-form-group full-width" style={{ marginBottom: '16px' }}>
+                    <label>Full Address *</label>
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="Street, City, State, ZIP..."
+                      className="modal-input"
+                      rows="2"
+                      style={{ resize: "none", minHeight: '50px' }}
+                      required
+                    ></textarea>
+                  </div>
+
+                  {/* SECTION 3: WORK & IDENTITY */}
+                  <div className="modal-section-header">
+                    <span className="material-symbols-outlined">badge</span>
+                    <h4>Work & Identity</h4>
+                  </div>
                   <div className="modal-row">
                     <div className="modal-form-group">
                       <label>PAN Number *</label>
@@ -848,7 +874,7 @@ const Employees = () => {
                         name="pan"
                         value={formData.pan}
                         onChange={handleInputChange}
-                        placeholder="Enter PAN Number"
+                        placeholder="Enter PAN"
                         className="modal-input"
                         required
                       />
@@ -860,25 +886,11 @@ const Employees = () => {
                         name="aadhar"
                         value={formData.aadhar}
                         onChange={handleInputChange}
-                        placeholder="Enter Aadhar Number"
+                        placeholder="Enter Aadhar"
                         className="modal-input"
                         required
                       />
                     </div>
-                  </div>
-
-                  <div className="modal-form-group full-width" style={{ marginBottom: '20px' }}>
-                    <label>Full Address *</label>
-                    <textarea
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      placeholder="Enter full residential address"
-                      className="modal-input"
-                      rows="3"
-                      style={{ resize: "vertical", minHeight: '80px' }}
-                      required
-                    ></textarea>
                   </div>
 
                   <div className="modal-row">
@@ -908,7 +920,7 @@ const Employees = () => {
                         name="salary"
                         value={formData.salary}
                         onChange={handleInputChange}
-                        placeholder="Enter monthly salary"
+                        placeholder="0.00"
                         className="modal-input"
                         required
                       />
@@ -942,38 +954,24 @@ const Employees = () => {
               </div>
               <form onSubmit={confirmEditEmployee}>
                 <div className="modal-body">
-                  <div className="modal-form-group">
-                    <label>Full Name *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder="Enter full name"
-                      className="modal-input"
-                      required
-                    />
+                  {/* SECTION 1: BASIC INFORMATION */}
+                  <div className="modal-section-header">
+                    <span className="material-symbols-outlined">person</span>
+                    <h4>Basic Information</h4>
                   </div>
-
                   <div className="modal-row">
                     <div className="modal-form-group">
-                      <label>Profile Image (Optional)</label>
-                      <div className="file-upload-wrapper">
-                        <input
-                          type="file"
-                          id="edit-employee-avatar"
-                          accept="image/*"
-                          onChange={handleInputChange}
-                          className="modal-file-input"
-                          name="avatar"
-                        />
-                        <label htmlFor="edit-employee-avatar" className="file-upload-label">
-                          <span className="material-symbols-outlined">cloud_upload</span>
-                          {formData.avatar ? "Change image file" : "Choose an image file"}
-                        </label>
-                      </div>
+                      <label>Full Name *</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="e.g. John Doe"
+                        className="modal-input"
+                        required
+                      />
                     </div>
-
                     <div className="modal-form-group">
                       <label>Department *</label>
                       <select
@@ -996,13 +994,54 @@ const Employees = () => {
 
                   <div className="modal-row">
                     <div className="modal-form-group">
+                      <label>Profile Image (Optional)</label>
+                      <div className="file-upload-wrapper">
+                        <input
+                          type="file"
+                          id="edit-employee-avatar"
+                          accept="image/*"
+                          onChange={handleInputChange}
+                          className="modal-file-input"
+                          name="avatar"
+                        />
+                        <label htmlFor="edit-employee-avatar" className="file-upload-label">
+                          <span className="material-symbols-outlined">add_a_photo</span>
+                          {formData.avatar ? "Change Photo" : "Upload Photo"}
+                        </label>
+                      </div>
+                    </div>
+                    <div className="modal-form-group">
+                      <label>Date of Birth *</label>
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                          value={formData.dob ? dayjs(toBackendDate(formData.dob)) : null}
+                          onChange={(newValue) => handleDateChange("dob", newValue)}
+                          format="DD/MM/YYYY"
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              className: 'modal-mui-input'
+                            }
+                          }}
+                        />
+                      </LocalizationProvider>
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: CONTACT DETAILS */}
+                  <div className="modal-section-header">
+                    <span className="material-symbols-outlined">contact_page</span>
+                    <h4>Contact Details</h4>
+                  </div>
+                  <div className="modal-row">
+                    <div className="modal-form-group">
                       <label>Email Address</label>
                       <input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="jofra@avseco.in"
+                        placeholder="name@company.com"
                         className="modal-input"
                       />
                     </div>
@@ -1020,23 +1059,26 @@ const Employees = () => {
                     </div>
                   </div>
 
+                  <div className="modal-form-group full-width" style={{ marginBottom: '16px' }}>
+                    <label>Full Address *</label>
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="Street, City, State, ZIP..."
+                      className="modal-input"
+                      rows="2"
+                      style={{ resize: "none", minHeight: '50px' }}
+                      required
+                    ></textarea>
+                  </div>
+
+                  {/* SECTION 3: WORK & IDENTITY */}
+                  <div className="modal-section-header">
+                    <span className="material-symbols-outlined">badge</span>
+                    <h4>Work & Identity</h4>
+                  </div>
                   <div className="modal-row">
-                    <div className="modal-form-group">
-                      <label>Date of Birth *</label>
-                      <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DatePicker
-                          value={formData.dob ? dayjs(toBackendDate(formData.dob)) : null}
-                          onChange={(newValue) => handleDateChange("dob", newValue)}
-                          format="DD/MM/YYYY"
-                          slotProps={{
-                            textField: {
-                              fullWidth: true,
-                              className: 'modal-mui-input'
-                            }
-                          }}
-                        />
-                      </LocalizationProvider>
-                    </div>
                     <div className="modal-form-group">
                       <label>PAN Number *</label>
                       <input
@@ -1044,14 +1086,11 @@ const Employees = () => {
                         name="pan"
                         value={formData.pan}
                         onChange={handleInputChange}
-                        placeholder="Enter PAN Number"
+                        placeholder="Enter PAN"
                         className="modal-input"
                         required
                       />
                     </div>
-                  </div>
-
-                  <div className="modal-row">
                     <div className="modal-form-group">
                       <label>Aadhar Number *</label>
                       <input
@@ -1059,11 +1098,14 @@ const Employees = () => {
                         name="aadhar"
                         value={formData.aadhar}
                         onChange={handleInputChange}
-                        placeholder="Enter Aadhar Number"
+                        placeholder="Enter Aadhar"
                         className="modal-input"
                         required
                       />
                     </div>
+                  </div>
+
+                  <div className="modal-row">
                     <div className="modal-form-group">
                       <label>Join Date *</label>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -1080,33 +1122,18 @@ const Employees = () => {
                         />
                       </LocalizationProvider>
                     </div>
-                  </div>
-
-                  <div className="modal-form-group">
-                    <label>Full Address *</label>
-                    <textarea
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      placeholder="Enter full residential address"
-                      className="modal-input"
-                      rows="4"
-                      style={{ resize: "vertical", minHeight: '100px' }}
-                      required
-                    ></textarea>
-                  </div>
-
-                  <div className="modal-form-group">
-                    <label>Default Salary (Monthly) *</label>
-                    <input
-                      type="number"
-                      name="salary"
-                      value={formData.salary}
-                      onChange={handleInputChange}
-                      placeholder="Enter monthly salary"
-                      className="modal-input"
-                      required
-                    />
+                    <div className="modal-form-group">
+                      <label>Default Salary (Monthly) *</label>
+                      <input
+                        type="number"
+                        name="salary"
+                        value={formData.salary}
+                        onChange={handleInputChange}
+                        placeholder="0.00"
+                        className="modal-input"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="modal-footer">

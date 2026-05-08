@@ -36,7 +36,6 @@ const ProductList = () => {
   const [expandedGroup, setExpandedGroup] = useState(null);
 
   const [variants, setVariants] = useState([]);
-  const [newSize, setNewSize] = useState({ size: "", hsn: "", cost: "", sell: "" });
 
   // Add Product
   const handleAddProduct = React.useCallback(() => {

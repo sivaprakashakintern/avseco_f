@@ -207,6 +207,13 @@
   flex-wrap: wrap;
 }
 
+.att-filters-scroll {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
 .att-search-box {
   position: relative;
   display: flex;
@@ -317,34 +324,42 @@
   .rotating { animation: rotate 1.5s linear infinite; font-size: 18px !important; }
   @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-  /* Stack Date and Stoppage One by One */
+  /* Stack Date and Stoppage in one line */
   .att-mobile-header-stack {
     display: flex;
-    flex-direction: column;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: space-between;
     gap: 12px;
     margin-bottom: 20px;
     background: white;
-    padding: 16px;
+    padding: 12px 16px;
     border-radius: 18px;
     border: 1px solid #f1f5f9;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
   }
 
   .att-mobile-header-stack .att-date-controls {
-    justify-content: space-between;
-    width: 100%;
+    width: auto !important;
+    gap: 8px !important;
+  }
+
+  .att-mobile-header-stack .att-date-display {
+    padding: 6px 12px !important;
+    font-size: 13px !important;
   }
 
   .att-mobile-header-stack .att-date-actions {
-    width: 100%;
-    margin: 0;
+    width: auto !important;
+    margin: 0 !important;
   }
 
   .att-mobile-header-stack .att-stoppage-btn {
-    width: 100%;
-    justify-content: center;
-    height: 48px;
-    border-radius: 12px;
+    width: auto !important;
+    padding: 0 14px !important;
+    height: 38px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
   }
 
   /* 2 by 2 Stats Grid */
@@ -366,47 +381,69 @@
   .att-stat-number { font-size: 22px; }
   .att-stat-label { font-size: 10px; }
 
-  /* Filter Row */
+  /* Filter Row - Scrollable filters, but Actions on new line */
   .att-filter-row { 
     margin-bottom: 16px; 
     padding: 0; 
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column !important;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .att-filters-scroll {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
     gap: 8px;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
   }
   
+  .att-filters-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
   .att-search-box { 
-    flex: 1 1 100%; /* Full width row */
+    flex: 0 0 200px;
     min-width: 0; 
-    height: 46px; 
-    border-radius: 14px; 
+    height: 44px; 
+    border-radius: 40px; 
   }
 
   .att-select-dept, .att-select-status {
-    flex: 1 1 calc(50% - 4px); /* Side by side row */
+    flex: 0 0 140px;
     min-width: 0;
     height: 44px;
-    border-radius: 12px;
+    border-radius: 40px;
     font-size: 13px;
     padding: 0 10px;
   }
 
-  .att-mark-all-btn { 
-    width: 100%; 
-    height: 46px; 
-    justify-content: center; 
-    border-radius: 14px; 
-    margin-top: 4px;
-    order: 10; 
+  /* Dedicated Action Line for Mobile */
+  .att-action-group {
+    display: flex !important;
+    width: 100% !important;
+    gap: 10px !important;
+    margin-bottom: 20px;
+    order: unset !important;
+    margin-left: 0 !important;
   }
 
-  /* Clear button on mobile */
-  .att-filter-row .att-btn-ghost {
-    flex: 1 1 100%;
-    justify-content: center;
-    height: 44px;
-    border-radius: 12px;
-    order: 5;
+  .att-mark-all-btn, .att-save-mobile-inline {
+    flex: 1 !important;
+    height: 48px !important;
+    border-radius: 14px !important;
+    font-size: 14px !important;
+    justify-content: center !important;
+    margin: 0 !important;
+  }
+
+  .att-save-mobile-inline {
+    background: #006A4E !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(0, 106, 78, 0.2);
   }
 
   .att-filter-spacer { display: none; }

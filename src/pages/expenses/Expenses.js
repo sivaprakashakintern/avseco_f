@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useAppContext } from '../../context/AppContext.js';
 import { formatDate, isWithinLast2Days } from '../../utils/dateUtils.js';
 import { formatCurrency, getDynamicFontSize } from '../../utils/formatUtils.js';
@@ -180,20 +180,21 @@ const Expenses = () => {
     );
 
     return (
-        <div className="stock-page">
-            <div className="page-header premium-header expenses-header-standard">
-                <div className="header-left-group">
-                    <h1 className="page-title-white">Expense Details</h1>
+        <div className="erp-page">
+            <div className="erp-header">
+                <div className="header-left">
+                    <h1 className="erp-title">Expense Details</h1>
                 </div>
-                <div className="header-right-group">
-                    <button className="btn-add-circle-premium" onClick={() => { 
+                <div className="erp-header-actions">
+                    <button className="erp-header-btn solid" onClick={() => { 
                         setIsEditMode(false); 
                         setIsModalOpen(true); 
                         setTimeout(() => {
                             formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }, 100);
-                    }} title="Add New Expense">
+                    }}>
                         <span className="material-symbols-outlined">add_circle</span>
+                        <span>Add Expense</span>
                     </button>
                 </div>
             </div>
@@ -383,66 +384,65 @@ const Expenses = () => {
             </div>
 
             {/* Recent Expenses Table */}
-            <div className="stock-table-container">
-                <div className="table-header">
-                    <h3>
-                        <span className="material-symbols-outlined" style={{ color: '#006A4E' }}>today</span>
+            <div className="erp-card">
+                <div className="erp-card-header">
+                    <h3 className="erp-card-title">
+                        <span className="material-symbols-outlined">today</span>
                         Today's Expenses
                     </h3>
                 </div>
 
-                <div className="table-responsive desktop-only-table">
-                    <table className="stock-table">
+                <div className="erp-table-wrapper desktop-only-table">
+                    <table className="erp-table">
                         <thead>
                             <tr>
-                                <th className="text-center">S.No</th>
-                                <th className="text-center">Date & Time</th>
-                                <th className="text-center">Category</th>
-                                <th className="text-center">Payment Mode</th>
-                                <th className="text-center">Amount (₹)</th>
-                                <th className="text-center">Actions</th>
+                                <th style={{ width: '60px' }}>S.No</th>
+                                <th>Date & Time</th>
+                                <th>Category</th>
+                                <th>Payment Mode</th>
+                                <th>Amount (₹)</th>
+                                <th style={{ width: '100px' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {expenses.filter(ex => formatDate(ex.date) === formatDate(new Date())).map((expense, index) => (
                                 <tr key={expense.id}>
-                                    <td className="sno-cell">{index + 1}</td>
-                                    <td className="date-cell">{formatDate(expense.date)}</td>
-                                    <td className="text-center">
-                                        <span className={`status-badge-lite ${expense.category === 'Machine Maintenance' ? 'low' :
-                                            expense.category === 'Material' ? 'normal' :
-                                                expense.category === 'Salary' ? 'critical' : 'normal'
-                                            }`}>
+                                    <td className="erp-td-center">{index + 1}</td>
+                                    <td>
+                                        <div className="erp-td-primary">{formatDate(expense.date)}</div>
+                                    </td>
+                                    <td>
+                                        <span className={`erp-badge ${expense.category === 'Salary' ? 'warning' : 'info'}`}>
                                             {expense.category}
                                         </span>
                                     </td>
-                                    <td className="text-center">
-                                        <span className="payment-badge-lite">
+                                    <td>
+                                        <span className="erp-badge neutral">
                                             {expense.paymentMode}
                                         </span>
                                     </td>
-                                    <td className="amount-cell">₹{Number(expense.amount).toLocaleString()}</td>
-                                    <td className="text-center">
-                                        <div className="action-buttons-center">
+                                    <td className="erp-td-amount">₹{Number(expense.amount).toLocaleString()}</td>
+                                    <td>
+                                        <div className="erp-table-actions">
                                             {isWithinLast2Days(expense.date) ? (
                                                 <>
                                                     <button
-                                                        className="action-btn edit"
-                                                        title="Edit"
+                                                        className="erp-btn ghost"
                                                         onClick={() => handleEditExpense(expense.id)}
+                                                        title="Edit"
                                                     >
-                                                        <span className="material-symbols-outlined">edit</span>
+                                                        <span className="material-symbols-outlined" style={{ color: '#2563eb' }}>edit</span>
                                                     </button>
                                                     <button
-                                                        className="action-btn delete"
-                                                        title="Delete"
+                                                        className="erp-btn ghost"
                                                         onClick={() => handleDeleteExpense(expense.id)}
+                                                        title="Delete"
                                                     >
-                                                        <span className="material-symbols-outlined">delete</span>
+                                                        <span className="material-symbols-outlined" style={{ color: '#ef4444' }}>delete</span>
                                                     </button>
                                                 </>
                                             ) : (
-                                                <span className="locked-badge">Locked</span>
+                                                <span className="erp-badge neutral">Locked</span>
                                             )}
                                         </div>
                                     </td>
@@ -522,7 +522,7 @@ const Expenses = () => {
                             );
                         })
                     ) : (
-                        <div className="no-data-mobile">
+                        <div className="erp-table-empty">
                             <span className="material-symbols-outlined">search_off</span>
                             <p>No expenses recorded today</p>
                         </div>

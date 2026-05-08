@@ -83,7 +83,6 @@ const AttendanceLog = () => {
 
   // ── Modal State ───────────────────────────────────────────────────────────────
   const [showHalfDayModal, setShowHalfDayModal] = useState(false);
-  const [showAbsentModal, setShowAbsentModal] = useState(false);
   const [showStoppageModal, setShowStoppageModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [halfDayTime, setHalfDayTime] = useState({ from: "09:00", to: "13:00" });
@@ -183,13 +182,7 @@ const AttendanceLog = () => {
     setSelectedEmployee(null);
   };
 
-  const handleSaveAbsent = () => {
-    if (!selectedEmployee) return;
-    patchAttendance(selectedEmployee.id, { status: "absent", note: absentReason, halfDayTime: null });
-    showToast(`${selectedEmployee.name} marked as Absent`);
-    setShowAbsentModal(false);
-    setSelectedEmployee(null);
-  };
+
 
 
 
@@ -255,15 +248,7 @@ const AttendanceLog = () => {
           <h1 className="page-title-white">Attendance</h1>
         </div>
         <div className="header-right-group">
-          {isMobile ? (
-             <button 
-                className="mobile-save-header-btn" 
-                onClick={handleSaveAttendance} 
-                disabled={saveLoading || isSunday || !isToday}
-              >
-                {saveLoading ? <span className="material-symbols-outlined rotating">sync</span> : "Save"}
-             </button>
-          ) : (
+          {!isMobile && (
             <button 
               className="btn-add-premium-pill" 
               onClick={handleSaveAttendance} 
@@ -338,39 +323,39 @@ const AttendanceLog = () => {
 
       {/* ── FILTERS + BULK ACTIONS ────────────────────────────────────────────── */}
       <div className="att-filter-row">
-        {/* Search */}
-        <div className="att-search-box">
-          <span className="material-symbols-outlined">search</span>
-          <input
-            type="text"
-            placeholder={isMobile ? "Search employees..." : "Search by name, dept, or ID…"}
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
+        <div className="att-filters-scroll">
+          {/* Search */}
+          <div className="att-search-box">
+            <span className="material-symbols-outlined">search</span>
+            <input
+              type="text"
+              placeholder={isMobile ? "Search employees..." : "Search by name, dept, or ID…"}
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          {/* Department Filter */}
+          <select className="att-select att-select-dept" value={selectedDept} onChange={e => setSelectedDept(e.target.value)}>
+            {departments.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+
+          {/* Status Filter */}
+          <select className="att-select att-select-status" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <option value="all">All Status</option>
+            <option value="present">Present</option>
+            <option value="half">Half Day</option>
+            <option value="absent">Absent</option>
+          </select>
+
+          {/* Clear */}
+          {(searchTerm || selectedDept !== "All Departments" || statusFilter !== "all") && (
+            <button className="att-btn att-btn-ghost" onClick={clearFilters}>
+              <span className="material-symbols-outlined">filter_list_off</span>
+              {!isMobile && "Clear"}
+            </button>
+          )}
         </div>
-
-        {/* Department Filter */}
-        <select className="att-select att-select-dept" value={selectedDept} onChange={e => setSelectedDept(e.target.value)}>
-          {departments.map(d => <option key={d} value={d}>{d}</option>)}
-        </select>
-
-        {/* Status Filter */}
-        <select className="att-select att-select-status" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          <option value="all">All Status</option>
-          <option value="present">Present</option>
-          <option value="half">Half Day</option>
-          <option value="absent">Absent</option>
-        </select>
-
-        {/* Clear */}
-        {(searchTerm || selectedDept !== "All Departments" || statusFilter !== "all") && (
-          <button className="att-btn att-btn-ghost" onClick={clearFilters}>
-            <span className="material-symbols-outlined">filter_list_off</span>
-            {!isMobile && "Clear"}
-          </button>
-        )}
-
-        <div className="att-filter-spacer" />
 
         <div className="att-action-group">
           <button 
@@ -381,6 +366,17 @@ const AttendanceLog = () => {
             <span className="material-symbols-outlined">done_all</span>
             <span className="btn-text">{isMobile ? "All Present" : "Mark All Present"}</span>
           </button>
+
+          {isMobile && (
+            <button 
+              className="att-btn att-btn-primary att-save-mobile-inline" 
+              onClick={handleSaveAttendance} 
+              disabled={saveLoading || isSunday || !isToday}
+            >
+              <span className="material-symbols-outlined">{saveLoading ? "sync" : "save"}</span>
+              <span className="btn-text">{saveLoading ? "Saving" : "Save"}</span>
+            </button>
+          )}
         </div>
       </div>
 

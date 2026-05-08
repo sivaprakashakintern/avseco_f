@@ -317,15 +317,15 @@ const SalesHistory = () => {
     };
 
     return (
-        <div className="stock-page">
-            <div className="page-header premium-header">
-                <div className="header-content">
-                    <h1 className="page-title">Transaction History</h1>
+        <div className="erp-page">
+            <div className="erp-header">
+                <div className="header-left">
+                    <h1 className="erp-title">Transaction History</h1>
                 </div>
-                <div className="history-actions">
-                    <button className="btn-export-premium" onClick={() => setShowExportModal(true)}>
+                <div className="erp-header-actions">
+                    <button className="erp-header-btn solid" onClick={() => setShowExportModal(true)}>
                         <span className="material-symbols-outlined">download</span>
-                        <span className="export-text">Export History</span>
+                        <span>Export Report</span>
                     </button>
                 </div>
             </div>
@@ -339,49 +339,50 @@ const SalesHistory = () => {
                 </div>
             )}
 
-            <div className="history-filters-wrapper">
-                <div className="search-box-container">
-                    <div className="search-box">
-                        <span className="material-symbols-outlined search-icon">search</span>
-                        <input
-                            type="text"
-                            placeholder="Search company, customer..."
-                            className="search-input"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        {searchTerm && (
-                            <button className="clear-search" onClick={() => setSearchTerm('')}>
-                                <span className="material-symbols-outlined">close</span>
-                            </button>
-                        )}
-                    </div>
+            <div className="erp-controls">
+                <div className="erp-search">
+                    <span className="material-symbols-outlined erp-search-icon">search</span>
+                    <input
+                        type="text"
+                        placeholder="Search company, customer or products..."
+                        className="erp-search-input"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    {searchTerm && (
+                        <button className="erp-search-clear" onClick={() => setSearchTerm('')}>
+                            <span className="material-symbols-outlined">close</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
-            <div className="stock-table-container">
-                <div className="table-header">
-                    <h3 className="section-title">Sales Records ({filteredTransactions.length})</h3>
+            <div className="erp-card">
+                <div className="erp-card-header">
+                    <h3 className="erp-card-title">
+                        <span className="material-symbols-outlined">analytics</span>
+                        Sales Records ({filteredTransactions.length})
+                    </h3>
                 </div>
-                <div className="table-responsive desktop-only-table">
-                    <table className="stock-table">
+                <div className="erp-table-wrapper desktop-only-table">
+                    <table className="erp-table">
                         <thead>
                             <tr>
-                                <th style={{ textAlign: 'center' }}>S.NO</th>
-                                <th style={{ textAlign: 'center' }}>DATE & TIME</th>
-                                <th style={{ textAlign: 'center' }}>COMPANY / CUSTOMER</th>
-                                <th style={{ textAlign: 'center' }}>PRODUCTS</th>
-                                <th style={{ textAlign: 'center' }}>TOTAL AMOUNT</th>
-                                <th style={{ textAlign: 'center' }}>STATUS</th>
-                                <th style={{ textAlign: 'center' }}>SOLD BY</th>
-                                <th style={{ textAlign: 'center' }}>ACTION</th>
+                                <th style={{ width: '60px' }}>S.NO</th>
+                                <th>DATE & TIME</th>
+                                <th>COMPANY / CUSTOMER</th>
+                                <th>PRODUCTS</th>
+                                <th>AMOUNT</th>
+                                <th>STATUS</th>
+                                <th>SOLD BY</th>
+                                <th style={{ width: '100px' }}>ACTION</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="8" style={{ textAlign: 'center', padding: '40px' }}>
-                                        <div className="loading-spinner"></div>
+                                    <td colSpan="8" className="erp-table-loading">
+                                        <div className="erp-spinner"></div>
                                         <p>Loading sales history...</p>
                                     </td>
                                 </tr>
@@ -393,70 +394,58 @@ const SalesHistory = () => {
                                     const displayAmount = transaction.totalAmount || transaction.amount || 0;
                                     const formattedTime = getFormattedTime(transaction);
                                     const datePart = transaction.date?.split(', ')[0] || new Date(transaction.createdAt).toLocaleDateString();
+                                    const status = (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase();
 
                                     return (
-                                        <tr
-                                            key={transaction.id || transaction._id}
-                                            style={{ transition: 'background 0.2s' }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                        >
-                                            <td style={{ textAlign: 'center' }}>{index + 1}</td>
-                                            <td style={{ textAlign: 'center' }}>
-                                                <div style={{ fontSize: '13px' }}>{datePart}</div>
-                                                <div style={{ fontSize: '11px', color: '#64748b' }}>{formattedTime}</div>
+                                        <tr key={transaction.id || transaction._id}>
+                                            <td className="erp-td-center">{index + 1}</td>
+                                            <td>
+                                                <div className="erp-td-primary">{datePart}</div>
+                                                <div className="erp-td-secondary">{formattedTime}</div>
                                             </td>
-                                            <td style={{ textAlign: 'center' }}>
-                                                <div style={{ fontWeight: 600 }}>{transaction.company || "Direct Sale"}</div>
-                                                <div style={{ fontSize: '12px', color: '#64748b' }}>{transaction.customer || "Walking Customer"}</div>
+                                            <td>
+                                                <div className="erp-td-primary">{transaction.company || "Direct Sale"}</div>
+                                                <div className="erp-td-secondary">{transaction.customer || "Walking Customer"}</div>
                                             </td>
-                                            <td style={{ textAlign: 'center' }}>
-                                                <div style={{ maxWidth: '200px', margin: '0 auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={baseProducts}>
+                                            <td>
+                                                <div className="erp-td-primary erp-text-ellipsis" title={baseProducts} style={{ maxWidth: '200px' }}>
                                                     {baseProducts}
                                                 </div>
-                                                <div style={{ fontSize: '11px', color: '#64748b' }}>{totalPieces} Pieces</div>
+                                                <div className="erp-td-secondary">{totalPieces} Pieces</div>
                                             </td>
-                                            <td style={{ textAlign: 'center', fontWeight: 700, color: '#0f172a' }}>
+                                            <td className="erp-td-amount">
                                                 ₹{displayAmount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
-                                            <td style={{ textAlign: 'center' }}>
+                                            <td>
                                                 <span
-                                                    className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}
+                                                    className={`erp-badge ${status === 'paid' ? 'success' : status === 'unpaid' ? 'danger' : 'warning'}`}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        if ((transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid') {
-                                                            handleTogglePaymentStatus(transaction);
-                                                        }
+                                                        if (status === 'unpaid') handleTogglePaymentStatus(transaction);
                                                     }}
-                                                    style={{
-                                                        cursor: (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? 'pointer' : 'default',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    title={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? "Click to mark as Paid" : ""}
+                                                    style={{ cursor: status === 'unpaid' ? 'pointer' : 'default' }}
                                                 >
                                                     {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
                                                 </span>
                                             </td>
-                                            <td style={{ textAlign: 'center' }}>
-                                                <span className="sold-by-badge">{transaction.soldBy || "-"}</span>
+                                            <td>
+                                                <span className="erp-badge neutral">{transaction.soldBy || "-"}</span>
                                             </td>
-                                            <td style={{ textAlign: 'center' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                            <td>
+                                                <div className="erp-table-actions">
                                                     <button
-                                                        className="icon-action-btn"
+                                                        className="erp-btn ghost"
                                                         onClick={(e) => { e.stopPropagation(); handleViewBill(transaction); }}
                                                         title="View Bill"
-                                                        style={{ color: '#10b981', cursor: 'pointer' }}
                                                     >
-                                                        <span className="material-symbols-outlined">receipt_long</span>
+                                                        <span className="material-symbols-outlined" style={{ color: '#10b981' }}>receipt_long</span>
                                                     </button>
                                                     <button
-                                                        className="icon-action-btn"
+                                                        className="erp-btn ghost"
                                                         onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(transaction.id || transaction._id); }}
                                                         title="Delete"
-                                                        style={{ color: '#ef4444' }}
                                                     >
-                                                        <span className="material-symbols-outlined">delete</span>
+                                                        <span className="material-symbols-outlined" style={{ color: '#ef4444' }}>delete</span>
                                                     </button>
                                                 </div>
                                             </td>
@@ -465,8 +454,9 @@ const SalesHistory = () => {
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan="8" className="no-data" style={{ textAlign: 'center', padding: '40px' }}>
-                                        <h4>No sales records found</h4>
+                                    <td colSpan="8" className="erp-table-empty">
+                                        <span className="material-symbols-outlined">receipt_long</span>
+                                        <p>No sales records found</p>
                                     </td>
                                 </tr>
                             )}
@@ -477,8 +467,8 @@ const SalesHistory = () => {
                 {/* Mobile Cards View */}
                 <div className="mobile-history-cards">
                     {loading ? (
-                        <div className="no-data-mobile">
-                            <div className="loading-spinner"></div>
+                        <div className="erp-table-loading">
+                            <div className="erp-spinner"></div>
                             <p>Loading sales history...</p>
                         </div>
                     ) : filteredTransactions.length > 0 ? (
@@ -489,6 +479,7 @@ const SalesHistory = () => {
                             const displayAmount = transaction.totalAmount || transaction.amount || 0;
                             const formattedTime = getFormattedTime(transaction);
                             const datePart = transaction.date?.split(', ')[0] || new Date(transaction.createdAt).toLocaleDateString();
+                            const status = (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase();
 
                             return (
                                 <div key={transaction.id || transaction._id} className="mobile-sale-card">
@@ -498,14 +489,11 @@ const SalesHistory = () => {
                                             {datePart} &bull; {formattedTime}
                                         </div>
                                         <span
-                                            className={`payment-badge ${(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase()}`}
+                                            className={`erp-badge ${status === 'paid' ? 'success' : status === 'unpaid' ? 'danger' : 'warning'}`}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                if ((transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid') {
-                                                    handleTogglePaymentStatus(transaction);
-                                                }
+                                                if (status === 'unpaid') handleTogglePaymentStatus(transaction);
                                             }}
-                                            style={{ cursor: (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? 'pointer' : 'default' }}
                                         >
                                             {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
                                         </span>
@@ -534,8 +522,8 @@ const SalesHistory = () => {
                                         <button
                                             className="sale-action-btn view"
                                             onClick={() => handleViewBill(transaction)}
-                                            disabled={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid'}
-                                            style={(transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase() === 'unpaid' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                            disabled={status === 'unpaid'}
+                                            style={status === 'unpaid' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                                         >
                                             <span className="material-symbols-outlined">receipt_long</span>
                                             View Bill
@@ -549,7 +537,7 @@ const SalesHistory = () => {
                             );
                         })
                     ) : (
-                        <div className="no-data-mobile">
+                        <div className="erp-table-empty">
                             <span className="material-symbols-outlined">receipt_long</span>
                             <h4>No sales records found</h4>
                         </div>
