@@ -56,10 +56,17 @@ const SalesHistory = () => {
     const filteredTransactions = useMemo(() => {
         return transactions.filter(t => {
             const searchLower = searchTerm.toLowerCase();
+            const productMatch = t.saleItems?.some(item => 
+                (item.productName && item.productName.toLowerCase().includes(searchLower)) ||
+                (item.baseName && item.baseName.toLowerCase().includes(searchLower))
+            );
+            
             return (
                 (t.company && t.company.toLowerCase().includes(searchLower)) ||
                 (t.customer && t.customer.toLowerCase().includes(searchLower)) ||
-                (t.product && t.product.toLowerCase().includes(searchLower))
+                (t.invoiceNo && t.invoiceNo.toLowerCase().includes(searchLower)) ||
+                (t.product && t.product.toLowerCase().includes(searchLower)) ||
+                productMatch
             );
         });
     }, [transactions, searchTerm]);
