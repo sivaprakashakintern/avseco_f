@@ -182,6 +182,10 @@ export const authApi = {
   changePassword: async (passData) => {
     const { data } = await axios.put('/auth/update-password', passData);
     return data;
+  },
+  getMySalary: async () => {
+    const { data } = await axios.get('/auth/my-salary');
+    return data;
   }
 };
 

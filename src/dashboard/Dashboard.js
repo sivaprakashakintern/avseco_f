@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../context/AppContext.js';
 import { useAuth } from '../context/AuthContext.js';
 import { formatCurrency } from '../utils/formatUtils.js';
+import { authApi } from '../utils/api.js';
 import dayjs from 'dayjs';
 import "./Dashboard.css";
 
@@ -10,7 +11,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { hasAccess, user, isAdmin } = useAuth();
   const {
-    expenses,
+    employees = [],
+    expenses = [],
     totalExpenseAmount,
     expenseByCategory,
     todayStats,
@@ -24,6 +26,14 @@ const Dashboard = () => {
     productionHistory = []
   } = useAppContext();
   const [timeFilter, setTimeFilter] = useState("Monthly");
+  const [mySalaryData, setMySalaryData] = useState(null);
+
+  // Fetch employee's own salary data (only for non-admin)
+  useEffect(() => {
+    if (!isAdmin) {
+      authApi.getMySalary().then(data => setMySalaryData(data)).catch(() => {});
+    }
+  }, [isAdmin]);
 
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
@@ -256,151 +266,330 @@ const Dashboard = () => {
 
   if (!isAdmin) {
     const currentMonthYear = dayjs().format('YYYY-MM');
-    const empYearAttendance = (attendanceRecords.year || []).filter(r => 
-      r.empId === user?._id && dayjs(r.date).format('YYYY-MM') === currentMonthYear
-    );
-    
-    const presentCount = empYearAttendance.filter(r => r.status === 'present').length;
-    const absentCount = empYearAttendance.filter(r => r.status === 'absent').length;
-    const onLeaveCount = empYearAttendance.filter(r => r.status === 'half' || r.status === 'leave').length;
-    const attendancePercentage = empYearAttendance.length > 0 ? ((presentCount / empYearAttendance.length) * 100).toFixed(1) : 0;
+    const lastMonthYear = dayjs().subtract(1, 'month').format('YYYY-MM');
+    const lastMonthName = dayjs().subtract(1, 'month').format('MMMM YYYY');
+    const currentMonthName = dayjs().format('MMMM YYYY');
 
+    // ── Attendance: filter by logged-in employee's ID ──────────────────────
+    const allYearAttendance = attendanceRecords.year || [];
+    const myId = user?._id || user?.id || '';
+
+    const myCurrentMonthAtt = allYearAttendance.filter(r => {
+      const empId = r.empId || (r.employee?._id ? String(r.employee._id) : String(r.employee || ''));
+      return empId === myId && dayjs(r.date).format('YYYY-MM') === currentMonthYear;
+    });
+
+    const presentCount = myCurrentMonthAtt.filter(r => r.status === 'present').length;
+    const absentCount = myCurrentMonthAtt.filter(r => r.status === 'absent').length;
+    const halfDayCount = myCurrentMonthAtt.filter(r => r.status === 'half').length;
+    const onLeaveCount = myCurrentMonthAtt.filter(r => r.status === 'leave').length;
+    const attendancePercentage = myCurrentMonthAtt.length > 0
+      ? ((presentCount / myCurrentMonthAtt.length) * 100).toFixed(1)
+      : 0;
+
+    // Last 7 days attendance for mini-heatmap
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = dayjs().subtract(6 - i, 'day');
+      const dateStr = d.format('YYYY-MM-DD');
+      const rec = allYearAttendance.find(r => {
+        const empId = r.empId || (r.employee?._id ? String(r.employee._id) : String(r.employee || ''));
+        return empId === myId && r.date === dateStr;
+      });
+      return { label: d.format('dd'), dateStr, status: rec?.status || 'none' };
+    });
+
+    // ── Salary: from dedicated /auth/my-salary API ────────────────────────
+    const myEmployeeObj = employees?.find(e => (e._id || e.id) === myId);
+    const mySalary = mySalaryData?.salary ? Number(mySalaryData.salary) : (myEmployeeObj?.salary ? Number(myEmployeeObj.salary) : 0);
+
+    // Find last month's salary entry from API response
+    const lastMonthSalaryEntry = (mySalaryData?.salaryExpenses || []).find(ex => {
+      if (!ex.date) return false;
+      const parts = ex.date.split('-');
+      const exDate = parts[0].length === 4 ? dayjs(ex.date) : dayjs(`${parts[2]}-${parts[1]}-${parts[0]}`);
+      return exDate.isValid() && exDate.format('YYYY-MM') === lastMonthYear;
+    });
+    const lastMonthSalary = lastMonthSalaryEntry ? Number(lastMonthSalaryEntry.amount || 0) : mySalary;
+
+    // ── Activity: sales or production ──────────────────────────────────────
     const isSalesDept = (user?.department || "").toLowerCase().includes("sales") || hasAccess("sales");
-    
-    const mySales = (salesHistory || []).filter(sale => 
+
+    const mySales = (salesHistory || []).filter(sale =>
       (sale.soldBy === user?.name || sale.recordedBy === user?.name) &&
       dayjs(sale.date).format('YYYY-MM') === currentMonthYear
     );
-    const totalMySalesValue = mySales.reduce((sum, sale) => sum + (Number(sale.totalAmount) || 0), 0);
-    
-    const myProduction = (productionHistory || []).filter(prod => 
+    const totalMySalesValue = mySales.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+    const myProduction = (productionHistory || []).filter(prod =>
       (prod.operator === user?.name || prod.recordedBy === user?.name) &&
       dayjs(prod.date).format('YYYY-MM') === currentMonthYear
     );
-    const totalMyProduced = myProduction.reduce((sum, prod) => sum + (Number(prod.quantity) || 0), 0);
+    const totalMyProduced = myProduction.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
+
+    const statusColor = { present: '#10b981', absent: '#ef4444', half: '#f59e0b', leave: '#8b5cf6', none: '#e2e8f0' };
 
     return (
-      <div className="dashboard-container employee-dashboard">
-        <div className="employee-welcome-banner">
-          <div className="welcome-text-group">
-            <span className="welcome-greeting">{getGreeting()},</span>
-            <h2 className="welcome-name">{user?.name}</h2>
-            <p className="welcome-role">{user?.role?.toUpperCase()} • {user?.department?.toUpperCase()}</p>
-          </div>
-        </div>
+      <div className="dashboard-container emp-self-dashboard">
 
-        <div className="premium-stats-grid">
-          <div className="premium-stat-card attendance">
-            <div className="p-stat-info">
-              <span className="p-stat-label">This Month Attendance</span>
-              <div className="p-stat-value">{presentCount} <small>Days Present</small></div>
-              <div className="attendance-metric-progress">
-                <div className="progress-bar-bg">
-                  <div className="progress-bar-fill" style={{ width: `${attendancePercentage}%` }}></div>
-                </div>
-                <div className="progress-details" style={{ display: 'flex', gap: '10px', marginTop: '6px', fontSize: '13px', opacity: 0.85 }}>
-                  <span>Present: {presentCount}</span>
-                  <span>Absent: {absentCount}</span>
-                  <span>Leave: {onLeaveCount}</span>
-                </div>
-              </div>
-              <div className="attendance-total-status" style={{ marginTop: '10px', fontSize: '13px', opacity: 0.9 }}>
-                Overall Rate: <strong>{attendancePercentage}%</strong> (Out of {empYearAttendance.length} records logged)
+        {/* ── HERO WELCOME BANNER ──────────────────────────────── */}
+        <div className="emp-hero-banner">
+          <div className="emp-hero-left">
+            <div className="emp-avatar-ring">
+              {user?.avatar
+                ? <img src={user.avatar} alt="avatar" className="emp-avatar-img" />
+                : <span className="emp-avatar-initials">{(user?.name || 'E')[0].toUpperCase()}</span>
+              }
+            </div>
+            <div className="emp-hero-info">
+              <span className="emp-greet-line">{getGreeting()} 👋</span>
+              <h2 className="emp-hero-name">{user?.name}</h2>
+              <div className="emp-hero-tags">
+                <span className="emp-tag role">{user?.role?.toUpperCase()}</span>
+                <span className="emp-tag dept">{user?.department}</span>
+                {myEmployeeObj?.empId && <span className="emp-tag empid">{myEmployeeObj.empId}</span>}
               </div>
             </div>
           </div>
-
-          {isSalesDept ? (
-            <div className="premium-stat-card sales">
-              <div className="p-stat-info">
-                <span className="p-stat-label">My Monthly Sales</span>
-                <div className="p-stat-value">₹{totalMySalesValue.toLocaleString()}</div>
-                <div className="sales-breakdown-details" style={{ marginTop: '10px' }}>
-                  <span className="breakdown-tag">Sales Logs: {mySales.length}</span>
-                </div>
-              </div>
+          <div className="emp-hero-right">
+            <div className="emp-hero-date">
+              <span className="emp-date-label">TODAY</span>
+              <span className="emp-date-value">{dayjs().format('DD MMM YYYY')}</span>
+              <span className="emp-date-day">{dayjs().format('dddd')}</span>
             </div>
-          ) : (
-            <div className="premium-stat-card stock">
-              <div className="p-stat-info">
-                <span className="p-stat-label">My Monthly Production</span>
-                <div className="p-stat-value">{totalMyProduced.toLocaleString()} <small>PCS</small></div>
-                <div className="prod-breakdown-details" style={{ marginTop: '10px' }}>
-                  <span className="breakdown-tag">Production Entries: {myProduction.length}</span>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
-        <div className="charts-row employee-charts-row">
-          <div className="chart-card large-chart employee-records-card" style={{ width: '100%', minWidth: '100%' }}>
-            <div className="chart-header" style={{ marginBottom: '16px' }}>
-              <h3>{isSalesDept ? "MY RECENT SALES LOGS" : "MY RECENT PRODUCTION LOGS"}</h3>
+        {/* ── TOP STATS GRID: Attendance + Salary ─────────────── */}
+        <div className="emp-stats-grid">
+
+          {/* Attendance Card */}
+          <div className="emp-stat-card emp-attendance-card">
+            <div className="emp-card-header">
+              <span className="emp-card-icon att-icon">
+                <span className="material-symbols-outlined">calendar_month</span>
+              </span>
+              <div>
+                <span className="emp-card-title">This Month Attendance</span>
+                <span className="emp-card-sub">{currentMonthName}</span>
+              </div>
             </div>
+
+            <div className="emp-att-numbers">
+              <div className="emp-att-num present">
+                <span className="num-val">{presentCount}</span>
+                <span className="num-lbl">Present</span>
+              </div>
+              <div className="emp-att-num absent">
+                <span className="num-val">{absentCount}</span>
+                <span className="num-lbl">Absent</span>
+              </div>
+              <div className="emp-att-num half">
+                <span className="num-val">{halfDayCount}</span>
+                <span className="num-lbl">Half Day</span>
+              </div>
+              <div className="emp-att-num leave">
+                <span className="num-val">{onLeaveCount}</span>
+                <span className="num-lbl">Leave</span>
+              </div>
+            </div>
+
+            <div className="emp-att-bar-wrap">
+              <div className="emp-att-bar-bg">
+                <div className="emp-att-bar-fill" style={{ width: `${attendancePercentage}%` }}></div>
+              </div>
+              <span className="emp-att-pct">{attendancePercentage}% Attendance Rate</span>
+            </div>
+
+            {/* Last 7-day mini heatmap */}
+            <div className="emp-week-heatmap">
+              {last7Days.map((d, i) => (
+                <div key={i} className="emp-heat-day" title={`${d.dateStr}: ${d.status}`}>
+                  <div className="emp-heat-dot" style={{ background: statusColor[d.status] || '#e2e8f0' }}></div>
+                  <span className="emp-heat-lbl">{d.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="emp-heat-legend">
+              <span><i style={{ background: '#10b981' }}></i> Present</span>
+              <span><i style={{ background: '#ef4444' }}></i> Absent</span>
+              <span><i style={{ background: '#f59e0b' }}></i> Half</span>
+              <span><i style={{ background: '#8b5cf6' }}></i> Leave</span>
+            </div>
+          </div>
+
+          {/* Last Month Salary Card */}
+          <div className="emp-stat-card emp-salary-card">
+            <div className="emp-card-header">
+              <span className="emp-card-icon sal-icon">
+                <span className="material-symbols-outlined">payments</span>
+              </span>
+              <div>
+                <span className="emp-card-title">Last Month Salary</span>
+                <span className="emp-card-sub">{lastMonthName}</span>
+              </div>
+            </div>
+
+            <div className="emp-salary-amount">
+              ₹{lastMonthSalary > 0 ? lastMonthSalary.toLocaleString() : '—'}
+            </div>
+
+            {mySalary > 0 && (
+              <div className="emp-salary-meta">
+                <div className="emp-salary-meta-row">
+                  <span>Monthly CTC</span>
+                  <strong>₹{mySalary.toLocaleString()}</strong>
+                </div>
+                {lastMonthSalaryEntry && (
+                  <div className="emp-salary-meta-row">
+                    <span>Credited On</span>
+                    <strong>{lastMonthSalaryEntry.date}</strong>
+                  </div>
+                )}
+                <div className="emp-salary-status">
+                  <span className="emp-salary-badge credited">✓ Credited</span>
+                </div>
+              </div>
+            )}
+            {mySalary === 0 && (
+              <p className="emp-salary-empty">Salary details not available. Contact admin.</p>
+            )}
+          </div>
+
+          {/* Activity Summary Card */}
+          <div className="emp-stat-card emp-activity-card">
+            <div className="emp-card-header">
+              <span className="emp-card-icon act-icon">
+                <span className="material-symbols-outlined">{isSalesDept ? 'point_of_sale' : 'precision_manufacturing'}</span>
+              </span>
+              <div>
+                <span className="emp-card-title">{isSalesDept ? 'My Sales' : 'My Production'}</span>
+                <span className="emp-card-sub">{currentMonthName}</span>
+              </div>
+            </div>
+
             {isSalesDept ? (
-              <div className="daily-table-wrapper employee-table-wrapper">
-                <table className="premium-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ padding: '12px', textAlign: 'left' }}>INVOICE</th>
-                      <th style={{ padding: '12px', textAlign: 'left' }}>DATE</th>
-                      <th style={{ padding: '12px', textAlign: 'left' }}>CUSTOMER</th>
-                      <th style={{ padding: '12px', textAlign: 'left' }}>TOTAL VALUE</th>
-                      <th style={{ padding: '12px', textAlign: 'left' }}>STATUS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mySales.slice(0, 5).map((sale, idx) => (
-                      <tr key={sale.id || sale._id || idx} style={{ borderBottom: '1px solid #334155' }}>
-                        <td style={{ padding: '12px' }}>{sale.invoiceNo}</td>
-                        <td style={{ padding: '12px' }}>{sale.date}</td>
-                        <td style={{ padding: '12px' }}>{sale.customer}</td>
-                        <td style={{ padding: '12px' }}>₹{Number(sale.totalAmount).toLocaleString()}</td>
-                        <td style={{ padding: '12px' }}><span className={`status-badge ${sale.paidStatus?.toLowerCase()}`}>{sale.paidStatus}</span></td>
-                      </tr>
-                    ))}
-                    {mySales.length === 0 && (
-                      <tr>
-                        <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#888' }}>No sales logs found for this month.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                <div className="emp-activity-big-num">₹{totalMySalesValue.toLocaleString()}</div>
+                <div className="emp-activity-sub">{mySales.length} Sale{mySales.length !== 1 ? 's' : ''} logged this month</div>
+              </>
             ) : (
-              <div className="daily-table-wrapper employee-table-wrapper">
-                <table className="premium-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ padding: '12px', textAlign: 'left' }}>DATE</th>
-                      <th style={{ padding: '12px', textAlign: 'left' }}>PRODUCT</th>
-                      <th style={{ padding: '12px', textAlign: 'left' }}>SIZE</th>
-                      <th style={{ padding: '12px', textAlign: 'left' }}>QUANTITY</th>
-                      <th style={{ padding: '12px', textAlign: 'left' }}>GRADE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {myProduction.slice(0, 5).map((prod, idx) => (
-                      <tr key={prod.id || prod._id || idx} style={{ borderBottom: '1px solid #334155' }}>
-                        <td style={{ padding: '12px' }}>{prod.date}</td>
-                        <td style={{ padding: '12px' }}>{prod.product}</td>
-                        <td style={{ padding: '12px' }}>{prod.size}</td>
-                        <td style={{ padding: '12px' }}>{prod.quantity?.toLocaleString()} pcs</td>
-                        <td style={{ padding: '12px' }}>{prod.grade}</td>
-                      </tr>
-                    ))}
-                    {myProduction.length === 0 && (
-                      <tr>
-                        <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#888' }}>No production logs found for this month.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                <div className="emp-activity-big-num">{totalMyProduced.toLocaleString()} <small>PCS</small></div>
+                <div className="emp-activity-sub">{myProduction.length} Entr{myProduction.length !== 1 ? 'ies' : 'y'} this month</div>
+              </>
             )}
           </div>
         </div>
+
+        {/* ── ACTIVITY LOG TABLE ───────────────────────────────── */}
+        <div className="emp-activity-section">
+          <div className="emp-section-header">
+            <h3 className="emp-section-title">
+              <span className="material-symbols-outlined">history</span>
+              {isSalesDept ? 'Recent Sales Activity' : 'Recent Production Activity'}
+            </h3>
+            <span className="emp-section-sub">{currentMonthName}</span>
+          </div>
+
+          <div className="emp-table-wrap">
+            {isSalesDept ? (
+              <table className="emp-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Invoice</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mySales.length === 0 ? (
+                    <tr><td colSpan="6" className="emp-empty-row">No sales logged this month</td></tr>
+                  ) : mySales.slice(0, 10).map((sale, idx) => (
+                    <tr key={sale.id || sale._id || idx}>
+                      <td className="emp-row-num">{idx + 1}</td>
+                      <td><strong>{sale.invoiceNo || '—'}</strong></td>
+                      <td>{sale.date}</td>
+                      <td>{sale.customer}</td>
+                      <td className="emp-money">₹{Number(sale.totalAmount || 0).toLocaleString()}</td>
+                      <td>
+                        <span className={`emp-status-pill ${(sale.paidStatus || '').toLowerCase()}`}>
+                          {sale.paidStatus || 'Pending'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table className="emp-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th>Size</th>
+                    <th>Quantity</th>
+                    <th>Grade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {myProduction.length === 0 ? (
+                    <tr><td colSpan="6" className="emp-empty-row">No production logged this month</td></tr>
+                  ) : myProduction.slice(0, 10).map((prod, idx) => (
+                    <tr key={prod.id || prod._id || idx}>
+                      <td className="emp-row-num">{idx + 1}</td>
+                      <td>{prod.date}</td>
+                      <td><strong>{prod.product}</strong></td>
+                      <td>{prod.size}</td>
+                      <td className="emp-money">{(prod.quantity || 0).toLocaleString()} pcs</td>
+                      <td>
+                        <span className={`emp-status-pill grade-${(prod.grade || 'a').toLowerCase()}`}>
+                          {prod.grade || '—'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* ── MONTH ATTENDANCE CALENDAR STRIP ─────────────────── */}
+        <div className="emp-cal-section">
+          <div className="emp-section-header">
+            <h3 className="emp-section-title">
+              <span className="material-symbols-outlined">event_available</span>
+              Attendance Log — {currentMonthName}
+            </h3>
+          </div>
+          <div className="emp-cal-grid">
+            {myCurrentMonthAtt.length === 0 ? (
+              <p className="emp-cal-empty">No attendance records found for this month.</p>
+            ) : myCurrentMonthAtt.sort((a, b) => a.date.localeCompare(b.date)).map((rec, i) => {
+              const dayNum = dayjs(rec.date).format('D');
+              const dayName = dayjs(rec.date).format('ddd');
+              const sc = { present: 'emp-cal-p', absent: 'emp-cal-a', half: 'emp-cal-h', leave: 'emp-cal-l' };
+              return (
+                <div key={i} className={`emp-cal-day ${sc[rec.status] || ''}`} title={`${rec.date}: ${rec.status}`}>
+                  <span className="emp-cal-daynum">{dayNum}</span>
+                  <span className="emp-cal-dayname">{dayName}</span>
+                  <span className="emp-cal-status-dot"></span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="emp-cal-legend">
+            <span className="emp-cal-leg-item emp-cal-p"><span></span> Present</span>
+            <span className="emp-cal-leg-item emp-cal-a"><span></span> Absent</span>
+            <span className="emp-cal-leg-item emp-cal-h"><span></span> Half Day</span>
+            <span className="emp-cal-leg-item emp-cal-l"><span></span> Leave</span>
+          </div>
+        </div>
+
       </div>
     );
   }
