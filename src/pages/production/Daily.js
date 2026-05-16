@@ -82,8 +82,6 @@ const Production = () => {
   // const { isAdmin } = useAuth(); // Commented out as it's unused and causing build errors
 
   // Production Entry Form State
-  const isToday = productionDate.isSame(dayjs(), 'day');
-  const isYesterday = productionDate.isSame(dayjs().subtract(1, 'day'), 'day');
   
   // Allow entry for dates starting from May 1st, 2026, but not future dates
   const isFromMayFirst = productionDate.valueOf() >= dayjs('2026-05-01').startOf('day').valueOf();
