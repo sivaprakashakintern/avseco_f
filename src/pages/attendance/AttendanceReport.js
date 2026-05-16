@@ -18,7 +18,11 @@ const AttendanceReport = () => {
     const [showExportDropdown, setShowExportDropdown] = useState(false);
 
     const employees = useMemo(() => {
-        return allEmployees.filter(emp => emp.isActive !== false);
+        return allEmployees.filter(emp => {
+            if (emp.isActive === false) return false;
+            if (emp.name && emp.name.toLowerCase().includes("nithish kumar")) return false;
+            return true;
+        });
     }, [allEmployees]);
 
     const daysInCurrentMonthCount = new Date(selectedYear, selectedMonth + 1, 0).getDate();

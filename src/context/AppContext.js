@@ -662,7 +662,7 @@ export const AppProvider = ({ children }) => {
 
     const updateAttendanceRecord = useCallback((dateStr, empId, updates) => {
         setAttendanceRecords(prev => {
-            const dayRecords = prev[dateStr] ?? buildDefaultAttendance(dateStr);
+            const dayRecords = (prev[dateStr] && prev[dateStr].length > 0) ? prev[dateStr] : buildDefaultAttendance(dateStr);
             const updated = dayRecords.map(r => r.empId === empId ? { ...r, ...updates } : r);
             return { ...prev, [dateStr]: updated };
         });

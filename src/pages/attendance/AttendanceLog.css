@@ -298,17 +298,24 @@
 .att-avatar-present { background: linear-gradient(135deg, #bbf7d0, #dcfce7); color: #166534; }
 .att-avatar-absent { background: linear-gradient(135deg, #fecaca, #fee2e2); color: #991b1b; }
 .att-avatar-half { background: linear-gradient(135deg, #fde68a, #fef3c7); color: #92400e; }
+.att-avatar-stoppage { background: linear-gradient(135deg, #fed7aa, #ffedd5); color: #ea580c; }
 
 .att-emp-info { display: flex; flex-direction: column; gap: 2px; }
 .att-emp-name { font-size: 16px; font-weight: 800; color: #0f172a; }
 .att-emp-dept { font-size: 11.5px; color: var(--att-text-muted); }
 
 /* P/H/A Toggle */
-.att-toggle-group { display: inline-flex; background: #f1f5f9; border-radius: 12px; padding: 4px; gap: 4px; }
-.att-toggle-btn { width: 36px; height: 36px; border-radius: 9px; border: none; font-weight: 800; font-size: 13px; cursor: pointer; background: transparent; color: #94a3b8; }
-.att-p.active { background: #22c55e; color: white; box-shadow: 0 3px 8px rgba(34, 197, 94, 0.35); }
-.att-h.active { background: #f59e0b; color: white; box-shadow: 0 3px 8px rgba(245, 158, 11, 0.35); }
-.att-a.active { background: #ef4444; color: white; box-shadow: 0 3px 8px rgba(239, 68, 68, 0.35); }
+.att-toggle-group { display: inline-flex; background: #f4f6f8; border-radius: 16px; padding: 4px; gap: 4px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+.att-toggle-btn { width: 38px; height: 38px; border-radius: 12px; border: none; font-weight: 800; font-size: 14px; cursor: pointer; background: transparent; color: #94a3b8; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; display: flex; align-items: center; justify-content: center; padding: 0; }
+.att-toggle-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.att-p:hover:not(:disabled):not(.active) { color: #22c55e; background: #dcfce7; }
+.att-h:hover:not(:disabled):not(.active) { color: #f59e0b; background: #ffedd5; }
+.att-a:hover:not(:disabled):not(.active) { color: #ef4444; background: #fee2e2; }
+
+.att-p.active { background: #22c55e; color: white; box-shadow: 0 6px 14px -2px rgba(34, 197, 94, 0.5); }
+.att-h.active { background: #f59e0b; color: white; box-shadow: 0 6px 14px -2px rgba(245, 158, 11, 0.5); }
+.att-a.active { background: #ef4444; color: white; box-shadow: 0 6px 14px -2px rgba(239, 68, 68, 0.5); }
 
 /* Pagination */
 .att-pagination { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-top: 1px solid #f1f5f9; background: #fcfdfd; }
@@ -701,4 +708,111 @@
 .att-stoppage-warn .material-symbols-outlined {
   font-size: 18px;
   color: #ea580c;
+}
+
+/* ── Custom React DatePicker Scaling ── */
+.large-calendar-popper .react-datepicker {
+  font-size: 1.25rem !important;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+}
+.large-calendar-popper .react-datepicker__month {
+  margin: 1rem;
+}
+.large-calendar-popper .react-datepicker__day-name, 
+.large-calendar-popper .react-datepicker__day {
+  width: 2.5rem !important;
+  line-height: 2.5rem !important;
+  font-weight: 600;
+  border-radius: 8px;
+}
+.large-calendar-popper .react-datepicker__current-month {
+  font-size: 1.3rem !important;
+  font-weight: 800;
+  color: #006A4E;
+  margin-bottom: 8px;
+}
+.large-calendar-popper .react-datepicker__header {
+  background-color: white;
+  border-bottom: 1px solid #e2e8f0;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  padding-top: 12px;
+}
+.large-calendar-popper .react-datepicker__day--selected {
+  background-color: #006A4E !important;
+  color: white !important;
+}
+.large-calendar-popper .react-datepicker__day:hover {
+  background-color: #dcfce7 !important;
+}
+
+/* ── Premium Toast Notification ── */
+.att-toast {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px 16px 16px;
+  border-radius: 20px;
+  background: white;
+  box-shadow: 0 15px 45px -5px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #1e293b;
+  min-width: 320px;
+  animation: toastSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes toastSlideIn {
+  0% { transform: translateX(120%) scale(0.9); opacity: 0; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+.att-toast-msg {
+  flex: 1;
+}
+
+.att-toast-icon-bg {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.att-toast-icon-bg .material-symbols-outlined {
+  font-size: 24px;
+}
+
+.att-toast-success .att-toast-icon-bg { background: #dcfce7; color: #166534; }
+.att-toast-error .att-toast-icon-bg { background: #fee2e2; color: #991b1b; }
+.att-toast-warning .att-toast-icon-bg { background: #ffedd5; color: #9a3412; }
+.att-toast-info .att-toast-icon-bg { background: #e0f2fe; color: #075985; }
+
+.att-toast-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.att-toast-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
 }
