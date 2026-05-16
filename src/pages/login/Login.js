@@ -21,7 +21,7 @@ const Login = () => {
         setLoginStatus(null);
 
         try {
-            const data = await login(username, password);
+            await login(username, password);
             setLoginStatus('success');
             setIsLoading(false);
             
