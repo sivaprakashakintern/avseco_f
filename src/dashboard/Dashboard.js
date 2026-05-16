@@ -295,8 +295,9 @@ const Dashboard = () => {
     const onLeaveCount = baseLeaveCount + passedSundaysCount;
     const earnedSalary = (presentCount * 250) + (stoppageCount * 250) + (halfDayCount * 125);
 
-    const attendancePercentage = myCurrentMonthAtt.length > 0
-      ? ((presentCount / myCurrentMonthAtt.length) * 100).toFixed(1)
+    const totalDaysConsidered = myCurrentMonthAtt.length + passedSundaysCount;
+    const attendancePercentage = totalDaysConsidered > 0
+      ? ((presentCount / totalDaysConsidered) * 100).toFixed(1)
       : 0;
 
     // Last 7 days attendance for mini-heatmap
