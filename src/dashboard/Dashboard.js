@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../context/AppContext.js';
 import { useAuth } from '../context/AuthContext.js';
 import { formatCurrency } from '../utils/formatUtils.js';
-import { authApi } from '../utils/api.js';
 import dayjs from 'dayjs';
 import "./Dashboard.css";
 
@@ -26,14 +25,6 @@ const Dashboard = () => {
     productionHistory = []
   } = useAppContext();
   const [timeFilter, setTimeFilter] = useState("Monthly");
-  const [mySalaryData, setMySalaryData] = useState(null);
-
-  // Fetch employee's own salary data (only for non-admin)
-  useEffect(() => {
-    if (!isAdmin) {
-      authApi.getMySalary().then(data => setMySalaryData(data)).catch(() => {});
-    }
-  }, [isAdmin]);
 
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
@@ -266,8 +257,6 @@ const Dashboard = () => {
 
   if (!isAdmin) {
     const currentMonthYear = dayjs().format('YYYY-MM');
-    const lastMonthYear = dayjs().subtract(1, 'month').format('YYYY-MM');
-    const lastMonthName = dayjs().subtract(1, 'month').format('MMMM YYYY');
     const currentMonthName = dayjs().format('MMMM YYYY');
 
     // ── Attendance: filter by logged-in employee's ID ──────────────────────
@@ -311,9 +300,8 @@ const Dashboard = () => {
       return { label: d.format('dd'), dateStr, status: rec?.status || 'none' };
     });
 
-    // ── Salary: from dedicated /auth/my-salary API ────────────────────────
+    // ── Salary ────────────────────────
     const myEmployeeObj = employees?.find(e => (e._id || e.id) === myId);
-    const mySalary = myEmployeeObj?.salary ? Number(myEmployeeObj.salary) : 0;
 
     // ── Activity: sales or production ──────────────────────────────────────
     const isSalesDept = (user?.department || "").toLowerCase().includes("sales") || hasAccess("sales");
