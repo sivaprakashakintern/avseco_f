@@ -77,6 +77,8 @@ export const AuthProvider = ({ children }) => {
   const hasAccess = useCallback((moduleName) => {
     if (!user) return false;
     if (user.role && user.role.toLowerCase() === 'admin') return true;
+    // Every user should have access to the dashboard home page
+    if (moduleName === 'dashboard') return true;
     return user.modules && user.modules.includes(moduleName);
   }, [user]);
 

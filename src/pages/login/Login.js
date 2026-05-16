@@ -27,14 +27,7 @@ const Login = () => {
             
             // Short delay to show success message
             setTimeout(() => {
-                // Redirect based on access
-                if (data.role === 'admin' || (data.modules && data.modules.includes('dashboard'))) {
-                    navigate("/dashboard");
-                } else if (data.modules && data.modules.length > 0) {
-                    navigate(`/${data.modules[0]}`);
-                } else {
-                    navigate("/dashboard");
-                }
+                navigate("/dashboard");
             }, 1000);
         } catch (err) {
             setIsLoading(false);
