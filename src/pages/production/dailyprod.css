@@ -524,6 +524,9 @@
   border: none !important;
   cursor: pointer !important;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .premium-submit-btn-new:hover {
