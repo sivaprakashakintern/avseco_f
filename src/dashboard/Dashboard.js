@@ -282,7 +282,19 @@ const Dashboard = () => {
     const presentCount = myCurrentMonthAtt.filter(r => r.status === 'present').length;
     const absentCount = myCurrentMonthAtt.filter(r => r.status === 'absent').length;
     const halfDayCount = myCurrentMonthAtt.filter(r => r.status === 'half').length;
-    const onLeaveCount = myCurrentMonthAtt.filter(r => r.status === 'leave').length;
+    const baseLeaveCount = myCurrentMonthAtt.filter(r => r.status === 'leave').length;
+    const stoppageCount = myCurrentMonthAtt.filter(r => r.status === 'stoppage').length;
+    
+    // Sundays are considered Leave and do NOT add to salary
+    let passedSundaysCount = 0;
+    const todayNum = dayjs().date();
+    for(let i=1; i<=todayNum; i++) {
+      if(dayjs().date(i).day() === 0) passedSundaysCount++;
+    }
+
+    const onLeaveCount = baseLeaveCount + passedSundaysCount;
+    const earnedSalary = (presentCount * 250) + (stoppageCount * 250) + (halfDayCount * 125);
+
     const attendancePercentage = myCurrentMonthAtt.length > 0
       ? ((presentCount / myCurrentMonthAtt.length) * 100).toFixed(1)
       : 0;
@@ -300,16 +312,7 @@ const Dashboard = () => {
 
     // ── Salary: from dedicated /auth/my-salary API ────────────────────────
     const myEmployeeObj = employees?.find(e => (e._id || e.id) === myId);
-    const mySalary = mySalaryData?.salary ? Number(mySalaryData.salary) : (myEmployeeObj?.salary ? Number(myEmployeeObj.salary) : 0);
-
-    // Find last month's salary entry from API response
-    const lastMonthSalaryEntry = (mySalaryData?.salaryExpenses || []).find(ex => {
-      if (!ex.date) return false;
-      const parts = ex.date.split('-');
-      const exDate = parts[0].length === 4 ? dayjs(ex.date) : dayjs(`${parts[2]}-${parts[1]}-${parts[0]}`);
-      return exDate.isValid() && exDate.format('YYYY-MM') === lastMonthYear;
-    });
-    const lastMonthSalary = lastMonthSalaryEntry ? Number(lastMonthSalaryEntry.amount || 0) : mySalary;
+    const mySalary = myEmployeeObj?.salary ? Number(myEmployeeObj.salary) : 0;
 
     // ── Activity: sales or production ──────────────────────────────────────
     const isSalesDept = (user?.department || "").toLowerCase().includes("sales") || hasAccess("sales");
@@ -417,42 +420,43 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Last Month Salary Card */}
+          {/* Earned Salary Card */}
           <div className="emp-stat-card emp-salary-card">
             <div className="emp-card-header">
               <span className="emp-card-icon sal-icon">
-                <span className="material-symbols-outlined">payments</span>
+                <span className="material-symbols-outlined">account_balance_wallet</span>
               </span>
               <div>
-                <span className="emp-card-title">Last Month Salary</span>
-                <span className="emp-card-sub">{lastMonthName}</span>
+                <span className="emp-card-title">This Month Salary</span>
+                <span className="emp-card-sub">{currentMonthName}</span>
               </div>
             </div>
 
             <div className="emp-salary-amount">
-              ₹{lastMonthSalary > 0 ? lastMonthSalary.toLocaleString() : '—'}
+              ₹{earnedSalary > 0 ? earnedSalary.toLocaleString() : '0'}
             </div>
 
-            {mySalary > 0 && (
-              <div className="emp-salary-meta">
-                <div className="emp-salary-meta-row">
-                  <span>Monthly CTC</span>
-                  <strong>₹{mySalary.toLocaleString()}</strong>
-                </div>
-                {lastMonthSalaryEntry && (
-                  <div className="emp-salary-meta-row">
-                    <span>Credited On</span>
-                    <strong>{lastMonthSalaryEntry.date}</strong>
-                  </div>
-                )}
-                <div className="emp-salary-status">
-                  <span className="emp-salary-badge credited">✓ Credited</span>
-                </div>
+            <div className="emp-salary-meta">
+              <div className="emp-salary-meta-row">
+                <span>Present ({presentCount}d)</span>
+                <strong>₹{presentCount * 250}</strong>
               </div>
-            )}
-            {mySalary === 0 && (
-              <p className="emp-salary-empty">Salary details not available. Contact admin.</p>
-            )}
+              {stoppageCount > 0 && (
+                <div className="emp-salary-meta-row">
+                  <span>Maintenance/Stoppage ({stoppageCount}d)</span>
+                  <strong>₹{stoppageCount * 250}</strong>
+                </div>
+              )}
+              {halfDayCount > 0 && (
+                <div className="emp-salary-meta-row">
+                  <span>Half Days ({halfDayCount}d)</span>
+                  <strong>₹{halfDayCount * 125}</strong>
+                </div>
+              )}
+              <div className="emp-salary-status">
+                <span className="emp-salary-badge pending">Current Month Estimate</span>
+              </div>
+            </div>
           </div>
 
           {/* Activity Summary Card */}
