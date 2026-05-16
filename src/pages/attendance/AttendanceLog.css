@@ -42,6 +42,7 @@
   color: white;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-left-group { display: flex; flex-direction: column; }
@@ -49,11 +50,26 @@
 .page-title-white {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   font-size: 18px;
-  font-weight: 750;
+  font-weight: 850;
   color: #ffffff;
   margin: 0;
+  position: relative;
+  padding-left: 14px;
+}
+
+.page-title-white::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 24px;
+  background: #22c55e;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
 }
 
 .header-right-group { display: flex; align-items: center; gap: 12px; }
@@ -306,135 +322,167 @@
 .att-modal-body { padding: 24px; }
 .att-modal-footer { padding: 16px 24px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 10px; }
 
-/* ══════════════════════════════════════════════════════════
-   MOBILE DESIGN REFINEMENTS (≤ 768px)
-   ══════════════════════════════════════════════════════════ */
+/* ─── MOBILE DESIGN REFINEMENTS (≤ 768px) ─── */
 @media (max-width: 768px) {
-  .att-container { padding: 12px; }
-
-  .premium-header-green.att-header { padding: 12px 20px; border-radius: 16px; margin-bottom: 16px; }
-  .page-title-white { font-size: 20px !important; }
-
-  .mobile-save-header-btn {
-    background: #ffffff; color: #006A4E; border: none; border-radius: 50px;
-    padding: 6px 16px; font-size: 13px; font-weight: 750; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    display: flex; align-items: center; gap: 6px;
+  .att-container { 
+    padding: 12px 10px; 
+    background-color: #fcfdfe;
   }
 
-  .rotating { animation: rotate 1.5s linear infinite; font-size: 18px !important; }
-  @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .premium-header-green.att-header { 
+    padding: 18px 24px; 
+    border-radius: 16px; 
+    margin-bottom: 16px;
+    height: 74px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .page-title-white { 
+    font-size: 22px !important; 
+    font-weight: 850 !important;
+    padding-left: 14px !important;
+    gap: 12px !important;
+  }
 
-  /* Stack Date and Stoppage in one line */
+  .page-title-white::before {
+    height: 28px;
+    width: 5px;
+    left: 0;
+  }
+
+  /* Date Navigator - Stacked Vertically */
   .att-mobile-header-stack {
     display: flex;
-    flex-direction: row !important;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column !important;
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     background: white;
-    padding: 12px 16px;
-    border-radius: 18px;
-    border: 1px solid #f1f5f9;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1.5px solid #f1f5f9;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
   }
 
   .att-mobile-header-stack .att-date-controls {
-    width: auto !important;
-    gap: 8px !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .att-mobile-header-stack .att-date-btn {
+    width: 40px;
+    height: 40px;
+    background: #f8fafc;
+    border: none;
+    border-radius: 12px;
   }
 
   .att-mobile-header-stack .att-date-display {
-    padding: 6px 12px !important;
-    font-size: 13px !important;
+    flex: 1;
+    height: 40px;
+    justify-content: center;
+    font-size: 14px !important;
+    background: #f1f5f9;
+    border-radius: 12px;
+    font-weight: 800;
   }
 
   .att-mobile-header-stack .att-date-actions {
-    width: auto !important;
+    width: 100% !important;
     margin: 0 !important;
   }
 
   .att-mobile-header-stack .att-stoppage-btn {
-    width: auto !important;
-    padding: 0 14px !important;
-    height: 38px !important;
-    font-size: 12px !important;
-    border-radius: 10px !important;
+    width: 100% !important;
+    height: 44px !important;
+    font-size: 13px !important;
+    border-radius: 12px !important;
+    font-weight: 800 !important;
+    justify-content: center !important;
+    background: #fff7ed !important;
+    border: 1.5px solid #ffedd5 !important;
+    color: #ea580c !important;
   }
 
-  /* 2 by 2 Stats Grid */
+  /* 2x2 Stats Grid */
   .att-stats-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 16px;
   }
 
   .att-stat-card {
-    padding: 16px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    padding: 14px;
+    border-radius: 16px;
+    gap: 10px;
+    border: 1.5px solid #f1f5f9;
   }
 
-  .att-stat-icon { width: 40px; height: 40px; border-radius: 10px; }
-  .att-stat-icon .material-symbols-outlined { font-size: 20px; }
-  .att-stat-number { font-size: 22px; }
-  .att-stat-label { font-size: 10px; }
+  .att-stat-icon { 
+    width: 36px; 
+    height: 36px; 
+    border-radius: 10px; 
+  }
+  
+  .att-stat-icon .material-symbols-outlined { font-size: 18px; }
+  .att-stat-number { font-size: 20px; font-weight: 900; }
+  .att-stat-label { font-size: 9px; margin-bottom: 2px; }
 
-  /* Filter Row - Scrollable filters, but Actions on new line */
+  /* Filters Row - Search and Dept in one line */
   .att-filter-row { 
     margin-bottom: 16px; 
-    padding: 0; 
-    display: flex;
+    display: flex !important;
     flex-direction: column !important;
-    align-items: stretch;
     gap: 12px;
   }
 
   .att-filters-scroll {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    gap: 8px;
-    padding-bottom: 8px;
-    -webkit-overflow-scrolling: touch;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr; /* Two columns for selects */
+    gap: 10px;
+    width: 100%;
+    overflow: visible !important;
   }
   
-  .att-filters-scroll::-webkit-scrollbar {
-    display: none;
-  }
-
   .att-search-box { 
-    flex: 0 0 200px;
-    min-width: 0; 
+    grid-column: 1 / -1; /* Search alone on its own line */
     height: 44px; 
-    border-radius: 40px; 
+    border-radius: 12px;
+    min-width: 0 !important;
+    flex: none !important;
   }
 
-  .att-select-dept, .att-select-status {
-    flex: 0 0 140px;
-    min-width: 0;
+  .att-select-dept {
     height: 44px;
-    border-radius: 40px;
     font-size: 13px;
-    padding: 0 10px;
+    border-radius: 12px;
+    min-width: 0 !important;
+    flex: none !important;
   }
 
-  /* Dedicated Action Line for Mobile */
+  /* Status Filter side-by-side with Dept */
+  .att-select-status {
+    height: 44px;
+    border-radius: 12px;
+    font-size: 13px;
+  }
+
+  /* Action Buttons Line - All Present and Save 50/50 */
   .att-action-group {
-    display: flex !important;
-    width: 100% !important;
-    gap: 10px !important;
-    margin-bottom: 20px;
-    order: unset !important;
-    margin-left: 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
   }
 
   .att-mark-all-btn, .att-save-mobile-inline {
-    flex: 1 !important;
     height: 48px !important;
     border-radius: 14px !important;
     font-size: 14px !important;
+    font-weight: 800 !important;
+    display: flex !important;
     justify-content: center !important;
     margin: 0 !important;
   }
@@ -443,20 +491,17 @@
     background: #006A4E !important;
     color: white !important;
     border: none !important;
-    box-shadow: 0 4px 12px rgba(0, 106, 78, 0.2);
   }
 
-  .att-filter-spacer { display: none; }
-
-  /* Premium Row-based Employee Card */
-  .att-mobile-list { display: flex; flex-direction: column; gap: 10px; }
+  /* Employee List Items */
+  .att-mobile-list { gap: 8px; }
 
   .att-mobile-row-premium {
-    background: white;
+    padding: 12px;
     border-radius: 16px;
-    padding: 14px;
-    border: 1px solid #f1f5f9;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    background: white;
+    border: 1.5px solid #f1f5f9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -472,47 +517,27 @@
   }
 
   .att-mobile-avatar-small {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
     font-size: 13px;
   }
 
-  .att-mobile-info-compact {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
+  .att-mobile-name-bold { font-size: 14.5px; font-weight: 800; color: #0f172a; }
+  .att-mobile-dept-sub { font-size: 10.5px; font-weight: 600; color: #64748b; }
 
-  .att-mobile-name-bold {
-    font-size: 14.5px;
-    font-weight: 800;
-    color: #0f172a;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .att-mobile-dept-sub {
-    font-size: 11px;
-    color: #64748b;
-    font-weight: 500;
-  }
-
-  .att-mobile-row-right {
-    flex-shrink: 0;
-  }
+  .att-mobile-row-right { flex-shrink: 0; }
 
   .att-mobile-toggle-compact {
-    background: #f1f5f9;
-    padding: 3px;
-    border-radius: 10px;
+    padding: 3px !important;
+    border-radius: 10px !important;
+    background: #f1f5f9 !important;
   }
 
   .att-mobile-toggle-compact .att-toggle-btn {
     width: 32px;
     height: 32px;
-    font-size: 11.5px;
+    font-size: 12px;
     border-radius: 7px;
   }
 
@@ -520,8 +545,16 @@
   .att-empty-state { padding: 50px 20px; text-align: center; color: #94a3b8; background: white; border-radius: 18px; }
   .att-empty-state .material-symbols-outlined { font-size: 40px; margin-bottom: 8px; opacity: 0.5; }
 
-  /* Pagination */
-  .att-pagination { margin-top: 16px; padding: 16px; flex-direction: column; gap: 12px; background: white; border-radius: 18px; }
+  /* Pagination Styling */
+  .att-pagination { 
+    margin-top: 16px; 
+    padding: 16px; 
+    border-radius: 18px;
+    background: white;
+    border: 1.5px solid #f1f5f9;
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 
 /* ── Modal Form Elements (Global) ─────────────────────────── */

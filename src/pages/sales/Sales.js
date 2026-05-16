@@ -171,7 +171,9 @@ const Sales = () => {
     // Get filtered data for export based on type
     const getFilteredDataForExport = (type) => {
         if (type === 'all') return allTransactions;
-        return allTransactions.filter(t => t.paymentStatus?.toLowerCase() === type.toLowerCase());
+        return allTransactions.filter(t => 
+            (t.paidStatus || t.paymentStatus || "").toLowerCase() === type.toLowerCase()
+        );
     };
 
 
