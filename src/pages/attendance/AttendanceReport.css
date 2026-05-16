@@ -196,9 +196,9 @@
 
 .dropdown-menu {
     position: absolute;
-    top: calc(100% + 14px);
-    right: 0;
-    left: auto;
+    top: calc(100% + 4px); /* Reduced from +14px to be closer */
+    left: 0; /* Aligned to start */
+    right: auto;
     width: auto;
     min-width: 280px;
     background: #ffffff !important;
@@ -1017,10 +1017,12 @@
         width: 100%;
     }
 
-    .report-select .select-arrow {
-        position: absolute;
-        right: 8px;
-        top: 50%;
+    .report-select .select-ar.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px; /* Reduced from 12px to be closer */
         transform: translateY(-50%);
         font-size: 18px;
         color: #94a3b8;

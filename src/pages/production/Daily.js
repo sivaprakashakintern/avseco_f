@@ -84,7 +84,11 @@ const Production = () => {
   // Production Entry Form State
   const isToday = productionDate.isSame(dayjs(), 'day');
   const isYesterday = productionDate.isSame(dayjs().subtract(1, 'day'), 'day');
-  const canModify = isToday || isYesterday;
+  
+  // Allow entry for dates starting from May 1st, 2026, but not future dates
+  const isFromMayFirst = productionDate.valueOf() >= dayjs('2026-05-01').startOf('day').valueOf();
+  const isNotFuture = productionDate.valueOf() <= dayjs().endOf('day').valueOf();
+  const canModify = isFromMayFirst && isNotFuture;
   const [formData, setFormData] = useState({
     product: "",
     size: "",

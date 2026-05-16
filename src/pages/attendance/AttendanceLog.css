@@ -21,7 +21,7 @@
 
 /* ── Container ────────────────────────────────────────────── */
 .att-container {
-  padding: 40px 60px;
+  padding: 20px 32px; /* Reduced from 40px 60px */
   background-color: #f8faf9;
   min-height: 100vh;
   font-family: inherit;
@@ -129,7 +129,7 @@
   justify-content: space-between;
   align-items: center;
   background: white;
-  padding: 14px 20px;
+  padding: 10px 18px; /* Reduced from 14px 20px */
   border-radius: var(--att-radius);
   border: 1px solid var(--att-border);
   box-shadow: var(--att-shadow);
