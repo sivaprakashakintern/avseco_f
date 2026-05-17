@@ -282,7 +282,13 @@ const Dashboard = () => {
     }
 
     const onLeaveCount = baseLeaveCount + passedSundaysCount;
-    const earnedSalary = (presentCount * 250) + (stoppageCount * 250) + (halfDayCount * 125);
+    
+    // ── Salary Calculation ────────────────────────
+    const myEmployeeObj = employees?.find(e => String(e._id || e.id) === String(myId));
+    const baseMonthlySalary = Number(myEmployeeObj?.salary) || 0;
+    const perDaySalary = baseMonthlySalary > 0 ? (baseMonthlySalary / 26) : 250; // default to 250 if no salary set
+    
+    const earnedSalary = Math.round((presentCount * perDaySalary) + (stoppageCount * perDaySalary) + (halfDayCount * (perDaySalary / 2)));
 
     const totalDaysConsidered = myCurrentMonthAtt.length + passedSundaysCount;
     const attendancePercentage = totalDaysConsidered > 0
@@ -299,9 +305,6 @@ const Dashboard = () => {
       });
       return { label: d.format('dd'), dateStr, status: rec?.status || 'none' };
     });
-
-    // ── Salary ────────────────────────
-    const myEmployeeObj = employees?.find(e => (e._id || e.id) === myId);
 
     // ── Activity: sales or production ──────────────────────────────────────
     const isSalesDept = (user?.department || "").toLowerCase().includes("sales") || hasAccess("sales");
@@ -428,18 +431,18 @@ const Dashboard = () => {
             <div className="emp-salary-meta">
               <div className="emp-salary-meta-row">
                 <span>Present ({presentCount}d)</span>
-                <strong>₹{presentCount * 250}</strong>
+                <strong>₹{Math.round(presentCount * perDaySalary)}</strong>
               </div>
               {stoppageCount > 0 && (
                 <div className="emp-salary-meta-row">
                   <span>Maintenance/Stoppage ({stoppageCount}d)</span>
-                  <strong>₹{stoppageCount * 250}</strong>
+                  <strong>₹{Math.round(stoppageCount * perDaySalary)}</strong>
                 </div>
               )}
               {halfDayCount > 0 && (
                 <div className="emp-salary-meta-row">
                   <span>Half Days ({halfDayCount}d)</span>
-                  <strong>₹{halfDayCount * 125}</strong>
+                  <strong>₹{Math.round(halfDayCount * (perDaySalary / 2))}</strong>
                 </div>
               )}
               <div className="emp-salary-status">

@@ -924,6 +924,11 @@ const Employees = () => {
                         className="modal-input"
                         required
                       />
+                      {formData.salary && !isNaN(formData.salary) && (
+                        <div style={{ fontSize: '12px', color: '#006A4E', marginTop: '4px', fontWeight: '500' }}>
+                          Per Day Salary: ₹{(Number(formData.salary) / 26).toFixed(2)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1133,6 +1138,11 @@ const Employees = () => {
                         className="modal-input"
                         required
                       />
+                      {formData.salary && !isNaN(formData.salary) && (
+                        <div style={{ fontSize: '12px', color: '#006A4E', marginTop: '4px', fontWeight: '500' }}>
+                          Per Day Salary: ₹{(Number(formData.salary) / 26).toFixed(2)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
