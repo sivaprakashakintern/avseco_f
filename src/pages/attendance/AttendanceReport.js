@@ -139,7 +139,7 @@ const AttendanceReport = () => {
             worksheet.addRow([]);
 
             // ROW 5: COLUMN HEADERS
-            const headerValues = ['S.No', 'Employee Name', ...daysInCurrentView.map(d => d.date), 'PRESE\nNT', 'ABSE\nNT', 'HALF'];
+            const headerValues = ['S.No', 'Employee Name', ...daysInCurrentView.map(d => d.date), 'PRESENT', 'ABSENT', 'HALF'];
             const headerRow = worksheet.addRow(headerValues);
             headerRow.height = 30;
 
@@ -276,7 +276,7 @@ const AttendanceReport = () => {
                 worksheet.getRow(1).getCell(1).alignment = { horizontal: 'center' };
 
                 // Header row
-                const headerValues = ['S.No', 'Employee Name', ...days.map(d => d.date), 'PRESE NT', 'ABSE NT', 'HALF'];
+                const headerValues = ['S.No', 'Employee Name', ...days.map(d => d.date), 'PRESENT', 'ABSENT', 'HALF'];
                 const headerRow = worksheet.addRow(headerValues);
                 headerRow.eachCell((cell, colNum) => {
                     cell.border = thinBorder;
@@ -426,8 +426,8 @@ const AttendanceReport = () => {
                                         {day.date}
                                     </th>
                                 ))}
-                                <th className="excel-header-summary">PRESE NT</th>
-                                <th className="excel-header-summary">ABSE NT</th>
+                                <th className="excel-header-summary">PRESENT</th>
+                                <th className="excel-header-summary">ABSENT</th>
                                 <th className="excel-header-summary">HALF</th>
                             </tr>
                         </thead>
