@@ -284,7 +284,10 @@ const Dashboard = () => {
     const onLeaveCount = baseLeaveCount + passedSundaysCount;
     
     // ── Salary Calculation ────────────────────────
-    const myEmployeeObj = employees?.find(e => String(e._id || e.id) === String(myId));
+    const myEmployeeObj = employees?.find(e => 
+      String(e._id || e.id) === String(myId) || 
+      (e.email && user?.email && String(e.email).toLowerCase() === String(user?.email).toLowerCase())
+    );
     const baseMonthlySalary = Number(myEmployeeObj?.salary) || 0;
     const perDaySalary = baseMonthlySalary > 0 ? (baseMonthlySalary / 26) : 0; // default to 0 if no salary set
     
