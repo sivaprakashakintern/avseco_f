@@ -284,14 +284,20 @@ const Dashboard = () => {
     const onLeaveCount = baseLeaveCount + passedSundaysCount;
     
     // ── Salary Calculation ────────────────────────
-    const myEmployeeObj = employees?.find(e => 
-      String(e._id || e.id) === String(myId) || 
-      (e.email && user?.email && String(e.email).toLowerCase() === String(user?.email).toLowerCase())
-    );
-    const baseMonthlySalary = Number(myEmployeeObj?.salary) || 0;
-    const perDaySalary = baseMonthlySalary > 0 ? (baseMonthlySalary / 26) : 0; // default to 0 if no salary set
+    const myEmployeeObj = employees ? employees.find(e => {
+      const isIdMatch = myId && String(e._id || e.id) === String(myId);
+      const isEmailMatch = Boolean(e.email && user?.email && String(e.email).toLowerCase() === String(user.email).toLowerCase());
+      return isIdMatch || isEmailMatch;
+    }) : null;
     
-    const earnedSalary = Math.round((presentCount * perDaySalary) + (stoppageCount * perDaySalary) + (halfDayCount * (perDaySalary / 2)));
+    const baseMonthlySalary = myEmployeeObj && !isNaN(Number(myEmployeeObj.salary)) ? Number(myEmployeeObj.salary) : 0;
+    const perDaySalary = baseMonthlySalary > 0 ? (baseMonthlySalary / 26) : 0; 
+    
+    const earnedSalary = Math.round(
+      (presentCount * perDaySalary) + 
+      (stoppageCount * perDaySalary) + 
+      (halfDayCount * (perDaySalary / 2))
+    ) || 0;
 
     const totalDaysConsidered = myCurrentMonthAtt.length + passedSundaysCount;
     const attendancePercentage = totalDaysConsidered > 0
@@ -434,18 +440,18 @@ const Dashboard = () => {
             <div className="emp-salary-meta">
               <div className="emp-salary-meta-row">
                 <span>Present ({presentCount}d)</span>
-                <strong>₹{Math.round(presentCount * perDaySalary)}</strong>
+                <strong>₹{Math.round(presentCount * perDaySalary) || 0}</strong>
               </div>
               {stoppageCount > 0 && (
                 <div className="emp-salary-meta-row">
                   <span>Maintenance/Stoppage ({stoppageCount}d)</span>
-                  <strong>₹{Math.round(stoppageCount * perDaySalary)}</strong>
+                  <strong>₹{Math.round(stoppageCount * perDaySalary) || 0}</strong>
                 </div>
               )}
               {halfDayCount > 0 && (
                 <div className="emp-salary-meta-row">
                   <span>Half Days ({halfDayCount}d)</span>
-                  <strong>₹{Math.round(halfDayCount * (perDaySalary / 2))}</strong>
+                  <strong>₹{Math.round(halfDayCount * (perDaySalary / 2)) || 0}</strong>
                 </div>
               )}
               <div className="emp-salary-status">
