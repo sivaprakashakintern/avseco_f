@@ -20,6 +20,7 @@ const AttendanceReport = () => {
     const employees = useMemo(() => {
         return allEmployees.filter(emp => {
             if (emp.isActive === false) return false;
+            if (emp.role === 'admin') return false; // Filter out admin
             if (emp.name && emp.name.toLowerCase().includes("nithish kumar")) return false;
             return true;
         });
