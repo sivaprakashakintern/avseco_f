@@ -286,7 +286,7 @@ const Dashboard = () => {
     // ── Salary Calculation ────────────────────────
     const myEmployeeObj = employees?.find(e => String(e._id || e.id) === String(myId));
     const baseMonthlySalary = Number(myEmployeeObj?.salary) || 0;
-    const perDaySalary = baseMonthlySalary > 0 ? (baseMonthlySalary / 26) : 250; // default to 250 if no salary set
+    const perDaySalary = baseMonthlySalary > 0 ? (baseMonthlySalary / 26) : 0; // default to 0 if no salary set
     
     const earnedSalary = Math.round((presentCount * perDaySalary) + (stoppageCount * perDaySalary) + (halfDayCount * (perDaySalary / 2)));
 
