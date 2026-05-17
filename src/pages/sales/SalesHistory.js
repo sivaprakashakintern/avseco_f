@@ -581,11 +581,11 @@ const SalesHistory = () => {
                                 body, html { margin: 0 !important; padding: 0 !important; background: #fff !important; width: 850px !important; }
                             }
                             .ci-container { padding: 35px 0; background: #fff; width: 100%; min-height: 800px; display: flex; flex-direction: column; }
-                            .ci-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #045b54; padding: 0 40px 18px; margin-bottom: 24px; }
-                            .ci-logo-area { display: flex; align-items: center; gap: 18px; }
-                            .ci-logo-img { height: 70px; object-fit: contain; }
-                            .ci-company-name { font-size: 22px; font-weight: 900; color: #045b54; letter-spacing: -0.01em; }
-                            .ci-company-addr { font-size: 13px; color: #64748b; font-weight: 500; }
+                            .ci-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #045b54; padding: 0 40px 18px; margin-bottom: 24px; }
+                            .ci-logo-area { display: flex; align-items: flex-start; gap: 18px; }
+                            .ci-logo-img { height: 85px; object-fit: contain; margin-top: 4px; }
+                            .ci-company-name { font-size: 22px; font-weight: 900; color: #045b54; letter-spacing: -0.01em; margin-bottom: 4px; }
+                            .ci-company-addr { font-size: 13px; color: #64748b; font-weight: 500; line-height: 1.45; }
                             .ci-invoice-title { font-size: 28px; font-weight: 900; color: #045b54; text-align: right; letter-spacing: 0.05em; margin-bottom: 8px; }
                             .ci-invoice-meta { font-size: 13px; color: #334155; text-align: right; display: flex; flex-direction: column; gap: 4px; }
                             .ci-billto { display: flex; justify-content: space-between; padding: 0 40px; margin-bottom: 30px; gap: 40px; }
@@ -611,12 +611,16 @@ const SalesHistory = () => {
                                     <img src={logo} alt="Logo" className="ci-logo-img" />
                                     <div>
                                         <div className="ci-company-name">AVS ECO INDUSTRIES</div>
-                                        <div className="ci-company-addr">Tiruttani, Thiruvallur (Dt) - 631210</div>
+                                        <div className="ci-company-addr">3/2, Mettu Street, Veeraragavapuram (Village & Post),</div>
+                                        <div className="ci-company-addr">Thiruvalangadu, Thiruvallur (Dist), Tiruttani (TK)</div>
+                                        <div className="ci-company-addr">Pincode - 631210</div>
+                                        <div className="ci-company-addr" style={{ marginTop: '2px' }}><b>Contact No:</b> 80988 02581, 9444730165, 63836 32726</div>
                                     </div>
                                 </div>
                                 <div>
                                     <div className="ci-invoice-title">INVOICE</div>
                                     <div className="ci-invoice-meta">
+                                        <div><b>GSTIN:</b> {selectedBill.gstin || "N/A"}</div>
                                         <div><b>Invoice Number:</b> AVS-{selectedBill.invoiceNo}</div>
                                         <div><b>Date:</b> {selectedBill.date}</div>
                                     </div>
@@ -630,7 +634,7 @@ const SalesHistory = () => {
                                     <div className="ci-billto-row"><b>Phone:</b> {selectedBill.phone}</div>
                                 </div>
                                 <div className="ci-billto-right" style={{ textAlign: 'right' }}>
-                                    <div className="ci-billto-title">Project Address</div>
+                                    <div className="ci-billto-title">Customer Address</div>
                                     <div className="ci-billto-row">{selectedBill.address}</div>
                                 </div>
                             </div>

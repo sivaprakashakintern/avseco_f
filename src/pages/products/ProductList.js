@@ -972,7 +972,7 @@ const ProductList = () => {
         </div>
       )}
       {variantToDelete && (
-        <div className="modal-overlay variant-modal-overlay" style={{ zIndex: 3000 }} onClick={() => setVariantToDelete(null)}>
+        <div className="modal-overlay variant-modal-overlay" style={{ zIndex: 100005 }} onClick={() => setVariantToDelete(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Delete Size Variant</h3>

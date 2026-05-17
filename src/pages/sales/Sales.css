@@ -3123,6 +3123,112 @@ textarea.quick-entry-input {
   width: 100%;
 }
 
+/* ===== OVERALL BILL SUMMARY FIXED ===== */
+.overall-bill-summary-fixed {
+  margin-top: 28px;
+  margin-bottom: 42px;
+  padding: 16px 32px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 2px solid #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.summary-info-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.summary-icon-container {
+  background: #334155;
+  color: #ffffff;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-icon-container span {
+  font-size: 20px;
+}
+
+.summary-subtitle {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.summary-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.summary-amount-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.summary-main-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.summary-currency {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.summary-amount-value {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #0F172A;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.summary-gst-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.summary-payment-details {
+  margin-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  width: 100%;
+}
+
+.summary-advance-paid {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #166534;
+}
+
+.summary-balance-due {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #ef4444;
+}
+
 @media (max-width: 768px) {
   .stock-page {
     padding: 24px 20px 40px 20px !important;
@@ -3415,10 +3521,82 @@ textarea.quick-entry-input {
     display: none !important;
   }
 
-
   .btn-export-premium span.material-symbols-outlined {
     margin: 0 !important;
     font-size: 22px !important;
     color: white !important;
+  }
+
+  /* Overall Bill Summary Mobile View Adjustments */
+  .overall-bill-summary-fixed {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 10px 16px !important;
+    margin-top: 16px !important;
+    margin-bottom: 16px !important;
+    border-color: #334155 !important;
+    min-height: auto !important;
+  }
+
+  .summary-info-wrapper {
+    justify-content: flex-start !important;
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+    width: auto !important;
+    gap: 8px !important;
+  }
+
+  .summary-icon-container {
+    padding: 4px !important;
+    border-radius: 6px !important;
+  }
+
+  .summary-icon-container span {
+    font-size: 16px !important;
+  }
+
+  .summary-subtitle {
+    display: none !important;
+  }
+
+  .summary-title {
+    font-size: 0.9rem !important;
+  }
+
+  .summary-amount-wrapper {
+    align-items: flex-end !important;
+    width: auto !important;
+  }
+
+  .summary-amount-value {
+    font-size: 1.3rem !important;
+  }
+
+  .summary-currency {
+    font-size: 0.9rem !important;
+  }
+
+  .summary-gst-text {
+    font-size: 0.68rem !important;
+    margin-top: 2px !important;
+    text-align: right !important;
+  }
+
+  .summary-payment-details {
+    align-items: flex-end !important;
+    border-top: 1px dashed #e2e8f0 !important;
+    padding-top: 4px !important;
+    margin-top: 4px !important;
+    width: auto !important;
+  }
+
+  .summary-advance-paid {
+    font-size: 0.7rem !important;
+  }
+
+  .summary-balance-due {
+    font-size: 0.72rem !important;
   }
 }

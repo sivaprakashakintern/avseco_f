@@ -1273,34 +1273,34 @@ const Sales = () => {
                             </div>
                         )}
 
-                        <div className="overall-bill-summary-fixed" style={{ marginTop: '28px', marginBottom: '42px', padding: '12px 32px', background: '#ffffff', borderRadius: '12px', border: '2px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{ background: '#334155', color: '#ffffff', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>receipt_long</span>
+                        <div className="overall-bill-summary-fixed">
+                            <div className="summary-info-wrapper">
+                                <div className="summary-icon-container">
+                                    <span className="material-symbols-outlined">receipt_long</span>
                                 </div>
                                 <div>
-                                    <h4 style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Summary</h4>
-                                    <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>Total Bill</span>
+                                    <h4 className="summary-subtitle">Summary</h4>
+                                    <span className="summary-title">Total Bill</span>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                    <span style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A' }}>₹</span>
-                                    <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.01em', lineHeight: 1 }}>
+                            <div className="summary-amount-wrapper">
+                                <div className="summary-main-price">
+                                    <span className="summary-currency">₹</span>
+                                    <span className="summary-amount-value">
                                         {billItems.reduce((sum, item) => sum + item.amount + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </span>
                                 </div>
                                 {billItems.reduce((sum, item) => sum + (item.gstAmount || 0), 0) > 0 && (
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginTop: '4px' }}>
+                                    <span className="summary-gst-text">
                                         (Includes ₹{billItems.reduce((sum, item) => sum + (item.gstAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} GST)
                                     </span>
                                 )}
                                 {paidStatus === 'Partial' && amountPaid && parseFloat(amountPaid) > 0 && (
-                                    <div style={{ marginTop: '8px', borderTop: '1px dashed #e2e8f0', paddingTop: '8px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#166534' }}>
+                                    <div className="summary-payment-details">
+                                        <span className="summary-advance-paid">
                                             Advance Paid: ₹{parseFloat(amountPaid).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </span>
-                                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ef4444' }}>
+                                        <span className="summary-balance-due">
                                             Balance Due: ₹{(billItems.reduce((sum, item) => sum + item.amount + (item.gstAmount || 0), 0) - parseFloat(amountPaid)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </span>
                                     </div>

@@ -716,7 +716,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 99999;
   animation: fadeIn 0.2s ease;
 }
 
@@ -912,7 +912,7 @@
   padding: 5vh 0 15vh 0;
   /* Huge bottom space */
   overflow-y: auto;
-  z-index: 2010;
+  z-index: 99999;
 }
 
 .modal-content {
