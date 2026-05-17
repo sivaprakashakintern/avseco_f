@@ -290,7 +290,11 @@ const Dashboard = () => {
       return isIdMatch || isEmailMatch;
     }) : null;
     
-    const baseMonthlySalary = myEmployeeObj && !isNaN(Number(myEmployeeObj.salary)) ? Number(myEmployeeObj.salary) : 0;
+    // Fallback to user?.salary because non-admins cannot fetch the full employees list
+    const baseMonthlySalary = myEmployeeObj && !isNaN(Number(myEmployeeObj.salary)) 
+      ? Number(myEmployeeObj.salary) 
+      : (user?.salary && !isNaN(Number(user.salary)) ? Number(user.salary) : 0);
+      
     const perDaySalary = baseMonthlySalary > 0 ? (baseMonthlySalary / 26) : 0; 
     
     const earnedSalary = Math.round(

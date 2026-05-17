@@ -647,7 +647,7 @@ export const AppProvider = ({ children }) => {
         return (employees || []).map(emp => ({
             date: dateStr,
             empId: emp.id,
-            status: "present",
+            status: "none", // Changed from present to none so the UI is fresh/empty
             note: "",
             halfDayTime: null,
         }));
