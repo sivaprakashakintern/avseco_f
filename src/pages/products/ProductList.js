@@ -16,7 +16,6 @@ const ProductList = () => {
   const [showGroupDeleteModal, setShowGroupDeleteModal] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [variantToDelete, setVariantToDelete] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -104,11 +103,19 @@ const ProductList = () => {
         const cost = parseFloat(v.cost) || 0;
         const sell = parseFloat(v.sell) || 0;
 
+        // Robust, unique SKU generation to avoid Mongo collision
+        const skuBase = v.hsn?.trim() || formData.hsn?.trim() || formData.name.trim();
+        const cleanSkuBase = skuBase.replace(/[^a-zA-Z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+        const cleanSize = v.size.trim().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, "");
+        const generatedSku = `${cleanSkuBase}-${cleanSize}`.toLowerCase();
+
+        const cleanHsn = v.hsn?.trim() || formData.hsn?.trim() || "";
+
         await addProduct({
           name: formData.name.trim(),
-          sku: v.hsn ? `${v.hsn.trim()}-${v.size.replace(/\s+/g, '-')}` : `${formData.hsn.trim()}-${v.size.replace(/\s+/g, '-')}`,
-          hsnCode: v.hsn ? v.hsn.trim() : formData.hsn.trim(),
-          size: v.size,
+          sku: generatedSku,
+          hsnCode: cleanHsn,
+          size: v.size.trim(),
           category: "Plates",
           costPrice: cost,
           sellPrice: sell,
@@ -166,10 +173,21 @@ const ProductList = () => {
           // Update existing
           const cost = parseFloat(v.cost) || 0;
           const sell = parseFloat(v.sell) || 0;
+
+          // Clean HSN and generate unique SKU
+          let cleanHsn = (v.hsn || "").trim();
+          if (cleanHsn.startsWith("-") || cleanHsn.includes("-inch")) {
+            cleanHsn = "";
+          }
+          const skuBase = cleanHsn || formData.name.trim();
+          const cleanSkuBase = skuBase.replace(/[^a-zA-Z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+          const cleanSize = v.size.trim().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, "");
+          const generatedSku = `${cleanSkuBase}-${cleanSize}`.toLowerCase();
+
           await updateProduct(v._id || v.id, {
             ...v,
-            sku: v.hsn ? v.hsn.trim() : formData.hsn.trim(),
-            hsnCode: v.hsn ? v.hsn.trim() : formData.hsn.trim(),
+            sku: generatedSku,
+            hsnCode: cleanHsn,
             costPrice: cost,
             sellPrice: sell,
             margin: sell > 0 ? ((sell - cost) / sell * 100).toFixed(1) + "%" : "0.0%",
@@ -178,19 +196,30 @@ const ProductList = () => {
           const cost = parseFloat(v.cost) || 0;
           const sell = parseFloat(v.sell) || 0;
 
+          // Clean HSN and generate unique SKU
+          let cleanHsn = (v.hsn || "").trim();
+          if (!cleanHsn && formData.hsn) {
+            const trimmedGroup = formData.hsn.trim();
+            if (!trimmedGroup.startsWith("-") && !trimmedGroup.includes("-inch")) {
+              cleanHsn = trimmedGroup;
+            }
+          }
+          const skuBase = cleanHsn || formData.name.trim();
+          const cleanSkuBase = skuBase.replace(/[^a-zA-Z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+          const cleanSize = v.size.trim().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, "");
+          const generatedSku = `${cleanSkuBase}-${cleanSize}`.toLowerCase();
+
           await addProduct({
             name: formData.name.trim(),
-            sku: v.hsn ? `${v.hsn.trim()}-${v.size.replace(/\s+/g, '-')}` : `${formData.hsn.trim()}-${v.size.replace(/\s+/g, '-')}`,
-            hsnCode: v.hsn ? v.hsn.trim() : formData.hsn.trim(),
-            size: v.size,
+            sku: generatedSku,
+            hsnCode: cleanHsn,
+            size: v.size.trim(),
             category: "Plates",
             costPrice: cost,
             sellPrice: sell,
             margin: sell > 0 ? ((sell - cost) / sell * 100).toFixed(1) + "%" : "0.0%",
           });
         }
-        // If unchecked and existing, we could delete it, but user didn't explicitly ask for deletion here.
-        // Usually better to just leave it or keep it as is.
       }
 
       await fetchProducts();
@@ -209,25 +238,20 @@ const ProductList = () => {
     setVariants(newVariants);
   };
 
-  const handleIndividualDelete = (variantId, index, size) => {
+  const handleIndividualDelete = async (variantId, index, size) => {
     if (!variantId) return;
-    setVariantToDelete({ id: variantId, index, size });
-  };
-
-  const confirmVariantDelete = async () => {
-    if (!variantToDelete) return;
-    const { id, index } = variantToDelete;
     try {
-      await deleteProduct(id);
+      await deleteProduct(variantId);
       const newVariants = [...variants];
       newVariants.splice(index, 1);
       setVariants(newVariants);
-      setVariantToDelete(null);
-      setFeedbackMessage("Size variant deleted");
+      await fetchProducts();
+      setFeedbackMessage(`${size} variant deleted`);
       setTimeout(() => setFeedbackMessage(""), 3000);
     } catch (err) {
       console.error("Error deleting variant:", err);
       setFeedbackMessage("Failed to delete variant");
+      setTimeout(() => setFeedbackMessage(""), 3000);
     }
   };
 
@@ -966,39 +990,6 @@ const ProductList = () => {
               </button>
               <button className="modal-confirm delete" onClick={confirmGroupDelete}>
                 Delete All
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {variantToDelete && (
-        <div className="modal-overlay variant-modal-overlay" style={{ zIndex: 100005 }} onClick={() => setVariantToDelete(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Delete Size Variant</h3>
-              <button className="modal-close" onClick={() => setVariantToDelete(null)}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="modal-icon warning">
-                <span className="material-symbols-outlined">delete_forever</span>
-              </div>
-              <p className="modal-title">Delete {variantToDelete.size} Variant?</p>
-              <p className="modal-desc">
-                Are you sure you want to delete this specific size for <strong>{formData.name}</strong>?
-                This will permanently remove the variant from your catalog.
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="modal-cancel"
-                onClick={() => setVariantToDelete(null)}
-              >
-                Cancel
-              </button>
-              <button className="modal-confirm delete" onClick={confirmVariantDelete}>
-                Delete Variant
               </button>
             </div>
           </div>
