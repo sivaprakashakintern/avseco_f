@@ -48,6 +48,7 @@ const ProductList = () => {
       cost: "",
       sell: "",
       hsn: "",
+      gstRate: 0,
       checked: true,
       isNew: true
     }]);
@@ -115,6 +116,7 @@ const ProductList = () => {
           name: formData.name.trim(),
           sku: generatedSku,
           hsnCode: cleanHsn,
+          gstRate: parseFloat(v.gstRate) || 0,
           size: v.size.trim(),
           category: "Plates",
           costPrice: cost,
@@ -153,13 +155,13 @@ const ProductList = () => {
     const variantsFromDefault = DEFAULT_SIZES.map(s => {
       const match = group.find(v => v.size === s);
       return match ?
-        { ...match, checked: true, cost: match.costPrice, sell: match.sellPrice, hsn: match.hsnCode || match.sku, isExisting: true } :
-        { size: s, cost: "", sell: "", hsn: group[0]?.hsnCode || group[0]?.sku || "", checked: false, isNew: true };
+        { ...match, checked: true, cost: match.costPrice, sell: match.sellPrice, hsn: match.hsnCode || match.sku, gstRate: match.gstRate || 0, isExisting: true } :
+        { size: s, cost: "", sell: "", hsn: group[0]?.hsnCode || group[0]?.sku || "", gstRate: group[0]?.gstRate || 0, checked: false, isNew: true };
     });
 
     const customVariants = group
       .filter(v => !DEFAULT_SIZES.includes(v.size))
-      .map(v => ({ ...v, checked: true, cost: v.costPrice, sell: v.sellPrice, hsn: v.sku, isExisting: true }));
+      .map(v => ({ ...v, checked: true, cost: v.costPrice, sell: v.sellPrice, hsn: v.sku, gstRate: v.gstRate || 0, isExisting: true }));
 
     setVariants([...variantsFromDefault, ...customVariants]);
     setShowEditModal(true);
@@ -188,6 +190,7 @@ const ProductList = () => {
             ...v,
             sku: generatedSku,
             hsnCode: cleanHsn,
+            gstRate: parseFloat(v.gstRate) || 0,
             costPrice: cost,
             sellPrice: sell,
             margin: sell > 0 ? ((sell - cost) / sell * 100).toFixed(1) + "%" : "0.0%",
@@ -213,6 +216,7 @@ const ProductList = () => {
             name: formData.name.trim(),
             sku: generatedSku,
             hsnCode: cleanHsn,
+            gstRate: parseFloat(v.gstRate) || 0,
             size: v.size.trim(),
             category: "Plates",
             costPrice: cost,
@@ -256,7 +260,7 @@ const ProductList = () => {
   };
 
   const handleAddCustomSize = () => {
-    setVariants([...variants, { size: "", hsn: "", cost: "", sell: "", checked: true, isNew: true }]);
+    setVariants([...variants, { size: "", hsn: "", cost: "", sell: "", gstRate: 0, checked: true, isNew: true }]);
   };
 
 
@@ -529,6 +533,7 @@ const ProductList = () => {
                           <th style={{ width: '40px' }}>Tick</th>
                           <th>Size</th>
                           <th>HSN</th>
+                          <th>GST (%)</th>
                           <th>Cost (₹)</th>
                           <th>Sell (₹)</th>
                           <th style={{ width: '40px' }}></th>
@@ -563,6 +568,19 @@ const ProductList = () => {
                                   onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
                                   onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
                                   placeholder="HSN"
+                                  className="table-input"
+                                  style={{ fontSize: '12px' }}
+                                />
+                              )}
+                            </td>
+                            <td>
+                              {v.checked && (
+                                <input
+                                  type="number"
+                                  value={v.gstRate || ""}
+                                  onChange={(e) => handleVariantChange(idx, 'gstRate', e.target.value)}
+                                  onKeyDown={(e) => handleModalKeyDown(e, 'add')}
+                                  placeholder="GST %"
                                   className="table-input"
                                   style={{ fontSize: '12px' }}
                                 />
@@ -608,7 +626,7 @@ const ProductList = () => {
                           </tr>
                         ))}
                         <tr>
-                          <td colSpan="6" style={{ textAlign: 'center', padding: '12px' }}>
+                          <td colSpan="7" style={{ textAlign: 'center', padding: '12px' }}>
                             <button className="add-row-btn" onClick={handleAddCustomSize}>
                               <span className="material-symbols-outlined">add</span>
                               Add Another Size
@@ -658,6 +676,15 @@ const ProductList = () => {
                               value={v.hsn || ""}
                               onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
                               placeholder="HSN"
+                            />
+                          </div>
+                          <div className="mobile-input-group">
+                            <label>GST (%)</label>
+                            <input
+                              type="number"
+                              value={v.gstRate || ""}
+                              onChange={(e) => handleVariantChange(idx, 'gstRate', e.target.value)}
+                              placeholder="GST %"
                             />
                           </div>
                           <div className="mobile-price-row">
@@ -736,6 +763,7 @@ const ProductList = () => {
                           <th style={{ width: '40px' }}>Tick</th>
                           <th>Size</th>
                           <th>HSN</th>
+                          <th>GST (%)</th>
                           <th>Cost (₹)</th>
                           <th>Sell (₹)</th>
                           <th style={{ width: '40px' }}></th>
@@ -772,6 +800,19 @@ const ProductList = () => {
                                   onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
                                   onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
                                   placeholder="HSN"
+                                  className="table-input"
+                                  style={{ fontSize: '12px' }}
+                                />
+                              )}
+                            </td>
+                            <td>
+                              {v.checked && (
+                                <input
+                                  type="number"
+                                  value={v.gstRate || ""}
+                                  onChange={(e) => handleVariantChange(idx, 'gstRate', e.target.value)}
+                                  onKeyDown={(e) => handleModalKeyDown(e, 'edit')}
+                                  placeholder="GST %"
                                   className="table-input"
                                   style={{ fontSize: '12px' }}
                                 />
@@ -827,7 +868,7 @@ const ProductList = () => {
                           </tr>
                         ))}
                         <tr>
-                          <td colSpan="6" style={{ textAlign: 'center', padding: '12px' }}>
+                          <td colSpan="7" style={{ textAlign: 'center', padding: '12px' }}>
                             <button className="add-row-btn" onClick={handleAddCustomSize}>
                               <span className="material-symbols-outlined">add</span>
                               Add Another Size
@@ -885,6 +926,15 @@ const ProductList = () => {
                               value={v.hsn || ""}
                               onChange={(e) => handleVariantChange(idx, 'hsn', e.target.value)}
                               placeholder="HSN"
+                            />
+                          </div>
+                          <div className="mobile-input-group">
+                            <label>GST (%)</label>
+                            <input
+                              type="number"
+                              value={v.gstRate || ""}
+                              onChange={(e) => handleVariantChange(idx, 'gstRate', e.target.value)}
+                              placeholder="GST %"
                             />
                           </div>
                           <div className="mobile-price-row">

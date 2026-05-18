@@ -45,8 +45,8 @@ const Sales = () => {
             };
         });
 
-        // Return only products that have stock (as requested by user previously)
-        return processed.filter(p => p.stock > 0);
+        // Return all non-deleted products so billing works based on all products in database
+        return processed.filter(p => !p.isDeleted);
     }, [dbProducts, stockData]);
     const [showAddClientModal, setShowAddClientModal] = useState(false);
     const [newClientData, setNewClientData] = useState({
@@ -142,18 +142,21 @@ const Sales = () => {
         }
     }, [selectedBaseProduct, products, selectedSize]);
 
-    // Initialize unit price when product variant (name + size) is selected
+    // Initialize unit price, HSN code, and GST rate when product variant (name + size) is selected
     useEffect(() => {
         if (selectedProductObj) {
             setUnitPrice(selectedProductObj.price.toString());
-            // Always set HSN code to 4602 19 19, ignoring any incorrect values in DB
-            setHsnCode("4602 19 19");
+            // Use HSN code from product details, fallback to default if empty
+            setHsnCode(selectedProductObj.hsnCode || "4602 19 19");
+            if (selectedProductObj.gstRate !== undefined) {
+                setGstRate(selectedProductObj.gstRate.toString());
+            }
         } else if (selectedBaseProduct) {
             setHsnCode("4602 19 19");
         } else if (!hsnCode) {
             setHsnCode("4602 19 19");
         }
-    }, [selectedProductObj, selectedBaseProduct, products, hsnCode]);
+    }, [selectedProductObj, selectedBaseProduct, hsnCode]);
 
     // Auto-calculate Total Amount when Quantity or Unit Price change
     useEffect(() => {
@@ -197,9 +200,8 @@ const Sales = () => {
         const currentQtyInBill = existingItemIndex !== -1 ? billItems[existingItemIndex].qty : 0;
 
         if (currentQtyInBill + qtyToAdd > currentStock) {
-            setFeedbackMessage(`Error: Only ${currentStock - currentQtyInBill} pieces left (You already have ${currentQtyInBill} in bill)`);
+            setFeedbackMessage(`⚠️ Warning: Exceeds stock (Only ${currentStock} pieces available)`);
             setTimeout(() => setFeedbackMessage(""), 3000);
-            return;
         }
 
         setBillItems(prevItems => {
