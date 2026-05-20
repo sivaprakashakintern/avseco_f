@@ -2025,6 +2025,43 @@
   transform: scale(1.05);
 }
 
+/* ===== RAW MATERIAL WARNING BANNER ===== */
+.raw-material-warning-banner {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 2px solid #ef4444;
+  border-radius: 20px;
+  padding: 20px 30px;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.1);
+  animation: pulseDashboardAlert 2s infinite;
+}
+
+.raw-material-warning-banner:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 25px -5px rgba(239, 68, 68, 0.2);
+  border-color: #dc2626;
+}
+
+@keyframes pulseDashboardAlert {
+  0% {
+    box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.1);
+    border-color: #fca5a5;
+  }
+  50% {
+    box-shadow: 0 10px 25px -3px rgba(239, 68, 68, 0.3);
+    border-color: #ef4444;
+  }
+  100% {
+    box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.1);
+    border-color: #fca5a5;
+  }
+}
+
 /* ===== BALANCE COMPARISON MODULE (New) ===== */
 .balance-comparison-module {
   display: flex;

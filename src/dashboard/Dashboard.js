@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../context/AppContext.js';
 import { useAuth } from '../context/AuthContext.js';
@@ -61,6 +61,44 @@ const Dashboard = () => {
 
   const dynamicSizes = getAvailableSizes();
   const attendanceNotMarked = hasAccess('attendance') && (!todayStats || todayStats.total === 0);
+  
+  // ── Raw Material Stock Calculations for Dashboard Alerts ──
+  const rawMaterialPurchases = useMemo(() => {
+    try {
+      const saved = localStorage.getItem("raw_material_purchases");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error("Error reading raw material purchases in Dashboard:", e);
+    }
+    return [
+      {
+        id: 1,
+        date: "2026-05-18",
+        name: "Premium Leaf Material",
+        cost: 30000,
+        capacity: 23000
+      }
+    ];
+  }, []);
+
+  const totalProducedPlates = useMemo(() => {
+    return (productionHistory || []).reduce(
+      (sum, item) => sum + (Number(item.quantity) || Number(item.qty) || 0),
+      0
+    );
+  }, [productionHistory]);
+
+  const totalPurchasedCapacity = useMemo(() => {
+    return rawMaterialPurchases.reduce((sum, p) => sum + (Number(p.capacity) || 0), 0);
+  }, [rawMaterialPurchases]);
+
+  const remainingCapacity = useMemo(() => {
+    return Math.max(0, totalPurchasedCapacity - totalProducedPlates);
+  }, [totalPurchasedCapacity, totalProducedPlates]);
+
+  const alertThreshold = 10000;
+  const isRawMaterialAlertActive = remainingCapacity < alertThreshold;
+
   const formatUnits = (val) => val >= 1000 ? `${(val / 1000).toFixed(1)}K Units` : `${val} Units`;
 
   const getMetrics = (period) => {
@@ -616,6 +654,27 @@ const Dashboard = () => {
             <p>Please update today's attendance to see accurate productivity stats.</p>
           </div>
           <button className="mark-now-btn">MARK NOW →</button>
+        </div>
+      )}
+
+      {/* RAW MATERIAL STOCK ALERT */}
+      {hasAccess('stock') && isRawMaterialAlertActive && (
+        <div className="raw-material-warning-banner" onClick={() => navigate("/stock/raw-materials")}>
+          <div className="warning-icon" style={{ background: "#ef4444" }}>
+            <span className="material-symbols-outlined">warning</span>
+          </div>
+          <div className="warning-text">
+            <h4 style={{ color: "#991b1b", margin: 0, fontSize: "18px", fontWeight: 800 }}>⚠️ RAW MATERIAL STOCK IS LOW!</h4>
+            <p style={{ color: "#b91c1c", margin: "6px 0 0 0", fontSize: "14px", fontWeight: 600, lineHeight: "1.4" }}>
+              Remaining Leaf Capacity: <strong>{remainingCapacity.toLocaleString()} plates</strong> (Threshold: {alertThreshold.toLocaleString()} plates).
+              <br />
+              Please purchase raw materials immediately.
+            </p>
+          </div>
+          <button className="mark-now-btn" style={{ background: "#ef4444" }} onClick={(e) => {
+            e.stopPropagation();
+            navigate("/stock/raw-materials");
+          }}>BUY NOW →</button>
         </div>
       )}
 
