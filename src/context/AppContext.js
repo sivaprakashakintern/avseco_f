@@ -202,6 +202,7 @@ export const AppProvider = ({ children }) => {
 
     // ── Low Stock Notifications ──────────────────────────────────────────────────
     const [lastNotifiedProducts, setLastNotifiedProducts] = useState(new Set());
+    const [lastNotifiedRawMaterial, setLastNotifiedRawMaterial] = useState(false);
 
     useEffect(() => {
         if (!user || !isAdmin) return;
@@ -238,6 +239,66 @@ export const AppProvider = ({ children }) => {
         const timer = setTimeout(checkLowStock, 5000);
         return () => clearTimeout(timer);
     }, [stockData, notifications, user, lastNotifiedProducts, isAdmin]);
+
+    // ── Raw Material Low Stock Notifications ──
+    useEffect(() => {
+        if (!user || !isAdmin) return;
+
+        const checkRawMaterialStock = async () => {
+            let purchases = [];
+            try {
+                const saved = localStorage.getItem("raw_material_purchases");
+                if (saved) purchases = JSON.parse(saved);
+            } catch (e) {
+                console.error("Error reading purchases in AppContext:", e);
+            }
+            if (purchases.length === 0) {
+                purchases = [
+                    {
+                        id: 1,
+                        date: "2026-05-18",
+                        name: "Premium Leaf Material",
+                        cost: 30000,
+                        capacity: 23000
+                    }
+                ];
+            }
+
+            const totalProd = (productionHistory || []).reduce(
+                (sum, item) => sum + (Number(item.quantity) || Number(item.qty) || 0),
+                0
+            );
+            const totalPurchased = purchases.reduce((sum, p) => sum + (Number(p.capacity) || 0), 0);
+            const remaining = Math.max(0, totalPurchased - totalProd);
+
+            if (remaining < 10000) {
+                const alreadyNotifiedInSession = lastNotifiedRawMaterial;
+                const alreadyInNotifications = notifications.some(n => 
+                    !n.isRead && n.type === 'admin_push' && n.title.includes('RAW MATERIAL ALERT')
+                );
+
+                if (!alreadyNotifiedInSession && !alreadyInNotifications) {
+                    try {
+                        await notificationApi.sendPush({
+                            title: `⚠️ RAW MATERIAL ALERT: STOCK IS LOW`,
+                            message: `Remaining raw leaf material capacity has fallen below 10,000 plates. Current remaining: ${remaining.toLocaleString()} plates. Please purchase raw materials immediately.`,
+                            link: '/stock/raw-materials'
+                        });
+                        setLastNotifiedRawMaterial(true);
+                    } catch (e) {
+                        console.error("Failed to send raw material stock alert:", e);
+                    }
+                }
+            } else {
+                if (lastNotifiedRawMaterial) {
+                    setLastNotifiedRawMaterial(false);
+                }
+            }
+        };
+
+        const timer = setTimeout(checkRawMaterialStock, 5000);
+        return () => clearTimeout(timer);
+    }, [productionHistory, notifications, user, lastNotifiedRawMaterial, isAdmin]);
 
     // Auto-accrue salaries on the 1st of each month
     useEffect(() => {

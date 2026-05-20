@@ -80,7 +80,16 @@ const Sidebar = () => {
   // ===== NAVIGATION ITEMS WITH CORRECT PATHS =====
   const navItems = [
     { icon: "dashboard", label: "Dashboard", path: "/dashboard", module: "dashboard" },
-    { icon: "inventory_2", label: "Stock", path: "/stock", module: "stock" },
+    {
+      icon: "inventory_2",
+      label: "Stock",
+      path: "/stock",
+      module: "stock",
+      children: [
+        { label: "Finished Goods", path: "/stock" },
+        { label: "Raw Materials", path: "/stock/raw-materials" }
+      ]
+    },
     { icon: "format_list_bulleted", label: "Products", path: "/products", module: "products" },
 
     // ✅ PRODUCTION - SUB-MENU

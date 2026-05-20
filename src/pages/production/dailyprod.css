@@ -1930,3 +1930,24 @@
   font-size: 15px !important;
   cursor: pointer !important;
 }
+
+/* Pulsating Raw Material Alert Banner Animation & Styles */
+.pulsating-alert-banner {
+  animation: pulseAlert 2s infinite;
+  transition: all 0.3s ease;
+}
+
+@keyframes pulseAlert {
+  0% {
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15);
+    border-color: #fca5a5;
+  }
+  50% {
+    box-shadow: 0 4px 25px rgba(239, 68, 68, 0.35);
+    border-color: #ef4444;
+  }
+  100% {
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15);
+    border-color: #fca5a5;
+  }
+}

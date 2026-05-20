@@ -81,6 +81,45 @@ const Production = () => {
   } = useAppContext();
   // const { isAdmin } = useAuth(); // Commented out as it's unused and causing build errors
 
+  // ── Raw Material Stock Calculations for Alerts ──
+  const rawMaterialPurchases = React.useMemo(() => {
+    try {
+      const saved = localStorage.getItem("raw_material_purchases");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error("Error reading raw material purchases:", e);
+    }
+    return [
+      {
+        id: 1,
+        date: "2026-05-18",
+        name: "Premium Leaf Material",
+        cost: 30000,
+        capacity: 23000
+      }
+    ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productionHistory]);
+
+  const totalProducedPlates = React.useMemo(() => {
+    return (productionHistory || []).reduce(
+      (sum, item) => sum + (Number(item.quantity) || Number(item.qty) || 0),
+      0
+    );
+  }, [productionHistory]);
+
+  const totalPurchasedCapacity = React.useMemo(() => {
+    return rawMaterialPurchases.reduce((sum, p) => sum + (Number(p.capacity) || 0), 0);
+  }, [rawMaterialPurchases]);
+
+  const remainingCapacity = React.useMemo(() => {
+    return Math.max(0, totalPurchasedCapacity - totalProducedPlates);
+  }, [totalPurchasedCapacity, totalProducedPlates]);
+
+  const alertThreshold = 10000;
+
+  const isRawMaterialAlertActive = remainingCapacity < alertThreshold;
+
   // Production Entry Form State
   
   // Allow entry for dates starting from May 1st, 2026, but not future dates
@@ -483,6 +522,34 @@ const Production = () => {
       </div>
 
       <div className="dashboard-content-main">
+        {/* ===== RAW MATERIAL WARNING BANNER ===== */}
+        {isRawMaterialAlertActive && (
+          <div className="pulsating-alert-banner" style={{
+            background: "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)",
+            border: "1px solid #fca5a5",
+            borderRadius: "16px",
+            padding: "18px 24px",
+            marginBottom: "24px",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            boxShadow: "0 4px 15px rgba(239, 68, 68, 0.15)",
+            animation: "pulseAlert 2s infinite"
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: "36px", color: "#ef4444" }}>warning</span>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ color: "#991b1b", fontWeight: 800, margin: 0, fontSize: "1.1rem" }}>
+                ⚠️ RAW MATERIAL STOCK IS LOW!
+              </h3>
+              <p style={{ color: "#b91c1c", margin: "6px 0 0 0", fontSize: "0.95rem", fontWeight: 600, lineHeight: "1.4" }}>
+                Remaining Leaf Capacity: <strong>{remainingCapacity.toLocaleString()} plates</strong> (Threshold: {alertThreshold.toLocaleString()} plates).
+                <br />
+                Please purchase raw materials immediately.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="production-main-grid">
           <div className="production-form-section" ref={formRef}>
             <div className={`premium-entry-card ${editingId ? 'edit-mode-active' : ''}`}>

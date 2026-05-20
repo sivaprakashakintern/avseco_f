@@ -20,6 +20,7 @@ import AdminPushPanel from "./pages/admin/AdminPushPanel.js";
 
 // Stock Pages
 import StockOverview from "./pages/stock/StockOverview.js";
+import RawMaterials from "./pages/stock/RawMaterials.js";
 import Expenses from "./pages/expenses/Expenses.js";
 import ExpenseReport from "./pages/expenses/ExpenseReport.js";
 import StockTransfer from "./pages/stock/StockTransfer.js";
@@ -52,6 +53,7 @@ import Sales from "./pages/sales/Sales.js";
 import SalesHistory from "./pages/sales/SalesHistory.js";
 import Help from "./pages/Help.js";
 import ChangePasswordModal from "./components/ChangePasswordModal.jsx";
+import PrivacyPolicy from "./pages/privacy/PrivacyPolicy.js";
 
 // Public Route Component (Redirects to dashboard if already logged in)
 const PublicRoute = ({ children }) => {
@@ -122,6 +124,7 @@ const App = () => {
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/reset-password/:token" element={<PublicRoute><ResetPassword /></PublicRoute>} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
 
             {/* Dashboard */}
             <Route path="/dashboard" element={
@@ -134,6 +137,11 @@ const App = () => {
             <Route path="/stock" element={
               <ProtectedRoute module="stock">
                 <AppLayout><StockOverview /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/stock/raw-materials" element={
+              <ProtectedRoute module="stock">
+                <AppLayout><RawMaterials /></AppLayout>
               </ProtectedRoute>
             } />
             <Route path="/expenses" element={
