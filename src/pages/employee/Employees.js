@@ -1276,6 +1276,22 @@ const Employees = () => {
                       <span className="detail-label">Default Salary</span>
                       <span className="detail-value">₹{Number(selectedEmployee.salary || 0).toLocaleString()}</span>
                     </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Status</span>
+                      <span className="detail-value" style={{ display: 'block', marginTop: '4px' }}>
+                        <span className="pill-badge" style={{
+                          color: selectedEmployee.active !== false ? '#10b981' : '#ef4444',
+                          background: selectedEmployee.active !== false ? '#dcfce7' : '#fee2e2',
+                          padding: '4px 10px',
+                          borderRadius: '12px',
+                          fontWeight: '700',
+                          fontSize: '11px',
+                          display: 'inline-block'
+                        }}>
+                          {selectedEmployee.active !== false ? '🟢 Active' : '🔴 Deactivated'}
+                        </span>
+                      </span>
+                    </div>
                     <div className="detail-item" style={{ gridColumn: "span 2" }}>
                       <span className="detail-label">Address</span>
                       <span className="detail-value">{selectedEmployee.address || "N/A"}</span>
@@ -1306,6 +1322,30 @@ const Employees = () => {
                   >
                     <span className="material-symbols-outlined">edit</span>
                     Edit
+                  </button>
+                )}
+                {isAdmin && (
+                  <button
+                    className="view-modal-btn"
+                    style={{
+                      background: selectedEmployee.active !== false ? '#fee2e2' : '#dcfce7',
+                      color: selectedEmployee.active !== false ? '#ef4444' : '#10b981',
+                      border: 'none',
+                      borderRadius: '10px',
+                      padding: '8px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      fontSize: '12px'
+                    }}
+                    onClick={() => handleToggleActiveEmployee(selectedEmployee)}
+                  >
+                    <span className="material-symbols-outlined">
+                      {selectedEmployee.active !== false ? 'person_off' : 'check_circle'}
+                    </span>
+                    {selectedEmployee.active !== false ? 'Deactivate' : 'Activate'}
                   </button>
                 )}
                 <button
