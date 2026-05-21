@@ -157,13 +157,7 @@ const RawMaterials = () => {
     });
   };
 
-  const handleDeletePurchase = (id) => {
-    if (window.confirm("Are you sure you want to delete this purchase batch?")) {
-      setPurchases((prev) => prev.filter((p) => p.id !== id));
-      setFeedbackMessage("🗑️ Purchase batch deleted");
-      setTimeout(() => setFeedbackMessage(""), 3000);
-    }
-  };
+
 
   return (
     <div className="stock-overview-new raw-materials-dashboard">
@@ -347,69 +341,7 @@ const RawMaterials = () => {
         </div>
       </div>
 
-      {/* ===== PURCHASE HISTORY LOG TABLE ===== */}
-      <div className="premium-card" style={{ padding: "24px", marginBottom: "32px" }}>
-        <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#1e293b", marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <span className="material-symbols-outlined" style={{ color: "#6366f1" }}>local_shipping</span>
-          Raw Leaf Material Purchase Logs
-        </h3>
-        
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-            <thead>
-              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                <th style={{ padding: "12px 16px", color: "#475569", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase" }}>Purchase Date</th>
-                <th style={{ padding: "12px 16px", color: "#475569", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase" }}>Batch Name/Details</th>
-                <th style={{ padding: "12px 16px", color: "#475569", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", textAlign: "right" }}>Cost (₹)</th>
-                <th style={{ padding: "12px 16px", color: "#475569", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", textAlign: "right" }}>Plates Capacity</th>
-                <th style={{ padding: "12px 16px", color: "#475569", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", textAlign: "center" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {purchases.map((p) => (
-                <tr key={p.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "16px", color: "#334155", fontSize: "0.9rem" }}>
-                    {p.date.split("-").reverse().join("-")}
-                  </td>
-                  <td style={{ padding: "16px", color: "#0f172a", fontSize: "0.9rem", fontWeight: 600 }}>
-                    {p.name}
-                  </td>
-                  <td style={{ padding: "16px", color: "#0f172a", fontSize: "0.9rem", fontWeight: 700, textAlign: "right" }}>
-                    ₹{Number(p.cost).toLocaleString("en-IN")}
-                  </td>
-                  <td style={{ padding: "16px", color: "#10b981", fontSize: "0.9rem", fontWeight: 700, textAlign: "right" }}>
-                    {Number(p.capacity).toLocaleString()} plates
-                  </td>
-                  <td style={{ padding: "16px", textAlign: "center" }}>
-                    <button
-                      onClick={() => handleDeletePurchase(p.id)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#ef4444",
-                        padding: "6px",
-                        borderRadius: "6px"
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "#fee2e2"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "none"}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>delete</span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {purchases.length === 0 && (
-                <tr>
-                  <td colSpan="5" style={{ padding: "24px", textAlign: "center", color: "#64748b" }}>
-                    No purchase batches recorded yet. Click "Purchase Raw Material" to get started!
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+
 
       {showAddModal && (
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
