@@ -3370,4 +3370,81 @@
   }
 }
 
+/* Custom styles for Turnover Size Charts on Dashboard */
+.size-charts-row {
+  grid-template-columns: 1fr 1fr !important;
+  margin-bottom: 24px;
+}
+
+@media screen and (max-width: 900px) {
+  .size-charts-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.size-chart-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 320px;
+}
+
+.size-chart-card .css-size-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.size-chart-card .size-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.size-chart-card .s-lbl {
+  width: 70px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--avs-text-light, #64748b);
+  text-transform: uppercase;
+}
+
+.size-chart-card .s-bar-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.size-chart-card .s-bar {
+  height: 14px;
+  border-radius: 8px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+
+.size-chart-card .s-qty {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--avs-text-dark, #0f172a);
+  min-width: 40px;
+  text-align: right;
+}
+
+.size-chart-card .empty-chart-msg {
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--avs-text-light, #64748b);
+  font-style: italic;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+
 

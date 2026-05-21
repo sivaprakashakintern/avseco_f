@@ -31,6 +31,18 @@ export const formatCurrency = (amount, shorten = false) => {
 };
 
 /**
+ * Calculate equivalent raw material capacity (plates) from purchase cost.
+ * Uses the same rule as RawMaterials: 30000 -> 23000, 40000 -> 33000.
+ * @param {number|string} cost
+ * @returns {number}
+ */
+export const calculateRawMaterialCapacity = (cost) => {
+    const costNum = Number(cost) || 0;
+    if (costNum <= 0) return 0;
+    return costNum >= 7000 ? Math.round(costNum - 7000) : Math.round(costNum * 0.7667);
+};
+
+/**
  * Returns a dynamic font size class or style based on length
  * @param {string|number} value - The value to check
  * @returns {object} Inline style object

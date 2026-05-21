@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext.js";
 import { attendanceApi } from "../../utils/api.js";
 import "./AttendanceReport.css";
@@ -16,11 +17,25 @@ const AttendanceReport = () => {
     const [showYearDropdown, setShowYearDropdown] = useState(false);
     const [showMonthDropdown, setShowMonthDropdown] = useState(false);
     const [showExportDropdown, setShowExportDropdown] = useState(false);
+    const location = useLocation();
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const monthParam = parseInt(params.get('month'), 10);
+        const yearParam = parseInt(params.get('year'), 10);
+
+        if (!Number.isNaN(monthParam) && monthParam >= 1 && monthParam <= 12) {
+            setSelectedMonth(monthParam - 1);
+        }
+        if (!Number.isNaN(yearParam) && yearParam >= 2000 && yearParam <= 2100) {
+            setSelectedYear(yearParam);
+        }
+    }, [location.search]);
 
     const employees = useMemo(() => {
         return allEmployees.filter(emp => {
-            if (emp.isActive === false) return false;
-            if (emp.role === 'admin') return false; // Filter out admin
+            // Show ALL employees (including deactivated) in the report for historical records
+            if (emp.role === 'admin') return false; // Filter out admin only
             if (emp.name && emp.name.toLowerCase().includes("nithish kumar")) return false;
             return true;
         });
@@ -54,7 +69,7 @@ const AttendanceReport = () => {
         employees.forEach(emp => {
             const empData = {
                 daily: [],
-                stats: { present: 0, absent: 0, half: 0, sundayWork: 0 }
+                stats: { present: 0, absent: 0, half: 0, stoppage: 0, sundayWork: 0 }
             };
 
             daysInCurrentView.forEach(day => {
@@ -80,6 +95,7 @@ const AttendanceReport = () => {
                         empData.stats.half += 1;
                     } else if (record.status === 'stoppage') {
                         displayStatus = 'WS';
+                        empData.stats.stoppage += 1;
                     }
                 }
                 empData.daily.push(displayStatus);
@@ -95,7 +111,7 @@ const AttendanceReport = () => {
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet(`${months[selectedMonth]} ${selectedYear}`);
 
-            const totalCols = daysInCurrentView.length + 5; // S.No + Name + days + PRES + ABS + HALF
+            const totalCols = daysInCurrentView.length + 8; // S.No + Name + days + PRES + ABS + HALF + TOTAL DAYS + TOTAL WRK DAYS + WORK STOPPAGE
 
             // Helper: column letter from number
             const colLetter = (n) => {
@@ -139,7 +155,7 @@ const AttendanceReport = () => {
             worksheet.addRow([]);
 
             // ROW 5: COLUMN HEADERS
-            const headerValues = ['S.No', 'Employee Name', ...daysInCurrentView.map(d => d.date), 'PRESENT', 'ABSENT', 'HALF'];
+            const headerValues = ['S.No', 'Employee Name', ...daysInCurrentView.map(d => d.date), 'PRESENT', 'ABSENT', 'HALF', 'TOTAL DAYS', 'TOTAL WRK DAYS', 'WORK STOPPAGE'];
             const headerRow = worksheet.addRow(headerValues);
             headerRow.height = 30;
 
@@ -170,7 +186,10 @@ const AttendanceReport = () => {
                     ...data.daily.map(s => s === 'Sunday' ? 'SUN' : (s === '-' ? '' : s)),
                     data.stats.present,
                     data.stats.absent,
-                    data.stats.half
+                    data.stats.half,
+                    daysInCurrentMonthCount,
+                    26,
+                    data.stats.stoppage || 0
                 ];
                 const row = worksheet.addRow(rowValues);
                 row.height = 18;
@@ -208,6 +227,9 @@ const AttendanceReport = () => {
             worksheet.getColumn(daysInCurrentView.length + 3).width = 9;
             worksheet.getColumn(daysInCurrentView.length + 4).width = 9;
             worksheet.getColumn(daysInCurrentView.length + 5).width = 6;
+            worksheet.getColumn(daysInCurrentView.length + 6).width = 12;
+            worksheet.getColumn(daysInCurrentView.length + 7).width = 15;
+            worksheet.getColumn(daysInCurrentView.length + 8).width = 15;
 
             // FREEZE: S.No + Name + header rows
             worksheet.views = [{ state: 'frozen', xSplit: 2, ySplit: 5 }];
@@ -256,7 +278,7 @@ const AttendanceReport = () => {
                     days.push({ date: i, isSunday: dateObj.getDay() === 0, isoDate: iso });
                 }
                 
-                const totalCols = days.length + 5;
+                const totalCols = days.length + 8;
                 const colLetter = (n) => {
                     let s = '';
                     while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
@@ -276,7 +298,7 @@ const AttendanceReport = () => {
                 worksheet.getRow(1).getCell(1).alignment = { horizontal: 'center' };
 
                 // Header row
-                const headerValues = ['S.No', 'Employee Name', ...days.map(d => d.date), 'PRESENT', 'ABSENT', 'HALF'];
+                const headerValues = ['S.No', 'Employee Name', ...days.map(d => d.date), 'PRESENT', 'ABSENT', 'HALF', 'TOTAL DAYS', 'TOTAL WRK DAYS', 'WORK STOPPAGE'];
                 const headerRow = worksheet.addRow(headerValues);
                 headerRow.eachCell((cell, colNum) => {
                     cell.border = thinBorder;
@@ -286,12 +308,15 @@ const AttendanceReport = () => {
                         cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
                     } else if (colNum <= days.length + 2) {
                         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCD34D' } };
+                    } else {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } };
+                        cell.font = { bold: true, size: 8, color: { argb: 'FF0F766E' }, name: 'Arial' };
                     }
                 });
 
                 // Data rows
                 employees.forEach((emp, index) => {
-                    const empStats = { present: 0, absent: 0, half: 0 };
+                    const empStats = { present: 0, absent: 0, half: 0, stoppage: 0 };
                     const dailyStatus = days.map(day => {
                         if (day.isSunday) return 'SUN';
                         const record = (yearMap[day.isoDate] || []).find(r => r.empId === emp.id);
@@ -299,17 +324,44 @@ const AttendanceReport = () => {
                         if (record.status === 'present') { empStats.present++; return 'P'; }
                         if (record.status === 'absent') { empStats.absent++; return 'A'; }
                         if (record.status === 'half') { empStats.present += 0.5; empStats.half++; return 'HD'; }
+                        if (record.status === 'stoppage') { empStats.stoppage++; return 'WS'; }
                         return '';
                     });
 
-                    const row = worksheet.addRow([index + 1, emp.name, ...dailyStatus, empStats.present, empStats.absent, empStats.half]);
-                    row.eachCell((cell) => { cell.border = thinBorder; cell.alignment = { horizontal: 'center' }; });
+                    const row = worksheet.addRow([
+                        index + 1,
+                        emp.name,
+                        ...dailyStatus,
+                        empStats.present,
+                        empStats.absent,
+                        empStats.half,
+                        daysInMonth,
+                        26,
+                        empStats.stoppage
+                    ]);
+                    row.eachCell((cell, colNum) => {
+                        cell.border = thinBorder;
+                        cell.font = { size: 9, name: 'Arial' };
+                        cell.alignment = { horizontal: colNum === 2 ? 'left' : 'center', vertical: 'middle' };
+                        if (colNum === 2) {
+                            cell.font = { size: 9, name: 'Arial', bold: true };
+                        }
+                        if (colNum > days.length + 2) {
+                            cell.font = { bold: true, size: 9, name: 'Arial' };
+                        }
+                    });
                 });
 
                 // Auto width
                 worksheet.getColumn(1).width = 5;
                 worksheet.getColumn(2).width = 20;
-                for (let i = 3; i <= days.length + 5; i++) worksheet.getColumn(i).width = 4;
+                for (let i = 3; i <= days.length + 2; i++) worksheet.getColumn(i).width = 4;
+                worksheet.getColumn(days.length + 3).width = 9;
+                worksheet.getColumn(days.length + 4).width = 9;
+                worksheet.getColumn(days.length + 5).width = 6;
+                worksheet.getColumn(days.length + 6).width = 12;
+                worksheet.getColumn(days.length + 7).width = 15;
+                worksheet.getColumn(days.length + 8).width = 15;
             }
 
             const buffer = await workbook.xlsx.writeBuffer();
@@ -435,10 +487,13 @@ const AttendanceReport = () => {
                             {employees.map((emp, index) => {
                                 const data = currentMonthData[emp.id];
                                 return (
-                                    <tr key={emp.id}>
+                                    <tr key={emp.id} style={emp.active === false ? { opacity: 0.7 } : {}}>
                                         <td className="sticky-col-no excel-cell-sno">{index + 1}</td>
                                         <td className="sticky-col excel-cell-name">
                                             <span className="emp-name-excel">{emp.name}</span>
+                                            {emp.active === false && (
+                                                <span style={{ display: 'block', fontSize: '10px', color: '#dc2626', fontWeight: '700', marginTop: '1px', letterSpacing: '0.3px' }}>Deactivated</span>
+                                            )}
                                         </td>
                                         {data.daily.map((status, idx) => {
                                             const isSun = daysInCurrentView[idx]?.isSunday;

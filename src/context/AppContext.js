@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { employeeApi, expenseApi, clientApi, productionApi, attendanceApi, productsApi, productionTargetApi, salesApi, notificationApi, turnoverApi } from "../utils/api.js";
+import { calculateRawMaterialCapacity } from "../utils/formatUtils.js";
 import { useAuth } from "./AuthContext.js";
 
 const DEPARTMENTS = ["All Departments", "CEO", "HR", "Sales Team", "IT Admin", "Operator", "Maintenance", "Machine Operator", "Cleaning", "Driver", "Others"];
@@ -44,6 +45,52 @@ export const AppProvider = ({ children }) => {
     }, []);
 
     const todayStr = toLocalDateKey(new Date());
+
+    const syncRawMaterialPurchase = useCallback((expense) => {
+        if (!expense || expense.category !== "Material") return;
+        const costNum = Number(expense.amount || expense.cost || 0);
+        if (costNum <= 0) return;
+
+        try {
+            const saved = localStorage.getItem("raw_material_purchases");
+            const purchases = saved ? JSON.parse(saved) : [];
+            const sourceExpenseId = expense.id || expense._id || String(Date.now());
+            const newRecord = {
+                id: `expense-${sourceExpenseId}`,
+                sourceExpenseId,
+                date: expense.date || toLocalDateKey(new Date()),
+                name: expense.description || "Material Purchase",
+                cost: costNum,
+                capacity: calculateRawMaterialCapacity(costNum)
+            };
+            const existingIndex = purchases.findIndex(p => p.sourceExpenseId === sourceExpenseId);
+            if (existingIndex >= 0) {
+                purchases[existingIndex] = { ...purchases[existingIndex], ...newRecord };
+            } else {
+                purchases.unshift(newRecord);
+            }
+            localStorage.setItem("raw_material_purchases", JSON.stringify(purchases));
+            window.dispatchEvent(new Event("rawMaterialPurchasesUpdated"));
+        } catch (error) {
+            console.error("Failed to sync raw material purchase with expense:", error);
+        }
+    }, [toLocalDateKey]);
+
+    const removeRawMaterialPurchase = useCallback((expenseId) => {
+        if (!expenseId) return;
+        try {
+            const saved = localStorage.getItem("raw_material_purchases");
+            if (!saved) return;
+            const purchases = JSON.parse(saved);
+            const filtered = purchases.filter(p => p.sourceExpenseId !== expenseId && p.id !== `expense-${expenseId}`);
+            if (filtered.length !== purchases.length) {
+                localStorage.setItem("raw_material_purchases", JSON.stringify(filtered));
+                window.dispatchEvent(new Event("rawMaterialPurchasesUpdated"));
+            }
+        } catch (error) {
+            console.error("Failed to remove raw material purchase record:", error);
+        }
+    }, []);
 
     // ── Fetch Initial Data ──────────────────────────────────────────────────────
     const fetchData = useCallback(async (isInitial = false, isBackground = false) => {
@@ -462,33 +509,42 @@ export const AppProvider = ({ children }) => {
         setIsUpdating(true);
         try {
             const data = await expenseApi.add(exp);
-            setExpenses(prev => [{ ...data, id: data._id }, ...prev]);
+            const expense = { ...exp, ...data, id: data._id };
+            setExpenses(prev => [{ ...expense }, ...prev]);
+            syncRawMaterialPurchase(expense);
             return data;
         } finally {
             setIsUpdating(false);
         }
-    }, []);
+    }, [syncRawMaterialPurchase]);
 
     const updateExpense = useCallback(async (id, updates) => {
         setIsUpdating(true);
         try {
             const data = await expenseApi.update(id, updates);
-            setExpenses(prev => prev.map(e => e.id === id ? { ...data, id: data._id } : e));
+            const expense = { ...data, id: data._id };
+            setExpenses(prev => prev.map(e => e.id === id ? expense : e));
+            if (expense.category === "Material") {
+                syncRawMaterialPurchase(expense);
+            } else {
+                removeRawMaterialPurchase(id);
+            }
             return data;
         } finally {
             setIsUpdating(false);
         }
-    }, []);
+    }, [removeRawMaterialPurchase, syncRawMaterialPurchase]);
 
     const deleteExpense = useCallback(async (id) => {
         setIsUpdating(true);
         try {
             await expenseApi.delete(id);
             setExpenses(prev => prev.filter(e => e.id !== id));
+            removeRawMaterialPurchase(id);
         } finally {
             setIsUpdating(false);
         }
-    }, []);
+    }, [removeRawMaterialPurchase]);
 
     // CLIENTS
     const addClient = useCallback(async (client) => {
