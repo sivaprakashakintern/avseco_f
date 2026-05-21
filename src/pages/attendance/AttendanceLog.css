@@ -798,21 +798,31 @@
 .att-toast-info .att-toast-icon-bg { background: #e0f2fe; color: #075985; }
 
 .att-toast-close {
-  background: transparent;
+  background: none;
   border: none;
   color: #94a3b8;
   cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  transition: all 0.2s ease;
-  margin-left: auto;
 }
 
 .att-toast-close:hover {
   background: #f1f5f9;
-  color: #0f172a;
+  color: #475569;
+}
+
+/* Deactivated Employee Row styling */
+.deactivated-attendance-row {
+  opacity: 0.45;
+  filter: grayscale(90%);
+  pointer-events: none;
+  cursor: not-allowed;
+  background-color: #f8fafc !important;
+}
+
+.deactivated-attendance-row td {
+  border-bottom-color: #e2e8f0 !important;
 }

@@ -6,6 +6,13 @@ import { formatCurrency } from '../utils/formatUtils.js';
 import dayjs from 'dayjs';
 import "./Dashboard.css";
 
+// Centralized Color Map for Product Sizes (Inches)
+const SIZE_COLOR_MAP = {
+  '6': '#3b82f6', '7': '#10b981', '8': '#8b5cf6', '9': '#f59e0b',
+  '10': '#f43f5e', '11': '#06b6d4', '12': '#84cc16', '13': '#4f46e5',
+  '14': '#db2777', '15': '#14b8a6'
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { hasAccess, user, isAdmin } = useAuth();
@@ -25,6 +32,7 @@ const Dashboard = () => {
     productionHistory = []
   } = useAppContext();
   const [timeFilter, setTimeFilter] = useState("Monthly");
+  const [showSalaryDetails, setShowSalaryDetails] = useState(false);
 
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
@@ -280,9 +288,77 @@ const Dashboard = () => {
 
   const currentData = dashboardData[timeFilter];
 
+  // Size breakdown charts calculations for Dashboard
+  const sizeChartsData = useMemo(() => {
+    const now = new Date();
+    const isYearly = timeFilter === 'Yearly';
+    const isWeekly = timeFilter === 'Weekly';
+
+    const safeDate = (info) => {
+      if (!info) return new Date(0);
+      if (info instanceof Date) return info;
+      const dStr = String(info);
+      const match = dStr.match(/(\d{1,4})[-/](\d{1,2})[-/](\d{1,4})/);
+      if (match) {
+        const [, p1, p2, p3] = match;
+        if (p1.length === 4) return new Date(Number(p1), Number(p2) - 1, Number(p3));
+        if (p3.length === 4) return new Date(Number(p3), Number(p2) - 1, Number(p1));
+      }
+      const d = new Date(dStr);
+      return isNaN(d.getTime()) ? new Date(0) : d;
+    };
+
+    const filteredSales = (salesHistory || []).filter(s => {
+      if (s.status && (s.status.toLowerCase().includes('cancel') || s.status.toLowerCase().includes('reject'))) return false;
+      const d = safeDate(s.date || s.createdAt);
+      if (isYearly) return d.getFullYear() === now.getFullYear();
+      if (isWeekly) return (now - d) / (1000 * 60 * 60 * 24) <= 7;
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+
+    const salesSizeMap = {};
+    filteredSales.forEach(s => {
+      if (s.saleItems && s.saleItems.length > 0) {
+        s.saleItems.forEach(item => {
+          const sz = (item.size || '').toString().trim() || 'Other';
+          salesSizeMap[sz] = (salesSizeMap[sz] || 0) + Number(item.qty || item.quantity || 0);
+        });
+      } else {
+        const sz = (s.size || '').toString().trim() || 'Other';
+        salesSizeMap[sz] = (salesSizeMap[sz] || 0) + Number(s.qty || s.quantity || 0);
+      }
+    });
+    const salesSizeChart = Object.keys(salesSizeMap)
+      .map(name => ({ name, SalesQty: salesSizeMap[name] }))
+      .sort((a, b) => (parseFloat(a.name) || 0) - (parseFloat(b.name) || 0));
+
+    const filteredProduction = (productionHistory || []).filter(p => {
+      const d = safeDate(p.date || p.createdAt);
+      if (isYearly) return d.getFullYear() === now.getFullYear();
+      if (isWeekly) return (now - d) / (1000 * 60 * 60 * 24) <= 7;
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+
+    const prodSizeMap = {};
+    filteredProduction.forEach(p => {
+      const sz = (p.size || p.productSize || '').toString().trim() || 'Other';
+      prodSizeMap[sz] = (prodSizeMap[sz] || 0) + Number(p.quantity || 0);
+    });
+    const prodSizeChart = Object.keys(prodSizeMap)
+      .map(name => ({ name, ProdQty: prodSizeMap[name] }))
+      .sort((a, b) => (parseFloat(a.name) || 0) - (parseFloat(b.name) || 0));
+
+    return { salesSizeChart, prodSizeChart };
+  }, [salesHistory, productionHistory, timeFilter]);
+
   // Navigation handlers
   const handleStockClick = () => navigate("/stock");
   const handleAttendanceClick = () => navigate("/attendance");
+  const handleAttendanceReportClick = () => navigate("/attendance-report");
+  const handleAprilAttendanceReportClick = () => {
+    const aprilYear = dayjs().month() >= 3 ? dayjs().year() : dayjs().year() - 1;
+    navigate(`/attendance-report?month=4&year=${aprilYear}`);
+  };
 
   // Popup handlers with position calculation
 
@@ -334,12 +410,17 @@ const Dashboard = () => {
       : (user?.salary && !isNaN(Number(user.salary)) ? Number(user.salary) : 0);
       
     const perDaySalary = baseMonthlySalary > 0 ? (baseMonthlySalary / 26) : 0; 
-    
-    const earnedSalary = Math.round(
-      (presentCount * perDaySalary) + 
-      (stoppageCount * perDaySalary) + 
-      (halfDayCount * (perDaySalary / 2))
-    ) || 0;
+    const casualLeaveAllowed = 1;
+    const paidCasualLeaveDays = Math.min(baseLeaveCount, casualLeaveAllowed);
+    const unpaidLeaveDays = Math.max(0, baseLeaveCount - casualLeaveAllowed);
+    const paidHalfDays = halfDayCount * 0.5;
+
+    const compensatedWorkDays = Math.min(26, presentCount + stoppageCount + paidHalfDays + paidCasualLeaveDays);
+    const earnedSalary = Math.round(compensatedWorkDays * perDaySalary) || 0;
+    const unpaidLeaveDeduction = Math.round(unpaidLeaveDays * perDaySalary);
+    const fullSalary = Math.round(26 * perDaySalary);
+    const bonus = (presentCount >= 26 && baseLeaveCount === 0 && compensatedWorkDays >= 26) ? 500 : 0;
+    const totalSalaryWithBonus = earnedSalary + bonus;
 
     const totalDaysConsidered = myCurrentMonthAtt.length + passedSundaysCount;
     const attendancePercentage = totalDaysConsidered > 0
@@ -476,7 +557,7 @@ const Dashboard = () => {
             </div>
 
             <div className="emp-salary-amount">
-              ₹{earnedSalary > 0 ? earnedSalary.toLocaleString() : '0'}
+              ₹{totalSalaryWithBonus > 0 ? totalSalaryWithBonus.toLocaleString() : '0'}
             </div>
 
             <div className="emp-salary-meta">
@@ -496,9 +577,29 @@ const Dashboard = () => {
                   <strong>₹{Math.round(halfDayCount * (perDaySalary / 2)) || 0}</strong>
                 </div>
               )}
+              <div className="emp-salary-meta-row">
+                <span>Casual Leave Paid ({paidCasualLeaveDays}/{casualLeaveAllowed})</span>
+                <strong>₹{Math.round(paidCasualLeaveDays * perDaySalary)}</strong>
+              </div>
+              {unpaidLeaveDays > 0 && (
+                <div className="emp-salary-meta-row">
+                  <span>Unpaid Leave ({unpaidLeaveDays}d)</span>
+                  <strong>-₹{unpaidLeaveDeduction.toLocaleString()}</strong>
+                </div>
+              )}
+              {bonus > 0 && (
+                <div className="emp-salary-meta-row">
+                  <span>Perfect Attendance Bonus</span>
+                  <strong>₹{bonus.toLocaleString()}</strong>
+                </div>
+              )}
               <div className="emp-salary-status">
                 <span className="emp-salary-badge pending">Current Month Estimate</span>
               </div>
+              <button className="btn-export-premium" style={{ marginTop: '14px', width: '100%' }} onClick={() => setShowSalaryDetails(!showSalaryDetails)}>
+                <span className="material-symbols-outlined">receipt_long</span>
+                <span>{showSalaryDetails ? 'Hide Salary Slip' : 'View Salary Slip'}</span>
+              </button>
             </div>
           </div>
 
@@ -527,6 +628,65 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+
+        {showSalaryDetails && (
+          <div className="salary-slip-panel premium-card" style={{ marginBottom: '24px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>Salary Slip - {currentMonthName}</h3>
+                <p style={{ margin: '6px 0 0', color: '#475569' }}>Detailed breakdown of this month&apos;s salary calculation.</p>
+              </div>
+              <button className="btn-export-premium" onClick={() => window.print()}>
+                <span className="material-symbols-outlined">print</span>
+                <span>Print Slip</span>
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '16px', marginBottom: '20px' }}>
+              <div>
+                <div className="detail-label">Base Monthly Salary</div>
+                <div className="detail-value">₹{fullSalary.toLocaleString()}</div>
+              </div>
+              <div>
+                <div className="detail-label">Per Day Salary</div>
+                <div className="detail-value">₹{perDaySalary.toFixed(2)}</div>
+              </div>
+              <div>
+                <div className="detail-label">Present Days</div>
+                <div className="detail-value">{presentCount}</div>
+              </div>
+              <div>
+                <div className="detail-label">Stoppage Days</div>
+                <div className="detail-value">{stoppageCount}</div>
+              </div>
+              <div>
+                <div className="detail-label">Half Days</div>
+                <div className="detail-value">{halfDayCount}</div>
+              </div>
+              <div>
+                <div className="detail-label">Paid Casual Leave</div>
+                <div className="detail-value">{paidCasualLeaveDays}/{casualLeaveAllowed}</div>
+              </div>
+            </div>
+            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '18px' }}>
+              <div className="emp-salary-meta-row">
+                <span>Total Paid Workdays</span>
+                <strong>{compensatedWorkDays.toFixed(1)}</strong>
+              </div>
+              <div className="emp-salary-meta-row">
+                <span>Salary Before Bonus</span>
+                <strong>₹{earnedSalary.toLocaleString()}</strong>
+              </div>
+              <div className="emp-salary-meta-row">
+                <span>Perfect Attendance Bonus</span>
+                <strong>₹{bonus.toLocaleString()}</strong>
+              </div>
+              <div className="emp-salary-meta-row" style={{ marginTop: '12px', fontSize: '1rem', fontWeight: 700 }}>
+                <span>Final Estimated Salary</span>
+                <strong>₹{totalSalaryWithBonus.toLocaleString()}</strong>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── ACTIVITY LOG TABLE ───────────────────────────────── */}
         <div className="emp-activity-section">
@@ -854,9 +1014,20 @@ const Dashboard = () => {
                 <span className="summary-value">{currentData.attendance.total > 0 ? (((currentData.attendance.absent + currentData.attendance.onLeave) / currentData.attendance.total) * 100).toFixed(1) : 0}%</span>
               </div>
             </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
+              <button className="btn-export-premium" onClick={(e) => { e.stopPropagation(); handleAttendanceReportClick(); }}>
+                <span className="material-symbols-outlined">calendar_today</span>
+                View Monthly Report
+              </button>
+              <button className="btn-export-premium" onClick={(e) => { e.stopPropagation(); handleAprilAttendanceReportClick(); }}>
+                <span className="material-symbols-outlined">calendar_view_month</span>
+                View April Attendance
+              </button>
+            </div>
           </div>
         )}
       </div>
+
 
       {/* INVENTORY LAYOUT AREA (ILA) */}
       {hasAccess('stock') && (
@@ -935,6 +1106,71 @@ const Dashboard = () => {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* SIZE CHART SECTION (SALES BY SIZE & PRODUCTION BY SIZE) */}
+      {(hasAccess('sales') || hasAccess('production')) && (
+        <div className="charts-row size-charts-row" style={{ marginTop: '24px' }}>
+          <div className="chart-card size-chart-card">
+            <div className="chart-header">
+              <div className="title-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span className="material-symbols-outlined icon-accent" style={{ color: '#3b82f6', fontSize: '24px' }}>shopping_bag</span>
+                <h3 style={{ textTransform: 'uppercase', fontSize: '14px', letterSpacing: '0.5px' }}>Sales Qty by Size</h3>
+              </div>
+              <span className="time-badge" style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>{timeFilter}</span>
+            </div>
+            <div className="css-size-grid" style={{ marginTop: '16px' }}>
+              {sizeChartsData.salesSizeChart.length > 0 ? sizeChartsData.salesSizeChart.map((s, i) => {
+                const barColor = SIZE_COLOR_MAP[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
+                return (
+                  <div key={i} className="size-stat-item">
+                    <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
+                    <div className="s-bar-group">
+                      <div 
+                        className="s-bar sales" 
+                        style={{ 
+                          width: `${(s.SalesQty / Math.max(...sizeChartsData.salesSizeChart.map(x => x.SalesQty), 1)) * 100}%`,
+                          backgroundColor: barColor
+                        }}
+                      ></div>
+                      <span className="s-qty">{s.SalesQty}</span>
+                    </div>
+                  </div>
+                );
+              }) : <div className="empty-chart-msg">No sales data for this period</div>}
+            </div>
+          </div>
+
+          <div className="chart-card size-chart-card">
+            <div className="chart-header">
+              <div className="title-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span className="material-symbols-outlined icon-accent-purple" style={{ color: '#8b5cf6', fontSize: '24px' }}>precision_manufacturing</span>
+                <h3 style={{ textTransform: 'uppercase', fontSize: '14px', letterSpacing: '0.5px' }}>Production Qty by Size</h3>
+              </div>
+              <span className="time-badge" style={{ background: '#f5f3ff', color: '#6d28d9', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>{timeFilter}</span>
+            </div>
+            <div className="css-size-grid" style={{ marginTop: '16px' }}>
+              {sizeChartsData.prodSizeChart.length > 0 ? sizeChartsData.prodSizeChart.map((s, i) => {
+                const barColor = SIZE_COLOR_MAP[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
+                return (
+                  <div key={i} className="size-stat-item">
+                    <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
+                    <div className="s-bar-group">
+                      <div 
+                        className="s-bar prod" 
+                        style={{ 
+                          width: `${(s.ProdQty / Math.max(...sizeChartsData.prodSizeChart.map(x => x.ProdQty), 1)) * 100}%`,
+                          backgroundColor: barColor
+                        }}
+                      ></div>
+                      <span className="s-qty">{s.ProdQty}</span>
+                    </div>
+                  </div>
+                );
+              }) : <div className="empty-chart-msg">No production data for this period</div>}
+            </div>
           </div>
         </div>
       )}

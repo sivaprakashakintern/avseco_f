@@ -37,6 +37,7 @@ const Employees = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [activeFilter, setActiveFilter] = useState("active"); // 'all' | 'active' | 'deactive'
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 768) setViewMode("list");
@@ -69,6 +70,11 @@ const Employees = () => {
     const isAdminUser = employee.role === 'admin';
     const isSelf = employee.email === user?.email || employee.id === user?.id;
     if (isAdminUser || isSelf) return false;
+
+    // Active / Deactive filter
+    const isActive = employee.active !== false; // default: true if not set
+    if (activeFilter === 'active' && !isActive) return false;
+    if (activeFilter === 'deactive' && isActive) return false;
 
     // Department filter
     const matchesDepartment =
@@ -248,7 +254,8 @@ const Employees = () => {
       pan: employee.pan || "",
       address: employee.address || "",
       salary: employee.salary || "",
-      avatar: employee.avatar || null
+      avatar: employee.avatar || null,
+      active: employee.active !== false
     });
     setShowEditModal(true);
   };
@@ -325,7 +332,8 @@ const Employees = () => {
         pan: formData.pan.toUpperCase(),
         address: formData.address,
         salary: Number(formData.salary) || 0,
-        avatar: formData.avatar
+        avatar: formData.avatar,
+        active: formData.active
       });
 
       setShowEditModal(false);
@@ -359,6 +367,20 @@ const Employees = () => {
   const handleViewEmployee = (employee) => {
     setSelectedEmployee(employee);
     setShowViewModal(true);
+  };
+
+  // Toggle Active / Deactivate Employee
+  const handleToggleActiveEmployee = async (employee) => {
+    const newStatus = employee.active === false ? true : false;
+    try {
+      await ctxUpdateEmployee(employee.id, { ...employee, active: newStatus });
+      setSelectedEmployee(prev => ({ ...prev, active: newStatus }));
+      setFeedbackMessage(newStatus ? `✅ ${employee.name} activated` : `⛔ ${employee.name} deactivated`);
+      setTimeout(() => setFeedbackMessage(''), 3000);
+    } catch (err) {
+      setFeedbackMessage('❌ Failed to update status: ' + (err.response?.data?.message || err.message));
+      setTimeout(() => setFeedbackMessage(''), 4000);
+    }
   };
 
   const handleDateChange = (name, newValue) => {
@@ -504,6 +526,18 @@ const Employees = () => {
             )}
           </div>
         </div>
+
+        {/* Active / Deactive Filter */}
+        <select
+          className="att-select att-select-status"
+          style={{ height: '40px', padding: '0 12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '13px', fontWeight: '600', color: '#475569', background: 'white', cursor: 'pointer' }}
+          value={activeFilter}
+          onChange={(e) => setActiveFilter(e.target.value)}
+        >
+          <option value="all">All Employees</option>
+          <option value="active">🟢 Active</option>
+          <option value="deactive">🔴 Deactivated</option>
+        </select>
 
         <div className="view-toggle">
           <button
@@ -1145,6 +1179,22 @@ const Employees = () => {
                       )}
                     </div>
                   </div>
+
+                  <div className="modal-row" style={{ marginTop: '4px' }}>
+                    <div className="modal-form-group">
+                      <label>Active Status</label>
+                      <select
+                        name="active"
+                        value={formData.active !== false ? "true" : "false"}
+                        onChange={(e) => setFormData({ ...formData, active: e.target.value === "true" })}
+                        className="modal-select"
+                        style={{ borderLeft: formData.active !== false ? '4px solid #10b981' : '4px solid #ef4444', fontWeight: '700' }}
+                      >
+                        <option value="true">🟢 Active (Currently Employed)</option>
+                        <option value="false">🔴 Deactivated (Left Job)</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
                 <div className="modal-footer">
                   <button type="button" className="modal-cancel" onClick={() => setShowEditModal(false)}>
@@ -1233,38 +1283,38 @@ const Employees = () => {
                   </div>
                 </div>
               </div>
-              <div className="modal-footer">
+              <div className="modal-footer view-modal-footer">
                 {isAdmin && (
                   <button
-                    className="modal-delete"
+                    className="view-modal-btn btn-delete"
                     onClick={() => {
                       setShowViewModal(false);
                       handleDeleteEmployee(selectedEmployee);
                     }}
                   >
                     <span className="material-symbols-outlined">delete</span>
-                    Delete Employee
+                    Delete
                   </button>
                 )}
-                <div style={{ display: 'flex', gap: '12px', marginLeft: 'auto' }}>
+                {isAdmin && (
                   <button
-                    className="modal-cancel"
-                    onClick={() => setShowViewModal(false)}
+                    className="view-modal-btn btn-edit"
+                    onClick={() => {
+                      setShowViewModal(false);
+                      handleEditEmployee(selectedEmployee);
+                    }}
                   >
-                    Close
+                    <span className="material-symbols-outlined">edit</span>
+                    Edit
                   </button>
-                  {isAdmin && (
-                    <button
-                      className="modal-confirm"
-                      onClick={() => {
-                        setShowViewModal(false);
-                        handleEditEmployee(selectedEmployee);
-                      }}
-                    >
-                      Edit Employee
-                    </button>
-                  )}
-                </div>
+                )}
+                <button
+                  className="view-modal-btn btn-close"
+                  onClick={() => setShowViewModal(false)}
+                >
+                  <span className="material-symbols-outlined">close</span>
+                  Close
+                </button>
               </div>
             </div>
           </div>

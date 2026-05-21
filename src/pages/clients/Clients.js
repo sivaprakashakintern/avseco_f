@@ -32,7 +32,7 @@ const Clients = () => {
     companyName: "",
     contactPerson: "",
     email: "",
-    phone: "+91 ",
+    phone: "",
     address: "",
     gst: "",
   });
@@ -87,12 +87,15 @@ const Clients = () => {
     let { name, value } = e.target;
 
     if (name === "phone") {
-      // Always maintain '+91 ' and limit to 10 digits
-      if (!value.startsWith("+91 ")) {
-        value = "+91 " + value.replace(/^\+91\s*/, "");
+      if (!value.trim()) {
+        value = "";
+      } else {
+        if (!value.startsWith("+91 ")) {
+          value = "+91 " + value.replace(/^\+91\s*/, "");
+        }
+        const digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
+        value = "+91 " + digits;
       }
-      const digits = value.slice(4).replace(/\D/g, "").slice(0, 10);
-      value = "+91 " + digits;
     }
 
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -104,7 +107,7 @@ const Clients = () => {
       companyName: "",
       contactPerson: "",
       email: "",
-      phone: "+91 ",
+      phone: "",
       address: "",
       gst: "",
     });
@@ -113,8 +116,8 @@ const Clients = () => {
   const confirmAddClient = async (e) => {
     e.preventDefault();
     const isCompany = formData.clientType === "Company";
-    if (!formData.contactPerson || !formData.phone || !formData.address) {
-      setFeedbackMessage("Please fill required fields (Contact, Phone & Address)");
+    if (!formData.contactPerson || !formData.address) {
+      setFeedbackMessage("Please fill required fields (Contact & Address)");
       setTimeout(() => setFeedbackMessage(""), 2500);
       return;
     }
@@ -129,7 +132,7 @@ const Clients = () => {
       await addClient({
         ...formData,
         status: "Active",
-        phone: formData.phone || "+91 00000 00000",
+        phone: formData.phone?.trim() ? formData.phone : undefined,
         address: formData.address || "Not provided",
       });
       setShowAddModal(false);
@@ -469,8 +472,8 @@ const Clients = () => {
                     <input className="modal-input" type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="jofra@avseco.in" />
                   </div>
                   <div className="modal-form-group">
-                    <label>Phone Number *</label>
-                    <input className="modal-input" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="e.g. +91 98765 43210" required />
+                    <label>Phone Number</label>
+                    <input className="modal-input" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="e.g. +91 98765 43210" />
                   </div>
                 </div>
 
@@ -598,7 +601,7 @@ const Clients = () => {
                 </div>
               </div>
 
-              <button className="btn-view-history-pill-compact" onClick={() => {/* handle history view */}}>
+              <button className="btn-view-history-pill-compact" onClick={() => {/* handle history view */ }}>
                 <span className="material-symbols-outlined">history</span>
                 View Order History
               </button>

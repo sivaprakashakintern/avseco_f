@@ -454,7 +454,7 @@ const AttendanceLog = () => {
               <tbody>
                 {paginatedEmployees.length > 0 ? (
                   paginatedEmployees.map((emp, index) => (
-                    <tr key={emp.id} className="att-table-row">
+                    <tr key={emp.id} className={`att-table-row ${emp.active === false ? 'deactivated-attendance-row' : ''}`}>
                       <td className="text-center" style={{ color: '#64748b', fontWeight: '600', fontSize: '13px' }}>
                         {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                       </td>
@@ -464,7 +464,9 @@ const AttendanceLog = () => {
                             {getInitials(emp.name)}
                           </div>
                           <div className="att-emp-info">
-                            <span className="att-emp-name">{emp.name}</span>
+                            <span className="att-emp-name">
+                              {emp.name} {emp.active === false && <span style={{ fontSize: '11px', color: '#c53030', fontWeight: 'bold' }}>(Deactivated)</span>}
+                            </span>
                             <span className="att-emp-dept">{emp.department}</span>
                           </div>
                         </div>
@@ -474,9 +476,9 @@ const AttendanceLog = () => {
                       <td className="text-center">
                         <div className="att-actions-cell" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                           <div className="att-toggle-group">
-                            <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => !isSunday && canModify && handleStatusChange(emp.id, "present")} disabled={isSunday || !canModify} title={isSunday ? "Sunday Restricted" : !canModify ? "View Only" : "Present"}>P</button>
-                            <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => !isSunday && canModify && handleStatusChange(emp.id, "half")} disabled={isSunday || !canModify} title={isSunday ? "Sunday Restricted" : !canModify ? "View Only" : "Half Day"}>H</button>
-                            <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => !isSunday && canModify && handleStatusChange(emp.id, "absent")} disabled={isSunday || !canModify} title={isSunday ? "Sunday Restricted" : !canModify ? "View Only" : "Absent"}>A</button>
+                            <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => !isSunday && canModify && emp.active !== false && handleStatusChange(emp.id, "present")} disabled={isSunday || !canModify || emp.active === false} title={emp.active === false ? "Employee Deactivated" : isSunday ? "Sunday Restricted" : !canModify ? "View Only" : "Present"}>P</button>
+                            <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => !isSunday && canModify && emp.active !== false && handleStatusChange(emp.id, "half")} disabled={isSunday || !canModify || emp.active === false} title={emp.active === false ? "Employee Deactivated" : isSunday ? "Sunday Restricted" : !canModify ? "View Only" : "Half Day"}>H</button>
+                            <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => !isSunday && canModify && emp.active !== false && handleStatusChange(emp.id, "absent")} disabled={isSunday || !canModify || emp.active === false} title={emp.active === false ? "Employee Deactivated" : isSunday ? "Sunday Restricted" : !canModify ? "View Only" : "Absent"}>A</button>
                           </div>
                           {emp.status === "stoppage" && (
                             <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: 'bold' }}>{emp.note?.replace('Work Stoppage: ', '')}</span>
@@ -504,22 +506,24 @@ const AttendanceLog = () => {
           <div className="att-mobile-list">
             {paginatedEmployees.length > 0 ? (
               paginatedEmployees.map((emp, index) => (
-                <div key={emp.id} className="att-mobile-row-premium">
+                <div key={emp.id} className={`att-mobile-row-premium ${emp.active === false ? 'deactivated-attendance-row' : ''}`}>
                   <div className="att-mobile-row-left">
                     <div className={`att-avatar att-avatar-${emp.status} att-mobile-avatar-small`}>
                       {getInitials(emp.name)}
                     </div>
                     <div className="att-mobile-info-compact">
-                      <span className="att-mobile-name-bold">{emp.name}</span>
+                      <span className="att-mobile-name-bold">
+                        {emp.name} {emp.active === false && <span style={{ fontSize: '10px', color: '#c53030', fontWeight: 'bold' }}>(Deactivated)</span>}
+                      </span>
                       <span className="att-mobile-dept-sub">{emp.department}</span>
                     </div>
                   </div>
 
                   <div className="att-mobile-row-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                     <div className="att-toggle-group att-mobile-toggle-compact">
-                      <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => !isSunday && canModify && handleStatusChange(emp.id, "present")} disabled={isSunday || !canModify}>P</button>
-                      <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => !isSunday && canModify && handleStatusChange(emp.id, "half")} disabled={isSunday || !canModify}>H</button>
-                      <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => !isSunday && canModify && handleStatusChange(emp.id, "absent")} disabled={isSunday || !canModify}>A</button>
+                      <button className={`att-toggle-btn att-p${emp.status === "present" ? " active" : ""}`} onClick={() => !isSunday && canModify && emp.active !== false && handleStatusChange(emp.id, "present")} disabled={isSunday || !canModify || emp.active === false}>P</button>
+                      <button className={`att-toggle-btn att-h${emp.status === "half" ? " active" : ""}`} onClick={() => !isSunday && canModify && emp.active !== false && handleStatusChange(emp.id, "half")} disabled={isSunday || !canModify || emp.active === false}>H</button>
+                      <button className={`att-toggle-btn att-a${emp.status === "absent" ? " active" : ""}`} onClick={() => !isSunday && canModify && emp.active !== false && handleStatusChange(emp.id, "absent")} disabled={isSunday || !canModify || emp.active === false}>A</button>
                     </div>
                     {emp.status === "stoppage" && (
                       <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: 'bold' }}>{emp.note?.replace('Work Stoppage: ', '')}</span>
