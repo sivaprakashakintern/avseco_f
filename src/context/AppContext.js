@@ -306,9 +306,17 @@ export const AppProvider = ({ children }) => {
 
         const checkAndAddSalaries = async () => {
             const now = new Date();
+            const currentDay = now.getDate();
             const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             
-            // Check if any salary expense exists for this month
+            // 1. Check if we are in the first 5 days of the month
+            if (currentDay > 5) return;
+
+            // 2. Check if we already accrued salaries for this month (using localStorage)
+            const lastAccruedMonth = localStorage.getItem('salary_accrued_month');
+            if (lastAccruedMonth === currentMonthYear) return;
+
+            // 3. Fallback check: if any salary expense exists for this month
             const hasSalariesThisMonth = (expenses || []).some(ex => {
                 if (ex.category !== 'Salary') return false;
                 const dParts = ex.date.includes('-') ? ex.date.split('-') : [];
@@ -344,6 +352,9 @@ export const AppProvider = ({ children }) => {
                     }
                 }
                 
+                // Mark as accrued in localStorage so it doesn't run again if deleted
+                localStorage.setItem('salary_accrued_month', currentMonthYear);
+
                 if (anyAdded) {
                     const updatedExpenses = await expenseApi.getAll();
                     setExpenses(updatedExpenses.map(e => ({ ...e, id: e._id })).sort((a, b) => {
@@ -352,6 +363,9 @@ export const AppProvider = ({ children }) => {
                         return dateB - dateA;
                     }));
                 }
+            } else {
+                // If it already exists in DB, mark localStorage so it doesn't re-trigger if later deleted
+                localStorage.setItem('salary_accrued_month', currentMonthYear);
             }
         };
 
