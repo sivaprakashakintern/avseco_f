@@ -134,7 +134,7 @@ const SalarySlip = () => {
   };
 
   return (
-    <div className="dashboard-container emp-self-dashboard salary-slip-container">
+    <div className="salary-slip-container">
       {/* Custom Premium & Printed Aesthetics */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap');
@@ -578,17 +578,17 @@ const SalarySlip = () => {
 
       {/* ── Control Header (hidden on print) ── */}
       <div className="slip-header-wrap no-print">
-        {/* Title visible only on mobile – sits above the controls row */}
-        <h3 className="slip-mobile-title">Salary Slip</h3>
+         {/* Title visible only on mobile – sits above the controls row */}
+         <button className="btn-salary-slip-action back-btn mobile-back-btn" onClick={() => navigate('/dashboard')}>
+           <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
+         </button>
+         <h3 className="slip-mobile-title">Salary Slip</h3>
+
 
         {/* Controls row: on desktop these are siblings inside the flex header;
             on mobile they collapse into a single justified row */}
         <div className="slip-controls-row">
           <div className="header-left-group">
-            <button className="btn-salary-slip-action back-btn" onClick={() => navigate('/dashboard')}>
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
-              <span className="btn-text">Dashboard</span>
-            </button>
             {/* Desktop title – hidden on mobile */}
             <h3 className="slip-desktop-title" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>Salary Slip</h3>
           </div>
