@@ -4,6 +4,8 @@ import { useAppContext } from "../../context/AppContext.js";
 import { useAuth } from "../../context/AuthContext.js";
 import { formatCurrency } from "../../utils/formatUtils.js";
 import dayjs from "dayjs";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import "../../dashboard/Dashboard.css";
 
 const SalarySlip = () => {
@@ -86,9 +88,54 @@ const SalarySlip = () => {
   const departmentName = employeeObj?.department || user?.department || "Plate Manufacturing Unit";
   const designationRole = employeeObj?.role || user?.role || "Employee";
 
+  const [downloadLoading, setDownloadLoading] = useState(false);
+
+  const downloadAsPDF = async () => {
+    const element = document.getElementById('salary-slip-printable');
+    if (!element) return;
+    setDownloadLoading(true);
+    try {
+      const fullHeight = element.scrollHeight;
+      const canvas = await html2canvas(element, {
+        scale: 2.5,
+        useCORS: true,
+        backgroundColor: '#f7f5f0',
+        width: element.offsetWidth,
+        height: fullHeight,
+        scrollY: -window.scrollY,
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.getElementById('salary-slip-printable');
+          if (el) {
+            el.style.borderRadius = '0';
+            el.style.boxShadow = 'none';
+            el.style.padding = '40px';
+            el.style.width = '750px';
+            el.style.background = '#ffffff';
+          }
+        }
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = (canvas.height / canvas.width) * pdfWidth;
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [pdfWidth, pdfHeight]
+      });
+      doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'SLOW');
+      const fileName = `Salary_Slip_${user?.name || 'Employee'}_${selectedMonthName.replace(' ', '_')}.pdf`;
+      doc.save(fileName);
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      alert('Could not generate PDF. Please try again.');
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
+
   return (
     <div className="dashboard-container emp-self-dashboard salary-slip-container">
-      {/* Custom Premium & Printed Aesthetics matching user image */}
+      {/* Custom Premium & Printed Aesthetics */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap');
 
@@ -100,9 +147,91 @@ const SalarySlip = () => {
           padding: 20px;
         }
 
+        .btn-salary-slip-action {
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 6px !important;
+          padding: 8px 16px !important;
+          border-radius: 10px !important;
+          font-weight: 600 !important;
+          font-size: 0.9rem !important;
+          cursor: pointer !important;
+          transition: all 0.2s ease !important;
+          border: none !important;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.05) !important;
+          text-decoration: none !important;
+        }
+        
+        .btn-salary-slip-action.back-btn {
+          background: #ffffff !important;
+          border: 2px solid #cbd5e1 !important;
+          color: #475569 !important;
+        }
+
+        .btn-salary-slip-action.back-btn:hover {
+          background: #f8fafc !important;
+          border-color: #94a3b8 !important;
+          color: #1e293b !important;
+        }
+
+        .btn-salary-slip-action.print-btn {
+          background: #006A4E !important;
+          color: #ffffff !important;
+        }
+
+        .btn-salary-slip-action.print-btn:hover {
+          background: #004d39 !important;
+          box-shadow: 0 6px 14px rgba(0, 106, 78, 0.2) !important;
+        }
+
+        /* ── Desktop: single-row header ─── */
+        .slip-header-wrap {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 15px;
+          margin-bottom: 24px;
+          flex-wrap: wrap;
+        }
+
+        .header-left-group {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .header-right-group {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .filter-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .filter-label {
+          font-weight: 700;
+          color: #475569;
+          font-size: 0.9rem;
+          margin-bottom: 0;
+        }
+
+        .btn-text {
+          display: inline-block;
+        }
+
+        /* Mobile-only title – hidden on desktop */
+        .slip-mobile-title {
+          display: none;
+        }
+
         .payslip-table-wrapper {
-          background: #f7f5f0; /* Vintage ivory/cream background from image */
-          border: 1px solid #b2c0b6; /* Sage green border style */
+          background: #f7f5f0;
+          border: 1px solid #b2c0b6;
           border-radius: 4px;
           padding: 45px 40px;
           box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
@@ -111,7 +240,7 @@ const SalarySlip = () => {
 
         .payslip-header {
           text-align: center;
-          margin-bottom: 25px;
+          margin-bottom: 10px;
         }
 
         .payslip-header h1 {
@@ -120,8 +249,32 @@ const SalarySlip = () => {
           font-weight: 700;
           text-transform: uppercase;
           color: #2c3e35;
-          margin: 0;
+          margin: 0 0 10px 0;
           letter-spacing: 1.5px;
+        }
+
+        /* Company address block inside slip */
+        .payslip-company-addr {
+          font-size: 12.5px;
+          color: #4a5c53;
+          line-height: 1.6;
+          margin-bottom: 2px;
+          text-align: center;
+        }
+
+        .payslip-addr-divider {
+          border: none;
+          border-top: 1.5px solid #b2c0b6;
+          margin: 10px auto;
+          width: 80%;
+        }
+
+        .payslip-company-contact {
+          font-size: 12.5px;
+          color: #2c3e35;
+          font-weight: 600;
+          text-align: center;
+          margin-bottom: 0;
         }
 
         .payslip-divider {
@@ -282,50 +435,216 @@ const SalarySlip = () => {
             background: #ffffff !important;
           }
         }
+
+        @media screen and (max-width: 768px) {
+          .salary-slip-container {
+            padding: 14px !important;
+          }
+
+          .payslip-table-wrapper {
+            padding: 22px !important;
+            border-radius: 20px !important;
+          }
+
+          .payslip-header h1 {
+            font-size: 22px !important;
+          }
+
+          .payslip-company-addr {
+            font-size: 11.5px !important;
+          }
+
+          .emp-info-section {
+            flex-direction: column !important;
+            gap: 18px !important;
+          }
+
+          .emp-info-right {
+            text-align: left !important;
+          }
+
+          .emp-info-left,
+          .emp-info-right {
+            width: 100% !important;
+          }
+
+          .breakdown-table td {
+            padding: 10px 8px !important;
+            font-size: 13px !important;
+          }
+
+          .breakdown-table tr.total-row td {
+            font-size: 15px !important;
+          }
+
+          .simple-sig-row {
+            flex-direction: column !important;
+            gap: 18px !important;
+          }
+
+          /* ── Mobile: title row on top, controls row below ── */
+          .slip-mobile-title {
+            display: block !important;
+            font-size: 1.15rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            margin-bottom: 10px !important;
+          }
+
+          .slip-header-wrap {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0 !important;
+            margin-bottom: 18px !important;
+          }
+
+          .header-left-group {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 8px !important;
+          }
+
+          /* Hide desktop title on mobile */
+          .header-left-group .slip-desktop-title {
+            display: none !important;
+          }
+
+          .header-left-group .btn-salary-slip-action.back-btn {
+            padding: 6px 10px !important;
+            font-size: 0.8rem !important;
+            gap: 4px !important;
+          }
+
+          .header-right-group {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 6px !important;
+            justify-content: flex-end !important;
+            flex: 1 !important;
+          }
+
+          .filter-label {
+            display: none !important;
+          }
+
+          .filter-group .material-symbols-outlined {
+            display: none !important;
+          }
+
+          #salary-month {
+            width: auto !important;
+            min-width: 110px !important;
+            padding: 6px 10px !important;
+            height: 36px !important;
+            font-size: 0.82rem !important;
+            border-radius: 8px !important;
+          }
+
+          .btn-salary-slip-action.print-btn {
+            width: 36px !important;
+            height: 36px !important;
+            padding: 0 !important;
+            justify-content: center !important;
+            border-radius: 50% !important;
+          }
+
+          .btn-salary-slip-action.print-btn .btn-text {
+            display: none !important;
+          }
+
+          .btn-salary-slip-action.print-btn span.material-symbols-outlined {
+            margin: 0 !important;
+            font-size: 20px !important;
+          }
+
+          /* Controls row: back btn on left, filter+print on right */
+          .slip-controls-row {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            gap: 8px !important;
+          }
+        }
+
+        /* Desktop: controls row acts normally (part of flex header) */
+        .slip-controls-row {
+          display: contents;
+        }
       `}</style>
 
-      {/* Control Header Row (Interactive Controls - Hidden in print) */}
-      <div className="emp-section-header no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button className="btn-export-premium" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', minHeight: '36px' }} onClick={() => navigate('/dashboard')}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
-            <span>Dashboard</span>
-          </button>
-          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>Payslip</h3>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="material-symbols-outlined" style={{ color: '#006A4E', fontSize: '20px' }}>calendar_month</span>
-            <label style={{ fontWeight: 700, color: '#475569', fontSize: '0.9rem', marginBottom: 0 }} htmlFor="salary-month">Month:</label>
+      {/* ── Control Header (hidden on print) ── */}
+      <div className="slip-header-wrap no-print">
+        {/* Title visible only on mobile – sits above the controls row */}
+        <h3 className="slip-mobile-title">Salary Slip</h3>
+
+        {/* Controls row: on desktop these are siblings inside the flex header;
+            on mobile they collapse into a single justified row */}
+        <div className="slip-controls-row">
+          <div className="header-left-group">
+            <button className="btn-salary-slip-action back-btn" onClick={() => navigate('/dashboard')}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
+              <span className="btn-text">Dashboard</span>
+            </button>
+            {/* Desktop title – hidden on mobile */}
+            <h3 className="slip-desktop-title" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>Salary Slip</h3>
           </div>
-          <select
-            id="salary-month"
-            value={selectedDate}
-            onChange={e => setSelectedDate(e.target.value)}
-            style={{ minWidth: '160px', padding: '8px 12px', borderRadius: '10px', border: '2px solid #cbd5e1', background: '#fff', fontSize: '0.92rem', fontWeight: 600, color: '#1e293b', outline: 'none', height: '38px' }}
-          >
-            {monthOptions.map(option => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-          <button className="btn-export-premium" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', background: '#006A4E', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600, minHeight: '38px' }} onClick={() => window.print()}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>print</span>
-            <span>Print / Download</span>
-          </button>
+          <div className="header-right-group">
+            <div className="filter-group">
+              <span className="material-symbols-outlined" style={{ color: '#006A4E', fontSize: '20px' }}>calendar_month</span>
+              <label className="filter-label" htmlFor="salary-month">Month:</label>
+              <select
+                id="salary-month"
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                style={{ minWidth: '160px', padding: '8px 12px', borderRadius: '10px', border: '2px solid #cbd5e1', background: '#fff', fontSize: '0.92rem', fontWeight: 600, color: '#1e293b', outline: 'none', height: '38px' }}
+              >
+                {monthOptions.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              className="btn-salary-slip-action print-btn"
+              onClick={downloadAsPDF}
+              disabled={downloadLoading}
+              title="Download Salary Slip as PDF"
+            >
+              {downloadLoading
+                ? <span className="material-symbols-outlined" style={{ fontSize: '18px', animation: 'spin 1s linear infinite' }}>progress_activity</span>
+                : <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>download</span>
+              }
+              <span className="btn-text">{downloadLoading ? 'Generating...' : 'Download PDF'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Tabular Wrapper */}
-      <div className="payslip-table-wrapper">
+      <div className="payslip-table-wrapper" id="salary-slip-printable">
 
-        {/* Header Block: Only Company Name is visible */}
+        {/* Header Block: Company name + address + divider + contact */}
         <div className="payslip-header">
           <h1>AVS ECO INDUSTRIES</h1>
+          <p className="payslip-company-addr">
+            3/2, Mettu Street, Veeraragavapuram (Village &amp; Post),
+          </p>
+          <p className="payslip-company-addr">
+            Thiruvalangadu, Thiruvallur (Dist), Tiruttani (TK)
+          </p>
+          <p className="payslip-company-addr">Pincode - 631210</p>
+          <hr className="payslip-addr-divider" />
+          <p className="payslip-company-contact">
+            Contact No: 80988 02581, 9444730165, 63836 32726
+          </p>
         </div>
 
         <div className="payslip-divider"></div>
 
-        {/* Employee Info Section (Removed ID and Bank details) */}
+        {/* Employee Info Section */}
         <div className="emp-info-section">
           <div className="emp-info-left">
             <div className="emp-info-title">Employee Information</div>
@@ -342,7 +661,7 @@ const SalarySlip = () => {
 
         {/* Salary Breakdown Title Banner */}
         <div className="breakdown-title-container">
-          <div className="breakdown-title">Salary & Attendance Breakdown</div>
+          <div className="breakdown-title">Salary &amp; Attendance Breakdown</div>
         </div>
 
         {/* Unified Breakdown Table with all requested fields */}

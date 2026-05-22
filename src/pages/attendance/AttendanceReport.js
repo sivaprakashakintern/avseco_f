@@ -34,8 +34,12 @@ const AttendanceReport = () => {
     const employees = useMemo(() => {
         const monthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
 
-        return allEmployees.filter(emp => {
-            if (emp.role === 'admin') return false;
+        const isRestrictedUser = (emp) => {
+        return emp.role === 'admin' || emp.department?.toLowerCase() === 'ceo' || emp.viewOnly;
+    };
+
+    return allEmployees.filter(emp => {
+            if (isRestrictedUser(emp)) return false;
             if (emp.name && emp.name.toLowerCase().includes("nithish kumar")) return false;
 
             const hasAttendanceInSelectedMonth = Object.values(attendanceRecords)

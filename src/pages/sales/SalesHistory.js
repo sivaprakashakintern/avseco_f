@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from '../../utils/axiosConfig.js';
 import { useAppContext } from '../../context/AppContext.js';
+import { useAuth } from '../../context/AuthContext.js';
 import './Sales.css';
 import logo from '../../assets/logo.png';
 import { jsPDF } from "jspdf";
@@ -19,6 +20,7 @@ const getFormattedTime = (transaction) => {
 
 const SalesHistory = () => {
     const { clients } = useAppContext();
+    const { user, isAdmin } = useAuth();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -54,9 +56,18 @@ const SalesHistory = () => {
     }, [fetchSales]);
 
     const filteredTransactions = useMemo(() => {
-        return transactions.filter(t => {
+        // Non-admins can only see their own logged sales
+        const baseList = isAdmin
+            ? transactions
+            : transactions.filter(t => {
+                const soldBy = String(t.soldBy || t.recordedBy || '').trim().toLowerCase();
+                const currentName = String(user?.name || '').trim().toLowerCase();
+                return soldBy === currentName;
+              });
+
+        return baseList.filter(t => {
             const searchLower = searchTerm.toLowerCase();
-            const productMatch = t.saleItems?.some(item => 
+            const productMatch = t.saleItems?.some(item =>
                 (item.productName && item.productName.toLowerCase().includes(searchLower)) ||
                 (item.baseName && item.baseName.toLowerCase().includes(searchLower))
             );
@@ -69,7 +80,7 @@ const SalesHistory = () => {
                 productMatch
             );
         });
-    }, [transactions, searchTerm]);
+    }, [transactions, searchTerm, isAdmin, user]);
 
     const handleDeleteTransaction = async (id) => {
         if (!window.confirm("Are you sure you want to delete this sales record?")) return;

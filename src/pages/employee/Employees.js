@@ -50,6 +50,8 @@ const Employees = () => {
   const [formData, setFormData] = useState({
     name: "",
     department: "Operator",
+    role: "employee",
+    viewOnly: false,
     email: "",
     phone: "",
     joinDate: new Date().toISOString().split("T")[0],
@@ -129,6 +131,8 @@ const Employees = () => {
     setFormData({
       name: "",
       department: "Operator",
+      role: "employee",
+      viewOnly: false,
       email: "",
       phone: "+91 ",
       joinDate: today,
@@ -216,6 +220,8 @@ const Employees = () => {
       const newEmployee = {
         name: formData.name,
         department: formData.department,
+        role: formData.role,
+        viewOnly: Boolean(formData.viewOnly),
         email: formData.email,
         phone: formData.phone,
         joinDate: formData.joinDate && dayjs(formData.joinDate).isValid() ? formData.joinDate.format("YYYY-MM-DD") : null,
@@ -246,6 +252,8 @@ const Employees = () => {
     setFormData({
       name: employee.name,
       department: employee.department,
+      role: employee.role || 'employee',
+      viewOnly: Boolean(employee.viewOnly),
       email: employee.email || "",
       phone: employee.phone || "",
       joinDate: employee.joinDate ? dayjs(employee.joinDate) : null,
@@ -324,6 +332,8 @@ const Employees = () => {
       await ctxUpdateEmployee(selectedEmployee.id, {
         name: formData.name,
         department: formData.department,
+        role: formData.role,
+        viewOnly: Boolean(formData.viewOnly),
         email: formData.email,
         phone: formData.phone,
         joinDate: formData.joinDate && dayjs(formData.joinDate).isValid() ? formData.joinDate.format("YYYY-MM-DD") : null,
@@ -389,7 +399,7 @@ const Employees = () => {
 
   // Form input change handler
   const handleInputChange = (e) => {
-    let { name, value, files } = e.target;
+    let { name, value, files, type, checked } = e.target;
     if (name === "avatar") {
       setFormData({
         ...formData,
@@ -415,6 +425,8 @@ const Employees = () => {
       // PAN is 10 characters (ABCDE1234F)
       let val = value.toUpperCase().substring(0, 10);
       setFormData({ ...formData, pan: val });
+    } else if (type === 'checkbox') {
+      setFormData({ ...formData, [name]: checked });
     } else {
       setFormData({
         ...formData,
@@ -1029,6 +1041,38 @@ const Employees = () => {
                           ))}
                       </select>
                     </div>
+                  </div>
+
+                  <div className="modal-row">
+                    <div className="modal-form-group">
+                      <label>Role *</label>
+                      <select
+                        name="role"
+                        value={formData.role}
+                        onChange={handleInputChange}
+                        className="modal-select"
+                        required
+                      >
+                        <option value="employee">Employee</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    {formData.role === 'admin' && (
+                      <div className="modal-form-group" style={{ alignSelf: 'flex-end' }}>
+                        <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            name="viewOnly"
+                            checked={formData.viewOnly}
+                            onChange={handleInputChange}
+                            style={{ width: '18px', height: '18px' }}
+                          />
+                          <span style={{ fontSize: '0.95rem', color: '#334155' }}>
+                            View-only admin
+                          </span>
+                        </label>
+                      </div>
+                    )}
                   </div>
 
                   <div className="modal-row">

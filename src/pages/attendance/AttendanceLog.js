@@ -54,11 +54,7 @@ const AttendanceLog = () => {
   const dateKey = toDateKey(currentDate);
   const isToday = toDateKey(currentDate) === toDateKey(today());
   const isSunday = currentDate.getDay() === 0;
-<<<<<<< HEAD
   const canModify = currentDate.valueOf() >= new Date(2026, 3, 1).valueOf() && currentDate.valueOf() <= today().valueOf();
-=======
-  const canModify = currentDate.valueOf() <= today().valueOf();
->>>>>>> 2669402e58db15b5fffbaf254f8bbf7071539e6b
 
   const goToPreviousDay = () => setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() - 1); return nd; });
   const goToNextDay = () => { if (!isToday) setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() + 1); return nd; }); };
@@ -107,13 +103,17 @@ const AttendanceLog = () => {
   const employees = useMemo(() => {
     const dayRecords = attendanceRecords[dateKey] || [];
 
-    // Filter out Admins and the Current User
+    const isRestrictedUser = (emp) => {
+      return emp.role === 'admin' || emp.department?.toLowerCase() === 'ceo' || emp.viewOnly;
+    };
+
+    // Filter out Admins/Owners/View-only admin users and the Current User
     return globalEmployees
       .filter(emp => {
-        const isAdmin = emp.role === 'admin';
+        const isRestricted = isRestrictedUser(emp);
         const isCurrentUser = emp.email === user?.email || emp.id === user?.id;
         const isActiveEmployee = emp.active !== false;
-        return !isAdmin && !isCurrentUser && isActiveEmployee;
+        return !isRestricted && !isCurrentUser && isActiveEmployee;
       })
       .map(emp => {
         const record = dayRecords.find(r => r.empId === emp.id);
@@ -293,10 +293,7 @@ const AttendanceLog = () => {
             <input
               type="date"
               value={dateKey}
-<<<<<<< HEAD
               min="2026-04-01"
-=======
->>>>>>> 2669402e58db15b5fffbaf254f8bbf7071539e6b
               max={toDateKey(today())}
               onChange={(e) => {
                 if (e.target.value) {
