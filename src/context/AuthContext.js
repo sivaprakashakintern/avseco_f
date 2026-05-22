@@ -74,8 +74,16 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
+  const isSuperAdmin = user && user.name && user.name === 'Nithish Kumar';
+  const isAdmin = isSuperAdmin || (user?.role?.toLowerCase() === 'admin');
+  const isCEOViewOnly = Boolean(isAdmin && (user?.viewOnly || user?.department?.toLowerCase() === 'ceo'));
+  const canEdit = isSuperAdmin ? true : !isCEOViewOnly;
+
   const hasAccess = useCallback((moduleName) => {
     if (!user) return false;
+    // Super admin has access to everything
+    if (isSuperAdmin) return true;
+
     const isAdminUser = user.role && user.role.toLowerCase() === 'admin';
     const isCEOViewOnly = Boolean(isAdminUser && (user.viewOnly || user.department?.toLowerCase() === 'ceo'));
 
@@ -84,11 +92,7 @@ export const AuthProvider = ({ children }) => {
     if (moduleName === 'dashboard') return true;
     if (isAdminUser) return true;
     return user.modules && user.modules.includes(moduleName);
-  }, [user]);
-
-  const isAdmin = user && user.role && user.role.toLowerCase() === 'admin';
-  const isCEOViewOnly = Boolean(isAdmin && (user?.viewOnly || user?.department?.toLowerCase() === 'ceo'));
-  const canEdit = !isCEOViewOnly;
+  }, [user, isSuperAdmin]);
 
   return (
     <AuthContext.Provider
@@ -98,6 +102,7 @@ export const AuthProvider = ({ children }) => {
         employee: user,
         modules: user?.modules || [],
         isAdmin,
+        isSuperAdmin,
         isCEOViewOnly,
         canEdit,
         isFirstLogin: user?.isFirstLogin,

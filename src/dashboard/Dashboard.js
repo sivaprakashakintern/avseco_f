@@ -13,9 +13,14 @@ const SIZE_COLOR_MAP = {
   '14': '#db2777', '15': '#14b8a6'
 };
 
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { hasAccess, user, isAdmin } = useAuth();
+  const isCeoUser = Boolean(
+    user?.department?.toLowerCase() === 'ceo' ||
+    user?.role?.toLowerCase() === 'ceo'
+  );
   const {
     employees = [],
     expenses = [],
@@ -57,36 +62,36 @@ const Dashboard = () => {
     return { baseMonthlySalary, perDaySalary, present, absent, half, stoppage, leave, paidCasualLeave, compensatedDays, earned, bonus, total, monthStr };
   };
   const {
-  baseMonthlySalary: fullSalaryForSelected,
-  perDaySalary: perDaySalaryForSelected,
-  present: presentCountForSelected,
-  stoppage: stoppageCountForSelected,
-  half: halfDayCountForSelected,
-  leave: leaveCountForSelected,
-  paidCasualLeave: paidCasualLeaveForSelected,
-  compensatedDays: compensatedWorkDaysForSelected,
-  earned: earnedSalaryForSelected,
-  bonus: bonusForSelected,
-  total: totalSalaryWithBonusForSelected,
-} = computeSalaryForMonth(selectedMonth, selectedYear);
+    baseMonthlySalary: fullSalaryForSelected,
+    perDaySalary: perDaySalaryForSelected,
+    present: presentCountForSelected,
+    stoppage: stoppageCountForSelected,
+    half: halfDayCountForSelected,
+    leave: leaveCountForSelected,
+    paidCasualLeave: paidCasualLeaveForSelected,
+    compensatedDays: compensatedWorkDaysForSelected,
+    earned: earnedSalaryForSelected,
+    bonus: bonusForSelected,
+    total: totalSalaryWithBonusForSelected,
+  } = computeSalaryForMonth(selectedMonth, selectedYear);
 
-// Update selected month name display
-useEffect(() => {
-  const monthName = dayjs(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`).format('MMMM YYYY');
-  setSelectedMonthName(monthName);
-}, [selectedMonth, selectedYear]);
+  // Update selected month name display
+  useEffect(() => {
+    const monthName = dayjs(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`).format('MMMM YYYY');
+    setSelectedMonthName(monthName);
+  }, [selectedMonth, selectedYear]);
 
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
-  
+
   const getAvailableSizes = () => {
     const sizesSet = new Set();
-    
+
     // Get sizes from stock
     (stockData || []).forEach(item => {
       if (item.size && item.size !== 'All Sizes') sizesSet.add(item.size);
     });
-    
+
     // Get sizes from production stats
     if (productionStats.monthBySize) {
       Object.keys(productionStats.monthBySize).forEach(size => {
@@ -100,7 +105,7 @@ useEffect(() => {
         if (size !== 'All Sizes' && size !== 'total') sizesSet.add(size);
       });
     }
-    
+
     // Basic sorting for "2 inch", "6-inch" etc.
     return Array.from(sizesSet).sort((a, b) => {
       const valA = parseFloat(a) || 0;
@@ -110,8 +115,13 @@ useEffect(() => {
   };
 
   const dynamicSizes = getAvailableSizes();
-  const attendanceNotMarked = hasAccess('attendance') && (!todayStats || todayStats.total === 0);
-  
+  const canViewAttendance = !isCeoUser && hasAccess('attendance');
+  const canViewActivity = hasAccess('sales') || hasAccess('production');
+  const canViewTopStats = canViewAttendance || canViewActivity;
+  const canViewPremiumStats = hasAccess('sales') || hasAccess('stock') || hasAccess('production');
+  const canViewChartRow = canViewPremiumStats || canViewAttendance;
+  const attendanceNotMarked = canViewAttendance && (!todayStats || todayStats.total === 0);
+
   // ── Raw Material Stock Calculations for Dashboard Alerts ──
   const rawMaterialPurchases = useMemo(() => {
     try {
@@ -174,11 +184,11 @@ useEffect(() => {
   const getPlatesData = (period = 'Monthly') => {
     const sizes = dynamicSizes;
     const now = new Date();
-    
+
     // 1. Determine period dates
     const isYearly = period === 'Yearly';
     const isWeekly = period === 'Weekly';
-    
+
     const safeDate = (info) => {
       if (!info) return new Date(0);
       if (info instanceof Date) return info;
@@ -209,12 +219,12 @@ useEffect(() => {
     });
 
     const totalPeriodExpenses = periodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-    
+
     // 3. Get production for the period
-    const productionBySize = period === 'Weekly' ? (productionStats?.weekBySize || {}) : 
-                             period === 'Yearly' ? (productionStats?.monthBySize || {}) : 
-                             (productionStats?.monthBySize || {});
-    
+    const productionBySize = period === 'Weekly' ? (productionStats?.weekBySize || {}) :
+      period === 'Yearly' ? (productionStats?.monthBySize || {}) :
+        (productionStats?.monthBySize || {});
+
     const totalProduction = Object.values(productionBySize).reduce((sum, val) => sum + (Number(val) || 0), 0) || 1;
     const expensePerUnit = totalPeriodExpenses / totalProduction;
 
@@ -225,7 +235,7 @@ useEffect(() => {
     // 5. Group data by size for the chart
     const platesData = sizes.map(size => {
       const sKey = size.toLowerCase().trim().replace(" ", "-");
-      
+
       const salesValue = filteredSales.reduce((sum, sale) => {
         // Fix: Use filter and sum instead of find to capture all items of same size in one sale
         const items = (sale.saleItems || []).filter(i => (i.size || "").toLowerCase().trim().replace(" ", "-") === sKey);
@@ -429,29 +439,29 @@ useEffect(() => {
     const halfDayCount = myCurrentMonthAtt.filter(r => r.status === 'half').length;
     const baseLeaveCount = myCurrentMonthAtt.filter(r => r.status === 'leave').length;
     const stoppageCount = myCurrentMonthAtt.filter(r => r.status === 'stoppage').length;
-    
+
     // Sundays are considered Leave and do NOT add to salary
     let passedSundaysCount = 0;
     const todayNum = dayjs().date();
-    for(let i=1; i<=todayNum; i++) {
-      if(dayjs().date(i).day() === 0) passedSundaysCount++;
+    for (let i = 1; i <= todayNum; i++) {
+      if (dayjs().date(i).day() === 0) passedSundaysCount++;
     }
 
     const onLeaveCount = baseLeaveCount + passedSundaysCount;
-    
+
     // ── Salary Calculation ────────────────────────
     const myEmployeeObj = employees ? employees.find(e => {
       const isIdMatch = myId && String(e._id || e.id) === String(myId);
       const isEmailMatch = Boolean(e.email && user?.email && String(e.email).toLowerCase() === String(user.email).toLowerCase());
       return isIdMatch || isEmailMatch;
     }) : null;
-    
+
     // Fallback to user?.salary because non-admins cannot fetch the full employees list
-    const baseMonthlySalary = myEmployeeObj && !isNaN(Number(myEmployeeObj.salary)) 
-      ? Number(myEmployeeObj.salary) 
+    const baseMonthlySalary = myEmployeeObj && !isNaN(Number(myEmployeeObj.salary))
+      ? Number(myEmployeeObj.salary)
       : (user?.salary && !isNaN(Number(user.salary)) ? Number(user.salary) : 0);
-      
-    const perDaySalary = baseMonthlySalary > 0 ? (baseMonthlySalary / 26) : 0; 
+
+    const perDaySalary = baseMonthlySalary > 0 ? (baseMonthlySalary / 26) : 0;
     const casualLeaveAllowed = 1;
     const paidCasualLeaveDays = Math.min(baseLeaveCount, casualLeaveAllowed);
     const unpaidLeaveDays = Math.max(0, baseLeaveCount - casualLeaveAllowed);
@@ -483,10 +493,26 @@ useEffect(() => {
     // ── Activity: sales or production ──────────────────────────────────────
     const isSalesDept = (user?.department || "").toLowerCase().includes("sales") || hasAccess("sales");
 
-    const mySales = (salesHistory || []).filter(sale =>
-      (sale.soldBy === user?.name || sale.recordedBy === user?.name) &&
-      dayjs(sale.date).format('YYYY-MM') === currentMonthYear
-    );
+    const mySales = (salesHistory || []).filter(sale => {
+      const soldByName = String(sale.soldBy || sale.recordedBy || "").trim().toLowerCase();
+      const currentName = String(user?.name || "").trim().toLowerCase();
+
+      const saleDateClean = String(sale.date || sale.createdAt || "").split(',')[0].trim();
+      const dateParts = saleDateClean.split('-');
+      let saleMonthYear = "";
+      if (dateParts.length === 3) {
+        if (dateParts[2].length === 4) {
+          saleMonthYear = `${dateParts[2]}-${dateParts[1]}`; // DD-MM-YYYY -> YYYY-MM
+        } else if (dateParts[0].length === 4) {
+          saleMonthYear = `${dateParts[0]}-${dateParts[1]}`; // YYYY-MM-DD -> YYYY-MM
+        }
+      }
+      if (!saleMonthYear) {
+        saleMonthYear = dayjs(sale.date || sale.createdAt).format('YYYY-MM');
+      }
+
+      return soldByName === currentName && saleMonthYear === currentMonthYear;
+    });
     const totalMySalesValue = mySales.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
     const myProduction = (productionHistory || []).filter(prod =>
@@ -529,192 +555,199 @@ useEffect(() => {
         </div>
 
         {/* ── TOP STATS GRID: Attendance + Salary ─────────────── */}
-        <div className="emp-stats-grid">
-
-          {/* Attendance Card */}
-          <div className="emp-stat-card emp-attendance-card">
-            <div className="emp-card-header">
-              <span className="emp-card-icon att-icon">
-                <span className="material-symbols-outlined">calendar_month</span>
-              </span>
-              <div>
-                <span className="emp-card-title">This Month Attendance</span>
-                <span className="emp-card-sub">{currentMonthName}</span>
-              </div>
-            </div>
-
-            <div className="emp-att-numbers">
-              <div className="emp-att-num present">
-                <span className="num-val">{presentCount}</span>
-                <span className="num-lbl">Present</span>
-              </div>
-              <div className="emp-att-num absent">
-                <span className="num-val">{absentCount}</span>
-                <span className="num-lbl">Absent</span>
-              </div>
-              <div className="emp-att-num half">
-                <span className="num-val">{halfDayCount}</span>
-                <span className="num-lbl">Half Day</span>
-              </div>
-              <div className="emp-att-num leave">
-                <span className="num-val">{onLeaveCount}</span>
-                <span className="num-lbl">Leave</span>
-              </div>
-            </div>
-
-            <div className="emp-att-bar-wrap">
-              <div className="emp-att-bar-bg">
-                <div className="emp-att-bar-fill" style={{ width: `${attendancePercentage}%` }}></div>
-              </div>
-              <span className="emp-att-pct">{attendancePercentage}% Attendance Rate</span>
-            </div>
-
-            {/* Last 7-day mini heatmap */}
-            <div className="emp-week-heatmap">
-              {last7Days.map((d, i) => (
-                <div key={i} className="emp-heat-day" title={`${d.dateStr}: ${d.status}`}>
-                  <div className="emp-heat-dot" style={{ background: statusColor[d.status] || '#e2e8f0' }}></div>
-                  <span className="emp-heat-lbl">{d.label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="emp-heat-legend">
-              <span><i style={{ background: '#10b981' }}></i> Present</span>
-              <span><i style={{ background: '#ef4444' }}></i> Absent</span>
-              <span><i style={{ background: '#f59e0b' }}></i> Half</span>
-              <span><i style={{ background: '#8b5cf6' }}></i> Leave</span>
-            </div>
-          </div>
-
-          {/* Earned Salary Card */}
-          <div className="emp-stat-card emp-salary-card">
-            <div className="emp-card-header">
-              <span className="emp-card-icon sal-icon">
-                <span className="material-symbols-outlined">account_balance_wallet</span>
-              </span>
-              <div>
-                <span className="emp-card-title">This Month Salary</span>
-                <span className="emp-card-sub">{currentMonthName}</span>
-              </div>
-            </div>
-
-            <div className="emp-salary-amount">
-              ₹{totalSalaryWithBonus > 0 ? totalSalaryWithBonus.toLocaleString() : '0'}
-            </div>
-
-            <div className="emp-salary-meta">
-              <div className="emp-salary-meta-row">
-                <span>Present ({presentCount}d)</span>
-                <strong>₹{Math.round(presentCount * perDaySalary) || 0}</strong>
-              </div>
-              {stoppageCount > 0 && (
-                <div className="emp-salary-meta-row">
-                  <span>Maintenance/Stoppage ({stoppageCount}d)</span>
-                  <strong>₹{Math.round(stoppageCount * perDaySalary) || 0}</strong>
-                </div>
-              )}
-              {halfDayCount > 0 && (
-                <div className="emp-salary-meta-row">
-                  <span>Half Days ({halfDayCount}d)</span>
-                  <strong>₹{Math.round(halfDayCount * (perDaySalary / 2)) || 0}</strong>
-                </div>
-              )}
-              <div className="emp-salary-meta-row">
-                <span>Casual Leave Paid ({paidCasualLeaveDays}/{casualLeaveAllowed})</span>
-                <strong>₹{Math.round(paidCasualLeaveDays * perDaySalary)}</strong>
-              </div>
-              {unpaidLeaveDays > 0 && (
-                <div className="emp-salary-meta-row">
-                  <span>Unpaid Leave ({unpaidLeaveDays}d)</span>
-                  <strong>-₹{unpaidLeaveDeduction.toLocaleString()}</strong>
-                </div>
-              )}
-              {bonus > 0 && (
-                <div className="emp-salary-meta-row">
-                  <span>Perfect Attendance Bonus</span>
-                  <strong>₹{bonus.toLocaleString()}</strong>
-                </div>
-              )}
-              <div className="emp-salary-status">
-                <span className="emp-salary-badge pending">Current Month Estimate</span>
-              </div>
-              <button className="btn-export-premium" style={{ marginTop: '14px', width: '100%' }} onClick={() => navigate('/salary-slip')}>
-                <span className="material-symbols-outlined">receipt_long</span>
-                <span>View Salary Slip</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Activity Summary Card */}
-          <div className="emp-stat-card emp-activity-card">
-            <div className="emp-card-header">
-              <span className="emp-card-icon act-icon">
-                <span className="material-symbols-outlined">{isSalesDept ? 'point_of_sale' : 'precision_manufacturing'}</span>
-              </span>
-              <div>
-                <span className="emp-card-title">{isSalesDept ? 'My Sales' : 'My Production'}</span>
-                <span className="emp-card-sub">{currentMonthName}</span>
-              </div>
-            </div>
-
-            {isSalesDept ? (
+        {canViewTopStats && (
+          <div className="emp-stats-grid">
+            {canViewAttendance && (
               <>
-                <div className="emp-activity-big-num">₹{totalMySalesValue.toLocaleString()}</div>
-                <div className="emp-activity-sub">{mySales.length} Sale{mySales.length !== 1 ? 's' : ''} logged this month</div>
-              </>
-            ) : (
-              <>
-                <div className="emp-activity-big-num">{totalMyProduced.toLocaleString()} <small>PCS</small></div>
-                <div className="emp-activity-sub">{myProduction.length} Entr{myProduction.length !== 1 ? 'ies' : 'y'} this month</div>
+                {/* Attendance Card */}
+                <div className="emp-stat-card emp-attendance-card">
+                  <div className="emp-card-header">
+                    <span className="emp-card-icon att-icon">
+                      <span className="material-symbols-outlined">calendar_month</span>
+                    </span>
+                    <div>
+                      <span className="emp-card-title">This Month Attendance</span>
+                      <span className="emp-card-sub">{currentMonthName}</span>
+                    </div>
+                  </div>
+
+                  <div className="emp-att-numbers">
+                    <div className="emp-att-num present">
+                      <span className="num-val">{presentCount}</span>
+                      <span className="num-lbl">Present</span>
+                    </div>
+                    <div className="emp-att-num absent">
+                      <span className="num-val">{absentCount}</span>
+                      <span className="num-lbl">Absent</span>
+                    </div>
+                    <div className="emp-att-num half">
+                      <span className="num-val">{halfDayCount}</span>
+                      <span className="num-lbl">Half Day</span>
+                    </div>
+                    <div className="emp-att-num leave">
+                      <span className="num-val">{onLeaveCount}</span>
+                      <span className="num-lbl">Leave</span>
+                    </div>
+                  </div>
+
+                  <div className="emp-att-bar-wrap">
+                    <div className="emp-att-bar-bg">
+                      <div className="emp-att-bar-fill" style={{ width: `${attendancePercentage}%` }}></div>
+                    </div>
+                    <span className="emp-att-pct">{attendancePercentage}% Attendance Rate</span>
+                  </div>
+
+                  <div className="emp-week-heatmap">
+                    {last7Days.map((d, i) => (
+                      <div key={i} className="emp-heat-day" title={`${d.dateStr}: ${d.status}`}>
+                        <div className="emp-heat-dot" style={{ background: statusColor[d.status] || '#e2e8f0' }}></div>
+                        <span className="emp-heat-lbl">{d.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="emp-heat-legend">
+                    <span><i style={{ background: '#10b981' }}></i> Present</span>
+                    <span><i style={{ background: '#ef4444' }}></i> Absent</span>
+                    <span><i style={{ background: '#f59e0b' }}></i> Half</span>
+                    <span><i style={{ background: '#8b5cf6' }}></i> Leave</span>
+                  </div>
+                </div>
+
+                {/* Earned Salary Card */}
+                <div className="emp-stat-card emp-salary-card">
+                  <div className="emp-card-header">
+                    <span className="emp-card-icon sal-icon">
+                      <span className="material-symbols-outlined">account_balance_wallet</span>
+                    </span>
+                    <div>
+                      <span className="emp-card-title">This Month Salary</span>
+                      <span className="emp-card-sub">{currentMonthName}</span>
+                    </div>
+                  </div>
+
+                  <div className="emp-salary-amount">
+                    ₹{totalSalaryWithBonus > 0 ? totalSalaryWithBonus.toLocaleString() : '0'}
+                  </div>
+
+                  <div className="emp-salary-meta">
+                    <div className="emp-salary-meta-row">
+                      <span>Present ({presentCount}d)</span>
+                      <strong>₹{Math.round(presentCount * perDaySalary) || 0}</strong>
+                    </div>
+                    {stoppageCount > 0 && (
+                      <div className="emp-salary-meta-row">
+                        <span>Maintenance/Stoppage ({stoppageCount}d)</span>
+                        <strong>₹{Math.round(stoppageCount * perDaySalary) || 0}</strong>
+                      </div>
+                    )}
+                    {halfDayCount > 0 && (
+                      <div className="emp-salary-meta-row">
+                        <span>Half Days ({halfDayCount}d)</span>
+                        <strong>₹{Math.round(halfDayCount * (perDaySalary / 2)) || 0}</strong>
+                      </div>
+                    )}
+                    <div className="emp-salary-meta-row">
+                      <span>Casual Leave Paid ({paidCasualLeaveDays}/{casualLeaveAllowed})</span>
+                      <strong>₹{Math.round(paidCasualLeaveDays * perDaySalary)}</strong>
+                    </div>
+                    {unpaidLeaveDays > 0 && (
+                      <div className="emp-salary-meta-row">
+                        <span>Unpaid Leave ({unpaidLeaveDays}d)</span>
+                        <strong>-₹{unpaidLeaveDeduction.toLocaleString()}</strong>
+                      </div>
+                    )}
+                    {bonus > 0 && (
+                      <div className="emp-salary-meta-row">
+                        <span>Perfect Attendance Bonus</span>
+                        <strong>₹{bonus.toLocaleString()}</strong>
+                      </div>
+                    )}
+                    <div className="emp-salary-status">
+                      <span className="emp-salary-badge pending">Current Month Estimate</span>
+                    </div>
+                    <button className="btn-view-salary-slip" style={{ marginTop: '14px', width: '100%' }} onClick={() => navigate('/salary-slip')}>
+                      <span className="material-symbols-outlined">receipt_long</span>
+                      <span>View Salary Slip</span>
+                    </button>
+                  </div>
+                </div>
               </>
             )}
+
+            {canViewActivity && (
+              <div className="emp-stat-card emp-activity-card">
+                <div className="emp-card-header">
+                  <span className="emp-card-icon act-icon">
+                    <span className="material-symbols-outlined">{isSalesDept ? 'point_of_sale' : 'precision_manufacturing'}</span>
+                  </span>
+                  <div>
+                    <span className="emp-card-title">{isSalesDept ? 'My Sales' : 'My Production'}</span>
+                    <span className="emp-card-sub">{currentMonthName}</span>
+                  </div>
+                </div>
+
+                {isSalesDept ? (
+                  <>
+                    <div className="emp-activity-big-num">₹{totalMySalesValue.toLocaleString()}</div>
+                    <div className="emp-activity-sub">{mySales.length} Sale{mySales.length !== 1 ? 's' : ''} logged this month</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="emp-activity-big-num">{totalMyProduced.toLocaleString()} <small>PCS</small></div>
+                    <div className="emp-activity-sub">{myProduction.length} Entr{myProduction.length !== 1 ? 'ies' : 'y'} this month</div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
 
-        {/* ── ACTIVITY LOG TABLE ───────────────────────────────── */}
-        <div className="emp-activity-section">
-          <div className="emp-section-header">
-            <h3 className="emp-section-title">
-              <span className="material-symbols-outlined">history</span>
-              {isSalesDept ? 'Recent Sales Activity' : 'Recent Production Activity'}
-            </h3>
-            <span className="emp-section-sub">{currentMonthName}</span>
+        {/* ── MONTH ATTENDANCE CALENDAR STRIP ─────────────────── */}
+        {!isCeoUser && (
+          <div className="emp-cal-section">
+            <div className="emp-section-header">
+              <h3 className="emp-section-title">
+                <span className="material-symbols-outlined">event_available</span>
+                Attendance Log — {currentMonthName}
+              </h3>
+            </div>
+            <div className="emp-cal-grid">
+              {myCurrentMonthAtt.length === 0 ? (
+                <p className="emp-cal-empty">No attendance records found for this month.</p>
+              ) : myCurrentMonthAtt.sort((a, b) => a.date.localeCompare(b.date)).map((rec, i) => {
+                const dayNum = dayjs(rec.date).format('D');
+                const dayName = dayjs(rec.date).format('ddd');
+                const sc = { present: 'emp-cal-p', absent: 'emp-cal-a', half: 'emp-cal-h', leave: 'emp-cal-l' };
+                return (
+                  <div key={i} className={`emp-cal-day ${sc[rec.status] || ''}`} title={`${rec.date}: ${rec.status}`}>
+                    <span className="emp-cal-daynum">{dayNum}</span>
+                    <span className="emp-cal-dayname">{dayName}</span>
+                    <span className="emp-cal-status-dot"></span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="emp-cal-legend">
+              <span className="emp-cal-leg-item emp-cal-p"><span></span> Present</span>
+              <span className="emp-cal-leg-item emp-cal-a"><span></span> Absent</span>
+              <span className="emp-cal-leg-item emp-cal-h"><span></span> Half Day</span>
+              <span className="emp-cal-leg-item emp-cal-l"><span></span> Leave</span>
+            </div>
           </div>
+        )}
 
-          <div className="emp-table-wrap">
-            {isSalesDept ? (
-              <table className="emp-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Invoice</th>
-                    <th>Date</th>
-                    <th>Customer</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mySales.length === 0 ? (
-                    <tr><td colSpan="6" className="emp-empty-row">No sales logged this month</td></tr>
-                  ) : mySales.slice(0, 10).map((sale, idx) => (
-                    <tr key={sale.id || sale._id || idx}>
-                      <td className="emp-row-num">{idx + 1}</td>
-                      <td><strong>{sale.invoiceNo || '—'}</strong></td>
-                      <td>{sale.date}</td>
-                      <td>{sale.customer}</td>
-                      <td className="emp-money">₹{Number(sale.totalAmount || 0).toLocaleString()}</td>
-                      <td>
-                        <span className={`emp-status-pill ${(sale.paidStatus || '').toLowerCase()}`}>
-                          {sale.paidStatus || 'Pending'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
+        {!isSalesDept && (
+          <div className="emp-activity-section">
+            <div className="emp-section-header">
+              <h3 className="emp-section-title">
+                <span className="material-symbols-outlined">history</span>
+                Recent Production Activity
+              </h3>
+              <span className="emp-section-sub">{currentMonthName}</span>
+            </div>
+
+            <div className="emp-table-wrap">
               <table className="emp-table">
                 <thead>
                   <tr>
@@ -745,41 +778,9 @@ useEffect(() => {
                   ))}
                 </tbody>
               </table>
-            )}
+            </div>
           </div>
-        </div>
-
-        {/* ── MONTH ATTENDANCE CALENDAR STRIP ─────────────────── */}
-        <div className="emp-cal-section">
-          <div className="emp-section-header">
-            <h3 className="emp-section-title">
-              <span className="material-symbols-outlined">event_available</span>
-              Attendance Log — {currentMonthName}
-            </h3>
-          </div>
-          <div className="emp-cal-grid">
-            {myCurrentMonthAtt.length === 0 ? (
-              <p className="emp-cal-empty">No attendance records found for this month.</p>
-            ) : myCurrentMonthAtt.sort((a, b) => a.date.localeCompare(b.date)).map((rec, i) => {
-              const dayNum = dayjs(rec.date).format('D');
-              const dayName = dayjs(rec.date).format('ddd');
-              const sc = { present: 'emp-cal-p', absent: 'emp-cal-a', half: 'emp-cal-h', leave: 'emp-cal-l' };
-              return (
-                <div key={i} className={`emp-cal-day ${sc[rec.status] || ''}`} title={`${rec.date}: ${rec.status}`}>
-                  <span className="emp-cal-daynum">{dayNum}</span>
-                  <span className="emp-cal-dayname">{dayName}</span>
-                  <span className="emp-cal-status-dot"></span>
-                </div>
-              );
-            })}
-          </div>
-          <div className="emp-cal-legend">
-            <span className="emp-cal-leg-item emp-cal-p"><span></span> Present</span>
-            <span className="emp-cal-leg-item emp-cal-a"><span></span> Absent</span>
-            <span className="emp-cal-leg-item emp-cal-h"><span></span> Half Day</span>
-            <span className="emp-cal-leg-item emp-cal-l"><span></span> Leave</span>
-          </div>
-        </div>
+        )}
 
       </div>
     );
@@ -884,133 +885,135 @@ useEffect(() => {
 
 
       {/* CHARTS SECTION */}
-      <div className="charts-row">
-        {/* Bar Chart */}
-        {(hasAccess('sales') || hasAccess('stock') || hasAccess('production')) && (
-          <div className="chart-card sales-expenses-card large-chart">
-            <div className="chart-header">
-              <h3>SALES VS EXPENSES</h3>
-              <div className="filter-group small">
-                {["Weekly", "Monthly", "Yearly"].map(filter => (
-                  <button
-                    key={filter}
-                    className={`filter-chip ${timeFilter === filter ? 'active' : ''}`}
-                    onClick={() => setTimeFilter(filter)}
-                  >
-                    {filter}
-                  </button>
-                ))}
+      {canViewChartRow && (
+        <div className="charts-row">
+          {/* Bar Chart */}
+          {(hasAccess('sales') || hasAccess('stock') || hasAccess('production')) && (
+            <div className="chart-card sales-expenses-card large-chart">
+              <div className="chart-header">
+                <h3>SALES VS EXPENSES</h3>
+                <div className="filter-group small">
+                  {["Weekly", "Monthly", "Yearly"].map(filter => (
+                    <button
+                      key={filter}
+                      className={`filter-chip ${timeFilter === filter ? 'active' : ''}`}
+                      onClick={() => setTimeFilter(filter)}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-            
-            <div className="balance-comparison-module">
+
+              <div className="balance-comparison-module">
                 <div className="balance-bar-container">
-                    <div className="balance-bar-info">
-                        <span className="bar-label">TOTAL TURNOVER</span>
-                        <span className="bar-value revenue">{formatStatValue(totalPeriodSales)}</span>
-                    </div>
-                    <div className="balance-progress-bg">
-                        <div className="balance-progress-fill revenue" style={{ width: `${totalPeriodSales > 0 ? (totalPeriodSales / Math.max(totalPeriodSales, totalPeriodExpenses || 1)) * 100 : 0}%` }}></div>
-                    </div>
+                  <div className="balance-bar-info">
+                    <span className="bar-label">TOTAL TURNOVER</span>
+                    <span className="bar-value revenue">{formatStatValue(totalPeriodSales)}</span>
+                  </div>
+                  <div className="balance-progress-bg">
+                    <div className="balance-progress-fill revenue" style={{ width: `${totalPeriodSales > 0 ? (totalPeriodSales / Math.max(totalPeriodSales, totalPeriodExpenses || 1)) * 100 : 0}%` }}></div>
+                  </div>
                 </div>
 
                 <div className="balance-bar-container">
-                    <div className="balance-bar-info">
-                        <span className="bar-label">TOTAL EXPENSES</span>
-                        <span className="bar-value expenses">{formatStatValue(totalPeriodExpenses)}</span>
+                  <div className="balance-bar-info">
+                    <span className="bar-label">TOTAL EXPENSES</span>
+                    <span className="bar-value expenses">{formatStatValue(totalPeriodExpenses)}</span>
+                  </div>
+                  <div className="balance-progress-bg">
+                    <div className="balance-progress-fill expenses" style={{ width: `${totalPeriodExpenses > 0 ? (totalPeriodExpenses / Math.max(totalPeriodSales, totalPeriodExpenses || 1)) * 100 : 0}%` }}></div>
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="chart-legend-row-bottom">
+                <div className="chart-legend-item">
+                  <span className="legend-dot sales-dot"></span>
+                  <span className="legend-text">Revenue: <strong>{formatStatValue(totalPeriodSales)}</strong></span>
+                </div>
+                <div className="chart-legend-item">
+                  <span className="legend-dot expenses-dot"></span>
+                  <span className="legend-text">Expenses: <strong>{formatStatValue(totalPeriodExpenses)}</strong></span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Attendance Section */}
+          {!isCeoUser && hasAccess('attendance') && (
+            <div className="chart-card attendance-section" onClick={handleAttendanceClick}>
+              <div className="attendance-header">
+                <h3>ATTENDANCE</h3>
+                <span className="view-details">VIEW DETAILS →</span>
+              </div>
+
+              <div className="attendance-pie-container">
+                <div className="pie-chart-wrapper">
+                  <div className="pie-chart">
+                    <div className="pie-segment present-segment" style={{ transform: `rotate(0deg)`, background: `conic-gradient(#10b981 0deg ${(currentData.attendance.present / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.present / currentData.attendance.total) * 360}deg 360deg)` }}></div>
+                    <div className="pie-segment absent-segment" style={{ transform: `rotate(${(currentData.attendance.present / currentData.attendance.total) * 360}deg)`, background: `conic-gradient(#ef4444 0deg ${(currentData.attendance.absent / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.absent / currentData.attendance.total) * 360}deg 360deg)` }}></div>
+                    <div className="pie-segment leave-segment" style={{ transform: `rotate(${((currentData.attendance.present + currentData.attendance.absent) / currentData.attendance.total) * 360}deg)`, background: `conic-gradient(#f59e0b 0deg ${(currentData.attendance.onLeave / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.onLeave / currentData.attendance.total) * 360}deg 360deg)` }}></div>
+                    <div className="pie-center">
+                      <span className="pie-total">{currentData.attendance.total}</span>
+                      <span className="pie-total-label">TOTAL</span>
                     </div>
-                    <div className="balance-progress-bg">
-                        <div className="balance-progress-fill expenses" style={{ width: `${totalPeriodExpenses > 0 ? (totalPeriodExpenses / Math.max(totalPeriodSales, totalPeriodExpenses || 1)) * 100 : 0}%` }}></div>
+                  </div>
+                </div>
+
+                <div className="pie-legend">
+                  <div className="legend-item">
+                    <span className="legend-color present-color"></span>
+                    <div className="legend-details">
+                      <span className="legend-label">PRESENT</span>
+                      <span className="legend-value">{currentData.attendance.present}</span>
+                      <span className="legend-percentage">({currentData.attendance.total > 0 ? ((currentData.attendance.present / currentData.attendance.total) * 100).toFixed(1) : 0}%)</span>
                     </div>
-                </div>
-
-            </div>
-
-            <div className="chart-legend-row-bottom">
-              <div className="chart-legend-item">
-                <span className="legend-dot sales-dot"></span>
-                <span className="legend-text">Revenue: <strong>{formatStatValue(totalPeriodSales)}</strong></span>
-              </div>
-              <div className="chart-legend-item">
-                <span className="legend-dot expenses-dot"></span>
-                <span className="legend-text">Expenses: <strong>{formatStatValue(totalPeriodExpenses)}</strong></span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Attendance Section */}
-        {hasAccess('attendance') && (
-          <div className="chart-card attendance-section" onClick={handleAttendanceClick}>
-            <div className="attendance-header">
-              <h3>ATTENDANCE</h3>
-              <span className="view-details">VIEW DETAILS →</span>
-            </div>
-
-            <div className="attendance-pie-container">
-              <div className="pie-chart-wrapper">
-                <div className="pie-chart">
-                  <div className="pie-segment present-segment" style={{ transform: `rotate(0deg)`, background: `conic-gradient(#10b981 0deg ${(currentData.attendance.present / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.present / currentData.attendance.total) * 360}deg 360deg)` }}></div>
-                  <div className="pie-segment absent-segment" style={{ transform: `rotate(${(currentData.attendance.present / currentData.attendance.total) * 360}deg)`, background: `conic-gradient(#ef4444 0deg ${(currentData.attendance.absent / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.absent / currentData.attendance.total) * 360}deg 360deg)` }}></div>
-                  <div className="pie-segment leave-segment" style={{ transform: `rotate(${((currentData.attendance.present + currentData.attendance.absent) / currentData.attendance.total) * 360}deg)`, background: `conic-gradient(#f59e0b 0deg ${(currentData.attendance.onLeave / currentData.attendance.total) * 360}deg, transparent ${(currentData.attendance.onLeave / currentData.attendance.total) * 360}deg 360deg)` }}></div>
-                  <div className="pie-center">
-                    <span className="pie-total">{currentData.attendance.total}</span>
-                    <span className="pie-total-label">TOTAL</span>
+                  </div>
+                  <div className="legend-item">
+                    <span className="legend-color absent-color"></span>
+                    <div className="legend-details">
+                      <span className="legend-label">ABSENT</span>
+                      <span className="legend-value">{currentData.attendance.absent}</span>
+                      <span className="legend-percentage">({currentData.attendance.total > 0 ? ((currentData.attendance.absent / currentData.attendance.total) * 100).toFixed(1) : 0}%)</span>
+                    </div>
+                  </div>
+                  <div className="legend-item">
+                    <span className="legend-color leave-color"></span>
+                    <div className="legend-details">
+                      <span className="legend-label">ON LEAVE</span>
+                      <span className="legend-value">{currentData.attendance.onLeave}</span>
+                      <span className="legend-percentage">({currentData.attendance.total > 0 ? ((currentData.attendance.onLeave / currentData.attendance.total) * 100).toFixed(1) : 0}%)</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="pie-legend">
-                <div className="legend-item">
-                  <span className="legend-color present-color"></span>
-                  <div className="legend-details">
-                    <span className="legend-label">PRESENT</span>
-                    <span className="legend-value">{currentData.attendance.present}</span>
-                    <span className="legend-percentage">({currentData.attendance.total > 0 ? ((currentData.attendance.present / currentData.attendance.total) * 100).toFixed(1) : 0}%)</span>
-                  </div>
+              <div className="attendance-stats-summary">
+                <div className="summary-item">
+                  <span className="summary-label">ATTENDANCE RATE</span>
+                  <span className="summary-value rate-high">{currentData.attendance.total > 0 ? ((currentData.attendance.present / currentData.attendance.total) * 100).toFixed(1) : 0}%</span>
                 </div>
-                <div className="legend-item">
-                  <span className="legend-color absent-color"></span>
-                  <div className="legend-details">
-                    <span className="legend-label">ABSENT</span>
-                    <span className="legend-value">{currentData.attendance.absent}</span>
-                    <span className="legend-percentage">({currentData.attendance.total > 0 ? ((currentData.attendance.absent / currentData.attendance.total) * 100).toFixed(1) : 0}%)</span>
-                  </div>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-color leave-color"></span>
-                  <div className="legend-details">
-                    <span className="legend-label">ON LEAVE</span>
-                    <span className="legend-value">{currentData.attendance.onLeave}</span>
-                    <span className="legend-percentage">({currentData.attendance.total > 0 ? ((currentData.attendance.onLeave / currentData.attendance.total) * 100).toFixed(1) : 0}%)</span>
-                  </div>
+                <div className="summary-item">
+                  <span className="summary-label">ABSENTEE RATE</span>
+                  <span className="summary-value">{currentData.attendance.total > 0 ? (((currentData.attendance.absent + currentData.attendance.onLeave) / currentData.attendance.total) * 100).toFixed(1) : 0}%</span>
                 </div>
               </div>
-            </div>
-
-            <div className="attendance-stats-summary">
-              <div className="summary-item">
-                <span className="summary-label">ATTENDANCE RATE</span>
-                <span className="summary-value rate-high">{currentData.attendance.total > 0 ? ((currentData.attendance.present / currentData.attendance.total) * 100).toFixed(1) : 0}%</span>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
+                <button className="btn-export-premium" onClick={(e) => { e.stopPropagation(); handleAttendanceReportClick(); }}>
+                  <span className="material-symbols-outlined">calendar_today</span>
+                  View Monthly Report
+                </button>
+                <button className="btn-export-premium" onClick={(e) => { e.stopPropagation(); handleAprilAttendanceReportClick(); }}>
+                  <span className="material-symbols-outlined">calendar_view_month</span>
+                  View April Attendance
+                </button>
               </div>
-              <div className="summary-item">
-                <span className="summary-label">ABSENTEE RATE</span>
-                <span className="summary-value">{currentData.attendance.total > 0 ? (((currentData.attendance.absent + currentData.attendance.onLeave) / currentData.attendance.total) * 100).toFixed(1) : 0}%</span>
-              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
-              <button className="btn-export-premium" onClick={(e) => { e.stopPropagation(); handleAttendanceReportClick(); }}>
-                <span className="material-symbols-outlined">calendar_today</span>
-                View Monthly Report
-              </button>
-              <button className="btn-export-premium" onClick={(e) => { e.stopPropagation(); handleAprilAttendanceReportClick(); }}>
-                <span className="material-symbols-outlined">calendar_view_month</span>
-                View April Attendance
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
 
       {/* INVENTORY LAYOUT AREA (ILA) */}
@@ -1036,25 +1039,25 @@ useEffect(() => {
               </div>
             </div>
           </div>
-          
+
           <div className="stock-grid ila-grid">
             {stockData.map((item, index) => {
               const currentMonthStr = dayjs().format('YYYY-MM');
-              
+
               // 1. Try specifically for this size or find the "All Sizes" master target
-              const monthlyTargets = (productionTargets || []).filter(t => 
+              const monthlyTargets = (productionTargets || []).filter(t =>
                 (t.productName === item.name || t.product === item.name) && t.date === currentMonthStr
               );
 
               const masterTarget = monthlyTargets.find(t => t.productSize === 'All Sizes');
               const specificTarget = monthlyTargets.find(t => t.productSize === item.size || t.size === item.size);
-              
+
               const monthlyTarget = masterTarget || specificTarget;
 
               // 2. If it's a master target, calculate progress based on TOTAL production of ALL sizes
               const targetQty = monthlyTarget ? Number(monthlyTarget.targetQty) : 0;
               let producedThisMonth = 0;
-              
+
               if (monthlyTarget?.productSize === 'All Sizes') {
                 // Sum production of ALL sizes for this product this month
                 producedThisMonth = Object.values(productionStats.monthBySize || {}).reduce((a, b) => a + b, 0);
@@ -1112,9 +1115,9 @@ useEffect(() => {
                   <div key={i} className="size-stat-item">
                     <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
                     <div className="s-bar-group">
-                      <div 
-                        className="s-bar sales" 
-                        style={{ 
+                      <div
+                        className="s-bar sales"
+                        style={{
                           width: `${(s.SalesQty / Math.max(...sizeChartsData.salesSizeChart.map(x => x.SalesQty), 1)) * 100}%`,
                           backgroundColor: barColor
                         }}
@@ -1142,9 +1145,9 @@ useEffect(() => {
                   <div key={i} className="size-stat-item">
                     <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
                     <div className="s-bar-group">
-                      <div 
-                        className="s-bar prod" 
-                        style={{ 
+                      <div
+                        className="s-bar prod"
+                        style={{
                           width: `${(s.ProdQty / Math.max(...sizeChartsData.prodSizeChart.map(x => x.ProdQty), 1)) * 100}%`,
                           backgroundColor: barColor
                         }}

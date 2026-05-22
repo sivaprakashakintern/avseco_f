@@ -4,7 +4,7 @@ import axios from '../utils/axiosConfig.js';
 import './ManageAccess.css';
 
 const ManageAccess = () => {
-  const { user, canEdit } = useAuth();
+  const { user, canEdit, refreshUser } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [availableModules, setAvailableModules] = useState([]);
@@ -14,6 +14,7 @@ const ManageAccess = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [activeTab, setActiveTab] = useState('permissions'); // 'permissions' or 'credentials'
   const [initialModules, setInitialModules] = useState([]); // Track original state for 'changes' button color logic
+  const [initialViewOnly, setInitialViewOnly] = useState(false);
   const managementCardRef = useRef(null);
 
   // Credential editing state
@@ -42,6 +43,7 @@ const ManageAccess = () => {
   const handleSelectEmployee = (employee) => {
     setSelectedEmployee({ ...employee });
     setInitialModules([...(employee.modules || [])]);
+    setInitialViewOnly(Boolean(employee.viewOnly));
     // Auto-fetch email as username
     setCredentials({ 
       username: employee.username || employee.email || '', 
@@ -78,9 +80,10 @@ const ManageAccess = () => {
   };
 
   const handleToggleModule = (moduleName) => {
-    if (!selectedEmployee || !canEdit) return;
+    if (!selectedEmployee || !canEdit || Boolean(selectedEmployee.viewOnly)) return;
 
-    const currentModules = [...selectedEmployee.modules];
+    // Ensure modules array exists
+    const currentModules = [...(selectedEmployee.modules || [])];
     const index = currentModules.indexOf(moduleName);
 
     if (index > -1) {
@@ -102,6 +105,12 @@ const ManageAccess = () => {
     setSelectedEmployee({ ...selectedEmployee, modules: [] });
   };
 
+  const handleToggleViewOnly = () => {
+    if (!selectedEmployee || !canEdit) return;
+    // No role‑based restriction; any user can be set to view‑only
+    setSelectedEmployee({ ...selectedEmployee, viewOnly: !selectedEmployee.viewOnly });
+  };
+
   const handleSavePermissions = async () => {
     if (!selectedEmployee || !canEdit) return;
     
@@ -110,14 +119,18 @@ const ManageAccess = () => {
 
     try {
       await axios.put(`/admin/employees/${selectedEmployee._id}/modules`, {
-        modules: selectedEmployee.modules
+        modules: selectedEmployee.modules,
+        viewOnly: Boolean(selectedEmployee.viewOnly)
       });
-      
+      // Refresh user info in case the current user is being updated
+      await refreshUser();
+      const updatedEmployee = { ...selectedEmployee, viewOnly: Boolean(selectedEmployee.viewOnly) };
       setEmployees(employees.map(emp => 
-        emp._id === selectedEmployee._id ? selectedEmployee : emp
+        emp._id === selectedEmployee._id ? updatedEmployee : emp
       ));
-      
+      setSelectedEmployee(updatedEmployee);
       setInitialModules([...selectedEmployee.modules]); // Update initial state after save
+      setInitialViewOnly(Boolean(selectedEmployee.viewOnly));
       setMessage({ type: 'success', text: 'Permissions saved successfully!' });
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
@@ -187,8 +200,10 @@ const ManageAccess = () => {
   };
   
   // Calculate if there are pending changes for the 'Commit Changes' button logic
-  const hasPendingChanges = selectedEmployee && 
-    JSON.stringify([...selectedEmployee.modules].sort()) !== JSON.stringify([...initialModules].sort());
+  const hasPendingChanges = selectedEmployee && (
+    JSON.stringify([...selectedEmployee.modules].sort()) !== JSON.stringify([...initialModules].sort()) ||
+    Boolean(selectedEmployee.viewOnly) !== Boolean(initialViewOnly)
+  );
 
   // Calculate if credential changes are pending
   const hasCredentialChanges = selectedEmployee && (
@@ -202,6 +217,9 @@ const ManageAccess = () => {
       <p>Loading administration console...</p>
     </div>
   );
+
+  
+  
 
   const renderManagementContent = () => (
     <div className="management-wrapper">
@@ -244,39 +262,60 @@ const ManageAccess = () => {
           <div className="tab-header">
             <h3>Module Access</h3>
             <div className="tab-actions">
-              <button onClick={handleSelectAll} className="bulk-btn select" disabled={!canEdit}>Allow All</button>
-              <button onClick={handleClearAll} className="bulk-btn clear" disabled={!canEdit}>Revoke All</button>
+               <button onClick={handleSelectAll} className="bulk-btn select" disabled={!canEdit || Boolean(selectedEmployee?.viewOnly)}>Allow All</button>
+               <button onClick={handleClearAll} className="bulk-btn clear" disabled={!canEdit || Boolean(selectedEmployee?.viewOnly)}>Revoke All</button>
             </div>
           </div>
+            <div className="view-only-toggle" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: canEdit ? 'pointer' : 'not-allowed', fontWeight: 600, color: '#0f172a' }}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(selectedEmployee?.viewOnly)}
+                  onChange={handleToggleViewOnly}
+                  disabled={!canEdit}
+                />
+                View-only access
+              </label>
+              <span style={{ color: '#64748b', fontSize: '0.9rem', maxWidth: '520px' }}>
+                When enabled, this user can browse assigned modules but cannot make edits.
+              </span>
+            </div>
           <div className="modules-grid">
-            {availableModules.filter(m => m.toLowerCase() !== 'dashboard').map(module => (
-              <div 
-                key={module}
-                onClick={canEdit ? () => handleToggleModule(module) : undefined}
-                className={`module-card ${selectedEmployee.modules.includes(module) ? 'active' : ''} ${canEdit ? '' : 'readonly'}`}
-              >
-                <div className="module-icon">
-                  <span className="material-symbols-outlined">{getModuleIcon(module)}</span>
+              {availableModules.filter(m => m.toLowerCase() !== 'dashboard').map(module => (
+                <div 
+                  key={module}
+                  onClick={canEdit && !selectedEmployee?.viewOnly ? () => handleToggleModule(module) : undefined}
+                                      className={`module-card ${selectedEmployee.modules?.includes(module) ? 'active' : ''} ${!canEdit || Boolean(selectedEmployee?.viewOnly) ? 'readonly' : ''}`}
+                >
+                  <div className="module-icon">
+                    <span className="material-symbols-outlined">{getModuleIcon(module)}</span>
+                  </div>
+                  <span className="module-name">{module}</span>
+                  <div className="check-box">
+                    {selectedEmployee.modules?.includes(module) && <span className="material-symbols-outlined">done</span>}
+                  </div>
                 </div>
-                <span className="module-name">{module}</span>
-                <div className="check-box">
-                  {selectedEmployee.modules.includes(module) && <span className="material-symbols-outlined">done</span>}
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
           <div className="tab-footer">
-            <button 
-              onClick={handleSavePermissions}
-              disabled={saving || !hasPendingChanges || !canEdit}
-              className={`save-btn ${hasPendingChanges ? 'has-changes' : 'no-changes'}`}
-            >
-              {saving ? 'Saving...' : 'Commit Changes'}
-            </button>
-            {!hasPendingChanges && selectedEmployee && (
-               <span className="no-changes-hint">No pending changes</span>
-            )}
-          </div>
+              {canEdit ? (
+                <button 
+                  onClick={handleSavePermissions}
+                  disabled={saving || !hasPendingChanges}
+                  className={`save-btn ${hasPendingChanges ? 'has-changes' : 'no-changes'}`}
+                >
+                  {saving ? 'Saving...' : 'Commit Changes'}
+                </button>
+              ) : (
+                <div className="info-message">
+                  <span className="material-symbols-outlined" style={{ verticalAlign: 'middle' }}>visibility</span>
+                  <span style={{ marginLeft: '6px' }}>View‑only mode – changes cannot be saved.</span>
+                </div>
+              )}
+              {!hasPendingChanges && selectedEmployee && (
+                 <span className="no-changes-hint">No pending changes</span>
+              )}
+            </div>
         </div>
       ) : (
         <div className="credentials-tab">
@@ -348,13 +387,20 @@ const ManageAccess = () => {
         </div>
       </div>
           <div className="tab-footer">
-            <button 
-              onClick={handleSaveCredentials}
-              disabled={saving || !credentials.username || !hasCredentialChanges || !canEdit}
-              className={`save-btn creds ${hasCredentialChanges ? 'has-changes' : 'no-changes'}`}
-            >
-              {saving ? 'Updating...' : 'Set New Credentials'}
-            </button>
+              {canEdit ? (
+                <button 
+                  onClick={handleSaveCredentials}
+                  disabled={saving || !credentials.username || !hasCredentialChanges}
+                  className={`save-btn creds ${hasCredentialChanges ? 'has-changes' : 'no-changes'}`}
+                >
+                  {saving ? 'Updating...' : 'Set New Credentials'}
+                </button>
+              ) : (
+                <div className="info-message">
+                  <span className="material-symbols-outlined" style={{ verticalAlign: 'middle' }}>visibility</span>
+                  <span style={{ marginLeft: '6px' }}>View‑only mode – credentials cannot be edited.</span>
+                </div>
+              )}
             {!hasCredentialChanges && selectedEmployee && (
                <span className="no-changes-hint">No pending changes</span>
             )}
