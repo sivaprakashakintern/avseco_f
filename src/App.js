@@ -14,6 +14,7 @@ import Employees from "./pages/employee/Employees.js";
 import AttendanceLog from "./pages/attendance/AttendanceLog.js";
 import AttendanceReport from "./pages/attendance/AttendanceReport.js";
 import ProfilePage from "./pages/profile/ProfilePage.js";
+import SalarySlip from "./pages/salary/SalarySlip.js";
 import LoadingScreen from "./components/LoadingScreen.js";
 import NotificationsPage from "./pages/notifications/NotificationsPage.js";
 import AdminPushPanel from "./pages/admin/AdminPushPanel.js";
@@ -130,6 +131,11 @@ const App = () => {
             <Route path="/dashboard" element={
               <ProtectedRoute module="dashboard">
                 <AppLayout><Dashboard /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/salary-slip" element={
+              <ProtectedRoute module="dashboard">
+                <AppLayout><SalarySlip /></AppLayout>
               </ProtectedRoute>
             } />
 

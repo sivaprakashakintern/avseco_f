@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../context/AppContext.js';
 import { useAuth } from '../context/AuthContext.js';
@@ -32,7 +32,49 @@ const Dashboard = () => {
     productionHistory = []
   } = useAppContext();
   const [timeFilter, setTimeFilter] = useState("Monthly");
-  const [showSalaryDetails, setShowSalaryDetails] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(dayjs().month() + 1);
+  const [selectedYear, setSelectedYear] = useState(dayjs().year());
+  const [selectedMonthName, setSelectedMonthName] = useState(dayjs().format('MMMM YYYY'));
+  // Helper functions for salary calculation for selected month
+  const computeSalaryForMonth = (month, year) => {
+    const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+    const allAttendance = Array.isArray(attendanceRecords) ? attendanceRecords : (attendanceRecords.year || []);
+    const monthAtt = allAttendance.filter(r => dayjs(r.date).format('YYYY-MM') === monthStr);
+    const present = monthAtt.filter(r => r.status === 'present').length;
+    const absent = monthAtt.filter(r => r.status === 'absent').length;
+    const half = monthAtt.filter(r => r.status === 'half').length;
+    const stoppage = monthAtt.filter(r => r.status === 'stoppage').length;
+    const leave = monthAtt.filter(r => r.status === 'leave').length;
+    const baseEmp = employees ? employees.find(e => String(e._id || e.id) === String(user?.id || user?._id)) : null;
+    const baseMonthlySalary = baseEmp && !isNaN(Number(baseEmp.salary)) ? Number(baseEmp.salary) : (user?.salary && !isNaN(Number(user.salary)) ? Number(user.salary) : 0);
+    const perDaySalary = baseMonthlySalary > 0 ? baseMonthlySalary / 26 : 0;
+    const paidCasualLeave = Math.min(leave, 1);
+    const compensatedDays = Math.min(26, present + stoppage + half * 0.5 + paidCasualLeave);
+    const earned = Math.round(compensatedDays * perDaySalary);
+    const unpaidLeaveDeduction = Math.round(Math.max(0, leave - 1) * perDaySalary);
+    const bonus = (present >= 26 && leave === 0 && compensatedDays >= 26) ? 500 : 0;
+    const total = earned + bonus - unpaidLeaveDeduction;
+    return { baseMonthlySalary, perDaySalary, present, absent, half, stoppage, leave, paidCasualLeave, compensatedDays, earned, bonus, total, monthStr };
+  };
+  const {
+  baseMonthlySalary: fullSalaryForSelected,
+  perDaySalary: perDaySalaryForSelected,
+  present: presentCountForSelected,
+  stoppage: stoppageCountForSelected,
+  half: halfDayCountForSelected,
+  leave: leaveCountForSelected,
+  paidCasualLeave: paidCasualLeaveForSelected,
+  compensatedDays: compensatedWorkDaysForSelected,
+  earned: earnedSalaryForSelected,
+  bonus: bonusForSelected,
+  total: totalSalaryWithBonusForSelected,
+} = computeSalaryForMonth(selectedMonth, selectedYear);
+
+// Update selected month name display
+useEffect(() => {
+  const monthName = dayjs(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`).format('MMMM YYYY');
+  setSelectedMonthName(monthName);
+}, [selectedMonth, selectedYear]);
 
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
@@ -596,9 +638,9 @@ const Dashboard = () => {
               <div className="emp-salary-status">
                 <span className="emp-salary-badge pending">Current Month Estimate</span>
               </div>
-              <button className="btn-export-premium" style={{ marginTop: '14px', width: '100%' }} onClick={() => setShowSalaryDetails(!showSalaryDetails)}>
+              <button className="btn-export-premium" style={{ marginTop: '14px', width: '100%' }} onClick={() => navigate('/salary-slip')}>
                 <span className="material-symbols-outlined">receipt_long</span>
-                <span>{showSalaryDetails ? 'Hide Salary Slip' : 'View Salary Slip'}</span>
+                <span>View Salary Slip</span>
               </button>
             </div>
           </div>
@@ -629,64 +671,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {showSalaryDetails && (
-          <div className="salary-slip-panel premium-card" style={{ marginBottom: '24px', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>Salary Slip - {currentMonthName}</h3>
-                <p style={{ margin: '6px 0 0', color: '#475569' }}>Detailed breakdown of this month&apos;s salary calculation.</p>
-              </div>
-              <button className="btn-export-premium" onClick={() => window.print()}>
-                <span className="material-symbols-outlined">print</span>
-                <span>Print Slip</span>
-              </button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '16px', marginBottom: '20px' }}>
-              <div>
-                <div className="detail-label">Base Monthly Salary</div>
-                <div className="detail-value">₹{fullSalary.toLocaleString()}</div>
-              </div>
-              <div>
-                <div className="detail-label">Per Day Salary</div>
-                <div className="detail-value">₹{perDaySalary.toFixed(2)}</div>
-              </div>
-              <div>
-                <div className="detail-label">Present Days</div>
-                <div className="detail-value">{presentCount}</div>
-              </div>
-              <div>
-                <div className="detail-label">Stoppage Days</div>
-                <div className="detail-value">{stoppageCount}</div>
-              </div>
-              <div>
-                <div className="detail-label">Half Days</div>
-                <div className="detail-value">{halfDayCount}</div>
-              </div>
-              <div>
-                <div className="detail-label">Paid Casual Leave</div>
-                <div className="detail-value">{paidCasualLeaveDays}/{casualLeaveAllowed}</div>
-              </div>
-            </div>
-            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '18px' }}>
-              <div className="emp-salary-meta-row">
-                <span>Total Paid Workdays</span>
-                <strong>{compensatedWorkDays.toFixed(1)}</strong>
-              </div>
-              <div className="emp-salary-meta-row">
-                <span>Salary Before Bonus</span>
-                <strong>₹{earnedSalary.toLocaleString()}</strong>
-              </div>
-              <div className="emp-salary-meta-row">
-                <span>Perfect Attendance Bonus</span>
-                <strong>₹{bonus.toLocaleString()}</strong>
-              </div>
-              <div className="emp-salary-meta-row" style={{ marginTop: '12px', fontSize: '1rem', fontWeight: 700 }}>
-                <span>Final Estimated Salary</span>
-                <strong>₹{totalSalaryWithBonus.toLocaleString()}</strong>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* ── ACTIVITY LOG TABLE ───────────────────────────────── */}
         <div className="emp-activity-section">

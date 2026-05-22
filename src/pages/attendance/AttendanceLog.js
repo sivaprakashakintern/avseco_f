@@ -54,7 +54,7 @@ const AttendanceLog = () => {
   const dateKey = toDateKey(currentDate);
   const isToday = toDateKey(currentDate) === toDateKey(today());
   const isSunday = currentDate.getDay() === 0;
-  const canModify = currentDate.valueOf() >= new Date(2026, 4, 1).valueOf() && currentDate.valueOf() <= today().valueOf();
+  const canModify = currentDate.valueOf() >= new Date(2026, 3, 1).valueOf() && currentDate.valueOf() <= today().valueOf();
 
   const goToPreviousDay = () => setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() - 1); return nd; });
   const goToNextDay = () => { if (!isToday) setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() + 1); return nd; }); };
@@ -288,7 +288,7 @@ const AttendanceLog = () => {
             <input
               type="date"
               value={dateKey}
-              min="2026-05-01"
+              min="2026-04-01"
               max={toDateKey(today())}
               onChange={(e) => {
                 if (e.target.value) {
