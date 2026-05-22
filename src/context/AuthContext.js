@@ -76,13 +76,19 @@ export const AuthProvider = ({ children }) => {
 
   const hasAccess = useCallback((moduleName) => {
     if (!user) return false;
-    if (user.role && user.role.toLowerCase() === 'admin') return true;
+    const isAdminUser = user.role && user.role.toLowerCase() === 'admin';
+    const isCEOViewOnly = Boolean(isAdminUser && (user.viewOnly || user.department?.toLowerCase() === 'ceo'));
+
+    if (isCEOViewOnly && ['notifications'].includes(moduleName)) return false;
     // Every user should have access to the dashboard home page
     if (moduleName === 'dashboard') return true;
+    if (isAdminUser) return true;
     return user.modules && user.modules.includes(moduleName);
   }, [user]);
 
   const isAdmin = user && user.role && user.role.toLowerCase() === 'admin';
+  const isCEOViewOnly = Boolean(isAdmin && (user?.viewOnly || user?.department?.toLowerCase() === 'ceo'));
+  const canEdit = !isCEOViewOnly;
 
   return (
     <AuthContext.Provider
@@ -92,6 +98,8 @@ export const AuthProvider = ({ children }) => {
         employee: user,
         modules: user?.modules || [],
         isAdmin,
+        isCEOViewOnly,
+        canEdit,
         isFirstLogin: user?.isFirstLogin,
         login: loginHelper,
         logout: logoutHelper,

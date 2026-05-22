@@ -106,27 +106,27 @@ export const AppProvider = ({ children }) => {
 
             // Build request map
             const requestMap = [];
-            if (hasAccess('employees') || hasAccess('production') || hasAccess('attendance') || hasAccess('sales') || !isAdmin) {
+            if (hasAccess('employees') || hasAccess('production') || hasAccess('attendance') || hasAccess('sales')) {
                 requestMap.push({ key: 'employees', call: employeeApi.getAll() });
             }
             if (hasAccess('stock')) requestMap.push({ key: 'expenses', call: expenseApi.getAll() });
             if (hasAccess('clients') || hasAccess('sales')) {
                 requestMap.push({ key: 'clients', call: clientApi.getAll() });
             }
-            if (hasAccess('production') || hasAccess('sales') || !isAdmin) {
+            if (hasAccess('production') || hasAccess('sales')) {
                 requestMap.push({ key: 'production', call: productionApi.getAll() });
                 if (hasAccess('production')) {
                     requestMap.push({ key: 'productionTargets', call: productionTargetApi.getAll() });
                 }
             }
-            if (hasAccess('attendance') || !isAdmin) {
+            if (hasAccess('attendance')) {
                 requestMap.push({ key: 'attendance', call: attendanceApi.getByDate(todayStr) });
                 requestMap.push({ key: 'attendanceYear', call: attendanceApi.getByYear(new Date().getFullYear()) });
             }
-            if (hasAccess('products') || hasAccess('production') || hasAccess('sales') || !isAdmin) {
+            if (hasAccess('products') || hasAccess('production') || hasAccess('sales')) {
                 requestMap.push({ key: 'products', call: productsApi.getAll() });
             }
-            if (hasAccess('sales') || hasAccess('production') || hasAccess('stock') || !isAdmin) {
+            if (hasAccess('sales') || hasAccess('production') || hasAccess('stock')) {
                 requestMap.push({ key: 'sales', call: salesApi.getAll() });
             }
             if (hasAccess('turnover')) {
@@ -178,7 +178,7 @@ export const AppProvider = ({ children }) => {
             });
 
             // Fetch Notifications separately (more frequent)
-            if (user) {
+            if (user && hasAccess('notifications')) {
                 const notifs = await notificationApi.getAll();
                 setNotifications(notifs);
                 setFetchStatus(prev => ({ ...prev, notifications: 'success' }));
@@ -193,7 +193,7 @@ export const AppProvider = ({ children }) => {
                 setIsUpdating(false);
             }
         }
-    }, [todayStr, user, refreshUser, hasAccess, isAdmin]);
+    }, [todayStr, user, refreshUser, hasAccess]);
 
     // ── DERIVED METRICS ─────────────────────────────────────────────────────────
     
@@ -353,9 +353,17 @@ export const AppProvider = ({ children }) => {
 
         const checkAndAddSalaries = async () => {
             const now = new Date();
+            const currentDay = now.getDate();
             const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             
-            // Check if any salary expense exists for this month
+            // 1. Check if we are in the first 5 days of the month
+            if (currentDay > 5) return;
+
+            // 2. Check if we already accrued salaries for this month (using localStorage)
+            const lastAccruedMonth = localStorage.getItem('salary_accrued_month');
+            if (lastAccruedMonth === currentMonthYear) return;
+
+            // 3. Fallback check: if any salary expense exists for this month
             const hasSalariesThisMonth = (expenses || []).some(ex => {
                 if (ex.category !== 'Salary') return false;
                 const dParts = ex.date.includes('-') ? ex.date.split('-') : [];
@@ -391,6 +399,9 @@ export const AppProvider = ({ children }) => {
                     }
                 }
                 
+                // Mark as accrued in localStorage so it doesn't run again if deleted
+                localStorage.setItem('salary_accrued_month', currentMonthYear);
+
                 if (anyAdded) {
                     const updatedExpenses = await expenseApi.getAll();
                     setExpenses(updatedExpenses.map(e => ({ ...e, id: e._id })).sort((a, b) => {
@@ -399,6 +410,9 @@ export const AppProvider = ({ children }) => {
                         return dateB - dateA;
                     }));
                 }
+            } else {
+                // If it already exists in DB, mark localStorage so it doesn't re-trigger if later deleted
+                localStorage.setItem('salary_accrued_month', currentMonthYear);
             }
         };
 
@@ -426,7 +440,7 @@ export const AppProvider = ({ children }) => {
         
         // Faster polling for notifications (10 seconds)
         const notificationInterval = setInterval(async () => {
-            if (user) {
+            if (user && hasAccess('notifications')) {
                 try {
                     const notifs = await notificationApi.getAll();
                     // Auto-toast for new incoming notifications
@@ -452,7 +466,7 @@ export const AppProvider = ({ children }) => {
             clearInterval(interval);
             clearInterval(notificationInterval);
         };
-    }, [user, fetchData, employees.length, products.length, hasFetched]);
+    }, [user, fetchData, employees.length, products.length, hasFetched, hasAccess]);
 
     // EMPLOYEES
     const addEmployee = useCallback(async (emp) => {

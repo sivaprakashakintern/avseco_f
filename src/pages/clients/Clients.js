@@ -454,13 +454,13 @@ const Clients = () => {
                         <input className="modal-input" name="companyName" value={formData.companyName} onChange={handleInputChange} placeholder="e.g. Acme Corp" required />
                       </div>
                       <div className="modal-form-group">
-                        <label>Contact Person *</label>
+                        <label>Contact Name *</label>
                         <input className="modal-input" name="contactPerson" value={formData.contactPerson} onChange={handleInputChange} placeholder="Harsath" required />
                       </div>
                     </>
                   ) : (
                     <div className="modal-form-group full-width">
-                      <label>Contact Person *</label>
+                      <label>Contact Name *</label>
                       <input className="modal-input" name="contactPerson" value={formData.contactPerson} onChange={handleInputChange} placeholder="Harsath" required />
                     </div>
                   )}
@@ -563,7 +563,7 @@ const Clients = () => {
               {/* CORE INFO GRID - CARD STYLE */}
               <div className="view-info-grid-cards">
                 <div className="view-card-item">
-                  <span className="card-label">Contact Person</span>
+                  <span className="card-label">Contact Name</span>
                   <span className="card-value">{viewClient.contactPerson || '—'}</span>
                 </div>
 

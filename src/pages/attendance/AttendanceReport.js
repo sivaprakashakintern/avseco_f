@@ -11,7 +11,6 @@ const months = [
 
 const AttendanceReport = () => {
     const { employees: allEmployees, attendanceRecords, fetchAttendanceForDate } = useAppContext();
-
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [showYearDropdown, setShowYearDropdown] = useState(false);
@@ -33,13 +32,27 @@ const AttendanceReport = () => {
     }, [location.search]);
 
     const employees = useMemo(() => {
+        const monthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
+
         return allEmployees.filter(emp => {
-            // Show ALL employees (including deactivated) in the report for historical records
-            if (emp.role === 'admin') return false; // Filter out admin only
+            if (emp.role === 'admin') return false;
             if (emp.name && emp.name.toLowerCase().includes("nithish kumar")) return false;
-            return true;
+
+            const hasAttendanceInSelectedMonth = Object.values(attendanceRecords)
+                .flat()
+                .some(record => record.empId === emp.id && String(record.date || "").startsWith(monthPrefix));
+
+            return emp.active !== false || hasAttendanceInSelectedMonth;
         });
-    }, [allEmployees]);
+    }, [allEmployees, attendanceRecords, selectedMonth, selectedYear]);
+
+    const goToPreviousMonth = () => {
+        setSelectedMonth(prev => (prev === 0 ? 11 : prev - 1));
+    };
+
+    const goToNextMonth = () => {
+        setSelectedMonth(prev => (prev === 11 ? 0 : prev + 1));
+    };
 
     const daysInCurrentMonthCount = new Date(selectedYear, selectedMonth + 1, 0).getDate();
     const daysInCurrentView = useMemo(() => {
@@ -434,7 +447,7 @@ const AttendanceReport = () => {
                 <div className="filter-item">
                     <label className="filter-label">MONTH:</label>
                     <div className="ar-month-nav">
-                        <button onClick={() => setSelectedMonth(prev => prev === 0 ? 11 : prev - 1)} className="nav-arrow-btn">
+                        <button onClick={goToPreviousMonth} className="nav-arrow-btn">
                             <span className="material-symbols-outlined">chevron_left</span>
                         </button>
                         <div className="custom-dropdown" onClick={(e) => e.stopPropagation()}>
@@ -445,14 +458,21 @@ const AttendanceReport = () => {
                             {showMonthDropdown && (
                                 <div className="dropdown-menu scrollable">
                                     {months.map((m, idx) => (
-                                        <div key={idx} className={`dropdown-item ${selectedMonth === idx ? "active" : ""}`} onClick={() => { setSelectedMonth(idx); setShowMonthDropdown(false); }}>
+                                        <div
+                                            key={idx}
+                                            className={`dropdown-item ${selectedMonth === idx ? "active" : ""}`}
+                                            onClick={() => {
+                                                setSelectedMonth(idx);
+                                                setShowMonthDropdown(false);
+                                            }}
+                                        >
                                             {m}
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </div>
-                        <button onClick={() => setSelectedMonth(prev => prev === 11 ? 0 : prev + 1)} className="nav-arrow-btn">
+                        <button onClick={goToNextMonth} className="nav-arrow-btn">
                             <span className="material-symbols-outlined">chevron_right</span>
                         </button>
                     </div>
