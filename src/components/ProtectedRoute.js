@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 
 const ProtectedRoute = ({ children, module, adminOnly = false }) => {
-  const { user, loading, hasAccess, isAdmin } = useAuth();
+  const { user, loading, hasAccess, isAdmin, isCEOViewOnly } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -20,7 +20,7 @@ const ProtectedRoute = ({ children, module, adminOnly = false }) => {
   }
 
   // If adminOnly requested but NOT admin -> redirect to /unauthorized
-  if (adminOnly && !isAdmin) {
+  if (adminOnly && (!isAdmin || isCEOViewOnly)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

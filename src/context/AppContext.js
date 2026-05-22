@@ -106,27 +106,27 @@ export const AppProvider = ({ children }) => {
 
             // Build request map
             const requestMap = [];
-            if (hasAccess('employees') || hasAccess('production') || hasAccess('attendance') || hasAccess('sales') || !isAdmin) {
+            if (hasAccess('employees') || hasAccess('production') || hasAccess('attendance') || hasAccess('sales')) {
                 requestMap.push({ key: 'employees', call: employeeApi.getAll() });
             }
             if (hasAccess('stock')) requestMap.push({ key: 'expenses', call: expenseApi.getAll() });
             if (hasAccess('clients') || hasAccess('sales')) {
                 requestMap.push({ key: 'clients', call: clientApi.getAll() });
             }
-            if (hasAccess('production') || hasAccess('sales') || !isAdmin) {
+            if (hasAccess('production') || hasAccess('sales')) {
                 requestMap.push({ key: 'production', call: productionApi.getAll() });
                 if (hasAccess('production')) {
                     requestMap.push({ key: 'productionTargets', call: productionTargetApi.getAll() });
                 }
             }
-            if (hasAccess('attendance') || !isAdmin) {
+            if (hasAccess('attendance')) {
                 requestMap.push({ key: 'attendance', call: attendanceApi.getByDate(todayStr) });
                 requestMap.push({ key: 'attendanceYear', call: attendanceApi.getByYear(new Date().getFullYear()) });
             }
-            if (hasAccess('products') || hasAccess('production') || hasAccess('sales') || !isAdmin) {
+            if (hasAccess('products') || hasAccess('production') || hasAccess('sales')) {
                 requestMap.push({ key: 'products', call: productsApi.getAll() });
             }
-            if (hasAccess('sales') || hasAccess('production') || hasAccess('stock') || !isAdmin) {
+            if (hasAccess('sales') || hasAccess('production') || hasAccess('stock')) {
                 requestMap.push({ key: 'sales', call: salesApi.getAll() });
             }
             if (hasAccess('turnover')) {
@@ -178,7 +178,7 @@ export const AppProvider = ({ children }) => {
             });
 
             // Fetch Notifications separately (more frequent)
-            if (user) {
+            if (user && hasAccess('notifications')) {
                 const notifs = await notificationApi.getAll();
                 setNotifications(notifs);
                 setFetchStatus(prev => ({ ...prev, notifications: 'success' }));
@@ -440,7 +440,7 @@ export const AppProvider = ({ children }) => {
         
         // Faster polling for notifications (10 seconds)
         const notificationInterval = setInterval(async () => {
-            if (user) {
+            if (user && hasAccess('notifications')) {
                 try {
                     const notifs = await notificationApi.getAll();
                     // Auto-toast for new incoming notifications

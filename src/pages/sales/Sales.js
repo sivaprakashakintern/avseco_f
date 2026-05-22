@@ -765,6 +765,20 @@ const Sales = () => {
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
                                             </div>
+                                            <button
+                                                className="add-new-client-dropdown-btn"
+                                                style={{ margin: '8px 12px 10px 12px' }}
+                                                onClick={() => {
+                                                    setNewClientData({ ...newClientData, companyName: companyName });
+                                                    setShowAddClientModal(true);
+                                                    setIsClientDropdownOpen(false);
+                                                }}
+                                            >
+                                                <span className="material-symbols-outlined">add_circle</span>
+                                                {companyName?.trim()
+                                                    ? `+ Add "${companyName}" as New Client`
+                                                    : '+ Add New Client'}
+                                            </button>
                                             {clients.filter(c =>
                                                 (c.companyName?.toLowerCase() || "").includes(companyName?.toLowerCase() || "") ||
                                                 (c.contactPerson?.toLowerCase() || "").includes(companyName?.toLowerCase() || "")
@@ -811,33 +825,10 @@ const Sales = () => {
                                                                 </div>
                                                             </button>
                                                         ))}
-                                                    <div className="dropdown-divider"></div>
-                                                    <button
-                                                        className="add-new-client-dropdown-btn"
-                                                        onClick={() => {
-                                                            setNewClientData({ ...newClientData, companyName: companyName });
-                                                            setShowAddClientModal(true);
-                                                            setIsClientDropdownOpen(false);
-                                                        }}
-                                                    >
-                                                        <span className="material-symbols-outlined">add_circle</span>
-                                                        Add New Client
-                                                    </button>
                                                 </>
                                             ) : (
                                                 <div className="no-clients-found-container">
                                                     <div className="no-clients-found">No clients found for "{companyName}"</div>
-                                                    <button
-                                                        className="create-client-btn-inline"
-                                                        onClick={() => {
-                                                            setNewClientData({ ...newClientData, companyName: companyName });
-                                                            setShowAddClientModal(true);
-                                                            setIsClientDropdownOpen(false);
-                                                        }}
-                                                    >
-                                                        <span className="material-symbols-outlined">person_add</span>
-                                                        Create "{companyName}" as new client
-                                                    </button>
                                                 </div>
                                             )}
                                         </div>
@@ -1671,18 +1662,18 @@ const Sales = () => {
                                 </div>
 
                                 <div className="modal-form-group">
-                                    <label>CONTACT PERSON *</label>
+                                    <label>CONTACT NAME *</label>
                                     <input
                                         type="text"
                                         className="modal-input"
-                                        placeholder="Enter contact person"
+                                        placeholder="Enter contact name"
                                         value={newClientData.contactPerson}
                                         onChange={(e) => setNewClientData({ ...newClientData, contactPerson: e.target.value })}
                                     />
                                 </div>
                                 <div className="modal-row">
                                     <div className="modal-form-group">
-                                        <label>EMAIL ADDRESS *</label>
+                                        <label>EMAIL ADDRESS (Optional)</label>
                                         <input
                                             type="email"
                                             className="modal-input"
@@ -1692,13 +1683,12 @@ const Sales = () => {
                                         />
                                     </div>
                                     <div className="modal-form-group">
-                                        <label>PHONE NUMBER *</label>
+                                        <label>PHONE NUMBER (Optional)</label>
                                         <input
                                             type="tel"
                                             className="modal-input"
                                             placeholder="Enter phone number"
                                             value={newClientData.phone}
-                                            required
                                             onChange={(e) => setNewClientData({ ...newClientData, phone: formatPhone(e.target.value) })}
                                         />
                                     </div>
@@ -1729,11 +1719,15 @@ const Sales = () => {
                                 <button className="modal-cancel" onClick={() => setShowAddClientModal(false)}>Cancel</button>
                                 <button
                                     className="modal-confirm"
-                                    disabled={!newClientData.contactPerson || !newClientData.phone || !newClientData.address}
+                                    disabled={!newClientData.contactPerson || !newClientData.address}
                                     onClick={async () => {
                                         try {
+                                            const normalizedPhone = (newClientData.phone || "").trim();
+                                            const usablePhone = normalizedPhone === "+91" || normalizedPhone === "+91 " ? "" : normalizedPhone;
                                             const newClient = {
                                                 ...newClientData,
+                                                email: (newClientData.email || "").trim(),
+                                                phone: usablePhone,
                                                 totalOrders: 0,
                                                 totalSpent: "₹0",
                                                 lastOrder: "Never",

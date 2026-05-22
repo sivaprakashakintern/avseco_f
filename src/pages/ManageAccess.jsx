@@ -4,7 +4,7 @@ import axios from '../utils/axiosConfig.js';
 import './ManageAccess.css';
 
 const ManageAccess = () => {
-  const { user } = useAuth();
+  const { user, canEdit } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [availableModules, setAvailableModules] = useState([]);
@@ -78,7 +78,7 @@ const ManageAccess = () => {
   };
 
   const handleToggleModule = (moduleName) => {
-    if (!selectedEmployee) return;
+    if (!selectedEmployee || !canEdit) return;
 
     const currentModules = [...selectedEmployee.modules];
     const index = currentModules.indexOf(moduleName);
@@ -93,17 +93,17 @@ const ManageAccess = () => {
   };
 
   const handleSelectAll = () => {
-    if (!selectedEmployee) return;
+    if (!selectedEmployee || !canEdit) return;
     setSelectedEmployee({ ...selectedEmployee, modules: [...availableModules] });
   };
 
   const handleClearAll = () => {
-    if (!selectedEmployee) return;
+    if (!selectedEmployee || !canEdit) return;
     setSelectedEmployee({ ...selectedEmployee, modules: [] });
   };
 
   const handleSavePermissions = async () => {
-    if (!selectedEmployee) return;
+    if (!selectedEmployee || !canEdit) return;
     
     setSaving(true);
     setMessage({ type: '', text: '' });
@@ -129,7 +129,7 @@ const ManageAccess = () => {
   };
 
   const handleSaveCredentials = async () => {
-    if (!selectedEmployee) return;
+    if (!selectedEmployee || !canEdit) return;
     
     setSaving(true);
     setMessage({ type: '', text: '' });
@@ -232,21 +232,28 @@ const ManageAccess = () => {
         </div>
       )}
 
+      {!canEdit && (
+        <div className="status-message info">
+          <span className="material-symbols-outlined">visibility</span>
+          View-only access is enabled. You can browse modules, but changes are disabled.
+        </div>
+      )}
+
       {activeTab === 'permissions' ? (
         <div className="permissions-tab">
           <div className="tab-header">
             <h3>Module Access</h3>
             <div className="tab-actions">
-              <button onClick={handleSelectAll} className="bulk-btn select">Allow All</button>
-              <button onClick={handleClearAll} className="bulk-btn clear">Revoke All</button>
+              <button onClick={handleSelectAll} className="bulk-btn select" disabled={!canEdit}>Allow All</button>
+              <button onClick={handleClearAll} className="bulk-btn clear" disabled={!canEdit}>Revoke All</button>
             </div>
           </div>
           <div className="modules-grid">
             {availableModules.filter(m => m.toLowerCase() !== 'dashboard').map(module => (
               <div 
                 key={module}
-                onClick={() => handleToggleModule(module)}
-                className={`module-card ${selectedEmployee.modules.includes(module) ? 'active' : ''}`}
+                onClick={canEdit ? () => handleToggleModule(module) : undefined}
+                className={`module-card ${selectedEmployee.modules.includes(module) ? 'active' : ''} ${canEdit ? '' : 'readonly'}`}
               >
                 <div className="module-icon">
                   <span className="material-symbols-outlined">{getModuleIcon(module)}</span>
@@ -261,7 +268,7 @@ const ManageAccess = () => {
           <div className="tab-footer">
             <button 
               onClick={handleSavePermissions}
-              disabled={saving || !hasPendingChanges}
+              disabled={saving || !hasPendingChanges || !canEdit}
               className={`save-btn ${hasPendingChanges ? 'has-changes' : 'no-changes'}`}
             >
               {saving ? 'Saving...' : 'Commit Changes'}
@@ -282,10 +289,12 @@ const ManageAccess = () => {
           <div className="input-with-actions">
             <input 
               value={credentials.username} 
+              readOnly={!canEdit}
+              disabled={!canEdit}
               onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
               placeholder="e.g. jdoe"
             />
-            <button className="icon-action-btn" onClick={() => copyToClipboard(credentials.username, 'Username')} title="Copy Username">
+            <button className="icon-action-btn" onClick={() => copyToClipboard(credentials.username, 'Username')} title="Copy Username" disabled={!canEdit}>
               <span className="material-symbols-outlined">content_copy</span>
             </button>
           </div>
@@ -296,7 +305,7 @@ const ManageAccess = () => {
              <span className="info-label">Current Data Password:</span>
              <span className="info-value">{selectedEmployee.visiblePassword || 'Not Set'}</span>
              {selectedEmployee.visiblePassword && (
-               <button className="copy-mini-btn" onClick={() => copyToClipboard(selectedEmployee.visiblePassword, 'Password')}>
+               <button className="copy-mini-btn" onClick={() => copyToClipboard(selectedEmployee.visiblePassword, 'Password')} disabled={!canEdit}>
                   <span className="material-symbols-outlined">content_copy</span>
                </button>
              )}
@@ -315,17 +324,19 @@ const ManageAccess = () => {
               <input 
                 type="text" 
                 value={credentials.password} 
+                readOnly={!canEdit}
+                disabled={!canEdit}
                 onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
                 placeholder="Leave empty to keep existing"
                 className="creds-input"
               />
-              <button className="gen-btn" onClick={generatePassword} type="button">
+              <button className="gen-btn" onClick={generatePassword} type="button" disabled={!canEdit}>
                 <span className="material-symbols-outlined">key</span>
                 Gen
               </button>
             </div>
             {credentials.password && (
-              <button className="icon-action-btn" onClick={() => copyToClipboard(credentials.password, 'Password')} title="Copy Password">
+              <button className="icon-action-btn" onClick={() => copyToClipboard(credentials.password, 'Password')} title="Copy Password" disabled={!canEdit}>
                 <span className="material-symbols-outlined">content_copy</span>
               </button>
             )}
@@ -339,7 +350,7 @@ const ManageAccess = () => {
           <div className="tab-footer">
             <button 
               onClick={handleSaveCredentials}
-              disabled={saving || !credentials.username || !hasCredentialChanges}
+              disabled={saving || !credentials.username || !hasCredentialChanges || !canEdit}
               className={`save-btn creds ${hasCredentialChanges ? 'has-changes' : 'no-changes'}`}
             >
               {saving ? 'Updating...' : 'Set New Credentials'}
