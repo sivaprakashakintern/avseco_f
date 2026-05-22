@@ -193,7 +193,7 @@ export const AppProvider = ({ children }) => {
                 setIsUpdating(false);
             }
         }
-    }, [todayStr, user, refreshUser, hasAccess, isAdmin]);
+    }, [todayStr, user, refreshUser, hasAccess]);
 
     // ── DERIVED METRICS ─────────────────────────────────────────────────────────
     
@@ -466,7 +466,7 @@ export const AppProvider = ({ children }) => {
             clearInterval(interval);
             clearInterval(notificationInterval);
         };
-    }, [user, fetchData, employees.length, products.length, hasFetched]);
+    }, [user, fetchData, employees.length, products.length, hasFetched, hasAccess]);
 
     // EMPLOYEES
     const addEmployee = useCallback(async (emp) => {
