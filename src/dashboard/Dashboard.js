@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from '../context/AppContext.js';
 import { useAuth } from '../context/AuthContext.js';
@@ -37,49 +37,7 @@ const Dashboard = () => {
     productionHistory = []
   } = useAppContext();
   const [timeFilter, setTimeFilter] = useState("Monthly");
-  const [selectedMonth, setSelectedMonth] = useState(dayjs().month() + 1);
-  const [selectedYear, setSelectedYear] = useState(dayjs().year());
-  const [selectedMonthName, setSelectedMonthName] = useState(dayjs().format('MMMM YYYY'));
-  // Helper functions for salary calculation for selected month
-  const computeSalaryForMonth = (month, year) => {
-    const monthStr = `${year}-${String(month).padStart(2, '0')}`;
-    const allAttendance = Array.isArray(attendanceRecords) ? attendanceRecords : (attendanceRecords.year || []);
-    const monthAtt = allAttendance.filter(r => dayjs(r.date).format('YYYY-MM') === monthStr);
-    const present = monthAtt.filter(r => r.status === 'present').length;
-    const absent = monthAtt.filter(r => r.status === 'absent').length;
-    const half = monthAtt.filter(r => r.status === 'half').length;
-    const stoppage = monthAtt.filter(r => r.status === 'stoppage').length;
-    const leave = monthAtt.filter(r => r.status === 'leave').length;
-    const baseEmp = employees ? employees.find(e => String(e._id || e.id) === String(user?.id || user?._id)) : null;
-    const baseMonthlySalary = baseEmp && !isNaN(Number(baseEmp.salary)) ? Number(baseEmp.salary) : (user?.salary && !isNaN(Number(user.salary)) ? Number(user.salary) : 0);
-    const perDaySalary = baseMonthlySalary > 0 ? baseMonthlySalary / 26 : 0;
-    const paidCasualLeave = Math.min(leave, 1);
-    const compensatedDays = Math.min(26, present + stoppage + half * 0.5 + paidCasualLeave);
-    const earned = Math.round(compensatedDays * perDaySalary);
-    const unpaidLeaveDeduction = Math.round(Math.max(0, leave - 1) * perDaySalary);
-    const bonus = (present >= 26 && leave === 0 && compensatedDays >= 26) ? 500 : 0;
-    const total = earned + bonus - unpaidLeaveDeduction;
-    return { baseMonthlySalary, perDaySalary, present, absent, half, stoppage, leave, paidCasualLeave, compensatedDays, earned, bonus, total, monthStr };
-  };
-  const {
-    baseMonthlySalary: fullSalaryForSelected,
-    perDaySalary: perDaySalaryForSelected,
-    present: presentCountForSelected,
-    stoppage: stoppageCountForSelected,
-    half: halfDayCountForSelected,
-    leave: leaveCountForSelected,
-    paidCasualLeave: paidCasualLeaveForSelected,
-    compensatedDays: compensatedWorkDaysForSelected,
-    earned: earnedSalaryForSelected,
-    bonus: bonusForSelected,
-    total: totalSalaryWithBonusForSelected,
-  } = computeSalaryForMonth(selectedMonth, selectedYear);
 
-  // Update selected month name display
-  useEffect(() => {
-    const monthName = dayjs(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`).format('MMMM YYYY');
-    setSelectedMonthName(monthName);
-  }, [selectedMonth, selectedYear]);
 
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
@@ -470,7 +428,7 @@ const Dashboard = () => {
     const compensatedWorkDays = Math.min(26, presentCount + stoppageCount + paidHalfDays + paidCasualLeaveDays);
     const earnedSalary = Math.round(compensatedWorkDays * perDaySalary) || 0;
     const unpaidLeaveDeduction = Math.round(unpaidLeaveDays * perDaySalary);
-    const fullSalary = Math.round(26 * perDaySalary);
+
     const bonus = (presentCount >= 26 && baseLeaveCount === 0 && compensatedWorkDays >= 26) ? 500 : 0;
     const totalSalaryWithBonus = earnedSalary + bonus;
 
