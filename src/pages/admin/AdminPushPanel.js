@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
+import { useAuth } from '../../context/AuthContext.js';
 import { notificationApi } from '../../utils/api.js';
 import './AdminPushPanel.css';
 
@@ -10,6 +11,7 @@ const AdminPushPanel = () => {
     const [message, setMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [status, setStatus] = useState(null); // { type: 'success'|'error', msg: '' }
+    const { canEdit } = useAuth();
 
     const handleSend = async (e) => {
         e.preventDefault();
@@ -47,6 +49,12 @@ const AdminPushPanel = () => {
             </div>
 
             <div className="push-main-content">
+                {!canEdit && (
+                    <div className="status-message info" style={{ marginBottom: '20px' }}>
+                        <span className="material-symbols-outlined">visibility</span>
+                        View-only access is enabled. You can browse this page, but sending notifications is disabled.
+                    </div>
+                )}
                 <div className="push-card-premium">
                     <div className="push-card-header-new">
                         <span className="material-symbols-outlined header-icon">campaign</span>
@@ -117,7 +125,7 @@ const AdminPushPanel = () => {
                             <button 
                                 type="submit" 
                                 className="btn-send-push-premium" 
-                                disabled={isSending}
+                                disabled={isSending || !canEdit}
                             >
                                 {isSending ? (
                                     <>

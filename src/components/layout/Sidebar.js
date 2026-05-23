@@ -9,7 +9,7 @@ import "./Sidebar.css";
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasAccess, isAdmin, isCEOViewOnly } = useAuth();
+  const { hasAccess, isAdmin } = useAuth();
 
   const { isMobileMenuOpen, setIsMobileMenuOpen, setLoading } = useContext(AppContext);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
@@ -150,7 +150,7 @@ const Sidebar = () => {
   });
 
   // Add Admin-specific Manage Access if admin
-  if (isAdmin && !isCEOViewOnly) {
+  if (isAdmin) {
     filteredNavItems.push({
       icon: "campaign",
       label: "Push Alerts",

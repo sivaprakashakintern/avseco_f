@@ -75,8 +75,17 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   const isSuperAdmin = user && user.name && user.name === 'Nithish Kumar';
-  const isAdmin = isSuperAdmin || (user?.role?.toLowerCase() === 'admin');
-  const isCEOViewOnly = Boolean(isAdmin && (user?.viewOnly || user?.department?.toLowerCase() === 'ceo'));
+  
+  const userRole = user?.role?.toLowerCase() || '';
+  const userDept = user?.department?.toLowerCase() || '';
+
+  const isAdminUser = userRole === 'admin' || userRole === 'ceo' || userRole === 'hr';
+  const isAdmin = isSuperAdmin || isAdminUser;
+
+  const isCEOViewOnly = Boolean(
+    isAdminUser && (user?.viewOnly || userRole === 'ceo' || userRole === 'hr' || userDept === 'ceo' || userDept === 'hr')
+  );
+
   const canEdit = isSuperAdmin ? true : !isCEOViewOnly;
 
   const hasAccess = useCallback((moduleName) => {
@@ -84,13 +93,17 @@ export const AuthProvider = ({ children }) => {
     // Super admin has access to everything
     if (isSuperAdmin) return true;
 
-    const isAdminUser = user.role && user.role.toLowerCase() === 'admin';
-    const isCEOViewOnly = Boolean(isAdminUser && (user.viewOnly || user.department?.toLowerCase() === 'ceo'));
+    const role = user?.role?.toLowerCase() || '';
+    const dept = user?.department?.toLowerCase() || '';
+    const isLocalAdminUser = role === 'admin' || role === 'ceo' || role === 'hr';
+    const isLocalCEOViewOnly = Boolean(
+      isLocalAdminUser && (user?.viewOnly || role === 'ceo' || role === 'hr' || dept === 'ceo' || dept === 'hr')
+    );
 
-    if (isCEOViewOnly && ['notifications'].includes(moduleName)) return false;
+    if (isLocalCEOViewOnly && ['notifications'].includes(moduleName)) return false;
     // Every user should have access to the dashboard home page
     if (moduleName === 'dashboard') return true;
-    if (isAdminUser) return true;
+    if (isLocalAdminUser) return true;
     return user.modules && user.modules.includes(moduleName);
   }, [user, isSuperAdmin]);
 
