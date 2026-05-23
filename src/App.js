@@ -13,8 +13,10 @@ import ProductList from "./pages/products/ProductList.js";
 import Employees from "./pages/employee/Employees.js";
 import AttendanceLog from "./pages/attendance/AttendanceLog.js";
 import AttendanceReport from "./pages/attendance/AttendanceReport.js";
+import MyAttendance from "./pages/attendance/MyAttendance.js";
 import ProfilePage from "./pages/profile/ProfilePage.js";
 import SalarySlip from "./pages/salary/SalarySlip.js";
+import Salary from "./pages/salary/Salary.js";
 import LoadingScreen from "./components/LoadingScreen.js";
 import NotificationsPage from "./pages/notifications/NotificationsPage.js";
 import AdminPushPanel from "./pages/admin/AdminPushPanel.js";
@@ -96,6 +98,20 @@ const AppLayout = ({ children }) => {
   );
 };
 
+  const MyAttendanceRoute = () => {
+    const { isAdmin } = useAuth();
+
+    if (isAdmin) {
+      return <Navigate to="/attendance" replace />;
+    }
+
+    return (
+      <ProtectedRoute>
+        <AppLayout><MyAttendance /></AppLayout>
+      </ProtectedRoute>
+    );
+  };
+
 const App = () => {
   useEffect(() => {
     const handleOnline = () => document.body.classList.remove('website-offline');
@@ -136,6 +152,11 @@ const App = () => {
             <Route path="/salary-slip" element={
               <ProtectedRoute module="dashboard">
                 <AppLayout><SalarySlip /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/salary" element={
+              <ProtectedRoute adminOnly={true}>
+                <AppLayout><Salary /></AppLayout>
               </ProtectedRoute>
             } />
 
@@ -245,6 +266,9 @@ const App = () => {
               <ProtectedRoute module="attendance">
                 <AppLayout><AttendanceReport /></AppLayout>
               </ProtectedRoute>
+            } />
+            <Route path="/my-attendance" element={
+              <MyAttendanceRoute />
             } />
 
             {/* Reports */}

@@ -1,0 +1,159 @@
+.my-attendance-container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.attendance-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.attendance-header h1 {
+  font-size: 2rem;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.attendance-header p {
+  color: #64748b;
+  font-size: 1.1rem;
+}
+
+.punch-card {
+  background: white;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.live-clock {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.punch-actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.punch-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 1.25rem 3rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.punch-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.punch-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.punch-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-in {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.btn-out {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.btn-completed {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+}
+
+.btn-icon {
+  font-size: 1.5rem;
+}
+
+.punch-history {
+  width: 100%;
+  margin-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.history-card {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid #f1f5f9;
+}
+
+.history-label {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.history-time {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.history-status {
+  font-size: 0.875rem;
+  color: #10b981;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-pending {
+  color: #f59e0b;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .my-attendance-container {
+    padding: 1rem;
+  }
+  
+  .live-clock {
+    font-size: 2.5rem;
+  }
+  
+  .punch-history {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
-// import { useAuth } from '../../context/AuthContext.js';
+import { useAuth } from '../../context/AuthContext.js';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
@@ -79,7 +79,7 @@ const Production = () => {
     productionTargets,
     fetchTargets
   } = useAppContext();
-  // const { isAdmin } = useAuth(); // Commented out as it's unused and causing build errors
+  const { canEdit, user } = useAuth();
 
   // ── Raw Material Stock Calculations for Alerts ──
   const rawMaterialPurchases = React.useMemo(() => {
@@ -125,7 +125,7 @@ const Production = () => {
   // Allow entry for dates starting from May 1st, 2026, but not future dates
   const isFromMayFirst = productionDate.valueOf() >= dayjs('2026-05-01').startOf('day').valueOf();
   const isNotFuture = productionDate.valueOf() <= dayjs().endOf('day').valueOf();
-  const canModify = isFromMayFirst && isNotFuture;
+  const canModify = isFromMayFirst && isNotFuture && canEdit;
   const [formData, setFormData] = useState({
     product: "",
     size: "",
@@ -367,6 +367,8 @@ const Production = () => {
       quantity: quantity,
       grade: formData.grade,
       operator: formData.operator,
+      employeeId: user?._id || user?.id || "",
+      employeeName: user?.name || "Unknown",
       time: timeString,
       status: "completed"
     };

@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }) => {
   const userRole = user?.role?.toLowerCase() || '';
   const userDept = user?.department?.toLowerCase() || '';
 
-  const isAdminUser = userRole === 'admin' || userRole === 'ceo' || userRole === 'hr';
+  const isAdminUser = userRole === 'admin' || userRole === 'ceo' || userRole === 'hr' || userDept === 'ceo' || userDept === 'hr' || user?.viewOnly;
   const isAdmin = isSuperAdmin || isAdminUser;
 
   const isCEOViewOnly = Boolean(
@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }) => {
 
     const role = user?.role?.toLowerCase() || '';
     const dept = user?.department?.toLowerCase() || '';
-    const isLocalAdminUser = role === 'admin' || role === 'ceo' || role === 'hr';
+    const isLocalAdminUser = role === 'admin' || role === 'ceo' || role === 'hr' || dept === 'ceo' || dept === 'hr' || user?.viewOnly;
     const isLocalCEOViewOnly = Boolean(
       isLocalAdminUser && (user?.viewOnly || role === 'ceo' || role === 'hr' || dept === 'ceo' || dept === 'hr')
     );

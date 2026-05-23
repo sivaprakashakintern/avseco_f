@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext.js";
 import { useAuth } from "../../context/AuthContext.js";
@@ -10,9 +10,10 @@ import "../../dashboard/Dashboard.css";
 
 const SalarySlip = () => {
   const navigate = useNavigate();
-  const { employees = [], attendanceRecords = [] } = useAppContext();
-  const { user } = useAuth();
+  const { employees = [], attendanceRecords = [], salesHistory = [] } = useAppContext();
+  const { user, isAdmin } = useAuth();
   const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM"));
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
 
   const monthOptions = useMemo(() => {
     return Array.from({ length: 12 }, (_, index) => {
@@ -36,6 +37,33 @@ const SalarySlip = () => {
 
   const employeeId = String(user?._id || user?.id || "");
 
+  const employeeOptions = useMemo(() => {
+    return employees
+      .map(employee => ({
+        id: String(employee._id || employee.id || ""),
+        name: employee.name || "Employee",
+        department: employee.department || "",
+      }))
+      .filter(employee => employee.id);
+  }, [employees]);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      setSelectedEmployeeId(employeeId);
+      return;
+    }
+
+    if (selectedEmployeeId) return;
+
+    if (employeeOptions.some(employee => employee.id === employeeId)) {
+      setSelectedEmployeeId(employeeId);
+    } else if (employeeOptions[0]?.id) {
+      setSelectedEmployeeId(employeeOptions[0].id);
+    }
+  }, [isAdmin, employeeId, employeeOptions, selectedEmployeeId]);
+
+  const activeEmployeeId = isAdmin ? (selectedEmployeeId || employeeId) : employeeId;
+
   const attendanceArray = Array.isArray(attendanceRecords)
     ? attendanceRecords
     : Array.isArray(attendanceRecords.year)
@@ -43,7 +71,7 @@ const SalarySlip = () => {
       : [];
 
   const monthAttendance = attendanceArray.filter(record =>
-    String(record.empId || record.employee?._id || record.employee) === employeeId &&
+    String(record.empId || record.employee?._id || record.employee) === activeEmployeeId &&
     dayjs(record.date).format("YYYY-MM") === selectedDate
   );
 
@@ -61,7 +89,7 @@ const SalarySlip = () => {
   const stoppage = monthAttendance.filter(r => r.status === "stoppage").length;
   const leave = monthAttendance.filter(r => r.status === "leave").length;
 
-  const employeeObj = employees.find(e => String(e._id || e.id) === employeeId);
+  const employeeObj = employees.find(e => String(e._id || e.id) === activeEmployeeId);
   const baseMonthlySalary = employeeObj && !isNaN(Number(employeeObj.salary))
     ? Number(employeeObj.salary)
     : (user?.salary && !isNaN(Number(user.salary)) ? Number(user.salary) : 0);
@@ -81,12 +109,40 @@ const SalarySlip = () => {
   const workedDays = present + stoppage + half * 0.5;
   const bonus = workedDays >= 26 ? 500 : 0;
 
-  // 3. Final rounded total paid
-  const total = Math.max(0, Math.round(baseMonthlySalary + bonus - totalDeductions));
+  // 3. Sales Commission Logic
+  const mySales = salesHistory.filter(sale => {
+    const soldByName = String(sale.soldBy || sale.recordedBy || "").trim().toLowerCase();
+    const currentName = String(user?.name || "").trim().toLowerCase();
+    
+    // Extract month-year
+    const saleDateClean = String(sale.date || sale.createdAt || "").split(',')[0].trim();
+    const dateParts = saleDateClean.split('-');
+    let saleMonthYear = "";
+    if (dateParts.length === 3) {
+      if (dateParts[2].length === 4) {
+        saleMonthYear = `${dateParts[2]}-${dateParts[1]}`; // DD-MM-YYYY -> YYYY-MM
+      } else if (dateParts[0].length === 4) {
+        saleMonthYear = `${dateParts[0]}-${dateParts[1]}`; // YYYY-MM-DD -> YYYY-MM
+      }
+    }
+    if (!saleMonthYear) {
+      saleMonthYear = dayjs(sale.date || sale.createdAt).format('YYYY-MM');
+    }
+
+    return soldByName === currentName && saleMonthYear === selectedDate;
+  });
+  
+  const totalMySalesValue = mySales.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+  // Example 2% commission on total sales
+  const salesCommission = Math.round(totalMySalesValue * 0.02);
+
+  // 4. Final rounded total paid
+  const total = Math.max(0, Math.round(baseMonthlySalary + bonus + salesCommission - totalDeductions));
 
   // Dynamic values for department and designation
   const departmentName = employeeObj?.department || user?.department || "Plate Manufacturing Unit";
   const designationRole = employeeObj?.role || user?.role || "Employee";
+  const employeeDisplayName = employeeObj?.name || user?.name || "Employee";
 
   const [downloadLoading, setDownloadLoading] = useState(false);
 
@@ -593,6 +649,22 @@ const SalarySlip = () => {
             <h3 className="slip-desktop-title" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>Salary Slip</h3>
           </div>
           <div className="header-right-group">
+            {isAdmin && employeeOptions.length > 0 && (
+              <div className="filter-group">
+                <span className="material-symbols-outlined" style={{ color: '#006A4E', fontSize: '20px' }}>badge</span>
+                <label className="filter-label" htmlFor="salary-employee">Employee:</label>
+                <select
+                  id="salary-employee"
+                  value={selectedEmployeeId || employeeOptions[0]?.id || ""}
+                  onChange={e => setSelectedEmployeeId(e.target.value)}
+                  style={{ minWidth: '180px', padding: '8px 12px', borderRadius: '10px', border: '2px solid #cbd5e1', background: '#fff', fontSize: '0.92rem', fontWeight: 600, color: '#1e293b', outline: 'none', height: '38px' }}
+                >
+                  {employeeOptions.map(option => (
+                    <option key={option.id} value={option.id}>{option.name}{option.department ? ` - ${option.department}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="filter-group">
               <span className="material-symbols-outlined" style={{ color: '#006A4E', fontSize: '20px' }}>calendar_month</span>
               <label className="filter-label" htmlFor="salary-month">Month:</label>
@@ -648,7 +720,7 @@ const SalarySlip = () => {
         <div className="emp-info-section">
           <div className="emp-info-left">
             <div className="emp-info-title">Employee Information</div>
-            <div className="emp-info-item"><span className="label">Employee Name:</span> <span style={{ textTransform: 'capitalize' }}>{user?.name || 'N/A'}</span></div>
+            <div className="emp-info-item"><span className="label">Employee Name:</span> <span style={{ textTransform: 'capitalize' }}>{employeeDisplayName}</span></div>
             <div className="emp-info-item"><span className="label">Position:</span> <span style={{ textTransform: 'capitalize' }}>{designationRole}</span></div>
             <div className="emp-info-item"><span className="label">Department:</span> <span style={{ textTransform: 'capitalize' }}>{departmentName}</span></div>
           </div>
@@ -711,6 +783,14 @@ const SalarySlip = () => {
                 {bonus > 0 ? `+ ${formatCurrency(bonus)}` : `${formatCurrency(0)}`}
               </td>
             </tr>
+            {salesCommission > 0 && (
+              <tr>
+                <td className="label-cell">Sales Commission (2%)</td>
+                <td className="value-cell" style={{ color: '#15803d' }}>
+                  + {formatCurrency(salesCommission)}
+                </td>
+              </tr>
+            )}
             <tr>
               <td className="label-cell">Deductions</td>
               <td className="value-cell" style={{ color: totalDeductions > 0 ? '#b91c1c' : '#2c3e35' }}>

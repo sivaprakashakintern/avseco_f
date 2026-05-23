@@ -118,10 +118,16 @@ export const AppProvider = ({ children }) => {
                 if (hasAccess('production')) {
                     requestMap.push({ key: 'productionTargets', call: productionTargetApi.getAll() });
                 }
+            } else {
+                // Fetch logged-in user's production if they don't have global access
+                requestMap.push({ key: 'myProduction', call: productionApi.getMyProduction() });
             }
             if (hasAccess('attendance')) {
                 requestMap.push({ key: 'attendance', call: attendanceApi.getByDate(todayStr) });
                 requestMap.push({ key: 'attendanceYear', call: attendanceApi.getByYear(new Date().getFullYear()) });
+            } else {
+                // If no global access, just fetch my own attendance for the year
+                requestMap.push({ key: 'myAttendanceYear', call: attendanceApi.getMyByYear(new Date().getFullYear()) });
             }
             if (hasAccess('products') || hasAccess('production') || hasAccess('sales')) {
                 requestMap.push({ key: 'products', call: productsApi.getAll() });
@@ -152,7 +158,13 @@ export const AppProvider = ({ children }) => {
                     } else if (key === 'clients') {
                         setClients(data.map(c => ({ ...c, id: c._id })));
                     } else if (key === 'production') {
-                        setProductionHistory(data.map(p => ({ ...p, id: p._id })).sort((a, b) => {
+                        setProductionHistory(data.map(p => ({ ...p, id: p._id, employeeId: p.employeeId || p.employee?._id || '', employeeName: p.employeeName || p.recordedBy || '' })).sort((a, b) => {
+                            const dateA = a.date && a.date.includes('-') ? new Date(a.date.split('-').reverse().join('-')) : new Date(a.date || a.createdAt);
+                            const dateB = b.date && b.date.includes('-') ? new Date(b.date.split('-').reverse().join('-')) : new Date(b.date || b.createdAt);
+                            return dateB - dateA;
+                        }));
+                    } else if (key === 'myProduction') {
+                        setProductionHistory(data.map(p => ({ ...p, id: p._id, employeeId: p.employeeId || p.employee?._id || '', employeeName: p.employeeName || p.recordedBy || '' })).sort((a, b) => {
                             const dateA = a.date && a.date.includes('-') ? new Date(a.date.split('-').reverse().join('-')) : new Date(a.date || a.createdAt);
                             const dateB = b.date && b.date.includes('-') ? new Date(b.date.split('-').reverse().join('-')) : new Date(b.date || b.createdAt);
                             return dateB - dateA;
@@ -163,6 +175,9 @@ export const AppProvider = ({ children }) => {
                         const mapped = data.map(r => ({ ...r, empId: r.employee?._id ? String(r.employee._id) : String(r.employee), id: r._id }));
                         setAttendanceRecords(prev => ({ ...prev, [todayStr]: mapped }));
                     } else if (key === 'attendanceYear') {
+                        const mapped = data.map(r => ({ ...r, empId: r.employee?._id ? String(r.employee._id) : String(r.employee), id: r._id }));
+                        setAttendanceRecords(prev => ({ ...prev, year: mapped }));
+                    } else if (key === 'myAttendanceYear') {
                         const mapped = data.map(r => ({ ...r, empId: r.employee?._id ? String(r.employee._id) : String(r.employee), id: r._id }));
                         setAttendanceRecords(prev => ({ ...prev, year: mapped }));
                     } else if (key === 'products') {
@@ -1070,12 +1085,22 @@ export const AppProvider = ({ children }) => {
 
     // Using todayStr calculated at the top of the component
 
+    const attendanceTargetEmployees = employees.filter(e => {
+        const dept = (e.department || "").toLowerCase();
+        const role = (e.role || "").toLowerCase();
+        return !dept.includes("ceo") && !role.includes("ceo") && !dept.includes("management") && !role.includes("management");
+    });
+
     const todayAttendance = attendanceRecords[todayStr] ?? [];
+    const todayAttendanceFiltered = todayAttendance.filter(r => {
+        return attendanceTargetEmployees.some(e => String(e._id || e.id) === String(r.empId || r.employee?._id || r.employee));
+    });
+
     const todayStats = {
-        present: todayAttendance.filter(r => r.status === "present").length,
-        absent: todayAttendance.filter(r => r.status === "absent").length,
-        half: todayAttendance.filter(r => r.status === "half").length,
-        total: employees.length || 0,
+        present: todayAttendanceFiltered.filter(r => r.status === "present").length,
+        absent: todayAttendanceFiltered.filter(r => r.status === "absent").length,
+        half: todayAttendanceFiltered.filter(r => r.status === "half").length,
+        total: attendanceTargetEmployees.length || 0,
     };
 
     const last7DaysTrend = Array.from({ length: 7 }, (_, i) => {
@@ -1083,13 +1108,16 @@ export const AppProvider = ({ children }) => {
         d.setDate(d.getDate() - (6 - i));
         const ds = toLocalDateKey(d);
         const recs = attendanceRecords[ds] ?? [];
+        const filteredRecs = recs.filter(r => {
+            return attendanceTargetEmployees.some(e => String(e._id || e.id) === String(r.empId || r.employee?._id || r.employee));
+        });
         return {
             date: ds,
             label: d.toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
-            present: recs.filter(r => r.status === "present").length,
-            absent: recs.filter(r => r.status === "absent").length,
-            half: recs.filter(r => r.status === "half").length,
-            total: employees.length || 0,
+            present: filteredRecs.filter(r => r.status === "present").length,
+            absent: filteredRecs.filter(r => r.status === "absent").length,
+            half: filteredRecs.filter(r => r.status === "half").length,
+            total: attendanceTargetEmployees.length || 0,
         };
     });
 

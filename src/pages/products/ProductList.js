@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./ProductList.css";
 import { useAppContext } from "../../context/AppContext.js";
+import { useAuth } from "../../context/AuthContext.js";
 
 // Removed image imports as per user request
 
@@ -9,6 +10,7 @@ const DEFAULT_SIZES = ["4-inch", "6-inch", "8-inch", "10-inch", "12-inch"];
 
 const ProductList = () => {
   const { products, fetchData, addProduct, updateProduct, deleteProduct } = useAppContext();
+  const { canEdit } = useAuth();
   // Simplified states - removed unused filters
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -38,6 +40,7 @@ const ProductList = () => {
 
   // Add Product
   const handleAddProduct = React.useCallback(() => {
+    if (!canEdit) return;
     setFormData({
       name: "",
       hsn: "",
@@ -53,7 +56,7 @@ const ProductList = () => {
       isNew: true
     }]);
     setShowAddModal(true);
-  }, []);
+  }, [canEdit]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -142,6 +145,7 @@ const ProductList = () => {
       setExpandedGroup(prev => prev === name ? null : name);
       return;
     }
+    if (!canEdit) return; // Disable desktop edit modal for ViewOnly
 
     const group = productGroups[name] || [];
     if (group.length === 0) return;
@@ -363,7 +367,7 @@ const ProductList = () => {
         </div>
 
         <div className="header-actions">
-          <button className="btn-transfer-premium" onClick={handleAddProduct}>
+          <button className="btn-transfer-premium" onClick={handleAddProduct} disabled={!canEdit}>
             <span className="material-symbols-outlined">add</span>
             <span className="btn-text">Add Product</span>
           </button>
@@ -413,17 +417,19 @@ const ProductList = () => {
                     <div className="mobile-hidden" style={{ textAlign: 'right' }}>
                       <span className="product-card-text-badge" style={{ padding: '2px 8px', fontSize: '10px', display: 'block', marginBottom: '4px' }}>{productGroups[name].length} Sizes</span>
                     </div>
-                    <button
-                      className="action-btn delete"
-                      style={{ padding: '4px', height: '32px', width: '32px' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setGroupToDelete(name);
-                        setShowGroupDeleteModal(true);
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
-                    </button>
+                    {canEdit && (
+                      <button
+                        className="action-btn delete"
+                        style={{ padding: '4px', height: '32px', width: '32px' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setGroupToDelete(name);
+                          setShowGroupDeleteModal(true);
+                        }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
+                      </button>
+                    )}
                     <div className="desktop-hidden">
                       <span className="material-symbols-outlined expand-chevron" style={{
                         transform: expandedGroup === name ? 'rotate(180deg)' : 'rotate(0)',
@@ -440,29 +446,31 @@ const ProductList = () => {
                   <div className="mobile-product-details" onClick={(e) => e.stopPropagation()}>
                     <div className="details-header">
                       <span>{productGroups[name].length} Sizes Available</span>
-                      <button className="edit-btn-mini" onClick={() => {
-                        // Trigger desktop edit logic even on mobile if they click this button
-                        const group = productGroups[name];
-                        setFormData({
-                          name: name,
-                          hsn: group[0]?.sku || "",
-                          category: group[0]?.category || "Plates",
-                        });
-                        const variantsFromDefault = DEFAULT_SIZES.map(s => {
-                          const match = group.find(v => v.size === s);
-                          return match ?
-                            { ...match, checked: true, cost: match.costPrice, sell: match.sellPrice, hsn: match.hsnCode || match.sku, isExisting: true } :
-                            { size: s, cost: "", sell: "", hsn: group[0]?.hsnCode || group[0]?.sku || "", checked: false, isNew: true };
-                        });
-                        const customVariants = group
-                          .filter(v => !DEFAULT_SIZES.includes(v.size))
-                          .map(v => ({ ...v, checked: true, cost: v.costPrice, sell: v.sellPrice, hsn: v.sku, isExisting: true }));
-                        setVariants([...variantsFromDefault, ...customVariants]);
-                        setShowEditModal(true);
-                      }}>
-                        <span className="material-symbols-outlined">edit</span>
-                        Edit All
-                      </button>
+                      {canEdit && (
+                        <button className="edit-btn-mini" onClick={() => {
+                          // Trigger desktop edit logic even on mobile if they click this button
+                          const group = productGroups[name];
+                          setFormData({
+                            name: name,
+                            hsn: group[0]?.sku || "",
+                            category: group[0]?.category || "Plates",
+                          });
+                          const variantsFromDefault = DEFAULT_SIZES.map(s => {
+                            const match = group.find(v => v.size === s);
+                            return match ?
+                              { ...match, checked: true, cost: match.costPrice, sell: match.sellPrice, hsn: match.hsnCode || match.sku, isExisting: true } :
+                              { size: s, cost: "", sell: "", hsn: group[0]?.hsnCode || group[0]?.sku || "", checked: false, isNew: true };
+                          });
+                          const customVariants = group
+                            .filter(v => !DEFAULT_SIZES.includes(v.size))
+                            .map(v => ({ ...v, checked: true, cost: v.costPrice, sell: v.sellPrice, hsn: v.sku, isExisting: true }));
+                          setVariants([...variantsFromDefault, ...customVariants]);
+                          setShowEditModal(true);
+                        }}>
+                          <span className="material-symbols-outlined">edit</span>
+                          Edit All
+                        </button>
+                      )}
                     </div>
                     <div className="mobile-variants-stack">
                       {productGroups[name].sort((a, b) => (parseInt(a.size) || 0) - (parseInt(b.size) || 0)).map((v, vIdx) => (

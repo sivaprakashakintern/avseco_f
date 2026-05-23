@@ -21,7 +21,7 @@ const Employees = () => {
     departments
   } = useAppContext();
 
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, canEdit } = useAuth();
 
   const [viewMode, setViewMode] = useState(window.innerWidth <= 768 ? "list" : "grid");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -68,10 +68,9 @@ const Employees = () => {
 
   // Filter employees
   const filteredEmployees = employees.filter((employee) => {
-    // Hide Admins and self from the Employee list
-    const isAdminUser = employee.role === 'admin';
-    const isSelf = employee.email === user?.email || employee.id === user?.id;
-    if (isAdminUser || isSelf) return false;
+    // Removed admin and self filtering so all employees are visible
+    // to those with access (like CEO/Admin).
+
 
     // Active / Deactive filter
     const isActive = employee.active !== false; // default: true if not set
@@ -466,7 +465,7 @@ const Employees = () => {
             <h1 className="page-title">Employees</h1>
           </div>
           <div className="header-actions">
-            {isAdmin && (
+            {isAdmin && canEdit && (
               <button className="btn-add-circle-premium" onClick={handleAddEmployee} title="Add Employee">
                 <span className="material-symbols-outlined">add_circle</span>
               </button>
@@ -644,7 +643,7 @@ const Employees = () => {
                         <span className="material-symbols-outlined empty-icon">group_off</span>
                         <h4>No employees found</h4>
                         <p>Try adjusting your filters or add a new employee</p>
-                        {isAdmin && <button className="add-employee-btn" onClick={handleAddEmployee}>Add Employee</button>}
+                        {isAdmin && canEdit && <button className="add-employee-btn" onClick={handleAddEmployee}>Add Employee</button>}
                       </div>
                     </td>
                   </tr>
@@ -690,7 +689,7 @@ const Employees = () => {
               <div className="mobile-emp-empty">
                 <span className="material-symbols-outlined">group_off</span>
                 <p>No employees found</p>
-                {isAdmin && <button className="add-employee-btn" onClick={handleAddEmployee}>Add Employee</button>}
+                {isAdmin && canEdit && <button className="add-employee-btn" onClick={handleAddEmployee}>Add Employee</button>}
               </div>
             )}
           </div>
@@ -744,7 +743,7 @@ const Employees = () => {
                     >
                       View
                     </button>
-                    {isAdmin && (
+                    {isAdmin && canEdit && (
                       <button
                         className="card-edit-btn"
                         onClick={(e) => { e.stopPropagation(); handleEditEmployee(employee) }}
@@ -762,7 +761,7 @@ const Employees = () => {
               <span className="material-symbols-outlined empty-icon">group_off</span>
               <h4>No employees found</h4>
               <p>Try adjusting your filters or add a new employee</p>
-              {isAdmin && (
+              {isAdmin && canEdit && (
                 <button className="add-employee-btn" onClick={handleAddEmployee}>
                   Add Employee
                 </button>
@@ -1344,7 +1343,7 @@ const Employees = () => {
                 </div>
               </div>
               <div className="modal-footer view-modal-footer">
-                {isAdmin && (
+                {isAdmin && canEdit && (
                   <button
                     className="view-modal-btn btn-delete"
                     onClick={() => {
@@ -1356,7 +1355,7 @@ const Employees = () => {
                     Delete
                   </button>
                 )}
-                {isAdmin && (
+                {isAdmin && canEdit && (
                   <button
                     className="view-modal-btn btn-edit"
                     onClick={() => {
@@ -1368,7 +1367,7 @@ const Employees = () => {
                     Edit
                   </button>
                 )}
-                {isAdmin && (
+                {isAdmin && canEdit && (
                   <button
                     className="view-modal-btn"
                     style={{

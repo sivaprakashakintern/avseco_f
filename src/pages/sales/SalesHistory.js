@@ -20,7 +20,7 @@ const getFormattedTime = (transaction) => {
 
 const SalesHistory = () => {
     const { clients } = useAppContext();
-    const { user, isAdmin } = useAuth();
+    const { user, isAdmin, canEdit } = useAuth();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -439,9 +439,9 @@ const SalesHistory = () => {
                                                     className={`erp-badge ${status === 'paid' ? 'success' : status === 'unpaid' ? 'danger' : 'warning'}`}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        if (status === 'unpaid') handleTogglePaymentStatus(transaction);
+                                                        if (status === 'unpaid' && canEdit) handleTogglePaymentStatus(transaction);
                                                     }}
-                                                    style={{ cursor: status === 'unpaid' ? 'pointer' : 'default' }}
+                                                    style={{ cursor: (status === 'unpaid' && canEdit) ? 'pointer' : 'default' }}
                                                 >
                                                     {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
                                                 </span>
@@ -458,13 +458,15 @@ const SalesHistory = () => {
                                                     >
                                                         <span className="material-symbols-outlined" style={{ color: '#10b981' }}>receipt_long</span>
                                                     </button>
-                                                    <button
-                                                        className="erp-btn ghost"
-                                                        onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(transaction.id || transaction._id); }}
-                                                        title="Delete"
-                                                    >
-                                                        <span className="material-symbols-outlined" style={{ color: '#ef4444' }}>delete</span>
-                                                    </button>
+                                                    {canEdit && (
+                                                        <button
+                                                            className="erp-btn ghost"
+                                                            onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(transaction.id || transaction._id); }}
+                                                            title="Delete"
+                                                        >
+                                                            <span className="material-symbols-outlined" style={{ color: '#ef4444' }}>delete</span>
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -510,7 +512,7 @@ const SalesHistory = () => {
                                             className={`erp-badge ${status === 'paid' ? 'success' : status === 'unpaid' ? 'danger' : 'warning'}`}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (status === 'unpaid') handleTogglePaymentStatus(transaction);
+                                                if (status === 'unpaid' && canEdit) handleTogglePaymentStatus(transaction);
                                             }}
                                         >
                                             {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
@@ -546,10 +548,12 @@ const SalesHistory = () => {
                                             <span className="material-symbols-outlined">receipt_long</span>
                                             View Bill
                                         </button>
-                                        <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}>
-                                            <span className="material-symbols-outlined">delete</span>
-                                            Delete
-                                        </button>
+                                        {canEdit && (
+                                            <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}>
+                                                <span className="material-symbols-outlined">delete</span>
+                                                Delete
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             );

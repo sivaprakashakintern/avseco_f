@@ -28,7 +28,7 @@ const Sales = () => {
         clients, addClient, employees, products: dbProducts, stockData,
         salesHistory, addSale, updateSale
     } = useAppContext();
-    const { user, isAdmin } = useAuth();
+    const { user, isAdmin, canEdit } = useAuth();
 
     // Process products into unique base names and their variants
     const products = React.useMemo(() => {
@@ -768,6 +768,7 @@ const Sales = () => {
                                             <button
                                                 className="add-new-client-dropdown-btn"
                                                 style={{ margin: '8px 12px 10px 12px' }}
+                                                disabled={!canEdit}
                                                 onClick={() => {
                                                     setNewClientData({ ...newClientData, companyName: companyName });
                                                     setShowAddClientModal(true);
@@ -1181,7 +1182,8 @@ const Sales = () => {
                                 <button
                                     className="btn-primary"
                                     onClick={handleAddItem}
-                                    style={{ width: '100%', height: '44px', background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    disabled={!canEdit}
+                                    style={{ width: '100%', height: '44px', background: !canEdit ? '#9ca3af' : '#10b981', color: 'white', border: 'none', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 800, cursor: !canEdit ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                 >
                                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add_circle</span>
                                     ADD ITEM
@@ -1561,7 +1563,7 @@ const Sales = () => {
                                 className="btn-primary quick-entry-btn log-btn-colored"
                                 onClick={handleLogTransaction}
                                 style={{ width: '100%', height: '52px', fontSize: '1rem', fontWeight: 800 }}
-                                disabled={isLogging || (billItems.length === 0 && !quantity)}
+                                disabled={!canEdit || isLogging || (billItems.length === 0 && !quantity)}
                             >
                                 <span className="material-symbols-outlined">
                                     {isLogging ? "hourglass_empty" : "done_all"}

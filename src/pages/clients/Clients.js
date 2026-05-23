@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext.js";
+import { useAuth } from "../../context/AuthContext.js";
 import "./Clients.css";
 
 const Clients = () => {
   const { clients, addClient, updateClient, deleteClient, salesHistory } = useAppContext();
+  const { isAdmin, canEdit } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -201,13 +203,15 @@ const Clients = () => {
       <div className="page-header premium-header client-header">
         <div className="header-content">
           <h1 className="page-title client-page-title">Client Details</h1>
-          <button
-            className="btn-add-circle-premium"
-            onClick={() => { resetForm(); setShowAddModal(true); }}
-            title="New Client"
-          >
-            <span className="material-symbols-outlined">add</span>
-          </button>
+          {isAdmin && canEdit && (
+            <button
+              className="btn-add-circle-premium"
+              onClick={() => { resetForm(); setShowAddModal(true); }}
+              title="New Client"
+            >
+              <span className="material-symbols-outlined">add</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -269,26 +273,30 @@ const Clients = () => {
                       <button className="action-btn" title="View" onClick={() => { setViewClient(client); setShowViewModal(true); }} style={{ color: '#10b981' }}>
                         <span className="material-symbols-outlined">visibility</span>
                       </button>
-                      <button className="action-btn" title="Edit" onClick={() => {
-                        setSelectedClient(client);
-                        setFormData({
-                          clientType: client.clientType || "Company",
-                          companyName: client.companyName || "",
-                          contactPerson: client.contactPerson || "",
-                          email: client.email || "",
-                          phone: client.phone || "",
-                          address: client.address || "",
-                          gst: client.gst || ""
-                        });
-                        setShowEditModal(true);
-                      }}><span className="material-symbols-outlined">edit</span></button>
-                      <button
-                        className="action-btn delete-btn"
-                        title="Delete"
-                        onClick={() => { setClientToDelete(client); setShowDeleteModal(true); }}
-                      >
-                        <span className="material-symbols-outlined">delete</span>
-                      </button>
+                      {isAdmin && canEdit && (
+                        <>
+                          <button className="action-btn" title="Edit" onClick={() => {
+                            setSelectedClient(client);
+                            setFormData({
+                              clientType: client.clientType || "Company",
+                              companyName: client.companyName || "",
+                              contactPerson: client.contactPerson || "",
+                              email: client.email || "",
+                              phone: client.phone || "",
+                              address: client.address || "",
+                              gst: client.gst || ""
+                            });
+                            setShowEditModal(true);
+                          }}><span className="material-symbols-outlined">edit</span></button>
+                          <button
+                            className="action-btn delete-btn"
+                            title="Delete"
+                            onClick={() => { setClientToDelete(client); setShowDeleteModal(true); }}
+                          >
+                            <span className="material-symbols-outlined">delete</span>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -338,27 +346,31 @@ const Clients = () => {
                           <span className="material-symbols-outlined">visibility</span>
                           View Portfolio
                         </button>
-                        <button className="dropdown-item" onClick={() => {
-                          setSelectedClient(client);
-                          setFormData({
-                            clientType: client.clientType || "Company",
-                            companyName: client.companyName || "",
-                            contactPerson: client.contactPerson || "",
-                            email: client.email || "",
-                            phone: client.phone || "",
-                            address: client.address || "",
-                            gst: client.gst || ""
-                          });
-                          setShowEditModal(true);
-                          setActiveDropdownId(null);
-                        }}>
-                          <span className="material-symbols-outlined">edit_note</span>
-                          Edit Details
-                        </button>
-                        <button className="dropdown-item delete" onClick={() => { setClientToDelete(client); setShowDeleteModal(true); setActiveDropdownId(null); }}>
-                          <span className="material-symbols-outlined">delete</span>
-                          Delete Client
-                        </button>
+                        {isAdmin && canEdit && (
+                          <>
+                            <button className="dropdown-item" onClick={() => {
+                              setSelectedClient(client);
+                              setFormData({
+                                clientType: client.clientType || "Company",
+                                companyName: client.companyName || "",
+                                contactPerson: client.contactPerson || "",
+                                email: client.email || "",
+                                phone: client.phone || "",
+                                address: client.address || "",
+                                gst: client.gst || ""
+                              });
+                              setShowEditModal(true);
+                              setActiveDropdownId(null);
+                            }}>
+                              <span className="material-symbols-outlined">edit_note</span>
+                              Edit Details
+                            </button>
+                            <button className="dropdown-item delete" onClick={() => { setClientToDelete(client); setShowDeleteModal(true); setActiveDropdownId(null); }}>
+                              <span className="material-symbols-outlined">delete</span>
+                              Delete Client
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

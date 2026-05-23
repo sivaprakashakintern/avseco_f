@@ -3783,3 +3783,183 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+/* BOTTOM SECTIONS (Attendance Log, Recent Production) */
+.emp-cal-section, .emp-activity-section {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f5f9;
+  margin-bottom: 24px;
+}
+
+.emp-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.emp-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.emp-section-title .material-symbols-outlined {
+  color: #006A4E;
+}
+
+.emp-section-sub {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* Calendar Grid */
+.emp-cal-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.emp-cal-day {
+  width: 60px;
+  height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  position: relative;
+}
+
+.emp-cal-daynum {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.emp-cal-dayname {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.emp-cal-status-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.emp-cal-p { background: #ecfdf5; border-color: #a7f3d0; }
+.emp-cal-p .emp-cal-status-dot { background: #10b981; }
+
+.emp-cal-a { background: #fef2f2; border-color: #fecaca; }
+.emp-cal-a .emp-cal-status-dot { background: #ef4444; }
+
+.emp-cal-h { background: #fffbeb; border-color: #fde68a; }
+.emp-cal-h .emp-cal-status-dot { background: #f59e0b; }
+
+.emp-cal-l { background: #f3e8ff; border-color: #e9d5ff; }
+.emp-cal-l .emp-cal-status-dot { background: #8b5cf6; }
+
+.emp-cal-empty {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  font-style: italic;
+  padding: 20px 0;
+}
+
+.emp-cal-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.emp-cal-leg-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.emp-cal-leg-item span {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+/* Activity Table */
+.emp-table-wrap {
+  overflow-x: auto;
+}
+
+.emp-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.emp-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.emp-table td {
+  padding: 14px 16px;
+  font-size: 0.95rem;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.emp-row-num {
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.emp-money {
+  font-weight: 700;
+  color: #059669;
+}
+
+.emp-empty-row {
+  text-align: center;
+  color: #94a3b8;
+  font-style: italic;
+  padding: 30px !important;
+}
+
+.emp-status-pill {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.grade-a { background: #ecfdf5; color: #059669; }
+.grade-b { background: #eff6ff; color: #2563eb; }
+.grade-c { background: #fef2f2; color: #dc2626; }

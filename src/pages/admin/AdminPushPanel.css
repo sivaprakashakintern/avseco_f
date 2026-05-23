@@ -448,3 +448,16 @@
         width: 3px;
     }
 }
+
+.push-banner-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    border: 1px solid #bae6fd;
+}

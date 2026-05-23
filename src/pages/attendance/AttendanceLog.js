@@ -47,14 +47,14 @@ const AttendanceLog = () => {
     updateAttendanceRecord,
     employees: globalEmployees
   } = useAppContext();
-  const { user } = useAuth();
+  const { user, canEdit } = useAuth();
 
   // ── Date State ──────────────────────────────────────────────────────────────
   const [currentDate, setCurrentDate] = useState(today());
   const dateKey = toDateKey(currentDate);
   const isToday = toDateKey(currentDate) === toDateKey(today());
   const isSunday = currentDate.getDay() === 0;
-  const canModify = currentDate.valueOf() >= new Date(2026, 3, 1).valueOf() && currentDate.valueOf() <= today().valueOf();
+  const canModify = canEdit && currentDate.valueOf() >= new Date(2026, 3, 1).valueOf() && currentDate.valueOf() <= today().valueOf();
 
   const goToPreviousDay = () => setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() - 1); return nd; });
   const goToNextDay = () => { if (!isToday) setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() + 1); return nd; }); };
@@ -103,17 +103,12 @@ const AttendanceLog = () => {
   const employees = useMemo(() => {
     const dayRecords = attendanceRecords[dateKey] || [];
 
-    const isRestrictedUser = (emp) => {
-      return emp.role === 'admin' || emp.department?.toLowerCase() === 'ceo' || emp.viewOnly;
-    };
-
-    // Filter out Admins/Owners/View-only admin users and the Current User
+    // Filter to show all active employees, but exclude CEO and Management
     return globalEmployees
       .filter(emp => {
-        const isRestricted = isRestrictedUser(emp);
-        const isCurrentUser = emp.email === user?.email || emp.id === user?.id;
-        const isActiveEmployee = emp.active !== false;
-        return !isRestricted && !isCurrentUser && isActiveEmployee;
+        if (emp.active === false) return false;
+        const dept = (emp.department || '').toLowerCase();
+        return dept !== 'ceo' && dept !== 'management';
       })
       .map(emp => {
         const record = dayRecords.find(r => r.empId === emp.id);
@@ -123,6 +118,8 @@ const AttendanceLog = () => {
           status: record?.status || "present",
           note: record?.note || "",
           halfDayTime: record?.halfDayTime || null,
+          checkIn: record?.checkIn || null,
+          checkOut: record?.checkOut || null,
         };
       });
   }, [globalEmployees, attendanceRecords, dateKey, user]);
@@ -453,6 +450,7 @@ const AttendanceLog = () => {
                   <th className="text-center" style={{ width: '50px' }}>S.NO</th>
                   <th>Employee</th>
                   <th>Department</th>
+                  <th>Punch Info</th>
                   <th className="text-center" style={{ width: '180px' }}>Mark Attendance</th>
                 </tr>
               </thead>
@@ -477,6 +475,13 @@ const AttendanceLog = () => {
                         </div>
                       </td>
                       <td><span className="att-dept-badge">{emp.department}</span></td>
+                      
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', fontSize: '11px', color: '#64748b' }}>
+                          <span>In: <strong style={{color: '#10b981'}}>{emp.checkIn ? new Date(emp.checkIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</strong></span>
+                          <span>Out: <strong style={{color: '#ef4444'}}>{emp.checkOut ? new Date(emp.checkOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</strong></span>
+                        </div>
+                      </td>
 
                       <td className="text-center">
                         <div className="att-actions-cell" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>

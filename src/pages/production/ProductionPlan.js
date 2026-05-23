@@ -43,7 +43,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     saveProductionTarget,
     deleteProductionTarget
   } = useAppContext();
-  const { isAdmin } = useAuth();
+  const { isAdmin, canEdit } = useAuth();
 
 
   // ===== TARGET ENTRY FORM STATE =====
@@ -704,6 +704,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
               <button
                 className="premium-submit-btn-new"
                 onClick={handleAddTarget}
+                disabled={!canEdit}
               >
                 <span className="material-symbols-outlined">add_task</span>
                 Add / Update <span className="hide-mobile">Target</span>
@@ -739,7 +740,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
               </select>
             </div>
 
-            {productionTargets.length > 0 && (
+            {productionTargets.length > 0 && canEdit && (
               <button className="premium-clear-btn-new" onClick={handleClearAllData}>
                 <span className="material-symbols-outlined">delete_sweep</span>
                 Clear All
@@ -848,7 +849,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                         </td>
                         <td className="text-center">
                           <div className="action-btns-new">
-                            {isAdmin && displayRemaining > 0 && (
+                            {isAdmin && canEdit && displayRemaining > 0 && (
                               <button
                                 className="remind-btn-new"
                                 title="Send Reminder"
@@ -857,9 +858,11 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                                 <span className="material-symbols-outlined">campaign</span>
                               </button>
                             )}
-                            <button className="delete-btn-new" onClick={() => handleDeleteTarget(item.id)}>
-                              <span className="material-symbols-outlined">delete</span>
-                            </button>
+                            {canEdit && (
+                              <button className="delete-btn-new" onClick={() => handleDeleteTarget(item.id)}>
+                                <span className="material-symbols-outlined">delete</span>
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -910,7 +913,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                       <span className="mob-size">{item.productSize}</span>
                     </div>
                     <div className="mob-card-actions">
-                      {displayRemaining > 0 && (
+                      {canEdit && displayRemaining > 0 && (
                         <button 
                           className="mob-remind" 
                           title="Send Reminder"
@@ -919,9 +922,11 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                           <span className="material-symbols-outlined">campaign</span>
                         </button>
                       )}
-                      <button className="mob-delete" onClick={() => handleDeleteTarget(item.id)}>
-                        <span className="material-symbols-outlined">delete</span>
-                      </button>
+                      {canEdit && (
+                        <button className="mob-delete" onClick={() => handleDeleteTarget(item.id)}>
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="card-stats-grid-mob">

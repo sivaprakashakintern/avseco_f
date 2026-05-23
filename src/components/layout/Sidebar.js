@@ -9,7 +9,7 @@ import "./Sidebar.css";
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasAccess, isAdmin } = useAuth();
+  const { hasAccess, isAdmin, canEdit } = useAuth();
 
   const { isMobileMenuOpen, setIsMobileMenuOpen, setLoading } = useContext(AppContext);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
@@ -124,20 +124,33 @@ const Sidebar = () => {
         { label: "Expense Report", path: "/expenses/report" }
       ]
     },
+    {
+      icon: "receipt_long",
+      label: "Salary",
+      path: "/salary",
+      module: "salary"
+    },
     { icon: "badge", label: "Employees", path: "/employees", module: "employees" },
     { icon: "group", label: "Clients", path: "/clients", module: "clients" },
 
-    // ATTENDANCE SUB-MENU (Now Hover/Popup based via CSS)
+    // ATTENDANCE SUB-MENU (Admin View)
     {
       icon: "event_available",
-      label: "Attendance",
+      label: "Attendance (Admin)",
       path: "/attendance",
       module: "attendance",
-      isSubmenu: true, // Flag for specific styling
+      isSubmenu: true,
       children: [
         { label: "Daily Log", path: "/attendance" },
         { label: "Attendance Report", path: "/attendance-report" }
       ]
+    },
+    // MY ATTENDANCE (Employee View)
+    {
+      icon: "fingerprint",
+      label: "My Attendance",
+      path: "/my-attendance",
+      alwaysShow: !isAdmin
     },
     { icon: "analytics", label: "Turnover", path: "/turnover", module: "turnover" },
     { icon: "notifications", label: "Notifications", path: "/notifications", module: "notifications" },
@@ -145,24 +158,29 @@ const Sidebar = () => {
 
   // Filter items based on access and administrative exposure
   const filteredNavItems = navItems.filter(item => {
+    if (item.alwaysShow) return true;
     // Basic module access check - Primary gatekeeper
     return hasAccess(item.module);
   });
 
-  // Add Admin-specific Manage Access if admin
+  // Add Admin-specific modules
   if (isAdmin) {
-    filteredNavItems.push({
-      icon: "campaign",
-      label: "Push Alerts",
-      path: "/admin/push-notifications",
-      module: "admin"
-    });
-    filteredNavItems.push({
-      icon: "admin_panel_settings",
-      label: "Manage Access",
-      path: "/admin/manage-access",
-      module: "admin"
-    });
+    // Only admins with edit rights (not CEO) can see these Admin panels
+    if (canEdit) {
+      filteredNavItems.push({
+        icon: "campaign",
+        label: "Push Alerts",
+        path: "/admin/push-notifications",
+        module: "admin"
+      });
+      
+      filteredNavItems.push({
+        icon: "admin_panel_settings",
+        label: "Manage Access",
+        path: "/admin/manage-access",
+        module: "admin"
+      });
+    }
   }
 
   // navItems already includes Notifications now

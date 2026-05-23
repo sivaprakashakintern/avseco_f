@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext.js";
+import { useAuth } from "../../context/AuthContext.js";
 import { calculateRawMaterialCapacity } from "../../utils/formatUtils.js";
 import {
   ResponsiveContainer,
@@ -17,6 +18,7 @@ import "./Stock.css";
 
 const RawMaterials = () => {
   const { productionHistory } = useAppContext();
+  const { canEdit } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   
@@ -173,11 +175,12 @@ const RawMaterials = () => {
       <div className="page-header premium-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 className="page-title">Raw Leaf Material Stock</h1>
-          <p style={{ color: "#64748b", marginTop: "4px", fontSize: "0.9rem" }}>
-            Track palm leaf material purchases, plates capacity, and production consumption.
-          </p>
         </div>
-        <button className="btn-transfer-premium" onClick={() => setShowAddModal(true)}>
+        <button 
+          className="btn-transfer-premium" 
+          onClick={() => setShowAddModal(true)}
+          disabled={!canEdit}
+        >
           <span className="material-symbols-outlined">add_shopping_cart</span>
           <span className="btn-text">Purchase Raw Material</span>
         </button>
@@ -206,7 +209,12 @@ const RawMaterials = () => {
               Raw leaf material capacity has fallen below <strong style={{ textDecoration: "underline" }}>{alertThreshold.toLocaleString()} plates</strong>! Current remaining capacity: <strong>{remainingCapacity.toLocaleString()} plates</strong>. Please buy more leaf batches immediately!
             </p>
           </div>
-          <button className="btn-transfer-premium" style={{ background: "#ef4444", color: "#fff", borderColor: "#ef4444" }} onClick={() => setShowAddModal(true)}>
+          <button 
+            className="btn-transfer-premium" 
+            style={{ background: "#ef4444", color: "#fff", borderColor: "#ef4444" }} 
+            onClick={() => setShowAddModal(true)}
+            disabled={!canEdit}
+          >
             Buy Leaf Now
           </button>
         </div>

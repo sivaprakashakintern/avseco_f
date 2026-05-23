@@ -17,10 +17,6 @@ const SIZE_COLOR_MAP = {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { hasAccess, user, isAdmin } = useAuth();
-  const isCeoUser = Boolean(
-    user?.department?.toLowerCase() === 'ceo' ||
-    user?.role?.toLowerCase() === 'ceo'
-  );
   const {
     employees = [],
     expenses = [],
@@ -73,7 +69,7 @@ const Dashboard = () => {
   };
 
   const dynamicSizes = getAvailableSizes();
-  const canViewAttendance = !isCeoUser && hasAccess('attendance');
+  const canViewAttendance = hasAccess('attendance');
   const canViewActivity = hasAccess('sales') || hasAccess('production');
   const canViewTopStats = canViewAttendance || canViewActivity;
   const canViewPremiumStats = hasAccess('sales') || hasAccess('stock') || hasAccess('production');
@@ -430,25 +426,8 @@ const Dashboard = () => {
     const unpaidLeaveDeduction = Math.round(unpaidLeaveDays * perDaySalary);
 
     const bonus = (presentCount >= 26 && baseLeaveCount === 0 && compensatedWorkDays >= 26) ? 500 : 0;
-    const totalSalaryWithBonus = earnedSalary + bonus;
 
-    const totalDaysConsidered = myCurrentMonthAtt.length + passedSundaysCount;
-    const attendancePercentage = totalDaysConsidered > 0
-      ? ((presentCount / totalDaysConsidered) * 100).toFixed(1)
-      : 0;
-
-    // Last 7 days attendance for mini-heatmap
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = dayjs().subtract(6 - i, 'day');
-      const dateStr = d.format('YYYY-MM-DD');
-      const rec = allYearAttendance.find(r => {
-        const empId = r.empId || (r.employee?._id ? String(r.employee._id) : String(r.employee || ''));
-        return empId === myId && r.date === dateStr;
-      });
-      return { label: d.format('dd'), dateStr, status: rec?.status || 'none' };
-    });
-
-    // ── Activity: sales or production ──────────────────────────────────────
+    // ── Activity: sales or production (Moved up for commission calc) ──────────────────────
     const isSalesDept = (user?.department || "").toLowerCase().includes("sales") || hasAccess("sales");
 
     const mySales = (salesHistory || []).filter(sale => {
@@ -472,12 +451,40 @@ const Dashboard = () => {
       return soldByName === currentName && saleMonthYear === currentMonthYear;
     });
     const totalMySalesValue = mySales.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+    const salesCommission = Math.round(totalMySalesValue * 0.02); // 2% commission
+    const currentEmployeeId = String(user?._id || user?.id || '');
+    const currentEmployeeName = String(user?.name || '').trim().toLowerCase();
 
     const myProduction = (productionHistory || []).filter(prod =>
-      (prod.operator === user?.name || prod.recordedBy === user?.name) &&
+      (
+        (prod.employeeId && String(prod.employeeId) === currentEmployeeId) ||
+        (prod.employeeName && String(prod.employeeName).trim().toLowerCase() === currentEmployeeName) ||
+        (prod.operator && String(prod.operator).trim().toLowerCase() === currentEmployeeName) ||
+        (prod.recordedBy && String(prod.recordedBy).trim().toLowerCase() === currentEmployeeName)
+      ) &&
       dayjs(prod.date).format('YYYY-MM') === currentMonthYear
     );
     const totalMyProduced = myProduction.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
+
+    const totalSalaryWithBonus = earnedSalary + bonus + salesCommission;
+
+    const totalDaysConsidered = myCurrentMonthAtt.length + passedSundaysCount;
+    const attendancePercentage = totalDaysConsidered > 0
+      ? ((presentCount / totalDaysConsidered) * 100).toFixed(1)
+      : 0;
+
+    // Last 7 days attendance for mini-heatmap
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = dayjs().subtract(6 - i, 'day');
+      const dateStr = d.format('YYYY-MM-DD');
+      const rec = allYearAttendance.find(r => {
+        const empId = r.empId || (r.employee?._id ? String(r.employee._id) : String(r.employee || ''));
+        return empId === myId && r.date === dateStr;
+      });
+      return { label: d.format('dd'), dateStr, status: rec?.status || 'none' };
+    });
+
+    // MyProduction and MySales calculation were moved above to include salesCommission in totalSalary
 
     const statusColor = { present: '#10b981', absent: '#ef4444', half: '#f59e0b', leave: '#8b5cf6', none: '#e2e8f0' };
 
@@ -494,8 +501,10 @@ const Dashboard = () => {
               }
             </div>
             <div className="emp-hero-info">
-              <span className="emp-greet-line">{getGreeting()} 👋</span>
-              <h2 className="emp-hero-name">{user?.name}</h2>
+              <h2 className="emp-hero-name" style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                <span className="emp-greet-line" style={{ display: 'inline', marginBottom: 0 }}>{getGreeting()}</span> 
+                <span style={{ fontSize: '1.4rem', fontWeight: 600 }}>{user?.name}</span> 👋
+              </h2>
               <div className="emp-hero-tags">
                 <span className="emp-tag role">{user?.role?.toUpperCase()}</span>
                 <span className="emp-tag dept">{user?.department}</span>
@@ -513,10 +522,8 @@ const Dashboard = () => {
         </div>
 
         {/* ── TOP STATS GRID: Attendance + Salary ─────────────── */}
-        {canViewTopStats && (
-          <div className="emp-stats-grid">
-            {canViewAttendance && (
-              <>
+        <div className="emp-stats-grid">
+          <>
                 {/* Attendance Card */}
                 <div className="emp-stat-card emp-attendance-card">
                   <div className="emp-card-header">
@@ -630,10 +637,8 @@ const Dashboard = () => {
                   </div>
                 </div>
               </>
-            )}
 
-            {canViewActivity && (
-              <div className="emp-stat-card emp-activity-card">
+            <div className="emp-stat-card emp-activity-card">
                 <div className="emp-card-header">
                   <span className="emp-card-icon act-icon">
                     <span className="material-symbols-outlined">{isSalesDept ? 'point_of_sale' : 'precision_manufacturing'}</span>
@@ -656,13 +661,11 @@ const Dashboard = () => {
                   </>
                 )}
               </div>
-            )}
           </div>
-        )}
 
 
         {/* ── MONTH ATTENDANCE CALENDAR STRIP ─────────────────── */}
-        {!isCeoUser && (
+        { (
           <div className="emp-cal-section">
             <div className="emp-section-header">
               <h3 className="emp-section-title">
@@ -900,7 +903,7 @@ const Dashboard = () => {
           )}
 
           {/* Attendance Section */}
-          {!isCeoUser && hasAccess('attendance') && (
+          {hasAccess('attendance') && (
             <div className="chart-card attendance-section" onClick={handleAttendanceClick}>
               <div className="attendance-header">
                 <h3>ATTENDANCE</h3>

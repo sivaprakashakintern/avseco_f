@@ -50,7 +50,7 @@ const AdminPushPanel = () => {
 
             <div className="push-main-content">
                 {!canEdit && (
-                    <div className="status-message info" style={{ marginBottom: '20px' }}>
+                    <div className="push-banner-info">
                         <span className="material-symbols-outlined">visibility</span>
                         View-only access is enabled. You can browse this page, but sending notifications is disabled.
                     </div>

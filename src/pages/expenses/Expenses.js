@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useAppContext } from '../../context/AppContext.js';
+import { useAuth } from '../../context/AuthContext.js';
 import { formatDate, isWithinLast2Days } from '../../utils/dateUtils.js';
 import { formatCurrency, getDynamicFontSize } from '../../utils/formatUtils.js';
 import "./Expenses.css";
@@ -23,6 +24,7 @@ const Expenses = () => {
         deleteExpense: ctxDeleteExpense,
         employees,
     } = useAppContext();
+    const { canEdit } = useAuth();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -186,16 +188,18 @@ const Expenses = () => {
                     <h1 className="erp-title">Expense Details</h1>
                 </div>
                 <div className="erp-header-actions">
-                    <button className="erp-header-btn solid" onClick={() => { 
-                        setIsEditMode(false); 
-                        setIsModalOpen(true); 
-                        setTimeout(() => {
-                            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 100);
-                    }}>
-                        <span className="material-symbols-outlined">add_circle</span>
-                        <span>Add Expense</span>
-                    </button>
+                    {canEdit && (
+                        <button className="erp-header-btn solid" onClick={() => { 
+                            setIsEditMode(false); 
+                            setIsModalOpen(true); 
+                            setTimeout(() => {
+                                formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }, 100);
+                        }}>
+                            <span className="material-symbols-outlined">add_circle</span>
+                            <span>Add Expense</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -425,22 +429,26 @@ const Expenses = () => {
                                     <td>
                                         <div className="erp-table-actions">
                                             {isWithinLast2Days(expense.date) ? (
-                                                <>
-                                                    <button
-                                                        className="erp-btn ghost"
-                                                        onClick={() => handleEditExpense(expense.id)}
-                                                        title="Edit"
-                                                    >
-                                                        <span className="material-symbols-outlined" style={{ color: '#2563eb' }}>edit</span>
-                                                    </button>
-                                                    <button
-                                                        className="erp-btn ghost"
-                                                        onClick={() => handleDeleteExpense(expense.id)}
-                                                        title="Delete"
-                                                    >
-                                                        <span className="material-symbols-outlined" style={{ color: '#ef4444' }}>delete</span>
-                                                    </button>
-                                                </>
+                                                canEdit ? (
+                                                    <>
+                                                        <button
+                                                            className="erp-btn ghost"
+                                                            onClick={() => handleEditExpense(expense.id)}
+                                                            title="Edit"
+                                                        >
+                                                            <span className="material-symbols-outlined" style={{ color: '#2563eb' }}>edit</span>
+                                                        </button>
+                                                        <button
+                                                            className="erp-btn ghost"
+                                                            onClick={() => handleDeleteExpense(expense.id)}
+                                                            title="Delete"
+                                                        >
+                                                            <span className="material-symbols-outlined" style={{ color: '#ef4444' }}>delete</span>
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <span className="erp-badge neutral">View Only</span>
+                                                )
                                             ) : (
                                                 <span className="erp-badge neutral">Locked</span>
                                             )}
@@ -498,7 +506,7 @@ const Expenses = () => {
                                                     <span className="expanded-info-value">{ex.paymentMode}</span>
                                                 </div>
                                             </div>
-                                            {isWithinLast2Days(ex.date) && (
+                                            {isWithinLast2Days(ex.date) && canEdit && (
                                                 <div className="expense-action-buttons">
                                                     <button
                                                         className="expense-mini-btn edit"

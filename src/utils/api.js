@@ -96,6 +96,10 @@ export const productionApi = {
     const { data } = await axios.get('/production');
     return data;
   },
+  getMyProduction: async () => {
+    const { data } = await axios.get('/production/my-production');
+    return data;
+  },
   add: async (productionData) => {
     const { data } = await axios.post('/production', productionData);
     return data;
@@ -123,8 +127,25 @@ export const attendanceApi = {
     const { data } = await axios.get(`/attendance/year/report/${year}`);
     return data;
   },
+  getMyByYear: async (year) => {
+    const { data } = await axios.get(`/attendance/my-attendance/year/${year}`);
+    return data;
+  },
   saveBulk: async (date, records) => {
     const { data } = await axios.post('/attendance/bulk', { date, records });
+    return data;
+  },
+  getGeofence: async () => {
+    const { data } = await axios.get('/attendance/geofence');
+    return data;
+  },
+  punchAttendance: async (action, time, lat, lng) => {
+    const payload = { action, time };
+    if (lat !== undefined && lng !== undefined) {
+      payload.lat = lat;
+      payload.lng = lng;
+    }
+    const { data } = await axios.post('/attendance/punch', payload);
     return data;
   }
 };
