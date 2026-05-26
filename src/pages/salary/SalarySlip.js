@@ -10,7 +10,7 @@ import "../../dashboard/Dashboard.css";
 
 const SalarySlip = () => {
   const navigate = useNavigate();
-  const { employees = [], attendanceRecords = [], salesHistory = [] } = useAppContext();
+  const { employees = [], attendanceRecords = [] } = useAppContext();
   const { user, isAdmin } = useAuth();
   const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM"));
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");

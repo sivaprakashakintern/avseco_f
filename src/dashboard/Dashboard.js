@@ -453,7 +453,6 @@ const Dashboard = () => {
       return soldByName === currentName && saleMonthYear === currentMonthYear;
     });
     const totalMySalesValue = mySales.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
-    const salesCommission = 0; // commission removed
     const currentEmployeeId = String(user?._id || user?.id || '');
     const currentEmployeeName = String(user?.name || '').trim().toLowerCase();
 

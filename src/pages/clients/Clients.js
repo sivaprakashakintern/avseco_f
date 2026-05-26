@@ -5,7 +5,7 @@ import "./Clients.css";
 
 const Clients = () => {
   const { clients, addClient, updateClient, deleteClient, salesHistory } = useAppContext();
-  const { isAdmin, canEdit } = useAuth();
+  const { canEdit } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);

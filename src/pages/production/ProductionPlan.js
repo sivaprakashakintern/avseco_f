@@ -43,7 +43,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
     saveProductionTarget,
     deleteProductionTarget
   } = useAppContext();
-  const { isAdmin, canEdit } = useAuth();
+  const { canEdit } = useAuth();
 
 
   // ===== TARGET ENTRY FORM STATE =====
