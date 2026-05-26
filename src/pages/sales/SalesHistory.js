@@ -341,7 +341,7 @@ const SalesHistory = () => {
                     <h1 className="erp-title">Transaction History</h1>
                 </div>
                 <div className="erp-header-actions">
-                    <button className="erp-header-btn solid" onClick={() => setShowExportModal(true)}>
+                    <button className="erp-header-btn solid btn-export" onClick={() => setShowExportModal(true)}>
                         <span className="material-symbols-outlined">download</span>
                         <span>Export Report</span>
                     </button>

@@ -88,8 +88,6 @@ const Salary = () => {
     });
   }, [activeEmployeeId, currentMonthKey, expenses]);
 
-  const monthSalaryTotal = monthSalaryEntries.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-
   const adminEmployeeCards = useMemo(() => {
     return employeeOptions.map(employee => {
       const employeeMonthEntries = (expenses || []).filter(expense => {
@@ -114,12 +112,12 @@ const Salary = () => {
     <div className="erp-page">
       <div className="erp-header">
         <div className="header-left">
-          <h1 className="erp-title">Salary</h1>
+          <h1 className="erp-title">Salary Report</h1>
         </div>
       </div>
 
       {isAdmin && employeeOptions.length > 0 && (
-        <div className="salary-panel" style={{ marginBottom: "20px" }}>
+        <div className="salary-panel">
           <div className="erp-card-header">
             <h3 className="erp-card-title">Select Employee</h3>
           </div>
@@ -133,16 +131,18 @@ const Salary = () => {
                 <option key={option.id} value={option.id}>{option.name}{option.department ? ` - ${option.department}` : ""}</option>
               ))}
             </select>
-            <button className="salary-btn" onClick={() => navigate("/salary-slip")} style={{ flexShrink: 0, whiteSpace: "nowrap" }}>View Detailed Slip</button>
+            <button className="salary-btn" onClick={() => navigate("/salary-slip")}>View Detailed Slip</button>
           </div>
         </div>
       )}
 
       {isAdmin && adminEmployeeCards.length > 0 && (
-        <div className="salary-panel" style={{ marginBottom: "20px" }}>
-          <div className="erp-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-            <h3 className="erp-card-title">All Employees</h3>
-            <span style={{ color: "#64748b", fontWeight: 600 }}>{adminEmployeeCards.length} employee{adminEmployeeCards.length !== 1 ? "s" : ""}</span>
+        <div className="salary-panel">
+          <div className="erp-card-header">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+              <h3 className="erp-card-title">All Employees</h3>
+              <span style={{ color: "#64748b", fontWeight: 600 }}>{adminEmployeeCards.length} employee{adminEmployeeCards.length !== 1 ? "s" : ""}</span>
+            </div>
           </div>
 
           <div className="salary-card-grid">

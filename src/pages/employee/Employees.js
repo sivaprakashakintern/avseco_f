@@ -21,7 +21,7 @@ const Employees = () => {
     departments
   } = useAppContext();
 
-  const { user, isAdmin, canEdit } = useAuth();
+  const { isAdmin, canEdit } = useAuth();
 
   const [viewMode, setViewMode] = useState(window.innerWidth <= 768 ? "list" : "grid");
   const [showAddModal, setShowAddModal] = useState(false);

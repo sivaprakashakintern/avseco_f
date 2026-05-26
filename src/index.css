@@ -804,15 +804,54 @@ input[type=number] { -moz-appearance: textfield; }
     border-radius: 50% !important;
   }
 
+  .erp-header-actions {
+    margin-left: auto !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
   /* Specifically hide download/export buttons on mobile as requested */
   .btn-export-premium,
   .btn-export,
   .btn-download,
   .export-btn,
   .premium-export-btn-new,
-  .erp-header-btn,
   .premium-header .btn-export-premium {
     display: none !important;
+  }
+
+  /* Pulsating Alert Banners (Low Stock Warning) Mobile Optimizations */
+  .pulsating-alert-banner {
+    flex-direction: column !important;
+    text-align: center !important;
+    align-items: center !important;
+    padding: 16px 20px !important;
+    gap: 12px !important;
+    margin-top: 16px !important;
+  }
+
+  .pulsating-alert-banner span.material-symbols-outlined {
+    font-size: 28px !important;
+  }
+
+  .pulsating-alert-banner h3 {
+    font-size: 15px !important;
+    text-align: center !important;
+    margin: 0 !important;
+  }
+
+  .pulsating-alert-banner p {
+    font-size: 12px !important;
+    margin-top: 6px !important;
+    text-align: center !important;
+    line-height: 1.4 !important;
+  }
+
+  .pulsating-alert-banner button.btn-transfer-premium {
+    width: 100% !important;
+    margin-top: 8px !important;
+    box-sizing: border-box !important;
+    justify-content: center !important;
   }
 }
 

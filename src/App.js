@@ -155,7 +155,7 @@ const App = () => {
               </ProtectedRoute>
             } />
             <Route path="/salary" element={
-              <ProtectedRoute adminOnly={true}>
+              <ProtectedRoute module="salary">
                 <AppLayout><Salary /></AppLayout>
               </ProtectedRoute>
             } />

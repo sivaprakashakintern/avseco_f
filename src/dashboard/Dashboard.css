@@ -1184,14 +1184,14 @@
 .ila-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
+  gap: 16px;
 }
 
 .ila-card {
   background: #ffffff;
   border: 1px solid #f1f5f9;
-  border-radius: 24px !important;
-  padding: 24px !important;
+  border-radius: 16px !important;
+  padding: 12px 16px !important;
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -1248,10 +1248,10 @@
 }
 
 .stock-size-val {
-  font-size: 20px;
-  font-weight: 900;
-  color: #1e293b;
-  letter-spacing: -0.5px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: -0.2px;
 }
 
 .item-value-info {
@@ -1262,13 +1262,14 @@
 }
 
 .stock-value-pcs {
-  font-size: 18px;
-  font-weight: 850;
+  font-size: 24px;
+  font-weight: 900;
   color: #2563eb;
+  letter-spacing: -0.5px;
 }
 
 .stock-value-pcs small {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: #94a3b8;
 }
@@ -1345,7 +1346,7 @@
 }
 
 .ila-card-footer {
-  margin-top: 20px;
+  margin-top: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2738,30 +2739,48 @@
     padding: 2px 4px !important;
   }
 
-  /* Attendance Warning Banner */
-  .attendance-warning-banner {
+  /* Attendance & Raw Material Warning Banners Mobile Optimizations */
+  .attendance-warning-banner,
+  .raw-material-warning-banner {
     padding: 16px !important;
     gap: 12px !important;
     border-radius: 16px !important;
     flex-direction: column !important;
     text-align: center !important;
+    align-items: center !important;
   }
 
   .warning-icon {
     width: 40px !important;
     height: 40px !important;
+    flex-shrink: 0 !important;
   }
 
   .warning-icon span {
     font-size: 24px !important;
   }
 
-  .warning-text h4 {
+  .warning-text h4,
+  .raw-material-warning-banner .warning-text h4 {
     font-size: 16px !important;
+    margin: 0 !important;
+    text-align: center !important;
   }
 
-  .warning-text p {
+  .warning-text p,
+  .raw-material-warning-banner .warning-text p {
     font-size: 12px !important;
+    margin-top: 4px !important;
+    line-height: 1.4 !important;
+    text-align: center !important;
+  }
+
+  .attendance-warning-banner .mark-now-btn,
+  .raw-material-warning-banner .mark-now-btn {
+    width: 100% !important;
+    margin-top: 4px !important;
+    padding: 10px 16px !important;
+    box-sizing: border-box !important;
   }
 
   /* Charts Row - Stack 100% */
@@ -3963,3 +3982,22 @@
 .grade-a { background: #ecfdf5; color: #059669; }
 .grade-b { background: #eff6ff; color: #2563eb; }
 .grade-c { background: #fef2f2; color: #dc2626; }
+
+/* Dynamic Module Access Hub - Premium Micro-Animations */
+.module-hub-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.module-hub-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 20px -5px rgba(0, 0, 0, 0.08), 0 8px 8px -5px rgba(0, 0, 0, 0.03) !important;
+  border-color: #cbd5e1 !important;
+}
+
+.module-hub-card:hover .launch-text {
+  transform: translateX(4px);
+}
+
+.module-hub-card:hover .launch-text span {
+  transform: translateX(2px);
+}

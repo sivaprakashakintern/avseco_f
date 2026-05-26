@@ -849,7 +849,7 @@ const ProductionPlan = ({ onNavigate, currentPage }) => {
                         </td>
                         <td className="text-center">
                           <div className="action-btns-new">
-                            {isAdmin && canEdit && displayRemaining > 0 && (
+                            {canEdit && displayRemaining > 0 && (
                               <button
                                 className="remind-btn-new"
                                 title="Send Reminder"

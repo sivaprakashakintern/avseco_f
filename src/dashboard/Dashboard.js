@@ -16,18 +16,18 @@ const SIZE_COLOR_MAP = {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { hasAccess, user, isAdmin } = useAuth();
+  const { hasAccess, user, isSuperAdmin } = useAuth();
   const {
     employees = [],
     expenses = [],
-    totalExpenseAmount,
-    expenseByCategory,
-    todayStats,
-    last7DaysTrend,
-    totalSalesAmount,
-    salesHistory,
-    stockData,
-    productionStats,
+    totalExpenseAmount = 0,
+    expenseByCategory = {},
+    todayStats = {},
+    last7DaysTrend = [],
+    totalSalesAmount = 0,
+    salesHistory = [],
+    stockData = [],
+    productionStats = {},
     productionTargets = [],
     attendanceRecords = {},
     productionHistory = []
@@ -70,8 +70,6 @@ const Dashboard = () => {
 
   const dynamicSizes = getAvailableSizes();
   const canViewAttendance = hasAccess('attendance');
-  const canViewActivity = hasAccess('sales') || hasAccess('production');
-  const canViewTopStats = canViewAttendance || canViewActivity;
   const canViewPremiumStats = hasAccess('sales') || hasAccess('stock') || hasAccess('production');
   const canViewChartRow = canViewPremiumStats || canViewAttendance;
   const attendanceNotMarked = canViewAttendance && (!todayStats || todayStats.total === 0);
@@ -360,11 +358,6 @@ const Dashboard = () => {
   // Navigation handlers
   const handleStockClick = () => navigate("/stock");
   const handleAttendanceClick = () => navigate("/attendance");
-  const handleAttendanceReportClick = () => navigate("/attendance-report");
-  const handleAprilAttendanceReportClick = () => {
-    const aprilYear = dayjs().month() >= 3 ? dayjs().year() : dayjs().year() - 1;
-    navigate(`/attendance-report?month=4&year=${aprilYear}`);
-  };
 
   // Popup handlers with position calculation
 
@@ -375,7 +368,16 @@ const Dashboard = () => {
     return "Good Evening";
   };
 
-  if (!isAdmin) {
+  const userRole = user?.role?.toLowerCase() || '';
+  const userDept = user?.department?.toLowerCase() || '';
+  const isHRorCEO = userRole === 'hr' || userRole === 'ceo' || userDept === 'hr' || userDept === 'ceo';
+
+  // Allow access to standard/premium dashboard widgets if user is Super Admin, HR, CEO.
+  const hasAdminWidgets = 
+    isSuperAdmin || 
+    isHRorCEO;
+
+  if (!hasAdminWidgets) {
     const currentMonthYear = dayjs().format('YYYY-MM');
     const currentMonthName = dayjs().format('MMMM YYYY');
 
@@ -451,7 +453,7 @@ const Dashboard = () => {
       return soldByName === currentName && saleMonthYear === currentMonthYear;
     });
     const totalMySalesValue = mySales.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
-    const salesCommission = Math.round(totalMySalesValue * 0.02); // 2% commission
+    const salesCommission = 0; // commission removed
     const currentEmployeeId = String(user?._id || user?.id || '');
     const currentEmployeeName = String(user?.name || '').trim().toLowerCase();
 
@@ -466,7 +468,7 @@ const Dashboard = () => {
     );
     const totalMyProduced = myProduction.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
 
-    const totalSalaryWithBonus = earnedSalary + bonus + salesCommission;
+    const totalSalaryWithBonus = earnedSalary + bonus;
 
     const totalDaysConsidered = myCurrentMonthAtt.length + passedSundaysCount;
     const attendancePercentage = totalDaysConsidered > 0
@@ -786,63 +788,65 @@ const Dashboard = () => {
 
 
       {/* PREMIUM ANALYTICS GRID (Production Stats) */}
-      <div className="premium-stats-grid dashboard-top-stats">
-        <div className="premium-stat-card today">
-          <div className="p-stat-info">
-            <span className="p-stat-label">Today's Production</span>
-            <div className="p-stat-value">{(productionStats?.today || 0).toLocaleString()}</div>
-            <div className="p-stat-breakdown">
-              {dynamicSizes.map(size => (
-                <span key={size} className="breakdown-tag">
-                  {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.todayBySize?.[size] || 0}
-                </span>
-              ))}
+      {hasAccess('production') && (
+        <div className="premium-stats-grid dashboard-top-stats">
+          <div className="premium-stat-card today">
+            <div className="p-stat-info">
+              <span className="p-stat-label">Today's Production</span>
+              <div className="p-stat-value">{(productionStats?.today || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {dynamicSizes.map(size => (
+                  <span key={size} className="breakdown-tag">
+                    {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.todayBySize?.[size] || 0}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="premium-stat-card week">
-          <div className="p-stat-info">
-            <span className="p-stat-label">Last 7 Days</span>
-            <div className="p-stat-value">{(productionStats?.week || 0).toLocaleString()}</div>
-            <div className="p-stat-breakdown">
-              {dynamicSizes.map(size => (
-                <span key={size} className="breakdown-tag">
-                  {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.weekBySize?.[size] || 0}
-                </span>
-              ))}
+          <div className="premium-stat-card week">
+            <div className="p-stat-info">
+              <span className="p-stat-label">Last 7 Days</span>
+              <div className="p-stat-value">{(productionStats?.week || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {dynamicSizes.map(size => (
+                  <span key={size} className="breakdown-tag">
+                    {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.weekBySize?.[size] || 0}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="premium-stat-card month">
-          <div className="p-stat-info">
-            <span className="p-stat-label">This Month</span>
-            <div className="p-stat-value">{(productionStats?.month || 0).toLocaleString()}</div>
-            <div className="p-stat-breakdown">
-              {dynamicSizes.map(size => (
-                <span key={size} className="breakdown-tag">
-                  {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.monthBySize?.[size] || 0}
-                </span>
-              ))}
+          <div className="premium-stat-card month">
+            <div className="p-stat-info">
+              <span className="p-stat-label">This Month</span>
+              <div className="p-stat-value">{(productionStats?.month || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {dynamicSizes.map(size => (
+                  <span key={size} className="breakdown-tag">
+                    {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.monthBySize?.[size] || 0}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="premium-stat-card stock">
-          <div className="p-stat-info">
-            <span className="p-stat-label">Total Produced</span>
-            <div className="p-stat-value">{(productionStats?.stock || 0).toLocaleString()}</div>
-            <div className="p-stat-breakdown">
-              {dynamicSizes.map(size => (
-                <span key={size} className="breakdown-tag">
-                  {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.stockBySize?.[size] || 0}
-                </span>
-              ))}
+          <div className="premium-stat-card stock">
+            <div className="p-stat-info">
+              <span className="p-stat-label">Total Produced</span>
+              <div className="p-stat-value">{(productionStats?.stock || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {dynamicSizes.map(size => (
+                  <span key={size} className="breakdown-tag">
+                    {size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size}: {productionStats?.stockBySize?.[size] || 0}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
 
       {/* CHARTS SECTION */}
@@ -961,16 +965,7 @@ const Dashboard = () => {
                   <span className="summary-value">{currentData.attendance.total > 0 ? (((currentData.attendance.absent + currentData.attendance.onLeave) / currentData.attendance.total) * 100).toFixed(1) : 0}%</span>
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
-                <button className="btn-export-premium" onClick={(e) => { e.stopPropagation(); handleAttendanceReportClick(); }}>
-                  <span className="material-symbols-outlined">calendar_today</span>
-                  View Monthly Report
-                </button>
-                <button className="btn-export-premium" onClick={(e) => { e.stopPropagation(); handleAprilAttendanceReportClick(); }}>
-                  <span className="material-symbols-outlined">calendar_view_month</span>
-                  View April Attendance
-                </button>
-              </div>
+
             </div>
           )}
         </div>
@@ -1061,65 +1056,69 @@ const Dashboard = () => {
       {/* SIZE CHART SECTION (SALES BY SIZE & PRODUCTION BY SIZE) */}
       {(hasAccess('sales') || hasAccess('production')) && (
         <div className="charts-row size-charts-row" style={{ marginTop: '24px' }}>
-          <div className="chart-card size-chart-card">
-            <div className="chart-header">
-              <div className="title-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span className="material-symbols-outlined icon-accent" style={{ color: '#3b82f6', fontSize: '24px' }}>shopping_bag</span>
-                <h3 style={{ textTransform: 'uppercase', fontSize: '14px', letterSpacing: '0.5px' }}>Sales Qty by Size</h3>
+          {hasAccess('sales') && (
+            <div className="chart-card size-chart-card">
+              <div className="chart-header">
+                <div className="title-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span className="material-symbols-outlined icon-accent" style={{ color: '#3b82f6', fontSize: '24px' }}>shopping_bag</span>
+                  <h3 style={{ textTransform: 'uppercase', fontSize: '14px', letterSpacing: '0.5px' }}>Sales Qty by Size</h3>
+                </div>
+                <span className="time-badge" style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>{timeFilter}</span>
               </div>
-              <span className="time-badge" style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>{timeFilter}</span>
-            </div>
-            <div className="css-size-grid" style={{ marginTop: '16px' }}>
-              {sizeChartsData.salesSizeChart.length > 0 ? sizeChartsData.salesSizeChart.map((s, i) => {
-                const barColor = SIZE_COLOR_MAP[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
-                return (
-                  <div key={i} className="size-stat-item">
-                    <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
-                    <div className="s-bar-group">
-                      <div
-                        className="s-bar sales"
-                        style={{
-                          width: `${(s.SalesQty / Math.max(...sizeChartsData.salesSizeChart.map(x => x.SalesQty), 1)) * 100}%`,
-                          backgroundColor: barColor
-                        }}
-                      ></div>
-                      <span className="s-qty">{s.SalesQty}</span>
+              <div className="css-size-grid" style={{ marginTop: '16px' }}>
+                {sizeChartsData.salesSizeChart.length > 0 ? sizeChartsData.salesSizeChart.map((s, i) => {
+                  const barColor = SIZE_COLOR_MAP[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
+                  return (
+                    <div key={i} className="size-stat-item">
+                      <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
+                      <div className="s-bar-group">
+                        <div
+                          className="s-bar sales"
+                          style={{
+                            width: `${(s.SalesQty / Math.max(...sizeChartsData.salesSizeChart.map(x => x.SalesQty), 1)) * 100}%`,
+                            backgroundColor: barColor
+                          }}
+                        ></div>
+                        <span className="s-qty">{s.SalesQty}</span>
+                      </div>
                     </div>
-                  </div>
-                );
-              }) : <div className="empty-chart-msg">No sales data for this period</div>}
+                  );
+                }) : <div className="empty-chart-msg">No sales data for this period</div>}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="chart-card size-chart-card">
-            <div className="chart-header">
-              <div className="title-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span className="material-symbols-outlined icon-accent-purple" style={{ color: '#8b5cf6', fontSize: '24px' }}>precision_manufacturing</span>
-                <h3 style={{ textTransform: 'uppercase', fontSize: '14px', letterSpacing: '0.5px' }}>Production Qty by Size</h3>
+          {hasAccess('production') && (
+            <div className="chart-card size-chart-card">
+              <div className="chart-header">
+                <div className="title-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span className="material-symbols-outlined icon-accent-purple" style={{ color: '#8b5cf6', fontSize: '24px' }}>precision_manufacturing</span>
+                  <h3 style={{ textTransform: 'uppercase', fontSize: '14px', letterSpacing: '0.5px' }}>Production Qty by Size</h3>
+                </div>
+                <span className="time-badge" style={{ background: '#f5f3ff', color: '#6d28d9', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>{timeFilter}</span>
               </div>
-              <span className="time-badge" style={{ background: '#f5f3ff', color: '#6d28d9', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>{timeFilter}</span>
-            </div>
-            <div className="css-size-grid" style={{ marginTop: '16px' }}>
-              {sizeChartsData.prodSizeChart.length > 0 ? sizeChartsData.prodSizeChart.map((s, i) => {
-                const barColor = SIZE_COLOR_MAP[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
-                return (
-                  <div key={i} className="size-stat-item">
-                    <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
-                    <div className="s-bar-group">
-                      <div
-                        className="s-bar prod"
-                        style={{
-                          width: `${(s.ProdQty / Math.max(...sizeChartsData.prodSizeChart.map(x => x.ProdQty), 1)) * 100}%`,
-                          backgroundColor: barColor
-                        }}
-                      ></div>
-                      <span className="s-qty">{s.ProdQty}</span>
+              <div className="css-size-grid" style={{ marginTop: '16px' }}>
+                {sizeChartsData.prodSizeChart.length > 0 ? sizeChartsData.prodSizeChart.map((s, i) => {
+                  const barColor = SIZE_COLOR_MAP[s.name] || ['#6366f1', '#a855f7', '#ec4899', '#14b8a6'][i % 4];
+                  return (
+                    <div key={i} className="size-stat-item">
+                      <span className="s-lbl">{s.name} {s.name.includes('"') || isNaN(s.name) ? '' : 'in'}</span>
+                      <div className="s-bar-group">
+                        <div
+                          className="s-bar prod"
+                          style={{
+                            width: `${(s.ProdQty / Math.max(...sizeChartsData.prodSizeChart.map(x => x.ProdQty), 1)) * 100}%`,
+                            backgroundColor: barColor
+                          }}
+                        ></div>
+                        <span className="s-qty">{s.ProdQty}</span>
+                      </div>
                     </div>
-                  </div>
-                );
-              }) : <div className="empty-chart-msg">No production data for this period</div>}
+                  );
+                }) : <div className="empty-chart-msg">No production data for this period</div>}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

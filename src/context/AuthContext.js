@@ -28,10 +28,10 @@ export const AuthProvider = ({ children }) => {
     if (!username || !password) {
       throw new Error('Please enter both username and password');
     }
-    
+
     try {
       const { data } = await axios.post('/auth/login', { username, password });
-      
+
       if (data && data.token) {
         // Set header IMMEDIATELY to avoid race conditions with initial fetches
         axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
       if (user?.token && !axios.defaults.headers.common['Authorization']) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
       }
-      
+
       const { data } = await axios.get('/auth/me');
       const updatedUser = { ...user, ...data };
       localStorage.setItem('userInfo', JSON.stringify(updatedUser));
@@ -74,38 +74,86 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
-  const isSuperAdmin = user && user.name && user.name === 'Nithish Kumar';
-  
+  const isSuperAdmin = Boolean(
+    user &&
+    (user.role?.toLowerCase() === 'superadmin' ||
+      user.role?.toLowerCase() === 'admin' ||
+      user.email === 'avsecoindustries@gmail.com' ||
+      user.username === 'avsecoindustries@gmail.com')
+  );
+
   const userRole = user?.role?.toLowerCase() || '';
   const userDept = user?.department?.toLowerCase() || '';
 
-  const isAdminUser = userRole === 'admin' || userRole === 'ceo' || userRole === 'hr' || userDept === 'ceo' || userDept === 'hr' || user?.viewOnly;
-  const isAdmin = isSuperAdmin || isAdminUser;
-
-  const isCEOViewOnly = Boolean(
-    isAdminUser && (user?.viewOnly || userRole === 'ceo' || userRole === 'hr' || userDept === 'ceo' || userDept === 'hr')
+  const isMasterAdmin = Boolean(
+    user &&
+    (user.email === 'avsecoindustries@gmail.com' ||
+      user.username === 'avsecoindustries@gmail.com')
   );
 
-  const canEdit = isSuperAdmin ? true : !isCEOViewOnly;
+  const isAdmin = Boolean(
+    isSuperAdmin ||
+    userRole === 'admin' ||
+    userRole === 'hr' ||
+    userRole === 'ceo' ||
+    userDept === 'ceo' ||
+    userDept === 'hr' ||
+    userDept === 'management'
+  );
 
-  const hasAccess = useCallback((moduleName) => {
+  const isCEOViewOnly = false;
+
+  const canEdit = (user && !user.viewOnly) || isMasterAdmin;
+
+  // Granular action-specific permission check
+  const hasPermission = useCallback((moduleName, action) => {
     if (!user) return false;
-    // Super admin has access to everything
+
+    // Super Admin god-mode bypass
     if (isSuperAdmin) return true;
 
-    const role = user?.role?.toLowerCase() || '';
-    const dept = user?.department?.toLowerCase() || '';
-    const isLocalAdminUser = role === 'admin' || role === 'ceo' || role === 'hr' || dept === 'ceo' || dept === 'hr' || user?.viewOnly;
-    const isLocalCEOViewOnly = Boolean(
-      isLocalAdminUser && (user?.viewOnly || role === 'ceo' || role === 'hr' || dept === 'ceo' || dept === 'hr')
-    );
+    // If viewOnly is true, block all write actions!
+    if (user.viewOnly === true && action !== 'view') {
+      return false;
+    }
 
-    if (isLocalCEOViewOnly && ['notifications'].includes(moduleName)) return false;
-    // Every user should have access to the dashboard home page
-    if (moduleName === 'dashboard') return true;
-    if (isLocalAdminUser) return true;
-    return user.modules && user.modules.includes(moduleName);
+    // If module is assigned to employee's modules array, grant full action permissions
+    if (Array.isArray(user.modules) && user.modules.includes(moduleName)) {
+      return true;
+    }
+
+    // Retrieve from dynamic permissions map
+    const userPerms = user.permissions ? user.permissions[moduleName] : null;
+
+    if (!userPerms) {
+      return false; // Strict check: no explicit permission -> NO access!
+    }
+
+    // 'manage' privilege grants full access (Allow All) for this module
+    if (userPerms.manage) return true;
+
+    // Bridge view/create (cached subdoc) and can_view/can_create (collection fields)
+    const isAllowed =
+      userPerms[action] !== undefined ? userPerms[action] : userPerms['can_' + action];
+
+    return Boolean(isAllowed);
   }, [user, isSuperAdmin]);
+
+  // Backward compatible module-view visibility check
+  const hasAccess = useCallback((moduleName) => {
+    if (!user) return false;
+    if (isSuperAdmin) return true;
+
+    if (moduleName === 'dashboard') return true;
+
+    // Dynamic module visibility check based on assigned modules array
+    if (Array.isArray(user.modules) && user.modules.includes(moduleName)) {
+      return true;
+    }
+
+    // If the user has 'view' action permission for this module, they have access
+    return hasPermission(moduleName, 'view');
+  }, [user, isSuperAdmin, hasPermission]);
 
   return (
     <AuthContext.Provider
@@ -123,6 +171,7 @@ export const AuthProvider = ({ children }) => {
         logout: logoutHelper,
         refreshUser,
         hasAccess,
+        hasPermission,
       }}
     >
       {children}

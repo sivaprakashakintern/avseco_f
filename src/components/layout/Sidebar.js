@@ -9,7 +9,7 @@ import "./Sidebar.css";
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasAccess, isAdmin, canEdit } = useAuth();
+  const { hasAccess, isAdmin, isSuperAdmin } = useAuth();
 
   const { isMobileMenuOpen, setIsMobileMenuOpen, setLoading } = useContext(AppContext);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
@@ -121,14 +121,9 @@ const Sidebar = () => {
       module: "expenses",
       children: [
         { label: "Daily Expenses", path: "/expenses" },
-        { label: "Expense Report", path: "/expenses/report" }
+        { label: "Expense Report", path: "/expenses/report" },
+        { label: "Salary Report", path: "/salary", module: "salary" }
       ]
-    },
-    {
-      icon: "receipt_long",
-      label: "Salary",
-      path: "/salary",
-      module: "salary"
     },
     { icon: "badge", label: "Employees", path: "/employees", module: "employees" },
     { icon: "group", label: "Clients", path: "/clients", module: "clients" },
@@ -159,28 +154,33 @@ const Sidebar = () => {
   // Filter items based on access and administrative exposure
   const filteredNavItems = navItems.filter(item => {
     if (item.alwaysShow) return true;
-    // Basic module access check - Primary gatekeeper
-    return hasAccess(item.module);
+    
+    // Check if the primary module has access
+    if (hasAccess(item.module)) return true;
+    
+    // If it has children, check if the user has access to any of the children's specific modules
+    if (item.children && item.children.length > 0) {
+      return item.children.some(sub => sub.module && hasAccess(sub.module));
+    }
+    
+    return false;
   });
 
   // Add Admin-specific modules
-  if (isAdmin) {
-    // Only admins with edit rights (not CEO) can see these Admin panels
-    if (canEdit) {
-      filteredNavItems.push({
-        icon: "campaign",
-        label: "Push Alerts",
-        path: "/admin/push-notifications",
-        module: "admin"
-      });
-      
-      filteredNavItems.push({
-        icon: "admin_panel_settings",
-        label: "Manage Access",
-        path: "/admin/manage-access",
-        module: "admin"
-      });
-    }
+  if (isSuperAdmin) {
+    filteredNavItems.push({
+      icon: "campaign",
+      label: "Push Alerts",
+      path: "/admin/push-notifications",
+      module: "admin"
+    });
+    
+    filteredNavItems.push({
+      icon: "admin_panel_settings",
+      label: "Manage Access",
+      path: "/admin/manage-access",
+      module: "admin"
+    });
   }
 
   // navItems already includes Notifications now
@@ -265,15 +265,20 @@ const Sidebar = () => {
                       className={`submenu ${!isMobile ? 'popup-menu' : ''}`}
                       style={!isMobile ? { top: popupTop, left: popupLeft, position: 'fixed', marginLeft: 0 } : {}}
                     >
-                      {item.children.map((sub) => (
-                        <div
-                          key={sub.label}
-                          className={`submenu-item ${isActive(sub.path) ? "active" : ""}`}
-                          onClick={() => handleNavigation(sub.path)}
-                        >
-                          <span className="submenu-text">{sub.label}</span>
-                        </div>
-                      ))}
+                      {item.children
+                        .filter(sub => {
+                          const requiredModule = sub.module || item.module;
+                          return hasAccess(requiredModule);
+                        })
+                        .map((sub) => (
+                          <div
+                            key={sub.label}
+                            className={`submenu-item ${isActive(sub.path) ? "active" : ""}`}
+                            onClick={() => handleNavigation(sub.path)}
+                          >
+                            <span className="submenu-text">{sub.label}</span>
+                          </div>
+                        ))}
                     </div>
                   )}
                 </div>

@@ -122,7 +122,7 @@ const AttendanceLog = () => {
           checkOut: record?.checkOut || null,
         };
       });
-  }, [globalEmployees, attendanceRecords, dateKey, user]);
+  }, [globalEmployees, attendanceRecords, dateKey]);
 
   // ── Quick Stats ───────────────────────────────────────────────────────────────
   const stats = useMemo(() => {

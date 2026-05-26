@@ -203,7 +203,7 @@ const Clients = () => {
       <div className="page-header premium-header client-header">
         <div className="header-content">
           <h1 className="page-title client-page-title">Client Details</h1>
-          {isAdmin && canEdit && (
+          {canEdit && (
             <button
               className="btn-add-circle-premium"
               onClick={() => { resetForm(); setShowAddModal(true); }}
@@ -273,7 +273,7 @@ const Clients = () => {
                       <button className="action-btn" title="View" onClick={() => { setViewClient(client); setShowViewModal(true); }} style={{ color: '#10b981' }}>
                         <span className="material-symbols-outlined">visibility</span>
                       </button>
-                      {isAdmin && canEdit && (
+                      {canEdit && (
                         <>
                           <button className="action-btn" title="Edit" onClick={() => {
                             setSelectedClient(client);
@@ -346,7 +346,7 @@ const Clients = () => {
                           <span className="material-symbols-outlined">visibility</span>
                           View Portfolio
                         </button>
-                        {isAdmin && canEdit && (
+                        {canEdit && (
                           <>
                             <button className="dropdown-item" onClick={() => {
                               setSelectedClient(client);

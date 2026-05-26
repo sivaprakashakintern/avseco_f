@@ -221,7 +221,7 @@ const RawMaterials = () => {
       )}
 
       {/* ===== METRIC STATUS CARDS ===== */}
-      <div className="stock-unified-hero-row" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px", marginBottom: "30px" }}>
+      <div className="stock-unified-hero-row" style={{ display: "flex", flexDirection: "row", flexWrap: "nowrap", gap: "16px", marginBottom: "30px" }}>
         {/* Total Cost */}
         <div className="hero-stat-item secondary-alert blue-alert">
           <div className="hero-icon-box">

@@ -5,18 +5,11 @@ import dayjs from 'dayjs';
 import './MyAttendance.css';
 
 const MyAttendance = () => {
-  const { attendanceRecords, fetchStatus, setToast } = useAppContext();
+  const { attendanceRecords, setToast } = useAppContext();
   const [currentTime, setCurrentTime] = useState(dayjs());
   const [isPunching, setIsPunching] = useState(false);
-  const [geoStatus, setGeoStatus] = useState({ checking: true, allowed: false, distance: null, mapUrl: '' });
-  const [geofenceCfg, setGeofenceCfg] = useState(null);
-  const [promptDisabled, setPromptDisabled] = useState(() => {
-    try {
-      return localStorage.getItem('att_prompt_disabled') === 'true';
-    } catch (e) {
-      return false;
-    }
-  });
+  const [geoConfig, setGeoConfig] = useState({ enabled: false, lat: 0, lng: 0, radius: 500, mapUrl: '' });
+  const [geoStatus, setGeoStatus] = useState({ checking: true, allowed: true, distance: null, mapUrl: '' });
   
   // Real-time clock
   useEffect(() => {
@@ -27,8 +20,6 @@ const MyAttendance = () => {
   const todayStr = dayjs().format('YYYY-MM-DD');
   
   // Find my attendance for today
-  // Wait, in AppContext, myAttendanceYear holds all year data.
-  // We can just filter attendanceRecords.year
   const allYearAttendance = attendanceRecords.year || [];
   const todayRecord = allYearAttendance.find(r => r.date === todayStr);
 
@@ -41,14 +32,67 @@ const MyAttendance = () => {
   const handlePunch = async (action) => {
     try {
       setIsPunching(true);
-      const isoTime = dayjs().toISOString();
-      await attendanceApi.punchAttendance(action, isoTime);
-      setToast({ message: `Successfully punched ${action === 'check-in' ? 'In' : 'Out'}!`, icon: 'check_circle' });
-      setTimeout(() => window.location.reload(), 1500);
+
+      if (geoConfig.enabled) {
+        if (!navigator.geolocation) {
+          setToast({ message: 'Geolocation is not supported by your browser.', icon: 'error' });
+          setIsPunching(false);
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
+            // Calculate distance (Haversine formula)
+            const toRadians = (deg) => deg * (Math.PI / 180);
+            const R = 6371000; // meters
+            const dLat = toRadians(geoConfig.lat - lat);
+            const dLon = toRadians(geoConfig.lng - lng);
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
+                      Math.cos(toRadians(lat)) * Math.cos(toRadians(geoConfig.lat)) * 
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const dist = R * c;
+
+            if (dist > geoConfig.radius) {
+              setToast({ message: 'try again within 500 m from your company', icon: 'error' });
+              setTimeout(() => setToast(null), 2000);
+              setIsPunching(false);
+              return;
+            }
+
+            // Within geofence, send punch with lat and lng to backend
+            try {
+              const isoTime = dayjs().toISOString();
+              await attendanceApi.punchAttendance(action, isoTime, lat, lng);
+              setToast({ message: `Successfully punched ${action === 'check-in' ? 'In' : 'Out'}!`, icon: 'check_circle' });
+              setTimeout(() => window.location.reload(), 1500);
+            } catch (err) {
+              console.error(err);
+              setToast({ message: err.response?.data?.message || 'Failed to record attendance', icon: 'error' });
+            } finally {
+              setIsPunching(false);
+            }
+          },
+          (error) => {
+            console.error('Error getting location:', error);
+            setToast({ message: 'Location permission is required to punch attendance. Please enable location services.', icon: 'error' });
+            setIsPunching(false);
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      } else {
+        // Geofencing not enabled, normal punch
+        const isoTime = dayjs().toISOString();
+        await attendanceApi.punchAttendance(action, isoTime);
+        setToast({ message: `Successfully punched ${action === 'check-in' ? 'In' : 'Out'}!`, icon: 'check_circle' });
+        setTimeout(() => window.location.reload(), 1500);
+      }
     } catch (err) {
       console.error(err);
       setToast({ message: err.response?.data?.message || 'Failed to record attendance', icon: 'error' });
-    } finally {
       setIsPunching(false);
     }
   };
@@ -60,60 +104,26 @@ const MyAttendance = () => {
       try {
         const cfg = await attendanceApi.getGeofence();
         if (!mounted) return;
-        setGeofenceCfg(cfg);
-        setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: cfg.mapUrl || '' });
+        if (cfg && cfg.enabled) {
+          setGeoConfig({
+            enabled: true,
+            lat: cfg.lat,
+            lng: cfg.lng,
+            radius: cfg.radius || 500,
+            mapUrl: cfg.mapUrl || ''
+          });
+          setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: cfg.mapUrl || '' });
+        } else {
+          setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: '' });
+        }
       } catch (err) {
         if (!mounted) return;
-        setGeofenceCfg(null);
         setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: '' });
       }
     };
     check();
     return () => { mounted = false; };
   }, []);
-
-  const retryLocation = () => {
-    setGeoStatus(s => ({ ...s, checking: true }));
-    if (!navigator.geolocation) {
-      setGeoStatus({ checking: false, allowed: false, distance: null, mapUrl: '' });
-      return;
-    }
-    navigator.geolocation.getCurrentPosition((pos) => {
-      window._lastKnownPosition = pos;
-      // reuse same calculation as above by forcing an effect-like computation
-      const cfgPromise = attendanceApi.getGeofence();
-      cfgPromise.then(cfg => {
-        if (!cfg.enabled) {
-          setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: '' });
-          return;
-        }
-        const toRad = (d) => d * (Math.PI/180);
-        const R = 6371000;
-        const lat1 = pos.coords.latitude;
-        const lon1 = pos.coords.longitude;
-        const lat2 = Number(cfg.lat);
-        const lon2 = Number(cfg.lng);
-        const dLat = toRad(lat2 - lat1);
-        const dLon = toRad(lon2 - lon1);
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const dist = R * c;
-        const allowed = dist <= (Number(cfg.radius) || 500);
-        setGeoStatus({ checking: false, allowed, distance: dist, mapUrl: cfg.mapUrl || '' });
-      }).catch(() => setGeoStatus({ checking: false, allowed: false, distance: null, mapUrl: '' }));
-    }, (err) => {
-      if (err && err.code === 1) {
-        setGeoStatus({ checking: false, allowed: false, distance: null, mapUrl: '', reason: 'permission_denied' });
-      } else {
-        setGeoStatus({ checking: false, allowed: false, distance: null, mapUrl: '' });
-      }
-    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
-  };
-
-  const disablePrompt = () => {
-    try { localStorage.setItem('att_prompt_disabled', 'true'); } catch (e) {}
-    setPromptDisabled(true);
-  };
 
   return (
     <div className="my-attendance-container">

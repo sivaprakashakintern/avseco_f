@@ -109,35 +109,8 @@ const SalarySlip = () => {
   const workedDays = present + stoppage + half * 0.5;
   const bonus = workedDays >= 26 ? 500 : 0;
 
-  // 3. Sales Commission Logic
-  const mySales = salesHistory.filter(sale => {
-    const soldByName = String(sale.soldBy || sale.recordedBy || "").trim().toLowerCase();
-    const currentName = String(user?.name || "").trim().toLowerCase();
-    
-    // Extract month-year
-    const saleDateClean = String(sale.date || sale.createdAt || "").split(',')[0].trim();
-    const dateParts = saleDateClean.split('-');
-    let saleMonthYear = "";
-    if (dateParts.length === 3) {
-      if (dateParts[2].length === 4) {
-        saleMonthYear = `${dateParts[2]}-${dateParts[1]}`; // DD-MM-YYYY -> YYYY-MM
-      } else if (dateParts[0].length === 4) {
-        saleMonthYear = `${dateParts[0]}-${dateParts[1]}`; // YYYY-MM-DD -> YYYY-MM
-      }
-    }
-    if (!saleMonthYear) {
-      saleMonthYear = dayjs(sale.date || sale.createdAt).format('YYYY-MM');
-    }
-
-    return soldByName === currentName && saleMonthYear === selectedDate;
-  });
-  
-  const totalMySalesValue = mySales.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
-  // Example 2% commission on total sales
-  const salesCommission = Math.round(totalMySalesValue * 0.02);
-
-  // 4. Final rounded total paid
-  const total = Math.max(0, Math.round(baseMonthlySalary + bonus + salesCommission - totalDeductions));
+  // 3. Final rounded total paid
+  const total = Math.max(0, Math.round(baseMonthlySalary + bonus - totalDeductions));
 
   // Dynamic values for department and designation
   const departmentName = employeeObj?.department || user?.department || "Plate Manufacturing Unit";
@@ -151,23 +124,62 @@ const SalarySlip = () => {
     if (!element) return;
     setDownloadLoading(true);
     try {
-      const fullHeight = element.scrollHeight;
       const canvas = await html2canvas(element, {
         scale: 2.5,
         useCORS: true,
         backgroundColor: '#f7f5f0',
-        width: element.offsetWidth,
-        height: fullHeight,
-        scrollY: -window.scrollY,
+        windowWidth: 750,
+        scrollX: 0,
+        scrollY: 0,
         onclone: (clonedDoc) => {
-          const el = clonedDoc.getElementById('salary-slip-printable');
-          if (el) {
-            el.style.borderRadius = '0';
-            el.style.boxShadow = 'none';
-            el.style.padding = '40px';
-            el.style.width = '750px';
-            el.style.background = '#ffffff';
-          }
+          // Inject custom print-specific override styling into cloned document
+          const style = clonedDoc.createElement('style');
+          style.innerHTML = `
+            #salary-slip-printable {
+              width: 750px !important;
+              max-width: 750px !important;
+              padding: 45px 40px !important;
+              border-radius: 4px !important;
+              background: #f7f5f0 !important;
+              border: 1px solid #b2c0b6 !important;
+              box-shadow: none !important;
+            }
+            .emp-info-section {
+              display: flex !important;
+              flex-direction: row !important;
+              justify-content: space-between !important;
+              gap: 0 !important;
+            }
+            .emp-info-left {
+              flex: 1.3 !important;
+              width: auto !important;
+            }
+            .emp-info-right {
+              flex: 0.9 !important;
+              text-align: right !important;
+              width: auto !important;
+            }
+            .simple-sig-row {
+              display: flex !important;
+              flex-direction: row !important;
+              justify-content: space-between !important;
+              gap: 0 !important;
+            }
+            .sig-box {
+              width: 190px !important;
+            }
+            .breakdown-table td {
+              padding: 12px 10px !important;
+              font-size: 14px !important;
+            }
+            .breakdown-table tr.total-row td {
+              font-size: 16px !important;
+            }
+            .breakdown-table tr.total-row td.value-cell {
+              font-size: 18px !important;
+            }
+          `;
+          clonedDoc.head.appendChild(style);
         }
       });
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
@@ -203,86 +215,154 @@ const SalarySlip = () => {
           padding: 20px;
         }
 
-        .btn-salary-slip-action {
-          display: inline-flex !important;
-          align-items: center !important;
-          gap: 6px !important;
-          padding: 8px 16px !important;
-          border-radius: 10px !important;
-          font-weight: 600 !important;
-          font-size: 0.9rem !important;
-          cursor: pointer !important;
-          transition: all 0.2s ease !important;
-          border: none !important;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.05) !important;
-          text-decoration: none !important;
-        }
-        
-        .btn-salary-slip-action.back-btn {
-          background: #ffffff !important;
-          border: 2px solid #cbd5e1 !important;
-          color: #475569 !important;
+        /* ── Header Title & Back Button ── */
+        .slip-title-container {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 24px;
         }
 
-        .btn-salary-slip-action.back-btn:hover {
-          background: #f8fafc !important;
-          border-color: #94a3b8 !important;
-          color: #1e293b !important;
+        .slip-title-container .back-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 42px;
+          height: 42px;
+          border-radius: 12px;
+          background: #ffffff;
+          border: 1.5px solid #cbd5e1;
+          color: #475569;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+          outline: none;
         }
 
-        .btn-salary-slip-action.print-btn {
-          background: #006A4E !important;
-          color: #ffffff !important;
+        .slip-title-container .back-btn:hover {
+          background: #f8fafc;
+          border-color: #94a3b8;
+          color: #1e293b;
+          transform: translateX(-2px);
         }
 
-        .btn-salary-slip-action.print-btn:hover {
-          background: #004d39 !important;
-          box-shadow: 0 6px 14px rgba(0, 106, 78, 0.2) !important;
+        .slip-title-container .slip-title {
+          font-size: 1.45rem;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0;
+          letter-spacing: -0.5px;
         }
 
-        /* ── Desktop: single-row header ─── */
-        .slip-header-wrap {
+        /* ── Controls Filter Card ── */
+        .slip-filter-card {
+          background: #ffffff;
+          border-radius: 16px;
+          border: 1.5px solid #cbd5e1;
+          padding: 16px 20px;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 15px;
-          margin-bottom: 24px;
+          gap: 20px;
+          margin-bottom: 28px;
+          box-shadow: 0 4px 12px rgba(15,23,42,0.04);
+        }
+
+        .slip-filter-inputs {
+          display: flex;
+          align-items: center;
+          gap: 20px;
           flex-wrap: wrap;
         }
 
-        .header-left-group {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .header-right-group {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          flex-wrap: wrap;
-        }
-
-        .filter-group {
+        .slip-filter-group {
           display: flex;
           align-items: center;
           gap: 8px;
         }
 
-        .filter-label {
+        .slip-filter-group .material-symbols-outlined {
+          color: #006A4E;
+          font-size: 20px;
+          display: flex;
+          align-items: center;
+        }
+
+        .slip-filter-label {
           font-weight: 700;
           color: #475569;
           font-size: 0.9rem;
-          margin-bottom: 0;
+          margin: 0;
+          white-space: nowrap;
         }
 
-        .btn-text {
-          display: inline-block;
+        .slip-filter-select {
+          min-width: 170px;
+          padding: 8px 12px;
+          border-radius: 10px;
+          border: 1.5px solid #cbd5e1;
+          background: #ffffff;
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #1e293b;
+          outline: none;
+          height: 38px;
+          cursor: pointer;
+          transition: all 0.2s ease;
         }
 
-        /* Mobile-only title – hidden on desktop */
-        .slip-mobile-title {
-          display: none;
+        .slip-filter-select:hover {
+          border-color: #94a3b8;
+        }
+
+        .slip-filter-select:focus {
+          border-color: #006A4E;
+          box-shadow: 0 0 0 3px rgba(0,106,78,0.1);
+        }
+
+        .slip-filter-actions {
+          display: flex;
+          align-items: center;
+        }
+
+        .btn-download-pdf {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 18px;
+          border-radius: 10px;
+          background: #006A4E;
+          color: #ffffff;
+          font-weight: 700;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: none;
+          box-shadow: 0 4px 10px rgba(0, 106, 78, 0.15);
+          height: 38px;
+          white-space: nowrap;
+          outline: none;
+        }
+
+        .btn-download-pdf:hover {
+          background: #004d39;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 14px rgba(0, 106, 78, 0.25);
+        }
+
+        .btn-download-pdf:active {
+          transform: translateY(0);
+        }
+
+        .btn-download-pdf:disabled {
+          background: #94a3b8;
+          cursor: not-allowed;
+          box-shadow: none;
+          transform: none;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
 
         .payslip-table-wrapper {
@@ -407,6 +487,7 @@ const SalarySlip = () => {
         .breakdown-table td.label-cell {
           font-weight: 600;
           color: #2c3e35;
+          width: 60%;
         }
 
         .breakdown-table td.value-cell {
@@ -499,7 +580,7 @@ const SalarySlip = () => {
 
           .payslip-table-wrapper {
             padding: 22px !important;
-            border-radius: 20px !important;
+            border-radius: 12px !important;
           }
 
           .payslip-header h1 {
@@ -538,126 +619,64 @@ const SalarySlip = () => {
             gap: 18px !important;
           }
 
-          /* ── Mobile: title row on top, controls row below ── */
-          .slip-mobile-title {
-            display: block !important;
-            font-size: 1.15rem !important;
-            font-weight: 800 !important;
-            color: #0f172a !important;
-            margin-bottom: 10px !important;
-          }
-
-          .slip-header-wrap {
+          /* Mobile styling for the filter card */
+          .slip-filter-card {
             flex-direction: column !important;
             align-items: stretch !important;
-            gap: 0 !important;
-            margin-bottom: 18px !important;
+            padding: 16px !important;
+            gap: 16px !important;
           }
 
-          .header-left-group {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: 8px !important;
+          .slip-filter-inputs {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
           }
 
-          /* Hide desktop title on mobile */
-          .header-left-group .slip-desktop-title {
-            display: none !important;
-          }
-
-          .header-left-group .btn-salary-slip-action.back-btn {
-            padding: 6px 10px !important;
-            font-size: 0.8rem !important;
-            gap: 4px !important;
-          }
-
-          .header-right-group {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: 6px !important;
-            justify-content: flex-end !important;
-            flex: 1 !important;
-          }
-
-          .filter-label {
-            display: none !important;
-          }
-
-          .filter-group .material-symbols-outlined {
-            display: none !important;
-          }
-
-          #salary-month {
-            width: auto !important;
-            min-width: 110px !important;
-            padding: 6px 10px !important;
-            height: 36px !important;
-            font-size: 0.82rem !important;
-            border-radius: 8px !important;
-          }
-
-          .btn-salary-slip-action.print-btn {
-            width: 36px !important;
-            height: 36px !important;
-            padding: 0 !important;
-            justify-content: center !important;
-            border-radius: 50% !important;
-          }
-
-          .btn-salary-slip-action.print-btn .btn-text {
-            display: none !important;
-          }
-
-          .btn-salary-slip-action.print-btn span.material-symbols-outlined {
-            margin: 0 !important;
-            font-size: 20px !important;
-          }
-
-          /* Controls row: back btn on left, filter+print on right */
-          .slip-controls-row {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            justify-content: space-between !important;
+          .slip-filter-group {
             width: 100% !important;
-            gap: 8px !important;
+            justify-content: space-between !important;
           }
-        }
 
-        /* Desktop: controls row acts normally (part of flex header) */
-        .slip-controls-row {
-          display: contents;
+          .slip-filter-select {
+            flex: 1 !important;
+            min-width: 0 !important;
+            max-width: 70% !important;
+          }
+
+          .slip-filter-actions {
+            width: 100% !important;
+          }
+
+          .btn-download-pdf {
+            width: 100% !important;
+            justify-content: center !important;
+          }
         }
       `}</style>
 
       {/* ── Control Header (hidden on print) ── */}
-      <div className="slip-header-wrap no-print">
-         {/* Title visible only on mobile – sits above the controls row */}
-         <button className="btn-salary-slip-action back-btn mobile-back-btn" onClick={() => navigate('/dashboard')}>
-           <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
-         </button>
-         <h3 className="slip-mobile-title">Salary Slip</h3>
+      <div className="slip-header-container no-print">
+        {/* Title row with back button */}
+        <div className="slip-title-container">
+          <button className="back-btn" onClick={() => navigate('/dashboard')} title="Back to Dashboard">
+            <span className="material-symbols-outlined">arrow_back</span>
+          </button>
+          <h3 className="slip-title">Salary Slip</h3>
+        </div>
 
-
-        {/* Controls row: on desktop these are siblings inside the flex header;
-            on mobile they collapse into a single justified row */}
-        <div className="slip-controls-row">
-          <div className="header-left-group">
-            {/* Desktop title – hidden on mobile */}
-            <h3 className="slip-desktop-title" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>Salary Slip</h3>
-          </div>
-          <div className="header-right-group">
+        {/* Filter and Download Card */}
+        <div className="slip-filter-card">
+          <div className="slip-filter-inputs">
             {isAdmin && employeeOptions.length > 0 && (
-              <div className="filter-group">
-                <span className="material-symbols-outlined" style={{ color: '#006A4E', fontSize: '20px' }}>badge</span>
-                <label className="filter-label" htmlFor="salary-employee">Employee:</label>
+              <div className="slip-filter-group">
+                <span className="material-symbols-outlined">badge</span>
+                <label className="slip-filter-label" htmlFor="salary-employee">Employee:</label>
                 <select
                   id="salary-employee"
                   value={selectedEmployeeId || employeeOptions[0]?.id || ""}
                   onChange={e => setSelectedEmployeeId(e.target.value)}
-                  style={{ minWidth: '180px', padding: '8px 12px', borderRadius: '10px', border: '2px solid #cbd5e1', background: '#fff', fontSize: '0.92rem', fontWeight: 600, color: '#1e293b', outline: 'none', height: '38px' }}
+                  className="slip-filter-select"
                 >
                   {employeeOptions.map(option => (
                     <option key={option.id} value={option.id}>{option.name}{option.department ? ` - ${option.department}` : ''}</option>
@@ -665,31 +684,34 @@ const SalarySlip = () => {
                 </select>
               </div>
             )}
-            <div className="filter-group">
-              <span className="material-symbols-outlined" style={{ color: '#006A4E', fontSize: '20px' }}>calendar_month</span>
-              <label className="filter-label" htmlFor="salary-month">Month:</label>
+            <div className="slip-filter-group">
+              <span className="material-symbols-outlined">calendar_month</span>
+              <label className="slip-filter-label" htmlFor="salary-month">Month:</label>
               <select
                 id="salary-month"
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
-                style={{ minWidth: '160px', padding: '8px 12px', borderRadius: '10px', border: '2px solid #cbd5e1', background: '#fff', fontSize: '0.92rem', fontWeight: 600, color: '#1e293b', outline: 'none', height: '38px' }}
+                className="slip-filter-select"
               >
                 {monthOptions.map(option => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="slip-filter-actions">
             <button
-              className="btn-salary-slip-action print-btn"
+              className="btn-download-pdf"
               onClick={downloadAsPDF}
               disabled={downloadLoading}
               title="Download Salary Slip as PDF"
             >
               {downloadLoading
-                ? <span className="material-symbols-outlined" style={{ fontSize: '18px', animation: 'spin 1s linear infinite' }}>progress_activity</span>
-                : <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>download</span>
+                ? <span className="material-symbols-outlined" style={{ fontSize: '20px', animation: 'spin 1s linear infinite' }}>progress_activity</span>
+                : <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>download</span>
               }
-              <span className="btn-text">{downloadLoading ? 'Generating...' : 'Download PDF'}</span>
+              <span>{downloadLoading ? 'Generating...' : 'Download PDF'}</span>
             </button>
           </div>
         </div>
@@ -783,14 +805,7 @@ const SalarySlip = () => {
                 {bonus > 0 ? `+ ${formatCurrency(bonus)}` : `${formatCurrency(0)}`}
               </td>
             </tr>
-            {salesCommission > 0 && (
-              <tr>
-                <td className="label-cell">Sales Commission (2%)</td>
-                <td className="value-cell" style={{ color: '#15803d' }}>
-                  + {formatCurrency(salesCommission)}
-                </td>
-              </tr>
-            )}
+
             <tr>
               <td className="label-cell">Deductions</td>
               <td className="value-cell" style={{ color: totalDeductions > 0 ? '#b91c1c' : '#2c3e35' }}>

@@ -34,7 +34,7 @@ export const AppProvider = ({ children }) => {
     const [toast, setToast] = useState(null); // { message, type }
     const [isUpdating, setIsUpdating] = useState(false);
     const [hasFetched, setHasFetched] = useState(false);
-    const { user, refreshUser, hasAccess, isAdmin } = useAuth();
+    const { user, refreshUser, hasAccess, isSuperAdmin } = useAuth();
     
     // ✅ Helper to avoid UTC timezone shift (IST+5:30 bug)
     const toLocalDateKey = useCallback((date) => {
@@ -267,7 +267,7 @@ export const AppProvider = ({ children }) => {
     const [lastNotifiedRawMaterial, setLastNotifiedRawMaterial] = useState(false);
 
     useEffect(() => {
-        if (!user || !isAdmin) return;
+        if (!user || !isSuperAdmin) return;
         if (stockData.length === 0) return;
 
         const checkLowStock = async () => {
@@ -300,11 +300,11 @@ export const AppProvider = ({ children }) => {
         // Delay check slightly to ensure data is settled
         const timer = setTimeout(checkLowStock, 5000);
         return () => clearTimeout(timer);
-    }, [stockData, notifications, user, lastNotifiedProducts, isAdmin]);
+    }, [stockData, notifications, user, lastNotifiedProducts, isSuperAdmin]);
 
     // ── Raw Material Low Stock Notifications ──
     useEffect(() => {
-        if (!user || !isAdmin) return;
+        if (!user || !isSuperAdmin) return;
 
         const checkRawMaterialStock = async () => {
             let purchases = [];
@@ -360,7 +360,7 @@ export const AppProvider = ({ children }) => {
 
         const timer = setTimeout(checkRawMaterialStock, 5000);
         return () => clearTimeout(timer);
-    }, [productionHistory, notifications, user, lastNotifiedRawMaterial, isAdmin]);
+    }, [productionHistory, notifications, user, lastNotifiedRawMaterial, isSuperAdmin]);
 
     // Auto-accrue salaries on the 1st of each month
     useEffect(() => {
