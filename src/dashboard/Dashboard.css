@@ -182,19 +182,34 @@
   display: flex;
   flex-wrap: nowrap;
   /* Force one line */
-  gap: 6px;
+  gap: 8px;
   margin-top: auto;
   overflow-x: auto;
   /* Allow scrolling if too wide on small screens */
-  padding-bottom: 4px;
+  padding-bottom: 6px;
   
-  /* Hide scrollbar completely to keep premium look without lines/arrows */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
+  /* Visible, thin premium scrollbar styling */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(203, 213, 225, 0.6) transparent; /* Firefox */
+  -ms-overflow-style: auto;  /* IE and Edge */
 }
 
 .p-stat-breakdown::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  height: 4px; /* Thin, premium height */
+  display: block;
+}
+
+.p-stat-breakdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.p-stat-breakdown::-webkit-scrollbar-thumb {
+  background: rgba(203, 213, 225, 0.6);
+  border-radius: 99px;
+}
+
+.p-stat-breakdown:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.8);
 }
 
 .breakdown-tag {
