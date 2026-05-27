@@ -187,18 +187,14 @@
   overflow-x: auto;
   /* Allow scrolling if too wide on small screens */
   padding-bottom: 4px;
+  
+  /* Hide scrollbar completely to keep premium look without lines/arrows */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
 }
 
 .p-stat-breakdown::-webkit-scrollbar {
-  height: 2px;
-}
-
-.p-stat-breakdown::-webkit-scrollbar-thumb {
-  background: transparent;
-}
-
-.premium-stat-card:hover .p-stat-breakdown::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  display: none; /* Chrome, Safari and Opera */
 }
 
 .breakdown-tag {
