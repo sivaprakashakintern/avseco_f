@@ -76,6 +76,12 @@
   cursor: not-allowed;
 }
 
+.punch-btn:disabled:not(.btn-completed) {
+  background: #e2e8f0 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+
 .btn-in {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
