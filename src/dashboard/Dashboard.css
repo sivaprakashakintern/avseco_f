@@ -200,80 +200,80 @@
 .breakdown-tag {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
+  gap: 6px;
+  padding: 5px 12px;
   border-radius: 8px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
   white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .breakdown-tag .b-size {
-  opacity: 0.6;
-  font-size: 9.5px;
+  opacity: 0.85; /* Make size label more prominent */
+  font-size: 10.5px;
   font-weight: 800;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
 }
 
 .breakdown-tag .b-qty {
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: 900;
 }
 
 /* Hover Zoom Effect */
 .breakdown-tag:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
 }
 
-/* Today (Green Theme) */
+/* Today (Vibrant Green Theme) */
 .premium-stat-card.today .breakdown-tag {
-  background: rgba(16, 185, 129, 0.09) !important;
-  color: #047857 !important;
-  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+  background: rgba(16, 185, 129, 0.16) !important;
+  color: #065f46 !important;
+  border: 1.5px solid rgba(16, 185, 129, 0.35) !important;
 }
 .premium-stat-card.today .breakdown-tag:hover {
-  background: rgba(16, 185, 129, 0.16) !important;
-  border-color: rgba(16, 185, 129, 0.4) !important;
-  color: #065f46 !important;
+  background: rgba(16, 185, 129, 0.24) !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  color: #044e37 !important;
 }
 
-/* Week (Blue Theme) */
+/* Week (Vibrant Blue Theme) */
 .premium-stat-card.week .breakdown-tag {
-  background: rgba(59, 130, 246, 0.09) !important;
-  color: #1d4ed8 !important;
-  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  background: rgba(59, 130, 246, 0.16) !important;
+  color: #1e40af !important;
+  border: 1.5px solid rgba(59, 130, 246, 0.35) !important;
 }
 .premium-stat-card.week .breakdown-tag:hover {
-  background: rgba(59, 130, 246, 0.16) !important;
-  border-color: rgba(59, 130, 246, 0.4) !important;
-  color: #1e40af !important;
+  background: rgba(59, 130, 246, 0.24) !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  color: #1e3a8a !important;
 }
 
-/* Month (Orange Theme) */
+/* Month (Vibrant Orange Theme) */
 .premium-stat-card.month .breakdown-tag {
-  background: rgba(245, 158, 11, 0.09) !important;
-  color: #b45309 !important;
-  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+  background: rgba(245, 158, 11, 0.16) !important;
+  color: #78350f !important;
+  border: 1.5px solid rgba(245, 158, 11, 0.35) !important;
 }
 .premium-stat-card.month .breakdown-tag:hover {
-  background: rgba(245, 158, 11, 0.16) !important;
-  border-color: rgba(245, 158, 11, 0.4) !important;
-  color: #78350f !important;
+  background: rgba(245, 158, 11, 0.24) !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  color: #5c2509 !important;
 }
 
-/* Total Produced (Purple Theme) */
+/* Total Produced (Vibrant Purple Theme) */
 .premium-stat-card.stock .breakdown-tag {
-  background: rgba(139, 92, 246, 0.09) !important;
-  color: #6d28d9 !important;
-  border: 1px solid rgba(139, 92, 246, 0.2) !important;
+  background: rgba(139, 92, 246, 0.16) !important;
+  color: #4c1d95 !important;
+  border: 1.5px solid rgba(139, 92, 246, 0.35) !important;
 }
 .premium-stat-card.stock .breakdown-tag:hover {
-  background: rgba(139, 92, 246, 0.16) !important;
-  border-color: rgba(139, 92, 246, 0.4) !important;
-  color: #4c1d95 !important;
+  background: rgba(139, 92, 246, 0.24) !important;
+  border-color: rgba(139, 92, 246, 0.5) !important;
+  color: #3b1375 !important;
 }
 
 

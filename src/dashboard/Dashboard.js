@@ -38,6 +38,13 @@ const Dashboard = () => {
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
 
+  // Helper to cleanly extract and format numeric sizes (e.g. 6-inch -> 6″, 10 inch -> 10″)
+  const formatSizeLabel = (sizeStr) => {
+    if (!sizeStr) return '';
+    const match = String(sizeStr).match(/^(\d+(?:\.\d+)?)/);
+    return match ? `${match[1]}″` : sizeStr;
+  };
+
   // Use the deduplicated, numerically sorted sizes from AppContext (avoids duplicates
   // caused by different string formats: "6-inch" vs "6 inch" vs "6")
   const dynamicSizes = productionStats?.availableSizes || [];
@@ -765,6 +772,17 @@ const Dashboard = () => {
             <div className="p-stat-info">
               <span className="p-stat-label">Today's Production</span>
               <div className="p-stat-value">{(productionStats?.today || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {dynamicSizes.map(size => {
+                  const qty = productionStats?.todayBySize?.[size] || 0;
+                  return (
+                    <span key={size} className="breakdown-tag">
+                      <span className="b-size">{formatSizeLabel(size)}</span>
+                      <span className="b-qty">{qty.toLocaleString()}</span>
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -772,6 +790,17 @@ const Dashboard = () => {
             <div className="p-stat-info">
               <span className="p-stat-label">Last 7 Days</span>
               <div className="p-stat-value">{(productionStats?.week || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {dynamicSizes.map(size => {
+                  const qty = productionStats?.weekBySize?.[size] || 0;
+                  return (
+                    <span key={size} className="breakdown-tag">
+                      <span className="b-size">{formatSizeLabel(size)}</span>
+                      <span className="b-qty">{qty.toLocaleString()}</span>
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -779,6 +808,17 @@ const Dashboard = () => {
             <div className="p-stat-info">
               <span className="p-stat-label">This Month</span>
               <div className="p-stat-value">{(productionStats?.month || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {dynamicSizes.map(size => {
+                  const qty = productionStats?.monthBySize?.[size] || 0;
+                  return (
+                    <span key={size} className="breakdown-tag">
+                      <span className="b-size">{formatSizeLabel(size)}</span>
+                      <span className="b-qty">{qty.toLocaleString()}</span>
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -786,6 +826,17 @@ const Dashboard = () => {
             <div className="p-stat-info">
               <span className="p-stat-label">Total Produced</span>
               <div className="p-stat-value">{(productionStats?.stock || 0).toLocaleString()}</div>
+              <div className="p-stat-breakdown">
+                {dynamicSizes.map(size => {
+                  const qty = productionStats?.stockBySize?.[size] || 0;
+                  return (
+                    <span key={size} className="breakdown-tag">
+                      <span className="b-size">{formatSizeLabel(size)}</span>
+                      <span className="b-qty">{qty.toLocaleString()}</span>
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
