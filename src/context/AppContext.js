@@ -972,30 +972,47 @@ export const AppProvider = ({ children }) => {
             prev7Days.push(toFormattedDate(pd));
         }
 
-        // Dynamically collect all sizes available in the system
-        const sizesSet = new Set();
-        (products || []).forEach(p => {
-            if (p.size && p.size !== 'All Sizes') sizesSet.add(p.size);
-        });
-        (history || []).forEach(p => {
-            const s = p.size || p.productSize;
-            if (s && s !== 'All Sizes') sizesSet.add(s);
-        });
-        // Ensure default standard sizes are always populated
-        ['6-inch', '8-inch', '10-inch', '12-inch'].forEach(s => sizesSet.add(s));
-
-        const availableSizes = Array.from(sizesSet).sort((a, b) => {
-            const valA = parseFloat(a) || 0;
-            const valB = parseFloat(b) || 0;
-            return valA - valB;
-        });
-
         // Helper to extract the numeric size (e.g., "6-inch" -> 6, "12" -> 12, "8 inch" -> 8)
         const parseNumericSize = (sizeStr) => {
             if (!sizeStr) return 0;
             const match = String(sizeStr).match(/(\d+(?:\.\d+)?)/);
             return match ? parseFloat(match[1]) : 0;
         };
+
+        // Dynamically collect all unique sizes based on their numeric value
+        const sizesMap = new Map(); // numericSize -> representativeString
+        
+        const addSizeToMap = (s) => {
+            if (!s || s === 'All Sizes') return;
+            const num = parseNumericSize(s);
+            if (num > 0) {
+                if (!sizesMap.has(num)) {
+                    sizesMap.set(num, s);
+                } else {
+                    const existing = sizesMap.get(num);
+                    // Prefer strings containing 'inch' or '″' if the existing one does not
+                    if (s.toLowerCase().includes('inch') && !existing.toLowerCase().includes('inch')) {
+                        sizesMap.set(num, s);
+                    }
+                }
+            }
+        };
+
+        (products || []).forEach(p => {
+            addSizeToMap(p.size);
+        });
+        (history || []).forEach(p => {
+            const s = p.size || p.productSize;
+            addSizeToMap(s);
+        });
+        // Ensure default standard sizes are always populated
+        ['6-inch', '8-inch', '10-inch', '12-inch'].forEach(s => addSizeToMap(s));
+
+        const availableSizes = Array.from(sizesMap.values()).sort((a, b) => {
+            const valA = parseNumericSize(a) || 0;
+            const valB = parseNumericSize(b) || 0;
+            return valA - valB;
+        });
 
         // Check if two size strings represent the same size numerically
         const sizeMatches = (itemSize, targetSize) => {
