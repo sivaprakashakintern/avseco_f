@@ -481,6 +481,7 @@ const AttendanceLog = () => {
                   <th>Employee</th>
                   <th>Department</th>
                   <th>Punch Info</th>
+                  <th>Office Hours</th>
                   <th className="text-center" style={{ width: '180px' }}>Mark Attendance</th>
                 </tr>
               </thead>
@@ -510,20 +511,35 @@ const AttendanceLog = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', fontSize: '11px', color: '#64748b' }}>
                           <span>In: <strong style={{color: '#10b981'}}>{emp.checkIn ? new Date(emp.checkIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</strong></span>
                           <span>Out: <strong style={{color: '#ef4444'}}>{emp.checkOut ? new Date(emp.checkOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</strong></span>
-                          {(() => {
-                            const hours = formatOfficeHours(emp.checkIn, emp.checkOut, dateKey);
-                            if (hours) {
-                              return (
-                                <span style={{ marginTop: '3px' }}>
-                                  Hours: <strong style={{ color: hours.isActive ? '#2563eb' : '#475569' }}>
-                                    {hours.text} {hours.isActive && '(Active)'}
-                                  </strong>
-                                </span>
-                              );
-                            }
-                            return null;
-                          })()}
                         </div>
+                      </td>
+                      
+                      <td>
+                        {(() => {
+                          const hours = formatOfficeHours(emp.checkIn, emp.checkOut, dateKey);
+                          if (hours) {
+                            return (
+                              <span className={`hours-badge ${hours.isActive ? 'badge-active' : 'badge-completed'}`} style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 10px',
+                                borderRadius: '30px',
+                                fontSize: '11px',
+                                fontWeight: '750',
+                                background: hours.isActive ? '#eff6ff' : '#f1f5f9',
+                                color: hours.isActive ? '#2563eb' : '#475569',
+                                border: `1px solid ${hours.isActive ? '#bfdbfe' : '#e2e8f0'}`
+                              }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+                                  {hours.isActive ? 'pending' : 'check_circle'}
+                                </span>
+                                {hours.text} {hours.isActive && '(Active)'}
+                              </span>
+                            );
+                          }
+                          return <span style={{ color: '#94a3b8', fontSize: '12px' }}>--</span>;
+                        })()}
                       </td>
 
                       <td className="text-center">
@@ -542,7 +558,7 @@ const AttendanceLog = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="att-empty">
+                    <td colSpan="6" className="att-empty">
                       <span className="material-symbols-outlined">search_off</span>
                       <p>No employees match the current filters</p>
                       <button className="att-btn att-btn-ghost" onClick={clearFilters}>Clear Filters</button>
@@ -570,13 +586,33 @@ const AttendanceLog = () => {
                       </span>
                       <span className="att-mobile-dept-sub">{emp.department}</span>
                       {(emp.checkIn || emp.checkOut) && (
-                        <span style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px', display: 'block' }}>
-                          In: {emp.checkIn ? new Date(emp.checkIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--'} | Out: {emp.checkOut ? new Date(emp.checkOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--'}
+                        <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>
+                            In: <strong style={{color: '#10b981'}}>{emp.checkIn ? new Date(emp.checkIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</strong> | Out: <strong style={{color: '#ef4444'}}>{emp.checkOut ? new Date(emp.checkOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</strong>
+                          </span>
                           {(() => {
                             const hours = formatOfficeHours(emp.checkIn, emp.checkOut, dateKey);
-                            return hours ? ` (${hours.text}${hours.isActive ? ' Active' : ''})` : '';
+                            if (hours) {
+                              return (
+                                <span style={{ 
+                                  fontSize: '11px', 
+                                  fontWeight: '750', 
+                                  color: hours.isActive ? '#2563eb' : '#475569',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '2px',
+                                  marginTop: '2px'
+                                }}>
+                                  <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>
+                                    {hours.isActive ? 'pending' : 'check_circle'}
+                                  </span>
+                                  Office Time: {hours.text} {hours.isActive && '(Active)'}
+                                </span>
+                              );
+                            }
+                            return null;
                           })()}
-                        </span>
+                        </div>
                       )}
                     </div>
                   </div>
