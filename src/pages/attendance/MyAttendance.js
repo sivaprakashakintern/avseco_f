@@ -268,22 +268,8 @@ const MyAttendance = () => {
         )}
 
         {geoConfig.enabled && geoStatus.verified && !geoStatus.allowed && (
-          <div className="office-warning-text" style={{ 
-            color: '#ef4444', 
-            fontWeight: '750', 
-            fontSize: '14.5px', 
-            textAlign: 'center',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: '#fef2f2',
-            padding: '10px 20px',
-            borderRadius: '30px',
-            border: '1px solid #fee2e2',
-            marginTop: '8px',
-            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.05)'
-          }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#ef4444' }}>warning</span>
+          <div className="office-warning-text">
+            <span className="material-symbols-outlined">warning</span>
             You are currently not in the office
           </div>
         )}
