@@ -228,12 +228,7 @@ const MyAttendance = () => {
               <div className="banner-content">
                 <div className="banner-title">Location Restricted</div>
                 <div className="banner-desc">You are currently not in the office</div>
-                {geoStatus.mapUrl && (
-                  <a href={geoStatus.mapUrl} target="_blank" rel="noreferrer" className="maps-link-btn">
-                    <span className="material-symbols-outlined">map</span>
-                    Open Location in Google Maps
-                  </a>
-                )}
+
               </div>
             </div>
           )
@@ -267,12 +262,7 @@ const MyAttendance = () => {
           </button>
         )}
 
-        {geoConfig.enabled && geoStatus.verified && !geoStatus.allowed && (
-          <div className="office-warning-text">
-            <span className="material-symbols-outlined">warning</span>
-            You are currently not in the office
-          </div>
-        )}
+
 
         <div className="punch-actions">
           {!hasPunchedIn ? (
