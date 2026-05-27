@@ -38,37 +38,9 @@ const Dashboard = () => {
   // Helper to get formatted currency with shortening
   const formatStatValue = (val) => formatCurrency(val, true);
 
-  const getAvailableSizes = () => {
-    const sizesSet = new Set();
-
-    // Get sizes from stock
-    (stockData || []).forEach(item => {
-      if (item.size && item.size !== 'All Sizes') sizesSet.add(item.size);
-    });
-
-    // Get sizes from production stats
-    if (productionStats.monthBySize) {
-      Object.keys(productionStats.monthBySize).forEach(size => {
-        if (size !== 'All Sizes' && size !== 'total') sizesSet.add(size);
-      });
-    }
-
-    // Get sizes from Today's production to be safe
-    if (productionStats.todayBySize) {
-      Object.keys(productionStats.todayBySize).forEach(size => {
-        if (size !== 'All Sizes' && size !== 'total') sizesSet.add(size);
-      });
-    }
-
-    // Basic sorting for "2 inch", "6-inch" etc.
-    return Array.from(sizesSet).sort((a, b) => {
-      const valA = parseFloat(a) || 0;
-      const valB = parseFloat(b) || 0;
-      return valA - valB;
-    });
-  };
-
-  const dynamicSizes = getAvailableSizes();
+  // Use the deduplicated, numerically sorted sizes from AppContext (avoids duplicates
+  // caused by different string formats: "6-inch" vs "6 inch" vs "6")
+  const dynamicSizes = productionStats?.availableSizes || [];
   const canViewAttendance = hasAccess('attendance');
   const canViewPremiumStats = hasAccess('sales') || hasAccess('stock') || hasAccess('production');
   const canViewChartRow = canViewPremiumStats || canViewAttendance;
