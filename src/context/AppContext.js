@@ -972,7 +972,37 @@ export const AppProvider = ({ children }) => {
             prev7Days.push(toFormattedDate(pd));
         }
 
-        const availableSizes = ['6-inch', '8-inch', '10-inch', '12-inch'];
+        // Dynamically collect all sizes available in the system
+        const sizesSet = new Set();
+        (products || []).forEach(p => {
+            if (p.size && p.size !== 'All Sizes') sizesSet.add(p.size);
+        });
+        (history || []).forEach(p => {
+            const s = p.size || p.productSize;
+            if (s && s !== 'All Sizes') sizesSet.add(s);
+        });
+        // Ensure default standard sizes are always populated
+        ['6-inch', '8-inch', '10-inch', '12-inch'].forEach(s => sizesSet.add(s));
+
+        const availableSizes = Array.from(sizesSet).sort((a, b) => {
+            const valA = parseFloat(a) || 0;
+            const valB = parseFloat(b) || 0;
+            return valA - valB;
+        });
+
+        // Helper to extract the numeric size (e.g., "6-inch" -> 6, "12" -> 12, "8 inch" -> 8)
+        const parseNumericSize = (sizeStr) => {
+            if (!sizeStr) return 0;
+            const match = String(sizeStr).match(/(\d+(?:\.\d+)?)/);
+            return match ? parseFloat(match[1]) : 0;
+        };
+
+        // Check if two size strings represent the same size numerically
+        const sizeMatches = (itemSize, targetSize) => {
+            const itemNum = parseNumericSize(itemSize);
+            const targetNum = parseNumericSize(targetSize);
+            return itemNum > 0 && targetNum > 0 && itemNum === targetNum;
+        };
         
         const todayHistory = history.filter(item => {
             const itemDateStr = item.date || "";
@@ -987,8 +1017,9 @@ export const AppProvider = ({ children }) => {
         const todayTotal = todayHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
         const todayBySize = {};
         availableSizes.forEach(size => {
-            const sKey = size.toLowerCase().trim().replace(" ", "-");
-            todayBySize[size] = todayHistory.filter(item => (item.size || "").toLowerCase().trim().replace(" ", "-") === sKey).reduce((sum, item) => sum + (item.quantity || 0), 0);
+            todayBySize[size] = todayHistory
+                .filter(item => sizeMatches(item.size || item.productSize, size))
+                .reduce((sum, item) => sum + (item.quantity || 0), 0);
         });
 
         const weekHistory = history.filter(item => {
@@ -1003,8 +1034,9 @@ export const AppProvider = ({ children }) => {
         const weekTotal = weekHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
         const weekBySize = {};
         availableSizes.forEach(size => {
-            const sKey = size.toLowerCase().trim().replace(" ", "-");
-            weekBySize[size] = weekHistory.filter(item => (item.size || "").toLowerCase().trim().replace(" ", "-") === sKey).reduce((sum, item) => sum + (item.quantity || 0), 0);
+            weekBySize[size] = weekHistory
+                .filter(item => sizeMatches(item.size || item.productSize, size))
+                .reduce((sum, item) => sum + (item.quantity || 0), 0);
         });
 
         const prevWeekHistory = history.filter(item => {
@@ -1036,8 +1068,9 @@ export const AppProvider = ({ children }) => {
         const monthTotal = monthHistory.reduce((sum, item) => sum + (item.quantity || 0), 0);
         const monthBySize = {};
         availableSizes.forEach(size => {
-            const sKey = size.toLowerCase().trim().replace(" ", "-");
-            monthBySize[size] = monthHistory.filter(item => (item.size || "").toLowerCase().trim().replace(" ", "-") === sKey).reduce((sum, item) => sum + (item.quantity || 0), 0);
+            monthBySize[size] = monthHistory
+                .filter(item => sizeMatches(item.size || item.productSize, size))
+                .reduce((sum, item) => sum + (item.quantity || 0), 0);
         });
         
         const prevMonthIdx = currentMonthIdx === 1 ? 12 : currentMonthIdx - 1;
@@ -1064,8 +1097,9 @@ export const AppProvider = ({ children }) => {
 
         const stockBySize = {};
         availableSizes.forEach(size => {
-            const sKey = size.toLowerCase().trim().replace(" ", "-");
-            stockBySize[size] = history.filter(item => (item.size || "").toLowerCase().trim().replace(" ", "-") === sKey).reduce((sum, item) => sum + (item.quantity || 0), 0);
+            stockBySize[size] = history
+                .filter(item => sizeMatches(item.size || item.productSize, size))
+                .reduce((sum, item) => sum + (item.quantity || 0), 0);
         });
 
         return {
@@ -1081,7 +1115,7 @@ export const AppProvider = ({ children }) => {
             stockBySize,
             availableSizes
         };
-    }, [productionHistory, toFormattedDate]);
+    }, [productionHistory, toFormattedDate, products]);
 
     // Using todayStr calculated at the top of the component
 

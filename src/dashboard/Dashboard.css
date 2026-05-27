@@ -202,17 +202,82 @@
 }
 
 .breakdown-tag {
-  background: #f8fafc;
-  color: #475569;
-  padding: 3px 8px;
-  /* More compact padding */
-  border-radius: 6px;
-  font-size: 10px;
-  /* Smaller font to fit in one line */
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
   font-weight: 700;
-  border: 1px solid #e2e8f0;
   white-space: nowrap;
-  /* Prevent text wrapping inside tag */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.breakdown-tag .b-size {
+  opacity: 0.6;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.breakdown-tag .b-qty {
+  font-size: 11.5px;
+  font-weight: 900;
+}
+
+/* Hover Zoom Effect */
+.breakdown-tag:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Today (Green Theme) */
+.premium-stat-card.today .breakdown-tag {
+  background: rgba(16, 185, 129, 0.09) !important;
+  color: #047857 !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+.premium-stat-card.today .breakdown-tag:hover {
+  background: rgba(16, 185, 129, 0.16) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #065f46 !important;
+}
+
+/* Week (Blue Theme) */
+.premium-stat-card.week .breakdown-tag {
+  background: rgba(59, 130, 246, 0.09) !important;
+  color: #1d4ed8 !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+}
+.premium-stat-card.week .breakdown-tag:hover {
+  background: rgba(59, 130, 246, 0.16) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: #1e40af !important;
+}
+
+/* Month (Orange Theme) */
+.premium-stat-card.month .breakdown-tag {
+  background: rgba(245, 158, 11, 0.09) !important;
+  color: #b45309 !important;
+  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+}
+.premium-stat-card.month .breakdown-tag:hover {
+  background: rgba(245, 158, 11, 0.16) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  color: #78350f !important;
+}
+
+/* Total Produced (Purple Theme) */
+.premium-stat-card.stock .breakdown-tag {
+  background: rgba(139, 92, 246, 0.09) !important;
+  color: #6d28d9 !important;
+  border: 1px solid rgba(139, 92, 246, 0.2) !important;
+}
+.premium-stat-card.stock .breakdown-tag:hover {
+  background: rgba(139, 92, 246, 0.16) !important;
+  border-color: rgba(139, 92, 246, 0.4) !important;
+  color: #4c1d95 !important;
 }
 
 
