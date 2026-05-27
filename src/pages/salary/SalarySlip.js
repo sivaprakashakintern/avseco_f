@@ -662,7 +662,7 @@ const SalarySlip = () => {
       <div className="slip-header-container no-print">
         {/* Title row with back button */}
         <div className="slip-title-container">
-          <button className="back-btn" onClick={() => navigate('/dashboard')} title="Back to Dashboard">
+          <button className="back-btn" onClick={() => navigate('/salary')} title="Back to Salary Report">
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
           <h3 className="slip-title">Salary Slip</h3>
