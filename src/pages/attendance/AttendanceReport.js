@@ -94,6 +94,7 @@ const AttendanceReport = () => {
                 const record = dayRecords.find(r => r.empId === emp.id);
                 
                 let displayStatus = '-';
+                let punchInfo = null;
 
                 // PRIORITY: If it's Sunday, ALWAYS show 'Sunday' and ignore any records
                 if (day.isSunday) {
@@ -114,8 +115,15 @@ const AttendanceReport = () => {
                         displayStatus = 'WS';
                         empData.stats.stoppage += 1;
                     }
+
+                    if (record.checkIn) {
+                        punchInfo = {
+                            checkIn: record.checkIn,
+                            checkOut: record.checkOut
+                        };
+                    }
                 }
-                empData.daily.push(displayStatus);
+                empData.daily.push({ status: displayStatus, punchInfo });
             });
             dataMap[emp.id] = empData;
         });
@@ -200,7 +208,7 @@ const AttendanceReport = () => {
                 const rowValues = [
                     index + 1,
                     emp.name,
-                    ...data.daily.map(s => s === 'Sunday' ? 'SUN' : (s === '-' ? '' : s)),
+                    ...data.daily.map(item => item.status === 'Sunday' ? 'SUN' : (item.status === '-' ? '' : item.status)),
                     data.stats.present,
                     data.stats.absent,
                     data.stats.half,
@@ -519,13 +527,13 @@ const AttendanceReport = () => {
                                                 <span style={{ display: 'block', fontSize: '10px', color: '#dc2626', fontWeight: '700', marginTop: '1px', letterSpacing: '0.3px' }}>Deactivated</span>
                                             )}
                                         </td>
-                                        {data.daily.map((status, idx) => {
+                                        {data.daily.map((item, idx) => {
                                             const isSun = daysInCurrentView[idx]?.isSunday;
                                             let cellClass = "excel-data-cell";
                                             if (isSun) cellClass += " sunday-col";
                                             
-                                            let displayStatus = status === '-' ? '' : status;
-                                            if (status === 'Sunday') displayStatus = 'SUN';
+                                            let displayStatus = item.status === '-' ? '' : item.status;
+                                            if (item.status === 'Sunday') displayStatus = 'SUN';
 
                                             let statusClass = "";
                                             if (displayStatus === 'P') statusClass = "status-p";
@@ -534,8 +542,36 @@ const AttendanceReport = () => {
                                             else if (displayStatus === 'WS') statusClass = "status-ws";
                                             else if (displayStatus === 'SUN') statusClass = "status-sun";
 
+                                            // Formats hover tooltip with punch in/out and duration
+                                            const getPunchTooltip = (punch) => {
+                                                if (!punch || !punch.checkIn) return undefined;
+                                                const formatTime = (isoStr) => {
+                                                    try {
+                                                        return new Date(isoStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                                    } catch (e) {
+                                                        return '--:--';
+                                                    }
+                                                };
+                                                const inTime = formatTime(punch.checkIn);
+                                                const outTime = punch.checkOut ? formatTime(punch.checkOut) : '--:--';
+                                                
+                                                let hoursStr = '';
+                                                const start = new Date(punch.checkIn);
+                                                const end = punch.checkOut ? new Date(punch.checkOut) : null;
+                                                if (end && !isNaN(start) && !isNaN(end)) {
+                                                    const diffMs = end - start;
+                                                    if (diffMs >= 0) {
+                                                        const totalMins = Math.floor(diffMs / (1000 * 60));
+                                                        const hrs = Math.floor(totalMins / 60);
+                                                        const mins = totalMins % 60;
+                                                        hoursStr = ` (${hrs}h ${mins}m)`;
+                                                    }
+                                                }
+                                                return `Punch In: ${inTime}\nPunch Out: ${outTime}${hoursStr}`;
+                                            };
+
                                             return (
-                                                <td key={idx} className={`${cellClass} ${statusClass}`}>
+                                                <td key={idx} className={`${cellClass} ${statusClass}`} title={getPunchTooltip(item.punchInfo)}>
                                                     {displayStatus}
                                                 </td>
                                             );

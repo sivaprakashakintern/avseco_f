@@ -21,7 +21,37 @@ const today = () => {
 const getInitials = (name = "") =>
   name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
+const formatOfficeHours = (checkIn, checkOut, dateKey) => {
+  if (!checkIn) return null;
+  const start = new Date(checkIn);
+  let end;
+  let isActive = false;
 
+  if (checkOut) {
+    end = new Date(checkOut);
+  } else {
+    const now = new Date();
+    const todayStr = toDateKey(now);
+    if (dateKey === todayStr) {
+      end = now;
+      isActive = true;
+    } else {
+      return null;
+    }
+  }
+
+  const diffMs = end - start;
+  if (isNaN(diffMs) || diffMs < 0) return null;
+
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  const hrs = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+
+  return {
+    text: `${hrs}h ${mins}m`,
+    isActive
+  };
+};
 
 // ─── Toast Component ──────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => (
@@ -480,6 +510,19 @@ const AttendanceLog = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', fontSize: '11px', color: '#64748b' }}>
                           <span>In: <strong style={{color: '#10b981'}}>{emp.checkIn ? new Date(emp.checkIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</strong></span>
                           <span>Out: <strong style={{color: '#ef4444'}}>{emp.checkOut ? new Date(emp.checkOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</strong></span>
+                          {(() => {
+                            const hours = formatOfficeHours(emp.checkIn, emp.checkOut, dateKey);
+                            if (hours) {
+                              return (
+                                <span style={{ marginTop: '3px' }}>
+                                  Hours: <strong style={{ color: hours.isActive ? '#2563eb' : '#475569' }}>
+                                    {hours.text} {hours.isActive && '(Active)'}
+                                  </strong>
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       </td>
 
@@ -526,6 +569,15 @@ const AttendanceLog = () => {
                         {emp.name} {emp.active === false && <span style={{ fontSize: '10px', color: '#c53030', fontWeight: 'bold' }}>(Deactivated)</span>}
                       </span>
                       <span className="att-mobile-dept-sub">{emp.department}</span>
+                      {(emp.checkIn || emp.checkOut) && (
+                        <span style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px', display: 'block' }}>
+                          In: {emp.checkIn ? new Date(emp.checkIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--'} | Out: {emp.checkOut ? new Date(emp.checkOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--'}
+                          {(() => {
+                            const hours = formatOfficeHours(emp.checkIn, emp.checkOut, dateKey);
+                            return hours ? ` (${hours.text}${hours.isActive ? ' Active' : ''})` : '';
+                          })()}
+                        </span>
+                      )}
                     </div>
                   </div>
 

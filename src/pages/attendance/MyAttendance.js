@@ -15,7 +15,7 @@ const MyAttendance = () => {
     radius: 500, 
     mapUrl: 'https://maps.app.goo.gl/bHvhxbA3BaQ1J1Ne6?g_st=aw' 
   });
-  const [geoStatus, setGeoStatus] = useState({ checking: false, allowed: true, distance: null, mapUrl: '', error: null, verified: false });
+  const [geoStatus, setGeoStatus] = useState({ checking: true, allowed: false, distance: null, mapUrl: '', error: null, verified: false });
   
   // Real-time clock
   useEffect(() => {
@@ -35,10 +35,26 @@ const MyAttendance = () => {
   const hasPunchedIn = !!todayRecord?.checkIn;
   const hasPunchedOut = !!todayRecord?.checkOut;
 
+  // Calculate total hours today
+  let totalHoursStr = '--';
+  let isHoursActive = false;
+  if (todayRecord?.checkIn) {
+    const start = dayjs(todayRecord.checkIn);
+    const end = todayRecord.checkOut ? dayjs(todayRecord.checkOut) : currentTime;
+    const diffMins = end.diff(start, 'minute');
+    if (diffMins >= 0) {
+      const hrs = Math.floor(diffMins / 60);
+      const mins = diffMins % 60;
+      totalHoursStr = `${hrs}h ${mins}m`;
+      isHoursActive = !todayRecord.checkOut;
+    }
+  }
+
   // Verifies user location against the geofence config
-  const verifyLocation = (silent = false) => {
+  const verifyLocation = (silent = false, customConfig = null) => {
+    const activeConfig = customConfig || geoConfig;
     return new Promise((resolve, reject) => {
-      if (!geoConfig.enabled) {
+      if (!activeConfig.enabled) {
         resolve({ allowed: true });
         return;
       }
@@ -46,7 +62,7 @@ const MyAttendance = () => {
       if (!navigator.geolocation) {
         const msg = 'Geolocation is not supported by your browser.';
         if (!silent) setToast({ message: msg, icon: 'error' });
-        setGeoStatus({ checking: false, allowed: false, distance: null, mapUrl: geoConfig.mapUrl, error: msg, verified: true });
+        setGeoStatus({ checking: false, allowed: false, distance: null, mapUrl: activeConfig.mapUrl, error: msg, verified: true });
         resolve({ allowed: false, error: msg });
         return;
       }
@@ -61,30 +77,30 @@ const MyAttendance = () => {
           // Calculate distance using Haversine formula
           const toRadians = (deg) => deg * (Math.PI / 180);
           const R = 6371000; // meters
-          const dLat = toRadians(geoConfig.lat - lat);
-          const dLon = toRadians(geoConfig.lng - lng);
+          const dLat = toRadians(activeConfig.lat - lat);
+          const dLon = toRadians(activeConfig.lng - lng);
           const a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
-                    Math.cos(toRadians(lat)) * Math.cos(toRadians(geoConfig.lat)) * 
+                    Math.cos(toRadians(lat)) * Math.cos(toRadians(activeConfig.lat)) * 
                     Math.sin(dLon/2) * Math.sin(dLon/2);
           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
           const dist = R * c;
 
-          const isAllowed = dist <= geoConfig.radius;
+          const isAllowed = dist <= activeConfig.radius;
           
           setGeoStatus({
             checking: false,
             allowed: isAllowed,
             distance: dist,
-            mapUrl: geoConfig.mapUrl,
+            mapUrl: activeConfig.mapUrl,
             error: null,
             verified: true
           });
 
           if (!silent) {
             if (isAllowed) {
-              setToast({ message: `Location verified! You are ${Math.round(dist)}m away (within range).`, icon: 'check_circle' });
+              setToast({ message: 'Location verified! You are inside the office range.', icon: 'check_circle' });
             } else {
-              setToast({ message: `Out of range! You are ${Math.round(dist)}m away.`, icon: 'warning' });
+              setToast({ message: 'Out of range! You are currently not in the office.', icon: 'warning' });
             }
             setTimeout(() => setToast(null), 3000);
           }
@@ -106,7 +122,7 @@ const MyAttendance = () => {
             checking: false,
             allowed: false,
             distance: null,
-            mapUrl: geoConfig.mapUrl,
+            mapUrl: activeConfig.mapUrl,
             error: msg,
             verified: true
           });
@@ -124,7 +140,7 @@ const MyAttendance = () => {
       if (geoConfig.enabled) {
         const result = await verifyLocation(true); // check location silently first
         if (!result.allowed) {
-          setToast({ message: result.error || 'try again within 500 m from your company', icon: 'error' });
+          setToast({ message: result.error || 'You are currently not in the office', icon: 'error' });
           setTimeout(() => setToast(null), 3500);
           setIsPunching(false);
           return;
@@ -156,7 +172,7 @@ const MyAttendance = () => {
     }
   };
 
-  // Fetch geofence config from server (do not request browser location on mount)
+  // Fetch geofence config from server and verify location automatically
   useEffect(() => {
     let mounted = true;
     const check = async () => {
@@ -164,20 +180,24 @@ const MyAttendance = () => {
         const cfg = await attendanceApi.getGeofence();
         if (!mounted) return;
         if (cfg && cfg.enabled) {
-          setGeoConfig({
+          const newConfig = {
             enabled: true,
             lat: cfg.lat,
             lng: cfg.lng,
             radius: cfg.radius || 500,
             mapUrl: cfg.mapUrl || ''
-          });
-          setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: cfg.mapUrl || '', error: null, verified: false });
+          };
+          setGeoConfig(newConfig);
+          setGeoStatus({ checking: true, allowed: false, distance: null, mapUrl: cfg.mapUrl || '', error: null, verified: false });
+          
+          // Silently verify on mount
+          await verifyLocation(true, newConfig);
         } else {
-          setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: '', error: null, verified: false });
+          setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: '', error: null, verified: true });
         }
       } catch (err) {
         if (!mounted) return;
-        setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: '', error: null, verified: false });
+        setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: '', error: null, verified: true });
       }
     };
     check();
@@ -192,39 +212,45 @@ const MyAttendance = () => {
       </div>
 
       <div className="punch-card">
-        {geoStatus.verified && (
-          <div className={`geo-status-banner ${geoStatus.allowed ? 'status-allowed' : 'status-denied'}`}>
-            <span className="material-symbols-outlined banner-icon">
-              {geoStatus.allowed ? 'check_circle' : geoStatus.error ? 'location_off' : 'warning'}
-            </span>
-            <div className="banner-content">
-              <div className="banner-title">
-                {geoStatus.allowed 
-                  ? 'Within Allowed Geofence' 
-                  : geoStatus.error 
-                    ? 'Location Check Failed' 
-                    : 'Out of Allowed Range'}
+        {geoConfig.enabled && geoStatus.verified && (
+          geoStatus.allowed ? (
+            <div className="geo-status-banner status-allowed">
+              <span className="material-symbols-outlined banner-icon">check_circle</span>
+              <div className="banner-content">
+                <div className="banner-title">Office Location Verified</div>
+                <div className="banner-desc">You are inside the office range. Ready to punch.</div>
               </div>
-              <div className="banner-desc">
-                {geoStatus.allowed 
-                  ? `You are ${geoStatus.distance !== null ? `${Math.round(geoStatus.distance)}m` : 'close'} away from the company. Ready to punch.`
-                  : geoStatus.error 
-                    ? geoStatus.error
-                    : `You are ${geoStatus.distance !== null ? `${Math.round(geoStatus.distance)}m` : 'too far'} away (Limit: ${geoConfig.radius}m).`}
-              </div>
-              {geoStatus.mapUrl && !geoStatus.allowed && (
-                <a href={geoStatus.mapUrl} target="_blank" rel="noreferrer" className="maps-link-btn">
-                  <span className="material-symbols-outlined">map</span>
-                  Open Location in Google Maps
-                </a>
-              )}
             </div>
-          </div>
+          ) : (
+            <div className="geo-status-banner status-denied">
+              <span className="material-symbols-outlined banner-icon">location_off</span>
+              <div className="banner-content">
+                <div className="banner-title">Location Restricted</div>
+                <div className="banner-desc">You are currently not in the office</div>
+                {geoStatus.mapUrl && (
+                  <a href={geoStatus.mapUrl} target="_blank" rel="noreferrer" className="maps-link-btn">
+                    <span className="material-symbols-outlined">map</span>
+                    Open Location in Google Maps
+                  </a>
+                )}
+              </div>
+            </div>
+          )
         )}
 
         <div className="live-clock">
           {currentTime.format('hh:mm:ss A')}
         </div>
+
+        {geoConfig.enabled && geoStatus.checking && !geoStatus.verified && (
+          <div className="geo-status-banner status-checking">
+            <span className="material-symbols-outlined banner-icon verifying-icon">my_location</span>
+            <div className="banner-content">
+              <div className="banner-title">Checking your location...</div>
+              <div className="banner-desc">Please wait while we verify your location.</div>
+            </div>
+          </div>
+        )}
 
         {geoConfig.enabled && (
           <button 
@@ -234,39 +260,37 @@ const MyAttendance = () => {
             disabled={geoStatus.checking || isPunching}
           >
             <span className="material-symbols-outlined btn-icon-small">
-              {geoStatus.checking ? 'autorenew' : 'my_location'}
+              {geoStatus.checking ? 'autorenew' : 'refresh'}
             </span>
-            {geoStatus.checking ? 'Verifying Location...' : 'Check Location Status'}
+            {geoStatus.checking ? 'Checking Location...' : 'Re-check Location'}
           </button>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div className="punch-actions">
-            {!hasPunchedIn ? (
-              <button 
-                className="punch-btn btn-in" 
-                onClick={() => handlePunch('check-in')}
-                disabled={isPunching || geoStatus.checking}
-              >
-                <span className="material-symbols-outlined btn-icon">login</span>
-                {isPunching ? 'Punching In...' : 'PUNCH IN'}
-              </button>
-            ) : !hasPunchedOut ? (
-              <button 
-                className="punch-btn btn-out" 
-                onClick={() => handlePunch('check-out')}
-                disabled={isPunching || geoStatus.checking}
-              >
-                <span className="material-symbols-outlined btn-icon">logout</span>
-                {isPunching ? 'Punching Out...' : 'PUNCH OUT'}
-              </button>
-            ) : (
-              <button className="punch-btn btn-completed" disabled>
-                <span className="material-symbols-outlined btn-icon">task_alt</span>
-                COMPLETED FOR TODAY
-              </button>
-            )}
-          </div>
+        <div className="punch-actions">
+          {!hasPunchedIn ? (
+            <button 
+              className="punch-btn btn-in" 
+              onClick={() => handlePunch('check-in')}
+              disabled={isPunching || geoStatus.checking || (geoConfig.enabled && !geoStatus.allowed)}
+            >
+              <span className="material-symbols-outlined btn-icon">login</span>
+              {isPunching ? 'Punching In...' : 'PUNCH IN'}
+            </button>
+          ) : !hasPunchedOut ? (
+            <button 
+              className="punch-btn btn-out" 
+              onClick={() => handlePunch('check-out')}
+              disabled={isPunching || geoStatus.checking || (geoConfig.enabled && !geoStatus.allowed)}
+            >
+              <span className="material-symbols-outlined btn-icon">logout</span>
+              {isPunching ? 'Punching Out...' : 'PUNCH OUT'}
+            </button>
+          ) : (
+            <button className="punch-btn btn-completed" disabled>
+              <span className="material-symbols-outlined btn-icon">task_alt</span>
+              COMPLETED FOR TODAY
+            </button>
+          )}
         </div>
 
         <div className="punch-history">
@@ -301,6 +325,19 @@ const MyAttendance = () => {
               </span>
             )}
           </div>
+
+          {hasPunchedIn && (
+            <div className="history-card">
+              <span className="history-label">Time in Office</span>
+              <span className="history-time">{totalHoursStr}</span>
+              <span className={`history-status ${isHoursActive ? 'status-active' : ''}`}>
+                <span className="material-symbols-outlined" style={{fontSize: '16px'}}>
+                  {isHoursActive ? 'pending' : 'check_circle'}
+                </span>
+                {isHoursActive ? 'Active Session' : 'Completed'}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>
