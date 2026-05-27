@@ -765,18 +765,6 @@ const Dashboard = () => {
             <div className="p-stat-info">
               <span className="p-stat-label">Today's Production</span>
               <div className="p-stat-value">{(productionStats?.today || 0).toLocaleString()}</div>
-              <div className="p-stat-breakdown">
-                {dynamicSizes.map(size => {
-                  const label = size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size;
-                  const qty = productionStats?.todayBySize?.[size] || 0;
-                  return (
-                    <span key={size} className="breakdown-tag">
-                      <span className="b-size">{label}″</span>
-                      <span className="b-qty">{qty.toLocaleString()}</span>
-                    </span>
-                  );
-                })}
-              </div>
             </div>
           </div>
 
@@ -784,18 +772,6 @@ const Dashboard = () => {
             <div className="p-stat-info">
               <span className="p-stat-label">Last 7 Days</span>
               <div className="p-stat-value">{(productionStats?.week || 0).toLocaleString()}</div>
-              <div className="p-stat-breakdown">
-                {dynamicSizes.map(size => {
-                  const label = size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size;
-                  const qty = productionStats?.weekBySize?.[size] || 0;
-                  return (
-                    <span key={size} className="breakdown-tag">
-                      <span className="b-size">{label}″</span>
-                      <span className="b-qty">{qty.toLocaleString()}</span>
-                    </span>
-                  );
-                })}
-              </div>
             </div>
           </div>
 
@@ -803,18 +779,6 @@ const Dashboard = () => {
             <div className="p-stat-info">
               <span className="p-stat-label">This Month</span>
               <div className="p-stat-value">{(productionStats?.month || 0).toLocaleString()}</div>
-              <div className="p-stat-breakdown">
-                {dynamicSizes.map(size => {
-                  const label = size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size;
-                  const qty = productionStats?.monthBySize?.[size] || 0;
-                  return (
-                    <span key={size} className="breakdown-tag">
-                      <span className="b-size">{label}″</span>
-                      <span className="b-qty">{qty.toLocaleString()}</span>
-                    </span>
-                  );
-                })}
-              </div>
             </div>
           </div>
 
@@ -822,18 +786,6 @@ const Dashboard = () => {
             <div className="p-stat-info">
               <span className="p-stat-label">Total Produced</span>
               <div className="p-stat-value">{(productionStats?.stock || 0).toLocaleString()}</div>
-              <div className="p-stat-breakdown">
-                {dynamicSizes.map(size => {
-                  const label = size.toLowerCase().includes('inch') ? size.split('-')[0].split(' ')[0] : size;
-                  const qty = productionStats?.stockBySize?.[size] || 0;
-                  return (
-                    <span key={size} className="breakdown-tag">
-                      <span className="b-size">{label}″</span>
-                      <span className="b-qty">{qty.toLocaleString()}</span>
-                    </span>
-                  );
-                })}
-              </div>
             </div>
           </div>
         </div>
