@@ -8,6 +8,9 @@
 .attendance-header {
   margin-bottom: 2rem;
   text-align: center;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
 }
 
 .attendance-header h1 {
@@ -160,18 +163,25 @@
   }
   
   .attendance-header {
-    text-align: left;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
     margin-bottom: 1.5rem;
-    padding-left: 4px;
+    padding-left: 0;
+    width: 100% !important;
   }
   
   .attendance-header h1 {
-    font-size: 1.6rem;
-    margin-bottom: 0.25rem;
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    text-align: center !important;
   }
   
   .attendance-header p {
-    font-size: 0.95rem;
+    font-size: 1.05rem;
+    text-align: center !important;
   }
   
   .punch-card {
