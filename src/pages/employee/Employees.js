@@ -63,6 +63,8 @@ const Employees = () => {
     salary: ""
   });
 
+  const isSalaryDisabled = formData.department === "CEO" || formData.department === "HR" || formData.department === "ceo" || formData.department === "hr";
+
   // Calculate stats - Strictly for staff (excludes admins)
 
 
@@ -228,7 +230,7 @@ const Employees = () => {
         aadhar: formData.aadhar,
         pan: formData.pan.toUpperCase(),
         address: formData.address,
-        salary: Number(formData.salary) || 0,
+        salary: isSalaryDisabled ? 0 : (Number(formData.salary) || 0),
         avatar: formData.avatar,
         empId: 'EMP-' + Math.floor(100000 + Math.random() * 900000)
       };
@@ -340,7 +342,7 @@ const Employees = () => {
         aadhar: formData.aadhar,
         pan: formData.pan.toUpperCase(),
         address: formData.address,
-        salary: Number(formData.salary) || 0,
+        salary: isSalaryDisabled ? 0 : (Number(formData.salary) || 0),
         avatar: formData.avatar,
         active: formData.active
       });
@@ -424,6 +426,13 @@ const Employees = () => {
       // PAN is 10 characters (ABCDE1234F)
       let val = value.toUpperCase().substring(0, 10);
       setFormData({ ...formData, pan: val });
+    } else if (name === "department") {
+      const isSalDisabled = value === "CEO" || value === "HR" || value === "ceo" || value === "hr";
+      setFormData({
+        ...formData,
+        department: value,
+        salary: isSalDisabled ? "0" : (formData.salary === "0" ? "" : formData.salary)
+      });
     } else if (type === 'checkbox') {
       setFormData({ ...formData, [name]: checked });
     } else {
@@ -959,17 +968,18 @@ const Employees = () => {
                       </LocalizationProvider>
                     </div>
                     <div className="modal-form-group">
-                      <label>Default Salary (Monthly) *</label>
+                      <label>Default Salary (Monthly) {isSalaryDisabled ? "" : "*"}</label>
                       <input
                         type="number"
                         name="salary"
-                        value={formData.salary}
+                        value={isSalaryDisabled ? "0" : formData.salary}
                         onChange={handleInputChange}
-                        placeholder="0.00"
+                        placeholder={isSalaryDisabled ? "N/A (No Salary)" : "0.00"}
                         className="modal-input"
-                        required
+                        required={!isSalaryDisabled}
+                        disabled={isSalaryDisabled}
                       />
-                      {formData.salary && !isNaN(formData.salary) && (
+                      {formData.salary && !isNaN(formData.salary) && !isSalaryDisabled && (
                         <div style={{ fontSize: '12px', color: '#006A4E', marginTop: '4px', fontWeight: '500' }}>
                           Per Day Salary: ₹{(Number(formData.salary) / 26).toFixed(2)}
                         </div>
@@ -1205,17 +1215,18 @@ const Employees = () => {
                       </LocalizationProvider>
                     </div>
                     <div className="modal-form-group">
-                      <label>Default Salary (Monthly) *</label>
+                      <label>Default Salary (Monthly) {isSalaryDisabled ? "" : "*"}</label>
                       <input
                         type="number"
                         name="salary"
-                        value={formData.salary}
+                        value={isSalaryDisabled ? "0" : formData.salary}
                         onChange={handleInputChange}
-                        placeholder="0.00"
+                        placeholder={isSalaryDisabled ? "N/A (No Salary)" : "0.00"}
                         className="modal-input"
-                        required
+                        required={!isSalaryDisabled}
+                        disabled={isSalaryDisabled}
                       />
-                      {formData.salary && !isNaN(formData.salary) && (
+                      {formData.salary && !isNaN(formData.salary) && !isSalaryDisabled && (
                         <div style={{ fontSize: '12px', color: '#006A4E', marginTop: '4px', fontWeight: '500' }}>
                           Per Day Salary: ₹{(Number(formData.salary) / 26).toFixed(2)}
                         </div>

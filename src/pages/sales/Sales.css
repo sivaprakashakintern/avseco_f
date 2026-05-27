@@ -2682,15 +2682,15 @@
 }
 
 .bill-btn-print {
-  background: #006A4E;
+  background: #000000;
   color: white;
-  box-shadow: 0 4px 10px rgba(0, 106, 78, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .bill-btn-print:hover {
-  background: #004d39;
+  background: #1e293b;
   transform: translateY(-2px);
-  box-shadow: 0 8px 15px rgba(0, 106, 78, 0.3);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
 }
 
 .bill-btn-whatsapp {
@@ -2879,15 +2879,15 @@
 }
 
 .bill-btn-print {
-  background: #006A4E;
+  background: #000000;
   color: white;
-  box-shadow: 0 4px 10px rgba(0, 106, 78, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .bill-btn-print:hover {
-  background: #004d39;
+  background: #1e293b;
   transform: translateY(-2px);
-  box-shadow: 0 8px 15px rgba(0, 106, 78, 0.3);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
 }
 
 .bill-btn-whatsapp {

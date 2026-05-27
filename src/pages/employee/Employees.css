@@ -2933,3 +2933,14 @@ body,
     padding: 0 12px;
   }
 }
+
+/* Premium Disabled Input Sizing & Style for CEO/HR Salary fields */
+.modal-input:disabled {
+  background-color: #f8fafc !important;
+  color: #64748b !important;
+  border: 1.5px dashed #cbd5e1 !important;
+  cursor: not-allowed !important;
+  opacity: 0.8;
+  font-weight: 700;
+  box-shadow: none !important;
+}

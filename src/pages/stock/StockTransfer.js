@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Stock.css';
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 // Products list (stable reference for useEffect dependency)
 const STOCK_TRANSFER_PRODUCTS = [
@@ -243,6 +245,65 @@ const StockTransactions = () => {
       setAllTransactions(allTransactions.filter(t => t.id !== id));
       setFeedbackMessage("❌ Transaction deleted");
       setTimeout(() => setFeedbackMessage(""), 3000);
+    }
+  };
+
+  const downloadBillAsPDF = async () => {
+    const element = document.getElementById('printable-stock-bill');
+    if (!element) return;
+    setFeedbackMessage("🚀 Generating A4 PDF Bill...");
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        width: 794,
+        height: element.scrollHeight,
+        windowWidth: 794,
+        windowHeight: element.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+          clonedDoc.documentElement.style.setProperty('width', '794px', 'important');
+          clonedDoc.body.style.setProperty('width', '794px', 'important');
+          clonedDoc.body.style.setProperty('overflow', 'visible', 'important');
+          const el = clonedDoc.getElementById('printable-stock-bill');
+          if (el) {
+            el.style.setProperty('width', '794px', 'important');
+            el.style.setProperty('min-width', '794px', 'important');
+            el.style.setProperty('max-width', '794px', 'important');
+            el.style.setProperty('padding', '45px 35px', 'important');
+            el.style.setProperty('box-shadow', 'none', 'important');
+            el.style.setProperty('border', 'none', 'important');
+            el.style.setProperty('background', '#ffffff', 'important');
+            el.style.margin = '0';
+          }
+          const actionArea = clonedDoc.querySelector('.bill-actions');
+          if (actionArea) {
+            actionArea.style.display = 'none';
+          }
+        }
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdfWidth = 210;
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: [pdfWidth, pdfHeight],
+        compress: true
+      });
+
+      doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+      doc.save(`Bill_${selectedBill.company.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+      setFeedbackMessage("✅ PDF Downloaded successfully!");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      setFeedbackMessage("❌ Could not generate PDF. Please try again.");
+      setTimeout(() => setFeedbackMessage(""), 4000);
     }
   };
 
@@ -806,7 +867,7 @@ const StockTransactions = () => {
       {/* Bill Generation Modal */}
       {showBillModal && selectedBill && (
         <div className="bill-modal-overlay" onClick={() => setShowBillModal(false)}>
-          <div className="bill-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="bill-modal-content" id="printable-stock-bill" onClick={(e) => e.stopPropagation()}>
             <div className="bill-header">
               <div className="bill-brand">
                 <h2>AVS ECO PRODUCTS</h2>
@@ -850,11 +911,15 @@ const StockTransactions = () => {
 
             <div className="bill-footer">
               <p>Thank you for your business!</p>
-              <div className="bill-actions">
+              <div className="bill-actions no-print">
                 <button className="btn-outline" onClick={() => setShowBillModal(false)}>Close</button>
-                <button className="btn-primary" onClick={() => window.print()}>
+                <button className="btn-primary" onClick={() => window.print()} style={{ marginRight: '8px' }}>
                   <span className="material-symbols-outlined">print</span>
                   Print Bill
+                </button>
+                <button className="btn-primary" onClick={downloadBillAsPDF} style={{ background: '#006A4E', borderColor: '#006A4E' }}>
+                  <span className="material-symbols-outlined">download</span>
+                  Download PDF
                 </button>
               </div>
             </div>

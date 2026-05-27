@@ -132,6 +132,9 @@ const SalarySlip = () => {
         scrollX: 0,
         scrollY: 0,
         onclone: (clonedDoc) => {
+          clonedDoc.documentElement.style.setProperty('width', '750px', 'important');
+          clonedDoc.body.style.setProperty('width', '750px', 'important');
+          clonedDoc.body.style.setProperty('overflow', 'visible', 'important');
           // Inject custom print-specific override styling into cloned document
           const style = clonedDoc.createElement('style');
           style.innerHTML = `

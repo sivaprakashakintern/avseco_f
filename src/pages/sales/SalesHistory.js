@@ -130,14 +130,21 @@ const SalesHistory = () => {
 
     const handleViewBill = (transaction, returnOnly = false) => {
 
+        // Match client by company name OR contact person name for more robust lookup
+        const clientInfo = clients?.find(c =>
+            (c.companyName && transaction.company && c.companyName === transaction.company) ||
+            (c.contactPerson && transaction.customer && c.contactPerson === transaction.customer)
+        );
 
-        const clientInfo = clients?.find(c => c.companyName === transaction.company);
+        // For WhatsApp: Client database phone takes first priority, then fall back to transaction phone
+        const resolvedPhone = clientInfo?.phone || transaction.phone || transaction.customerPhone || "N/A";
+
         const billData = {
             invoiceNo: transaction.invoiceNo || (transaction.id || transaction._id)?.slice(-6).toUpperCase() || "N/A",
             date: transaction.date?.split(', ')[0] || new Date(transaction.createdAt).toLocaleDateString(),
             company: transaction.company || "Direct Sale",
             customer: transaction.customer || clientInfo?.contactPerson || "Walking Customer",
-            phone: transaction.phone || transaction.customerPhone || clientInfo?.phone || "N/A",
+            phone: resolvedPhone,
             email: transaction.email || transaction.customerEmail || clientInfo?.email || "N/A",
             gstin: transaction.gstin || transaction.customerGstin || clientInfo?.gst || "N/A",
             address: transaction.address || transaction.customerAddress || clientInfo?.address || "N/A",
@@ -198,79 +205,177 @@ const SalesHistory = () => {
 
         const phone = cleaned;
         if (!phone || phone.length < 10) {
-            alert('Please enter a valid WhatsApp number.');
+            alert('❌ No valid phone number found.\n\nPlease add the client\'s phone number in Client Details to send via WhatsApp.');
             return;
         }
 
-        setFeedbackMessage(`🚀 Generating High-Res Bill & Connecting to WhatsApp...`);
+        setFeedbackMessage(`🚀 Generating Invoice & Opening WhatsApp...`);
 
         try {
-            const fullHeight = invoiceElement.scrollHeight;
             const canvas = await html2canvas(invoiceElement, {
-                scale: 2.5,
+                scale: 3,
                 useCORS: true,
                 backgroundColor: '#ffffff',
-                width: 850,
-                windowWidth: 850,
-                height: fullHeight,
-                scrollY: -window.scrollY,
+                width: 794,
+                height: invoiceElement.scrollHeight,
+                windowWidth: 794,
+                windowHeight: invoiceElement.scrollHeight,
+                scrollX: 0,
+                scrollY: 0,
                 onclone: (clonedDoc) => {
+                    clonedDoc.documentElement.style.setProperty('width', '794px', 'important');
+                    clonedDoc.body.style.setProperty('width', '794px', 'important');
+                    clonedDoc.body.style.setProperty('overflow', 'visible', 'important');
                     const el = clonedDoc.getElementById('printable-bill');
                     if (el) {
+                        el.style.setProperty('width', '794px', 'important');
+                        el.style.setProperty('min-width', '794px', 'important');
+                        el.style.setProperty('max-width', '794px', 'important');
                         el.style.zoom = '1';
                         el.style.transform = 'none';
-                        el.style.margin = '0 auto';
+                        el.style.margin = '0';
+                        el.style.padding = '0';
                         el.style.boxShadow = 'none';
-                        el.style.position = 'relative';
+                        el.style.position = 'absolute';
                         el.style.top = '0';
                         el.style.left = '0';
-                        el.style.width = '850px';
-                        el.style.height = `${fullHeight}px`;
+                        el.style.height = 'auto';
                         el.style.overflow = 'visible';
                     }
-                    const actionButtons = clonedDoc.querySelector('.no-print');
-                    if (actionButtons) {
-                        actionButtons.style.display = 'none';
+                    const container = clonedDoc.getElementById('printable-invoice');
+                    if (container) {
+                        container.style.setProperty('width', '794px', 'important');
+                        container.style.setProperty('min-width', '794px', 'important');
+                        container.style.setProperty('max-width', '794px', 'important');
+                        container.style.setProperty('padding', '45px 35px', 'important');
+                        container.style.setProperty('box-shadow', 'none', 'important');
                     }
+                    const actionButtons = clonedDoc.querySelectorAll('.no-print');
+                    actionButtons.forEach(btn => {
+                        btn.style.display = 'none';
+                    });
                 }
             });
 
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
-            const imgWidth = canvas.width;
-            const imgHeight = canvas.height;
-
-            const pdfWidth = (imgWidth / (3 * 96)) * 25.4;
-            const pdfHeight = (imgHeight / (3 * 96)) * 25.4;
-
+            // Generate full A4 PDF from canvas
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const pdfWidth = 210;
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             const doc = new jsPDF({
-                orientation: pdfWidth > pdfHeight ? 'l' : 'p',
+                orientation: 'p',
                 unit: 'mm',
                 format: [pdfWidth, pdfHeight],
-                compress: false
+                compress: true
             });
+            doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
 
-            doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'SLOW');
-            const pdfBlob = doc.output('blob');
-            const pdfFile = new File([pdfBlob], `Invoice_${bill.invoiceNo}.pdf`, { type: 'application/pdf' });
-
-            const message = `*INVOICE: ${bill.invoiceNo}*%0A%0ADear *${bill.customer}*,%0A%0AThank you for your business with *AVS ECO INDUSTRIES*! 🌿%0A%0APlease find your invoice attached below.`;
+            // WhatsApp URL — opens WhatsApp with the client's phone number pre-selected
+            const message = encodeURIComponent(`*INVOICE: ${bill.invoiceNo}*\n\nDear *${bill.customer}*,\n\nThank you for your business with *AVS ECO INDUSTRIES*! 🌿\n\nPlease find your invoice PDF attached.`);
             const waUrl = `https://wa.me/${phone}?text=${message}`;
 
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                await navigator.share({
-                    files: [pdfFile],
-                    title: `Invoice ${bill.invoiceNo}`,
-                    text: `Dear ${bill.customer}, Please find your invoice from AVSECO INDUSTRIES.`
-                }).catch(() => {
-                    doc.save(`Invoice_${bill.invoiceNo}.pdf`);
-                    window.open(waUrl, '_blank');
-                });
+            // Download PDF
+            doc.save(`Invoice_${bill.invoiceNo}.pdf`);
+
+            // To avoid popup blockers on mobile, use window.location.href to redirect directly to the WhatsApp app.
+            // On PC/desktop, open in a new tab via window.open so the main page remains open.
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                setTimeout(() => {
+                    window.location.href = waUrl;
+                }, 800);
             } else {
-                doc.save(`Invoice_${bill.invoiceNo}.pdf`);
-                window.open(waUrl, '_blank');
+                setTimeout(() => {
+                    window.open(waUrl, '_blank');
+                }, 800);
             }
+
+            setFeedbackMessage("✅ PDF ready! WhatsApp opened with client's number.");
+            setTimeout(() => setFeedbackMessage(""), 4000);
         } catch (err) {
             console.error('WhatsApp capture failed:', err);
+            alert('Could not generate invoice PDF. Please try again.');
+        } finally {
+            setFeedbackMessage("");
+        }
+    };
+
+    const downloadInvoiceAsPDF = async (bill) => {
+        const invoiceElement = document.getElementById('printable-bill');
+        if (!invoiceElement) {
+            alert('Invoice preview not found.');
+            return;
+        }
+
+        setFeedbackMessage(`🚀 Generating High-Res A4 Bill...`);
+
+        try {
+            const canvas = await html2canvas(invoiceElement, {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                width: 794,
+                height: invoiceElement.scrollHeight,
+                windowWidth: 794,
+                windowHeight: invoiceElement.scrollHeight,
+                scrollX: 0,
+                scrollY: 0,
+                onclone: (clonedDoc) => {
+                    clonedDoc.documentElement.style.setProperty('width', '794px', 'important');
+                    clonedDoc.body.style.setProperty('width', '794px', 'important');
+                    clonedDoc.body.style.setProperty('overflow', 'visible', 'important');
+                    const el = clonedDoc.getElementById('printable-bill');
+                    if (el) {
+                        el.style.setProperty('width', '794px', 'important');
+                        el.style.setProperty('min-width', '794px', 'important');
+                        el.style.setProperty('max-width', '794px', 'important');
+                        el.style.zoom = '1';
+                        el.style.transform = 'none';
+                        el.style.margin = '0';
+                        el.style.padding = '0';
+                        el.style.boxShadow = 'none';
+                        el.style.position = 'absolute';
+                        el.style.top = '0';
+                        el.style.left = '0';
+                        el.style.height = 'auto';
+                        el.style.overflow = 'visible';
+                    }
+                    const container = clonedDoc.getElementById('printable-invoice');
+                    if (container) {
+                        container.style.setProperty('width', '794px', 'important');
+                        container.style.setProperty('min-width', '794px', 'important');
+                        container.style.setProperty('max-width', '794px', 'important');
+                        container.style.setProperty('padding', '45px 35px', 'important');
+                        container.style.setProperty('box-shadow', 'none', 'important');
+                    }
+                    const actionButtons = clonedDoc.querySelectorAll('.no-print');
+                    actionButtons.forEach(btn => {
+                        btn.style.display = 'none';
+                    });
+                }
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+            // Calculate exact PDF dimensions in mm to match the canvas aspect ratio (maintaining exact scale)
+            const pdfWidth = 210;
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            // Generate a standard or custom height portrait PDF to display the full invoice edge-to-edge
+            const doc = new jsPDF({
+                orientation: 'p',
+                unit: 'mm',
+                format: [pdfWidth, pdfHeight],
+                compress: true
+            });
+
+            // Add the A4 preview image to fill the PDF page 100% perfectly edge-to-edge
+            doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+            doc.save(`Invoice_${bill.invoiceNo}.pdf`);
+            setFeedbackMessage("✅ PDF Downloaded successfully!");
+            setTimeout(() => setFeedbackMessage(""), 3000);
+        } catch (err) {
+            console.error('PDF generation failed:', err);
             alert('Could not generate full invoice. Please try again.');
         } finally {
             setFeedbackMessage("");
@@ -590,35 +695,99 @@ const SalesHistory = () => {
                     >
                         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
                         <style>{`
-                            @media print {
-                                @page { size: portrait; margin: 0; }
-                                .no-print { display: none !important; }
-                                body, html { margin: 0 !important; padding: 0 !important; background: #fff !important; width: 850px !important; }
+                            .responsive-bill-modal { 
+                                background: transparent !important; 
+                                box-shadow: none !important; 
+                                border: none !important; 
+                                width: 794px !important; 
+                                min-width: 794px !important; 
+                                max-width: 794px !important; 
+                                margin: 20px auto !important; 
                             }
-                            .ci-container { padding: 35px 0; background: #fff; width: 100%; min-height: 800px; display: flex; flex-direction: column; }
-                            .ci-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #045b54; padding: 0 40px 18px; margin-bottom: 24px; }
-                            .ci-logo-area { display: flex; align-items: flex-start; gap: 18px; }
-                            .ci-logo-img { height: 85px; object-fit: contain; margin-top: 4px; }
-                            .ci-company-name { font-size: 22px; font-weight: 900; color: #045b54; letter-spacing: -0.01em; margin-bottom: 4px; }
+                            .ci-container { 
+                                padding: 45px 35px !important; 
+                                background: #ffffff !important; 
+                                width: 794px !important; 
+                                min-height: 1123px !important; 
+                                box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important; 
+                                box-sizing: border-box !important; 
+                                display: flex; 
+                                flex-direction: column; 
+                                border-radius: 4px;
+                            }
+                            .ci-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000000; padding: 0 0 18px 0; margin-bottom: 24px; }
+                            .ci-logo-area { display: flex; align-items: flex-start; gap: 18px; width: 62%; }
+                            .ci-logo-img { width: 90px; height: 90px; object-fit: contain; }
+                            .ci-company-name { font-size: 22px; font-weight: 900; color: #000000; letter-spacing: -0.01em; margin-bottom: 4px; }
                             .ci-company-addr { font-size: 13px; color: #64748b; font-weight: 500; line-height: 1.45; }
-                            .ci-invoice-title { font-size: 28px; font-weight: 900; color: #045b54; text-align: right; letter-spacing: 0.05em; margin-bottom: 8px; }
-                            .ci-invoice-meta { font-size: 13px; color: #334155; text-align: right; display: flex; flex-direction: column; gap: 4px; }
-                            .ci-billto { display: flex; justify-content: space-between; padding: 0 40px; margin-bottom: 30px; gap: 40px; }
-                            .ci-billto-title { font-size: 12px; font-weight: 800; color: #045b54; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+                            .ci-header-right { width: 35%; display: flex; flex-direction: column; align-items: flex-end; }
+                            .ci-invoice-title { font-size: 28px; font-weight: 900; color: #000000; text-align: right; letter-spacing: 0.05em; margin-bottom: 8px; }
+                            .ci-invoice-meta { font-size: 13px; color: #334155; text-align: right; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+                            .ci-invoice-meta div { white-space: nowrap; }
+                            .ci-billto { display: flex; justify-content: space-between; padding: 0; margin-bottom: 20px; gap: 40px; }
+                            .ci-billto-title { font-size: 12px; font-weight: 800; color: #000000; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
                             .ci-billto-row { font-size: 13px; margin-bottom: 5px; color: #1e293b; line-height: 1.5; }
-                            .ci-section-title { background: #f8fafc; padding: 10px 40px 18px; font-size: 12px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-bottom: 0; }
-                            .ci-table-wrap { padding: 16px 40px 0; flex-grow: 1; }
-                            .ci-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1.5px solid #045b54; }
-                            .ci-tbl-head th { background: #045b54; color: #fff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.2); text-align: center; }
-                            .ci-tbody td { padding: 14px 14px; font-size: 13px; color: #333; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; text-align: center; font-weight: 500; }
+                            .ci-billto-right { text-align: right; max-width: 320px; word-break: break-word; display: flex; flex-direction: column; align-items: flex-end; }
+                            .ci-section-title { font-size: 15px; font-weight: 900; color: #000000; padding: 20px 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em; }
+                            .ci-table-wrap { padding: 0; }
+                            .ci-table { width: 100%; border-collapse: collapse; margin-top: 16px; border: 1.5px solid #000000; }
+                            .ci-tbl-head th { background: #ffffff; color: #000000; padding: 12px 14px; font-size: 12px; font-weight: 800; text-transform: uppercase; border-bottom: 2px solid #000000; border-right: 1px solid #000000; }
+                            .ci-tbl-head th:last-child { border-right: none; }
+                            .ci-tbody td { padding: 14px 14px; font-size: 13px; color: #000000; border-bottom: 1px solid #000000; border-right: 1px solid #000000; font-weight: 500; text-align: center; }
+                            .ci-tbody tr:last-child td { border-bottom: none; }
+                            .ci-tbody td:last-child { border-right: none; }
                             .ci-tbody tr:nth-child(even) { background: #fcfdfe; }
-                            .ci-summary { display: flex; justify-content: flex-end; padding: 0 40px; margin-top: -1.5px; }
-                            .ci-summary-box { width: 280px; border: 1.5px solid #045b54; border-top: none; }
+                            .ci-summary { display: flex; justify-content: flex-end; padding: 0; margin-top: -1.5px; }
+                            .ci-summary-box { width: 280px; border: 1.5px solid #000000; border-top: none; }
                             .ci-sum-row { display: flex; justify-content: space-between; padding: 8px 14px; font-size: 12.5px; border-bottom: 1px solid #e2e8f0; }
-                            .ci-total-row { background: #045b54; color: #fff; display: flex; justify-content: space-between; padding: 14px; font-size: 15px; font-weight: 900; }
-                            .ci-payment { display: grid; grid-template-columns: 1fr 1fr; padding: 24px 40px; border-top: 2px solid #045b54; margin-top: 40px; background: #fcfdfe; }
-                            .ci-pay-title { font-size: 13px; font-weight: 800; color: #045b54; margin-bottom: 10px; text-transform: uppercase; }
-                            .ci-footer { border-top: 2px solid #045b54; margin-top: auto; padding: 20px 40px; text-align: center; font-size: 12px; color: #64748b; font-weight: 500; }
+                            .ci-total-row { background: #ffffff; color: #000000; display: flex; justify-content: space-between; padding: 14px; font-size: 15px; font-weight: 900; border-top: 2px solid #000000; }
+                            .ci-payment { display: grid; grid-template-columns: 1fr 1fr; padding: 24px 0; border-top: 2px solid #000000; margin-top: 20px; }
+                            .ci-payment div { font-size: 13px; color: #1e293b; line-height: 1.6; font-weight: 500; }
+                            .ci-pay-title { font-size: 13px; font-weight: 800; color: #000000; margin-bottom: 10px; text-transform: uppercase; }
+                            .ci-footer { border-top: 2px solid #000000; margin-top: auto; padding: 20px 0 0 0; text-align: center; font-size: 12px; color: #64748b; font-weight: 500; }
+
+                            @media print {
+                                @page { size: A4 portrait; margin: 0; }
+                                .no-print { display: none !important; }
+                                .sidebar, .topbar, .mobile-overlay, aside, header, .erp-header, .erp-controls, .erp-card, .feedback-toast, .mobile-history-cards { 
+                                    display: none !important; 
+                                }
+                                body, html { 
+                                    margin: 0 !important; 
+                                    padding: 0 !important; 
+                                    background: #ffffff !important; 
+                                    width: 794px !important; 
+                                }
+                                .bill-modal-overlay { 
+                                    position: absolute !important; 
+                                    top: 0 !important; 
+                                    left: 0 !important; 
+                                    width: 794px !important; 
+                                    height: auto !important; 
+                                    background: transparent !important; 
+                                    padding: 0 !important; 
+                                    margin: 0 !important;
+                                    overflow: visible !important;
+                                }
+                                .bill-modal-content, .responsive-bill-modal { 
+                                    width: 794px !important; 
+                                    max-width: 794px !important; 
+                                    min-width: 794px !important; 
+                                    box-shadow: none !important; 
+                                    border: none !important; 
+                                    margin: 0 !important; 
+                                    padding: 0 !important; 
+                                    background: transparent !important;
+                                }
+                                .ci-container { 
+                                    padding: 45px 35px !important; 
+                                    min-height: 1123px !important; 
+                                    width: 794px !important; 
+                                    background: #ffffff !important;
+                                    border: none !important;
+                                    box-shadow: none !important;
+                                }
+                            }
                         `}</style>
                         <div className="ci-container" id="printable-invoice">
                             <div className="ci-header">
@@ -632,7 +801,7 @@ const SalesHistory = () => {
                                         <div className="ci-company-addr" style={{ marginTop: '2px' }}><b>Contact No:</b> 80988 02581, 9444730165, 63836 32726</div>
                                     </div>
                                 </div>
-                                <div>
+                                <div className="ci-header-right">
                                     <div className="ci-invoice-title">INVOICE</div>
                                     <div className="ci-invoice-meta">
                                         <div><b>GSTIN:</b> {selectedBill.gstin || "N/A"}</div>
@@ -658,13 +827,13 @@ const SalesHistory = () => {
                                 <table className="ci-table">
                                     <thead className="ci-tbl-head">
                                         <tr>
-                                            <th>S.NO</th>
-                                            <th>HSN CODE</th>
-                                            <th>PRODUCT NAME</th>
-                                            <th>QTY</th>
-                                            <th>RATE</th>
-                                            <th>GST</th>
-                                            <th>AMOUNT</th>
+                                            <th style={{ width: '6%', textAlign: 'center' }}>S.NO</th>
+                                            <th style={{ width: '14%', textAlign: 'center' }}>HSN CODE</th>
+                                            <th style={{ width: '38%', textAlign: 'left' }}>PRODUCT NAME</th>
+                                            <th style={{ width: '8%', textAlign: 'center' }}>QTY</th>
+                                            <th style={{ width: '14%', textAlign: 'center' }}>RATE</th>
+                                            <th style={{ width: '8%', textAlign: 'center' }}>GST</th>
+                                            <th style={{ width: '16%', textAlign: 'center' }}>AMOUNT</th>
                                         </tr>
                                     </thead>
                                     <tbody className="ci-tbody">
@@ -702,7 +871,7 @@ const SalesHistory = () => {
                                     </div>
                                     {selectedBill.paidStatus === 'Partial' && (
                                         <>
-                                            <div className="ci-sum-row" style={{ background: '#f0fdf4', color: '#166534', fontWeight: 700, borderBottom: '1px solid #bbf7d0' }}>
+                                            <div className="ci-sum-row" style={{ background: '#f1f5f9', color: '#0f172a', fontWeight: 700, borderBottom: '1px solid #cbd5e1' }}>
                                                 <span>Advance Paid:</span>
                                                 <span>₹{selectedBill.amountPaid?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}</span>
                                             </div>
@@ -734,6 +903,10 @@ const SalesHistory = () => {
                             <button className="bill-btn bill-btn-print" onClick={() => window.print()}>
                                 <span className="material-symbols-outlined">print</span>
                                 Print
+                            </button>
+                            <button className="bill-btn" onClick={() => downloadInvoiceAsPDF(selectedBill)} style={{ background: '#006A4E', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700' }}>
+                                <span className="material-symbols-outlined">download</span>
+                                Download PDF
                             </button>
                             <button className="bill-btn bill-btn-whatsapp" onClick={() => sendInvoiceToWhatsApp(selectedBill)}>
                                 <span className="material-symbols-outlined">Chat</span>
