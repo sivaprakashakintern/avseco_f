@@ -8,7 +8,13 @@ const MyAttendance = () => {
   const { attendanceRecords, setToast } = useAppContext();
   const [currentTime, setCurrentTime] = useState(dayjs());
   const [isPunching, setIsPunching] = useState(false);
-  const [geoConfig, setGeoConfig] = useState({ enabled: false, lat: 0, lng: 0, radius: 500, mapUrl: '' });
+  const [geoConfig, setGeoConfig] = useState({ 
+    enabled: true, 
+    lat: 10.431349, 
+    lng: 78.585778, 
+    radius: 500, 
+    mapUrl: 'https://maps.app.goo.gl/gqPp3Pp5juhZe66k8' 
+  });
   const [geoStatus, setGeoStatus] = useState({ checking: false, allowed: true, distance: null, mapUrl: '', error: null, verified: false });
   
   // Real-time clock
