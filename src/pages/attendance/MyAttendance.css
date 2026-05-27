@@ -157,3 +157,149 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Geofencing Status Banner & Verify Button Enhancements */
+.geo-status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-left: 5px solid transparent;
+}
+
+.status-allowed {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-left: 5px solid #10b981;
+}
+
+.status-allowed .banner-icon {
+  color: #10b981;
+}
+
+.status-allowed .banner-title {
+  color: #065f46;
+}
+
+.status-allowed .banner-desc {
+  color: #047857;
+}
+
+.status-denied {
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-left: 5px solid #ef4444;
+}
+
+.status-denied .banner-icon {
+  color: #ef4444;
+}
+
+.status-denied .banner-title {
+  color: #991b1b;
+}
+
+.status-denied .banner-desc {
+  color: #b91c1c;
+}
+
+.banner-icon {
+  font-size: 1.75rem;
+  font-variation-settings: 'FILL' 1;
+  margin-top: 2px;
+}
+
+.banner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.banner-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.banner-desc {
+  font-size: 0.925rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.maps-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: #ef4444;
+  color: white !important;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  width: fit-content;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+}
+
+.maps-link-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.verify-loc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 30px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.verify-loc-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.verify-loc-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.verify-loc-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-icon-small {
+  font-size: 1.2rem;
+}
+
+.verify-loc-btn.verifying .btn-icon-small {
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}

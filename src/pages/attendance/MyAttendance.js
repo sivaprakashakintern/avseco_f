@@ -9,7 +9,7 @@ const MyAttendance = () => {
   const [currentTime, setCurrentTime] = useState(dayjs());
   const [isPunching, setIsPunching] = useState(false);
   const [geoConfig, setGeoConfig] = useState({ enabled: false, lat: 0, lng: 0, radius: 500, mapUrl: '' });
-  const [geoStatus, setGeoStatus] = useState({ checking: true, allowed: true, distance: null, mapUrl: '' });
+  const [geoStatus, setGeoStatus] = useState({ checking: false, allowed: true, distance: null, mapUrl: '', error: null, verified: false });
   
   // Real-time clock
   useEffect(() => {
@@ -29,60 +29,113 @@ const MyAttendance = () => {
   const hasPunchedIn = !!todayRecord?.checkIn;
   const hasPunchedOut = !!todayRecord?.checkOut;
 
+  // Verifies user location against the geofence config
+  const verifyLocation = (silent = false) => {
+    return new Promise((resolve, reject) => {
+      if (!geoConfig.enabled) {
+        resolve({ allowed: true });
+        return;
+      }
+
+      if (!navigator.geolocation) {
+        const msg = 'Geolocation is not supported by your browser.';
+        if (!silent) setToast({ message: msg, icon: 'error' });
+        setGeoStatus({ checking: false, allowed: false, distance: null, mapUrl: geoConfig.mapUrl, error: msg, verified: true });
+        resolve({ allowed: false, error: msg });
+        return;
+      }
+
+      setGeoStatus(prev => ({ ...prev, checking: true, error: null }));
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          // Calculate distance using Haversine formula
+          const toRadians = (deg) => deg * (Math.PI / 180);
+          const R = 6371000; // meters
+          const dLat = toRadians(geoConfig.lat - lat);
+          const dLon = toRadians(geoConfig.lng - lng);
+          const a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
+                    Math.cos(toRadians(lat)) * Math.cos(toRadians(geoConfig.lat)) * 
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          const dist = R * c;
+
+          const isAllowed = dist <= geoConfig.radius;
+          
+          setGeoStatus({
+            checking: false,
+            allowed: isAllowed,
+            distance: dist,
+            mapUrl: geoConfig.mapUrl,
+            error: null,
+            verified: true
+          });
+
+          if (!silent) {
+            if (isAllowed) {
+              setToast({ message: `Location verified! You are ${Math.round(dist)}m away (within range).`, icon: 'check_circle' });
+            } else {
+              setToast({ message: `Out of range! You are ${Math.round(dist)}m away.`, icon: 'warning' });
+            }
+            setTimeout(() => setToast(null), 3000);
+          }
+
+          resolve({ allowed: isAllowed, lat, lng, distance: dist });
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          let msg = 'Location permission is required to punch attendance. Please enable location services.';
+          if (error.code === error.PERMISSION_DENIED) {
+            msg = 'Location permission denied. Please allow location access in your browser settings to punch attendance.';
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            msg = 'Location information is unavailable. Please check your network or GPS connection.';
+          } else if (error.code === error.TIMEOUT) {
+            msg = 'Location request timed out. Please try again.';
+          }
+          if (!silent) setToast({ message: msg, icon: 'error' });
+          setGeoStatus({
+            checking: false,
+            allowed: false,
+            distance: null,
+            mapUrl: geoConfig.mapUrl,
+            error: msg,
+            verified: true
+          });
+          resolve({ allowed: false, error: msg });
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  };
+
   const handlePunch = async (action) => {
     try {
       setIsPunching(true);
 
       if (geoConfig.enabled) {
-        if (!navigator.geolocation) {
-          setToast({ message: 'Geolocation is not supported by your browser.', icon: 'error' });
+        const result = await verifyLocation(true); // check location silently first
+        if (!result.allowed) {
+          setToast({ message: result.error || 'try again within 500 m from your company', icon: 'error' });
+          setTimeout(() => setToast(null), 3500);
           setIsPunching(false);
           return;
         }
 
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-
-            // Calculate distance (Haversine formula)
-            const toRadians = (deg) => deg * (Math.PI / 180);
-            const R = 6371000; // meters
-            const dLat = toRadians(geoConfig.lat - lat);
-            const dLon = toRadians(geoConfig.lng - lng);
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
-                      Math.cos(toRadians(lat)) * Math.cos(toRadians(geoConfig.lat)) * 
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            const dist = R * c;
-
-            if (dist > geoConfig.radius) {
-              setToast({ message: 'try again within 500 m from your company', icon: 'error' });
-              setTimeout(() => setToast(null), 2000);
-              setIsPunching(false);
-              return;
-            }
-
-            // Within geofence, send punch with lat and lng to backend
-            try {
-              const isoTime = dayjs().toISOString();
-              await attendanceApi.punchAttendance(action, isoTime, lat, lng);
-              setToast({ message: `Successfully punched ${action === 'check-in' ? 'In' : 'Out'}!`, icon: 'check_circle' });
-              setTimeout(() => window.location.reload(), 1500);
-            } catch (err) {
-              console.error(err);
-              setToast({ message: err.response?.data?.message || 'Failed to record attendance', icon: 'error' });
-            } finally {
-              setIsPunching(false);
-            }
-          },
-          (error) => {
-            console.error('Error getting location:', error);
-            setToast({ message: 'Location permission is required to punch attendance. Please enable location services.', icon: 'error' });
-            setIsPunching(false);
-          },
-          { enableHighAccuracy: true, timeout: 10000 }
-        );
+        // Within geofence, send punch with lat and lng to backend
+        try {
+          const isoTime = dayjs().toISOString();
+          await attendanceApi.punchAttendance(action, isoTime, result.lat, result.lng);
+          setToast({ message: `Successfully punched ${action === 'check-in' ? 'In' : 'Out'}!`, icon: 'check_circle' });
+          setTimeout(() => window.location.reload(), 1500);
+        } catch (err) {
+          console.error(err);
+          setToast({ message: err.response?.data?.message || 'Failed to record attendance', icon: 'error' });
+        } finally {
+          setIsPunching(false);
+        }
       } else {
         // Geofencing not enabled, normal punch
         const isoTime = dayjs().toISOString();
@@ -112,13 +165,13 @@ const MyAttendance = () => {
             radius: cfg.radius || 500,
             mapUrl: cfg.mapUrl || ''
           });
-          setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: cfg.mapUrl || '' });
+          setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: cfg.mapUrl || '', error: null, verified: false });
         } else {
-          setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: '' });
+          setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: '', error: null, verified: false });
         }
       } catch (err) {
         if (!mounted) return;
-        setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: '' });
+        setGeoStatus({ checking: false, allowed: true, distance: null, mapUrl: '', error: null, verified: false });
       }
     };
     check();
@@ -133,34 +186,61 @@ const MyAttendance = () => {
       </div>
 
       <div className="punch-card">
-        {geoStatus.checking ? (
-          <div style={{ padding: 12, color: '#64748b' }}>Checking your location…</div>
-        ) : !geoStatus.allowed ? (
-          <div style={{ padding: 12 }}>
-            <div style={{ color: '#ef4444', marginBottom: 8 }}>You are not within the allowed location to punch.</div>
-            <div style={{ color: '#64748b', marginBottom: 8 }}>Distance from allowed point: {geoStatus.distance ? `${Math.round(geoStatus.distance)} m` : 'Unknown'}</div>
-            {geoStatus.mapUrl && (
-              <a href={geoStatus.mapUrl} target="_blank" rel="noreferrer" className="punch-btn" style={{ display: 'inline-block', marginTop: 6 }}>
-                Open Location in Maps
-              </a>
-            )}
+        {geoStatus.verified && (
+          <div className={`geo-status-banner ${geoStatus.allowed ? 'status-allowed' : 'status-denied'}`}>
+            <span className="material-symbols-outlined banner-icon">
+              {geoStatus.allowed ? 'check_circle' : geoStatus.error ? 'location_off' : 'warning'}
+            </span>
+            <div className="banner-content">
+              <div className="banner-title">
+                {geoStatus.allowed 
+                  ? 'Within Allowed Geofence' 
+                  : geoStatus.error 
+                    ? 'Location Check Failed' 
+                    : 'Out of Allowed Range'}
+              </div>
+              <div className="banner-desc">
+                {geoStatus.allowed 
+                  ? `You are ${geoStatus.distance !== null ? `${Math.round(geoStatus.distance)}m` : 'close'} away from the company. Ready to punch.`
+                  : geoStatus.error 
+                    ? geoStatus.error
+                    : `You are ${geoStatus.distance !== null ? `${Math.round(geoStatus.distance)}m` : 'too far'} away (Limit: ${geoConfig.radius}m).`}
+              </div>
+              {geoStatus.mapUrl && !geoStatus.allowed && (
+                <a href={geoStatus.mapUrl} target="_blank" rel="noreferrer" className="maps-link-btn">
+                  <span className="material-symbols-outlined">map</span>
+                  Open Location in Google Maps
+                </a>
+              )}
+            </div>
           </div>
-        ) : null}
+        )}
 
         <div className="live-clock">
           {currentTime.format('hh:mm:ss A')}
         </div>
 
-        {/* Banner removed — module opens normally. Location will be requested when user clicks Punch. */}
+        {geoConfig.enabled && (
+          <button 
+            type="button" 
+            className={`verify-loc-btn ${geoStatus.checking ? 'verifying' : ''}`}
+            onClick={() => verifyLocation(false)}
+            disabled={geoStatus.checking || isPunching}
+          >
+            <span className="material-symbols-outlined btn-icon-small">
+              {geoStatus.checking ? 'autorenew' : 'my_location'}
+            </span>
+            {geoStatus.checking ? 'Verifying Location...' : 'Check Location Status'}
+          </button>
+        )}
 
-        {geoStatus.checking ? null : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div className="punch-actions">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="punch-actions">
             {!hasPunchedIn ? (
               <button 
                 className="punch-btn btn-in" 
                 onClick={() => handlePunch('check-in')}
-                disabled={isPunching}
+                disabled={isPunching || geoStatus.checking}
               >
                 <span className="material-symbols-outlined btn-icon">login</span>
                 {isPunching ? 'Punching In...' : 'PUNCH IN'}
@@ -169,7 +249,7 @@ const MyAttendance = () => {
               <button 
                 className="punch-btn btn-out" 
                 onClick={() => handlePunch('check-out')}
-                disabled={isPunching}
+                disabled={isPunching || geoStatus.checking}
               >
                 <span className="material-symbols-outlined btn-icon">logout</span>
                 {isPunching ? 'Punching Out...' : 'PUNCH OUT'}
@@ -181,8 +261,7 @@ const MyAttendance = () => {
               </button>
             )}
           </div>
-          </div>
-        )}
+        </div>
 
         <div className="punch-history">
           <div className="history-card">
