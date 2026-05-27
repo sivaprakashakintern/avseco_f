@@ -10,10 +10,10 @@ const MyAttendance = () => {
   const [isPunching, setIsPunching] = useState(false);
   const [geoConfig, setGeoConfig] = useState({ 
     enabled: true, 
-    lat: 10.431338, 
-    lng: 78.585891, 
+    lat: 17.449734, 
+    lng: 78.364748, 
     radius: 500, 
-    mapUrl: 'https://maps.app.goo.gl/bHvhxbA3BaQ1J1Ne6?g_st=aw' 
+    mapUrl: 'https://maps.app.goo.gl/3XgoLR8xShbQBm6o6' 
   });
   const [geoStatus, setGeoStatus] = useState({ checking: true, allowed: false, distance: null, mapUrl: '', error: null, verified: false });
   
