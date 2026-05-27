@@ -145,7 +145,7 @@ const AttendanceLog = () => {
         return {
           ...emp,
           empId: emp.empId || `EMP-${String(emp.id).padStart(4, "0")}`,
-          status: record?.status || "present",
+          status: record?.status || "none",
           note: record?.note || "",
           halfDayTime: record?.halfDayTime || null,
           checkIn: record?.checkIn || null,

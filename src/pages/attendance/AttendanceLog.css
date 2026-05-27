@@ -299,6 +299,7 @@
 .att-avatar-absent { background: linear-gradient(135deg, #fecaca, #fee2e2); color: #991b1b; }
 .att-avatar-half { background: linear-gradient(135deg, #fde68a, #fef3c7); color: #92400e; }
 .att-avatar-stoppage { background: linear-gradient(135deg, #fed7aa, #ffedd5); color: #ea580c; }
+.att-avatar-none { background: linear-gradient(135deg, #f1f5f9, #e2e8f0); color: #64748b; border: 1px dashed #cbd5e1; }
 
 .att-emp-info { display: flex; flex-direction: column; gap: 2px; }
 .att-emp-name { font-size: 16px; font-weight: 800; color: #0f172a; }
