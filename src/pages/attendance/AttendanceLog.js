@@ -83,7 +83,6 @@ const AttendanceLog = () => {
   const [currentDate, setCurrentDate] = useState(today());
   const dateKey = toDateKey(currentDate);
   const isToday = toDateKey(currentDate) === toDateKey(today());
-  const isSunday = currentDate.getDay() === 0;
   const canModify = canEdit && currentDate.valueOf() >= new Date(2026, 3, 1).valueOf() && currentDate.valueOf() <= today().valueOf();
 
   const goToPreviousDay = () => setCurrentDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() - 1); return nd; });
