@@ -647,8 +647,6 @@ const SalesHistory = () => {
                                         <button
                                             className="sale-action-btn view"
                                             onClick={() => handleViewBill(transaction)}
-                                            disabled={status === 'unpaid'}
-                                            style={status === 'unpaid' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                                         >
                                             <span className="material-symbols-outlined">receipt_long</span>
                                             View Bill
