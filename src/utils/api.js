@@ -65,6 +65,25 @@ export const clientApi = {
   },
 };
 
+export const vendorApi = {
+  getAll: async () => {
+    const { data } = await axios.get('/vendors');
+    return data;
+  },
+  add: async (vendorData) => {
+    const { data } = await axios.post('/vendors', vendorData);
+    return data;
+  },
+  update: async (id, vendorData) => {
+    const { data } = await axios.put(`/vendors/${id}`, vendorData);
+    return data;
+  },
+  delete: async (id) => {
+    const { data } = await axios.delete(`/vendors/${id}`);
+    return data;
+  },
+};
+
 export const expenseApi = {
   getAll: async () => {
     const { data } = await axios.get('/expenses');
@@ -259,6 +278,21 @@ export const turnoverApi = {
   },
   delete: async (id) => {
     const { data } = await axios.delete(`/turnover/${id}`);
+    return data;
+  }
+};
+
+export const rawMaterialApi = {
+  getAll: async () => {
+    const { data } = await axios.get('/raw-materials');
+    return data;
+  },
+  add: async (materialData) => {
+    const { data } = await axios.post('/raw-materials', materialData);
+    return data;
+  },
+  delete: async (id) => {
+    const { data } = await axios.delete(`/raw-materials/${id}`);
     return data;
   }
 };

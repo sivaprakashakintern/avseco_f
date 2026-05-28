@@ -127,6 +127,7 @@ const Sidebar = () => {
     },
     { icon: "badge", label: "Employees", path: "/employees", module: "employees" },
     { icon: "group", label: "Clients", path: "/clients", module: "clients" },
+    { icon: "store", label: "Vendors", path: "/vendors", module: "vendors" },
 
     // ATTENDANCE SUB-MENU (Admin View)
     {
@@ -145,6 +146,7 @@ const Sidebar = () => {
       icon: "fingerprint",
       label: "My Attendance",
       path: "/my-attendance",
+      hideForAdmin: true,
       alwaysShow: !isAdmin
     },
     { icon: "analytics", label: "Turnover", path: "/turnover", module: "turnover" },
@@ -153,10 +155,11 @@ const Sidebar = () => {
 
   // Filter items based on access and administrative exposure
   const filteredNavItems = navItems.filter(item => {
+    if (item.hideForAdmin && isAdmin) return false;
     if (item.alwaysShow) return true;
     
     // Check if the primary module has access
-    if (hasAccess(item.module)) return true;
+    if (item.module && hasAccess(item.module)) return true;
     
     // If it has children, check if the user has access to any of the children's specific modules
     if (item.children && item.children.length > 0) {

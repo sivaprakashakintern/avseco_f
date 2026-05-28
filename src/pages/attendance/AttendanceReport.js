@@ -96,19 +96,18 @@ const AttendanceReport = () => {
                 let displayStatus = '-';
                 let punchInfo = null;
 
-                // PRIORITY: If it's Sunday, ALWAYS show 'Sunday' and ignore any records
-                if (day.isSunday) {
-                    displayStatus = 'Sunday';
-                } else if (record) {
-                    // Only process status if it's NOT a Sunday
+                if (record && record.status && record.status !== 'none' && !(day.isSunday && record.status === 'absent')) {
                     if (record.status === 'present') {
-                        displayStatus = 'P';
+                        displayStatus = day.isSunday ? 'OD' : 'P';
                         empData.stats.present += 1;
                     } else if (record.status === 'absent') {
-                        displayStatus = 'A';
-                        empData.stats.absent += 1;
+                        // Only show A if it is a real saved record in the database
+                        if (record._id) {
+                            displayStatus = 'A';
+                            empData.stats.absent += 1;
+                        }
                     } else if (record.status === 'half') {
-                        displayStatus = 'HD';
+                        displayStatus = day.isSunday ? 'OD' : 'HD';
                         empData.stats.present += 0.5;
                         empData.stats.half += 1;
                     } else if (record.status === 'stoppage') {
@@ -122,6 +121,8 @@ const AttendanceReport = () => {
                             checkOut: record.checkOut
                         };
                     }
+                } else if (day.isSunday) {
+                    displayStatus = 'Sunday';
                 }
                 empData.daily.push({ status: displayStatus, punchInfo });
             });
@@ -343,13 +344,16 @@ const AttendanceReport = () => {
                 employees.forEach((emp, index) => {
                     const empStats = { present: 0, absent: 0, half: 0, stoppage: 0 };
                     const dailyStatus = days.map(day => {
-                        if (day.isSunday) return 'SUN';
                         const record = (yearMap[day.isoDate] || []).find(r => r.empId === emp.id);
-                        if (!record) return '';
-                        if (record.status === 'present') { empStats.present++; return 'P'; }
-                        if (record.status === 'absent') { empStats.absent++; return 'A'; }
-                        if (record.status === 'half') { empStats.present += 0.5; empStats.half++; return 'HD'; }
-                        if (record.status === 'stoppage') { empStats.stoppage++; return 'WS'; }
+                        if (record && record.status && record.status !== 'none' && !(day.isSunday && record.status === 'absent')) {
+                            if (record.status === 'present') { empStats.present++; return day.isSunday ? 'OD' : 'P'; }
+                            if (record.status === 'absent') { 
+                                if (record._id) { empStats.absent++; return 'A'; } 
+                            }
+                            if (record.status === 'half') { empStats.present += 0.5; empStats.half++; return day.isSunday ? 'OD' : 'HD'; }
+                            if (record.status === 'stoppage') { empStats.stoppage++; return 'WS'; }
+                        }
+                        if (day.isSunday) return 'SUN';
                         return '';
                     });
 
@@ -406,17 +410,17 @@ const AttendanceReport = () => {
 
     return (
         <div className="attendance-report-page" onClick={() => { setShowYearDropdown(false); setShowMonthDropdown(false); setShowExportDropdown(false); }}>
-            <div className="attendance-header premium-header-green">
-                <div className="header-left-group">
-                    <h1 className="page-title-white">Monthly Attendance</h1>
+            <div className="erp-header">
+                <div className="erp-header-left">
+                    <h1 className="erp-title">Monthly Attendance</h1>
                 </div>
 
-                <div className="ar-banner-right desktop-only-export">
+                <div className="erp-header-right desktop-only-export">
                     <div className="custom-dropdown" onClick={(e) => e.stopPropagation()}>
-                        <button className="ar-export-btn" onClick={() => setShowExportDropdown(!showExportDropdown)}>
+                        <button className="erp-header-btn primary" onClick={() => setShowExportDropdown(!showExportDropdown)}>
                             <span className="material-symbols-outlined">download</span>
                             Export Report
-                            <span className="material-symbols-outlined" style={{ marginLeft: '4px' }}>
+                            <span className="material-symbols-outlined" style={{ marginLeft: '4px', fontSize: '20px' }}>
                                 {showExportDropdown ? 'arrow_drop_up' : 'arrow_drop_down'}
                             </span>
                         </button>
@@ -496,6 +500,7 @@ const AttendanceReport = () => {
                 <div className="legend-item"><span className="legend-box absent">A</span> Absent</div>
                 <div className="legend-item"><span className="legend-box half">HD</span> Half Day</div>
                 <div className="legend-item"><span className="legend-box stoppage">WS</span> Work Stoppage</div>
+                <div className="legend-item"><span className="legend-box present" style={{background: '#dcfce7', color: '#166534', border: '1.5px solid #86efac'}}>OD</span> Over Duty</div>
             </div>
 
             <div className="attendance-report-main-card">
@@ -541,6 +546,7 @@ const AttendanceReport = () => {
                                             else if (displayStatus === 'HD') statusClass = "status-hd";
                                             else if (displayStatus === 'WS') statusClass = "status-ws";
                                             else if (displayStatus === 'SUN') statusClass = "status-sun";
+                                            else if (displayStatus === 'OD') statusClass = "status-p"; // OD uses same green as Present
 
                                             // Formats hover tooltip with punch in/out and duration
                                             const getPunchTooltip = (punch) => {

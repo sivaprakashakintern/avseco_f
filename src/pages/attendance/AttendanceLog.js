@@ -452,7 +452,7 @@ const AttendanceLog = () => {
             <button
               className="att-btn att-btn-primary att-save-mobile-inline"
               onClick={handleSaveAttendance}
-              disabled={saveLoading || isSunday || !canModify}
+              disabled={saveLoading || !canModify}
             >
               <span className="material-symbols-outlined">{saveLoading ? "sync" : "save"}</span>
               <span className="btn-text">{saveLoading ? "Saving" : "Save"}</span>
@@ -708,10 +708,8 @@ const AttendanceLog = () => {
               <p className="att-field-label">Quick Presets</p>
               <div className="att-presets">
                 {[
-                  { label: "9AM–1PM", from: "09:00", to: "13:00" },
-                  { label: "1PM–6PM", from: "13:00", to: "18:00" },
-                  { label: "9AM–12PM", from: "09:00", to: "12:00" },
-                  { label: "2PM–6PM", from: "14:00", to: "18:00" },
+                  { label: "9:00 AM–1:30 PM", from: "09:00", to: "13:30" },
+                  { label: "1:30 PM–4:30 PM", from: "13:30", to: "16:30" },
                 ].map(p => (
                   <button
                     key={p.label}

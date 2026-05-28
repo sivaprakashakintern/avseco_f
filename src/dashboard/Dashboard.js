@@ -410,6 +410,7 @@ const Dashboard = () => {
 
     // ── Activity: sales or production (Moved up for commission calc) ──────────────────────
     const isSalesDept = (user?.department || "").toLowerCase().includes("sales") || hasAccess("sales");
+    const isProductionDept = ["operator", "machine operator", "production"].some(d => (user?.department || "").toLowerCase().includes(d)) || hasAccess("production");
 
     const mySales = (salesHistory || []).filter(sale => {
       const soldByName = String(sale.soldBy || sale.recordedBy || "").trim().toLowerCase();
@@ -435,16 +436,29 @@ const Dashboard = () => {
     const currentEmployeeId = String(user?._id || user?.id || '');
     const currentEmployeeName = String(user?.name || '').trim().toLowerCase();
 
-    const myProduction = (productionHistory || []).filter(prod =>
-      (
+    const myProduction = (productionHistory || []).filter(prod => {
+      let pDate = new Date(prod.date || prod.createdAt);
+      if (isNaN(pDate.getTime()) && prod.date) {
+        const dStr = String(prod.date);
+        const match = dStr.match(/(\d{1,4})[-/](\d{1,2})[-/](\d{1,4})/);
+        if (match) {
+          const [, p1, p2, p3] = match;
+          if (p1.length === 4) pDate = new Date(Number(p1), Number(p2) - 1, Number(p3));
+          else if (p3.length === 4) pDate = new Date(Number(p3), Number(p2) - 1, Number(p1));
+        }
+      }
+      if (isNaN(pDate.getTime())) pDate = new Date();
+      
+      const pMonthYear = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}`;
+      return (
         (prod.employeeId && String(prod.employeeId) === currentEmployeeId) ||
         (prod.employeeName && String(prod.employeeName).trim().toLowerCase() === currentEmployeeName) ||
         (prod.operator && String(prod.operator).trim().toLowerCase() === currentEmployeeName) ||
         (prod.recordedBy && String(prod.recordedBy).trim().toLowerCase() === currentEmployeeName)
       ) &&
-      dayjs(prod.date).format('YYYY-MM') === currentMonthYear
-    );
-    const totalMyProduced = myProduction.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
+      pMonthYear === currentMonthYear;
+    });
+    const totalMyProduced = myProduction.reduce((sum, p) => sum + (Number(p.quantity) || Number(p.qty) || 0), 0);
 
     const totalSalaryWithBonus = earnedSalary + bonus;
 
@@ -618,31 +632,110 @@ const Dashboard = () => {
                 </div>
               </>
 
-            <div className="emp-stat-card emp-activity-card">
+            {isSalesDept && (
+              <div className="emp-stat-card emp-activity-card">
                 <div className="emp-card-header">
                   <span className="emp-card-icon act-icon">
-                    <span className="material-symbols-outlined">{isSalesDept ? 'point_of_sale' : 'precision_manufacturing'}</span>
+                    <span className="material-symbols-outlined">point_of_sale</span>
                   </span>
                   <div>
-                    <span className="emp-card-title">{isSalesDept ? 'My Sales' : 'My Production'}</span>
+                    <span className="emp-card-title">My Sales</span>
                     <span className="emp-card-sub">{currentMonthName}</span>
                   </div>
                 </div>
+                <div className="emp-activity-big-num">₹{totalMySalesValue.toLocaleString()}</div>
+                <div className="emp-activity-sub">{mySales.length} Sale{mySales.length !== 1 ? 's' : ''} logged this month</div>
+              </div>
+            )}
 
-                {isSalesDept ? (
-                  <>
-                    <div className="emp-activity-big-num">₹{totalMySalesValue.toLocaleString()}</div>
-                    <div className="emp-activity-sub">{mySales.length} Sale{mySales.length !== 1 ? 's' : ''} logged this month</div>
-                  </>
-                ) : (
-                  <>
-                    <div className="emp-activity-big-num">{totalMyProduced.toLocaleString()} <small>PCS</small></div>
-                    <div className="emp-activity-sub">{myProduction.length} Entr{myProduction.length !== 1 ? 'ies' : 'y'} this month</div>
-                  </>
+            {isProductionDept && (
+              <div className="emp-stat-card emp-activity-card">
+                <div className="emp-card-header">
+                  <span className="emp-card-icon act-icon">
+                    <span className="material-symbols-outlined">precision_manufacturing</span>
+                  </span>
+                  <div>
+                    <span className="emp-card-title">My Production</span>
+                    <span className="emp-card-sub">{currentMonthName}</span>
+                  </div>
+                </div>
+                <div className="emp-activity-big-num">{totalMyProduced.toLocaleString()} <small>PCS</small></div>
+                <div className="emp-activity-sub">{myProduction.length} Entr{myProduction.length !== 1 ? 'ies' : 'y'} this month</div>
+                
+                {myProduction.length > 0 && (
+                  <div className="emp-prod-breakdown">
+                    <h4 className="emp-breakdown-title">Production Breakdown</h4>
+                    <ul className="emp-breakdown-list">
+                      {Object.entries(
+                        myProduction.reduce((acc, prod) => {
+                          const sz = (prod.size || prod.productSize || '').trim() || 'Other';
+                          acc[sz] = (acc[sz] || 0) + (Number(prod.quantity) || 0);
+                          return acc;
+                        }, {})
+                      ).sort((a, b) => b[1] - a[1]).map(([size, qty]) => (
+                        <li key={size} className="emp-breakdown-item">
+                          <span className="emp-b-size">{formatSizeLabel(size)}</span>
+                          <span className="emp-b-qty">{qty.toLocaleString()} PCS</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </div>
+            )}
           </div>
 
+        {/* ── EMPLOYEE INVENTORY & PRODUCTION AREA ─────────────────── */}
+        <div className="stock-overview-section ila-section" style={{ marginTop: '24px', marginBottom: '24px' }}>
+          <div className="ila-header">
+            <div className="ila-title-box">
+              <span className="ila-label">PRODUCTION & INVENTORY</span>
+              <h3>TOTAL STOCK OVERVIEW</h3>
+            </div>
+            <div className="ila-summary-badges">
+              <div className="ila-badge">
+                <span className="badge-label">TODAY'S PROD.</span>
+                <span className="badge-value">{(productionStats?.today || 0).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="stock-grid ila-grid">
+            {stockData.map((item, index) => {
+              const currentMonthStr = dayjs().format('YYYY-MM');
+              const monthlyTargets = (productionTargets || []).filter(t =>
+                (t.productName === item.name || t.product === item.name) && t.date === currentMonthStr
+              );
+              const masterTarget = monthlyTargets.find(t => t.productSize === 'All Sizes');
+              const specificTarget = monthlyTargets.find(t => t.productSize === item.size || t.size === item.size);
+              const monthlyTarget = masterTarget || specificTarget;
+              const targetQty = monthlyTarget ? Number(monthlyTarget.targetQty) : 0;
+              let producedThisMonth = 0;
+              if (monthlyTarget?.productSize === 'All Sizes') {
+                producedThisMonth = Object.values(productionStats.monthBySize || {}).reduce((a, b) => a + b, 0);
+              } else {
+                producedThisMonth = productionStats.monthBySize?.[item.size] || 0;
+              }
+              const progress = targetQty > 0 ? (producedThisMonth / targetQty) * 100 : 0;
+              const status = progress >= 100 ? 'optimal' : progress >= 50 ? 'good' : progress > 0 ? 'warning' : 'critical';
+
+              return (
+                <div key={index} className={`stock-item-card ila-card ${status}`}>
+                  <div className="ila-card-status-dot"></div>
+                  <div className="stock-item-header">
+                    <div className="item-main-info">
+                      <span className="stock-name-tag">{item.name}</span>
+                      <span className="stock-size-val">{item.size}</span>
+                    </div>
+                    <div className="item-value-info">
+                      <span className="stock-value-pcs">{item.quantity.toLocaleString()} <small>PCS</small></span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* ── MONTH ATTENDANCE CALENDAR STRIP ─────────────────── */}
         { (
@@ -678,7 +771,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        {!isSalesDept && (
+        {isProductionDept && (
           <div className="emp-activity-section">
             <div className="emp-section-header">
               <h3 className="emp-section-title">
@@ -713,6 +806,49 @@ const Dashboard = () => {
                       <td>
                         <span className={`emp-status-pill grade-${(prod.grade || 'a').toLowerCase()}`}>
                           {prod.grade || '—'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {isSalesDept && (
+          <div className="emp-activity-section" style={{ marginTop: '24px' }}>
+            <div className="emp-section-header">
+              <h3 className="emp-section-title">
+                <span className="material-symbols-outlined">receipt_long</span>
+                Recent Sales Activity
+              </h3>
+              <span className="emp-section-sub">{currentMonthName}</span>
+            </div>
+
+            <div className="emp-table-wrap">
+              <table className="emp-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mySales.length === 0 ? (
+                    <tr><td colSpan="5" className="emp-empty-row">No sales logged this month</td></tr>
+                  ) : mySales.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)).slice(0, 10).map((sale, idx) => (
+                    <tr key={sale.id || sale._id || idx}>
+                      <td className="emp-row-num">{idx + 1}</td>
+                      <td>{String(sale.date || '').split(',')[0] || dayjs(sale.createdAt).format('DD-MM-YYYY')}</td>
+                      <td><strong>{sale.customer}</strong></td>
+                      <td className="emp-money">₹{(sale.totalAmount || sale.amount || 0).toLocaleString()}</td>
+                      <td>
+                        <span className={`emp-status-pill status-${(sale.paidStatus || 'paid').toLowerCase()}`}>
+                          {sale.paidStatus || 'Paid'}
                         </span>
                       </td>
                     </tr>
@@ -867,7 +1003,7 @@ const Dashboard = () => {
               <div className="balance-comparison-module">
                 <div className="balance-bar-container">
                   <div className="balance-bar-info">
-                    <span className="bar-label">TOTAL TURNOVER</span>
+                    <span className="bar-label">TOTAL SALES</span>
                     <span className="bar-value revenue">{formatStatValue(totalPeriodSales)}</span>
                   </div>
                   <div className="balance-progress-bg">
@@ -890,7 +1026,7 @@ const Dashboard = () => {
               <div className="chart-legend-row-bottom">
                 <div className="chart-legend-item">
                   <span className="legend-dot sales-dot"></span>
-                  <span className="legend-text">Revenue: <strong>{formatStatValue(totalPeriodSales)}</strong></span>
+                  <span className="legend-text">Sales: <strong>{formatStatValue(totalPeriodSales)}</strong></span>
                 </div>
                 <div className="chart-legend-item">
                   <span className="legend-dot expenses-dot"></span>
@@ -903,9 +1039,9 @@ const Dashboard = () => {
           {/* Attendance Section */}
           {hasAccess('attendance') && (
             <div className="chart-card attendance-section" onClick={handleAttendanceClick}>
-              <div className="attendance-header">
-                <h3>ATTENDANCE</h3>
-                <span className="view-details">VIEW DETAILS →</span>
+              <div className="attendance-header" style={{ display: 'flex', width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ margin: 0 }}>ATTENDANCE</h3>
+                <span className="view-details" style={{ margin: 0, whiteSpace: 'nowrap' }}>VIEW DETAILS →</span>
               </div>
 
               <div className="attendance-pie-container">

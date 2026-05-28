@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext.js";
 import { useAuth } from "../../context/AuthContext.js";
-import { calculateRawMaterialCapacity } from "../../utils/formatUtils.js";
+import { vendorApi, rawMaterialApi } from "../../utils/api.js";
 import {
   ResponsiveContainer,
   BarChart,
@@ -26,40 +26,57 @@ const RawMaterials = () => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     name: "",
-    cost: "",
+    leafCount: "",
     capacity: ""
   });
 
-  // ── Raw Material Batches (Leaf purchases) persisted in localStorage ──
-  const [purchases, setPurchases] = useState(() => {
-    const saved = localStorage.getItem("raw_material_purchases");
-    if (saved) return JSON.parse(saved);
-    // Dynamic starting point matching user's instruction
-    return [
-      {
-        id: 1,
-        date: "2026-05-18",
-        name: "Premium Leaf Material",
-        cost: 30000,
-        capacity: 23000
-      }
-    ];
-  });
+  const [vendors, setVendors] = useState([]);
 
-  // Save to localStorage whenever purchases change
   useEffect(() => {
-    localStorage.setItem("raw_material_purchases", JSON.stringify(purchases));
-  }, [purchases]);
+    const fetchVendors = async () => {
+      try {
+        const data = await vendorApi.getAll();
+        if (data && data.success) {
+          setVendors(data.data || []);
+        } else if (Array.isArray(data)) {
+          setVendors(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch vendors:", err);
+      }
+    };
+    fetchVendors();
+  }, []);
+
+  // ── Raw Material Batches (Leaf purchases) persisted in database ──
+  const [purchases, setPurchases] = useState([]);
+  
+  const fetchPurchases = async () => {
+    try {
+      const data = await rawMaterialApi.getAll();
+      if (data && data.success && data.data) {
+        setPurchases(data.data.map(p => ({
+          ...p,
+          leafCount: p.leafCount || (p.capacity ? Math.round(p.capacity / 3) : 0)
+        })));
+      } else if (Array.isArray(data)) {
+        setPurchases(data.map(p => ({
+          ...p,
+          leafCount: p.leafCount || (p.capacity ? Math.round(p.capacity / 3) : 0)
+        })));
+      }
+    } catch (err) {
+      console.error("Failed to fetch raw material purchases:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchPurchases();
+  }, []);
 
   useEffect(() => {
     const handleExternalUpdate = () => {
-      const saved = localStorage.getItem("raw_material_purchases");
-      if (!saved) return;
-      try {
-        setPurchases(JSON.parse(saved));
-      } catch (error) {
-        console.error("Failed to sync raw material purchases from storage:", error);
-      }
+      fetchPurchases();
     };
 
     window.addEventListener("rawMaterialPurchasesUpdated", handleExternalUpdate);
@@ -80,9 +97,9 @@ const RawMaterials = () => {
     return purchases.reduce((sum, p) => sum + (Number(p.capacity) || 0), 0);
   }, [purchases]);
 
-  // Total spent on raw material purchases
-  const totalCost = useMemo(() => {
-    return purchases.reduce((sum, p) => sum + (Number(p.cost) || 0), 0);
+  // Total spent on raw material purchases (Replaced with Leaves Bought)
+  const totalLeavesBought = useMemo(() => {
+    return purchases.reduce((sum, p) => sum + (Number(p.leafCount) || 0), 0);
   }, [purchases]);
 
   // Remaining capacity (Total purchased - total consumed)
@@ -100,12 +117,12 @@ const RawMaterials = () => {
   const barChartData = useMemo(() => {
     return [
       {
-        name: "Stock Consumption & Cost",
-        "Total Cost (₹)": totalCost,
+        name: "Stock Consumption",
+        "Total Capacity (Plates)": totalPurchasedCapacity,
         "Produced Plates": totalProduced
       }
     ];
-  }, [totalProduced, totalCost]);
+  }, [totalProduced, totalPurchasedCapacity]);
 
   const pieChartData = [
     { name: "Remaining Capacity", value: remainingCapacity, color: "#10b981" },
@@ -117,10 +134,10 @@ const RawMaterials = () => {
     const { name, value } = e.target;
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-      if (name === "cost") {
-        const costNum = parseFloat(value);
-        if (!isNaN(costNum) && costNum > 0) {
-          updated.capacity = calculateRawMaterialCapacity(costNum);
+      if (name === "leafCount") {
+        const countNum = parseInt(value);
+        if (!isNaN(countNum) && countNum > 0) {
+          updated.capacity = countNum * 3;
         } else {
           updated.capacity = "";
         }
@@ -129,34 +146,42 @@ const RawMaterials = () => {
     });
   };
 
-  const handleAddPurchase = (e) => {
+  const handleAddPurchase = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.cost || !formData.capacity) {
+    if (!formData.name || !formData.leafCount || !formData.capacity) {
       setFeedbackMessage("⚠️ Please fill in all fields!");
       setTimeout(() => setFeedbackMessage(""), 3000);
       return;
     }
 
-    const newBatch = {
-      id: Date.now(),
-      date: formData.date,
-      name: formData.name.trim(),
-      cost: parseFloat(formData.cost),
-      capacity: parseInt(formData.capacity)
-    };
+    try {
+      const newBatch = {
+        date: formData.date,
+        name: formData.name.trim(),
+        leafCount: parseInt(formData.leafCount),
+        capacity: parseInt(formData.capacity)
+      };
 
-    setPurchases((prev) => [newBatch, ...prev]);
-    setShowAddModal(false);
-    setFeedbackMessage("✅ Raw material batch purchased successfully!");
-    setTimeout(() => setFeedbackMessage(""), 3000);
+      const res = await rawMaterialApi.add(newBatch);
+      if (res && res.success) {
+        setPurchases((prev) => [res.data, ...prev]);
+        setShowAddModal(false);
+        setFeedbackMessage("✅ Raw material batch purchased successfully!");
+        setTimeout(() => setFeedbackMessage(""), 3000);
 
-    // Reset Form
-    setFormData({
-      date: new Date().toISOString().split("T")[0],
-      name: "",
-      cost: "",
-      capacity: ""
-    });
+        // Reset Form
+        setFormData({
+          date: new Date().toISOString().split("T")[0],
+          name: "",
+          leafCount: "",
+          capacity: ""
+        });
+      }
+    } catch (err) {
+      setFeedbackMessage("❌ Failed to record purchase.");
+      setTimeout(() => setFeedbackMessage(""), 3000);
+      console.error(err);
+    }
   };
 
 
@@ -222,14 +247,14 @@ const RawMaterials = () => {
 
       {/* ===== METRIC STATUS CARDS ===== */}
       <div className="stock-unified-hero-row" style={{ display: "flex", flexDirection: "row", flexWrap: "nowrap", gap: "16px", marginBottom: "30px" }}>
-        {/* Total Cost */}
+        {/* Total Leaves Bought */}
         <div className="hero-stat-item secondary-alert blue-alert">
           <div className="hero-icon-box">
-            <span className="material-symbols-outlined">payments</span>
+            <span className="material-symbols-outlined">eco</span>
           </div>
           <div className="hero-details">
-            <span className="hero-label">TOTAL PURCHASE VALUE</span>
-            <span className="hero-value">₹{totalCost.toLocaleString("en-IN")}</span>
+            <span className="hero-label">TOTAL LEAVES BOUGHT</span>
+            <span className="hero-value">{totalLeavesBought.toLocaleString("en-IN")} <small>leaves</small></span>
           </div>
         </div>
 
@@ -289,7 +314,7 @@ const RawMaterials = () => {
                 <YAxis stroke="#64748b" fontSize={12} tickLine={false} />
                 <Tooltip cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }} contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0" }} />
                 <Legend iconType="circle" />
-                <Bar dataKey="Total Cost (₹)" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="Total Capacity (Plates)" fill="#3b82f6" radius={[6, 6, 0, 0]} />
                 <Bar dataKey="Produced Plates" fill="#10b981" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -374,50 +399,60 @@ const RawMaterials = () => {
                     className="modal-input"
                     value={formData.date}
                     onChange={handleInputChange}
+                    lang="en-IN"
                     required
                   />
                 </div>
                 
                 <div className="modal-form-group">
                   <label>Batch Name/Supplier Details *</label>
-                  <input
-                    type="text"
+                  <select
                     name="name"
                     className="modal-input"
-                    placeholder="e.g. Leaf Supplier A - Premium 12 Inch"
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                  />
+                  >
+                    <option value="" disabled>Select Leaf Vendor</option>
+                    {vendors
+                      .filter(v => v.vendorType && v.vendorType.toLowerCase().includes('leaf'))
+                      .map(v => (
+                        <option key={v._id || v.id} value={v.contactPerson}>
+                          {v.contactPerson}
+                        </option>
+                      ))}
+                  </select>
                 </div>
 
-                <div className="modal-form-group">
-                  <label>Purchase Price (₹) *</label>
-                  <input
-                    type="number"
-                    name="cost"
-                    className="modal-input"
-                    placeholder="e.g. 30000"
-                    value={formData.cost}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <div className="modal-form-group" style={{ flex: 1, marginBottom: 0 }}>
+                    <label>Leaf Count *</label>
+                    <input
+                      type="number"
+                      name="leafCount"
+                      className="modal-input"
+                      placeholder="e.g. 1000"
+                      value={formData.leafCount}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
 
-                <div className="modal-form-group" style={{ marginBottom: 0 }}>
-                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Equivalent Plates Capacity *</span>
-                    <span style={{ color: '#3b82f6', fontSize: '0.75rem', fontWeight: 600 }}>⚡ Auto-calculated from Cost</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="capacity"
-                    className="modal-input"
-                    placeholder="e.g. 23000"
-                    value={formData.capacity}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  <div className="modal-form-group" style={{ flex: 1, marginBottom: 0 }}>
+                    <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Equivalent Plates *</span>
+                      <span style={{ color: '#3b82f6', fontSize: '0.75rem', fontWeight: 600 }}></span>
+                    </label>
+                    <input
+                      type="number"
+                      name="capacity"
+                      className="modal-input"
+                      placeholder="e.g. 23000"
+                      value={formData.capacity}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
                 </div>
               </div>
               

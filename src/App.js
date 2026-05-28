@@ -49,6 +49,9 @@ import CheckPage from "./pages/CheckPage.js";
 // Client Pages
 import Clients from "./pages/clients/Clients.js";
 
+// Vendor Pages
+import Vendors from "./pages/vendors/Vendors.js";
+
 // Turnover Pages
 import Turnover from "./pages/turnover/Turnover.js";
 
@@ -234,6 +237,13 @@ const App = () => {
             <Route path="/clients" element={
               <ProtectedRoute module="clients">
                 <AppLayout><Clients /></AppLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Vendors */}
+            <Route path="/vendors" element={
+              <ProtectedRoute module="vendors">
+                <AppLayout><Vendors /></AppLayout>
               </ProtectedRoute>
             } />
 

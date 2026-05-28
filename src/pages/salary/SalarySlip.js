@@ -96,7 +96,13 @@ const SalarySlip = () => {
 
   const perDaySalary = baseMonthlySalary > 0 ? baseMonthlySalary / 26 : 0;
 
-  // 1. Off-time & Casual Leave Logic: 
+  // 1. Sunday Overwork Logic
+  const sundayWorkedDays = monthAttendance.filter(r => dayjs(r.date).day() === 0 && r.status === "present").length;
+  const sundayHalfDays = monthAttendance.filter(r => dayjs(r.date).day() === 0 && r.status === "half").length;
+  const totalSundayOverworkDays = sundayWorkedDays + (sundayHalfDays * 0.5);
+  const sundayOverworkPay = Math.round(totalSundayOverworkDays * perDaySalary);
+
+  // 2. Off-time & Casual Leave Logic: 
   // 1 day of off-time (either planned leave or unplanned absent) is treated as a paid casual leave allowed by the company.
   const casualLeaveCount = Math.min(1, leave + absent);
   const unpaidLeaveDays = Math.max(0, leave - 1);
@@ -105,12 +111,12 @@ const SalarySlip = () => {
   const totalDeductionDays = unpaidLeaveDays + unpaidAbsentDays + halfDayDeductionDays;
   const totalDeductions = Math.round(totalDeductionDays * perDaySalary);
 
-  // 2. Bonus Logic: If total present days (present + stoppage + half * 0.5) is 26 or more, add a 500 bonus
+  // 3. Bonus Logic: If total present days (present + stoppage + half * 0.5) is 26 or more, add a 500 bonus
   const workedDays = present + stoppage + half * 0.5;
   const bonus = workedDays >= 26 ? 500 : 0;
 
-  // 3. Final rounded total paid
-  const total = Math.max(0, Math.round(baseMonthlySalary + bonus - totalDeductions));
+  // 4. Final rounded total paid
+  const total = Math.max(0, Math.round(baseMonthlySalary + bonus + sundayOverworkPay - totalDeductions));
 
   // Dynamic values for department and designation
   const departmentName = employeeObj?.department || user?.department || "Plate Manufacturing Unit";
@@ -222,7 +228,7 @@ const SalarySlip = () => {
         .slip-title-container {
           display: flex;
           align-items: center;
-          gap: 16px;
+          justify-content: space-between;
           margin-bottom: 24px;
         }
 
@@ -662,10 +668,10 @@ const SalarySlip = () => {
       <div className="slip-header-container no-print">
         {/* Title row with back button */}
         <div className="slip-title-container">
-          <button className="back-btn" onClick={() => navigate('/salary')} title="Back to Salary Report">
-            <span className="material-symbols-outlined">arrow_back</span>
-          </button>
           <h3 className="slip-title">Salary Slip</h3>
+          <button className="back-btn" onClick={() => navigate(-1)} title="Close Salary Slip">
+            <span className="material-symbols-outlined">close</span>
+          </button>
         </div>
 
         {/* Filter and Download Card */}
@@ -808,6 +814,14 @@ const SalarySlip = () => {
                 {bonus > 0 ? `+ ${formatCurrency(bonus)}` : `${formatCurrency(0)}`}
               </td>
             </tr>
+            {totalSundayOverworkDays > 0 && (
+              <tr>
+                <td className="label-cell">Sunday Overwork (OD)</td>
+                <td className="value-cell" style={{ color: '#15803d' }}>
+                  {totalSundayOverworkDays} Day(s) <span style={{ fontSize: '11px', fontWeight: 600 }}>(+ {formatCurrency(sundayOverworkPay)})</span>
+                </td>
+              </tr>
+            )}
 
             <tr>
               <td className="label-cell">Deductions</td>

@@ -296,7 +296,7 @@ const Sales = () => {
         const payload = {
             invoiceNo: editingTransactionId ? (salesHistory.find(s => s.id === editingTransactionId)?.invoiceNo || `INV-${Date.now().toString().slice(-6)}`) : `INV-${Date.now().toString().slice(-6)}`,
             date: formatDate(new Date()) + ", " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
-            customer: customerName,
+            customer: customerName || companyName || "Cash Customer",
             company: companyName,
             customerEmail: customerEmail,
             customerPhone: customerPhone,
@@ -958,7 +958,7 @@ const Sales = () => {
 
                         <div className="quick-entry-row">
                             <div className="quick-entry-item two-col-item" style={clientType === 'Individual' ? { opacity: 0.6 } : {}}>
-                                <span className="quick-entry-label">GSTIN No:</span>
+                                <span className="quick-entry-label" style={{ textTransform: 'none' }}>GSTIN No:</span>
                                 <div className="input-with-icon" style={{ width: '100%' }}>
                                     <span className="material-symbols-outlined input-icon">receipt</span>
                                     <input

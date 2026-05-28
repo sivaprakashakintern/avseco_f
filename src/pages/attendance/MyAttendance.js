@@ -12,7 +12,7 @@ const MyAttendance = () => {
     enabled: true, 
     lat: 10.0425777, 
     lng: 77.5283017, 
-    radius: 500, 
+    radius: 200, 
     mapUrl: 'https://maps.app.goo.gl/KRHXi93VXax77jJm6' 
   });
   const [geoStatus, setGeoStatus] = useState({ checking: true, allowed: false, distance: null, mapUrl: '', error: null, verified: false });
@@ -49,6 +49,9 @@ const MyAttendance = () => {
       isHoursActive = !todayRecord.checkOut;
     }
   }
+
+  // Verify Time Window (08:00 AM to 07:00 PM)
+  const isTimeAllowed = currentTime.hour() >= 8 && (currentTime.hour() < 19 || (currentTime.hour() === 19 && currentTime.minute() === 0));
 
   // Verifies user location against the geofence config
   const verifyLocation = (silent = false, customConfig = null) => {
@@ -184,7 +187,7 @@ const MyAttendance = () => {
             enabled: true,
             lat: cfg.lat,
             lng: cfg.lng,
-            radius: cfg.radius || 500,
+            radius: cfg.radius || 200,
             mapUrl: cfg.mapUrl || ''
           };
           setGeoConfig(newConfig);
@@ -234,6 +237,16 @@ const MyAttendance = () => {
           )
         )}
 
+        {!isTimeAllowed && (
+          <div className="geo-status-banner status-denied" style={{ marginTop: '12px' }}>
+            <span className="material-symbols-outlined banner-icon">schedule</span>
+            <div className="banner-content">
+              <div className="banner-title">Outside Allowed Time</div>
+              <div className="banner-desc">You can only punch between 08:00 AM and 07:00 PM</div>
+            </div>
+          </div>
+        )}
+
         <div className="live-clock">
           {currentTime.format('hh:mm:ss A')}
         </div>
@@ -269,7 +282,7 @@ const MyAttendance = () => {
             <button 
               className="punch-btn btn-in" 
               onClick={() => handlePunch('check-in')}
-              disabled={isPunching || geoStatus.checking || (geoConfig.enabled && !geoStatus.allowed)}
+              disabled={isPunching || !isTimeAllowed || geoStatus.checking || (geoConfig.enabled && !geoStatus.allowed)}
             >
               <span className="material-symbols-outlined btn-icon">login</span>
               {isPunching ? 'Punching In...' : 'PUNCH IN'}
@@ -278,7 +291,7 @@ const MyAttendance = () => {
             <button 
               className="punch-btn btn-out" 
               onClick={() => handlePunch('check-out')}
-              disabled={isPunching || geoStatus.checking || (geoConfig.enabled && !geoStatus.allowed)}
+              disabled={isPunching || !isTimeAllowed || geoStatus.checking || (geoConfig.enabled && !geoStatus.allowed)}
             >
               <span className="material-symbols-outlined btn-icon">logout</span>
               {isPunching ? 'Punching Out...' : 'PUNCH OUT'}

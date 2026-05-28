@@ -34,7 +34,7 @@ export const AppProvider = ({ children }) => {
     const [toast, setToast] = useState(null); // { message, type }
     const [isUpdating, setIsUpdating] = useState(false);
     const [hasFetched, setHasFetched] = useState(false);
-    const { user, refreshUser, hasAccess, isSuperAdmin } = useAuth();
+    const { user, refreshUser, hasAccess, isAdmin, isSuperAdmin } = useAuth();
     
     // ✅ Helper to avoid UTC timezone shift (IST+5:30 bug)
     const toLocalDateKey = useCallback((date) => {
@@ -113,9 +113,9 @@ export const AppProvider = ({ children }) => {
             if (hasAccess('clients') || hasAccess('sales')) {
                 requestMap.push({ key: 'clients', call: clientApi.getAll() });
             }
-            if (hasAccess('production') || hasAccess('sales')) {
+            if (isAdmin || isSuperAdmin || user?.department?.toLowerCase()?.includes('sales')) {
                 requestMap.push({ key: 'production', call: productionApi.getAll() });
-                if (hasAccess('production')) {
+                if (isAdmin || isSuperAdmin) {
                     requestMap.push({ key: 'productionTargets', call: productionTargetApi.getAll() });
                 }
             } else {
@@ -208,7 +208,7 @@ export const AppProvider = ({ children }) => {
                 setIsUpdating(false);
             }
         }
-    }, [todayStr, user, refreshUser, hasAccess]);
+    }, [todayStr, user, refreshUser, hasAccess, isAdmin, isSuperAdmin]);
 
     // ── DERIVED METRICS ─────────────────────────────────────────────────────────
     
@@ -1001,12 +1001,6 @@ export const AppProvider = ({ children }) => {
         (products || []).forEach(p => {
             addSizeToMap(p.size);
         });
-        (history || []).forEach(p => {
-            const s = p.size || p.productSize;
-            addSizeToMap(s);
-        });
-        // Ensure default standard sizes are always populated
-        ['6-inch', '8-inch', '10-inch', '12-inch'].forEach(s => addSizeToMap(s));
 
         const availableSizes = Array.from(sizesMap.values()).sort((a, b) => {
             const valA = parseNumericSize(a) || 0;

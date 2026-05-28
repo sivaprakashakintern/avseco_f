@@ -405,7 +405,7 @@ const Expenses = () => {
                                 <th>Category</th>
                                 <th>Payment Mode</th>
                                 <th>Amount (₹)</th>
-                                <th style={{ width: '100px' }}>Actions</th>
+                                <th style={{ width: '140px' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -427,7 +427,7 @@ const Expenses = () => {
                                     </td>
                                     <td className="erp-td-amount">₹{Number(expense.amount).toLocaleString()}</td>
                                     <td>
-                                        <div className="erp-table-actions">
+                                        <div className="erp-table-actions" style={{ display: 'flex', flexDirection: 'row', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
                                             {isWithinLast2Days(expense.date) ? (
                                                 canEdit ? (
                                                     <>
