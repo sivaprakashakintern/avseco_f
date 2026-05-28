@@ -455,7 +455,6 @@ const RawMaterials = () => {
                   </div>
                 </div>
               </div>
-              
               <div className="modal-footer">
                 <button type="button" className="modal-cancel" onClick={() => setShowAddModal(false)}>Cancel</button>
                 <button type="submit" className="modal-confirm">Record Purchase</button>
