@@ -448,7 +448,7 @@ const Sales = () => {
 
         // Scroll back to the top (Customer Details section) on mobile
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, invoiceNo, gstRate, hsnCode, paidStatus, paymentMode, quantity, salesHistory, selectedBaseProduct, selectedProduct, selectedProductObj, selectedSize, setIsLogging, soldBy, updateSale, user?.name, unitPrice]);
+    }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, invoiceNo, gstRate, hsnCode, paidStatus, paymentMode, quantity, salesHistory, selectedBaseProduct, selectedProduct, selectedProductObj, selectedSize, setIsLogging, soldBy, updateSale, user?.name, unitPrice, navigate]);
 
     const handleCancelEdit = () => {
         setEditingTransactionId(null);
