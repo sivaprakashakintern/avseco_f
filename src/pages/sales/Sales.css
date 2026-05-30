@@ -2165,7 +2165,7 @@
     cursor: pointer;
   }
 
-  .sale-action-btn:first-child {
+  .sale-action-btn:not(:last-child) {
     border-right: 1px solid #f1f5f9;
   }
 
@@ -2175,6 +2175,10 @@
 
   .sale-action-btn.view {
     color: #006A4E;
+  }
+
+  .sale-action-btn.edit {
+    color: #3b82f6;
   }
 
   .sale-action-btn span {
@@ -3470,7 +3474,7 @@ textarea.quick-entry-input {
 
   .sale-card-actions {
     display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr)) !important;
     border-top: 1px solid #f1f5f9 !important;
     background: #fff !important;
   }
@@ -3489,9 +3493,16 @@ textarea.quick-entry-input {
     transition: all 0.2s !important;
   }
 
+  .sale-action-btn:not(:last-child) {
+    border-right: 1px solid #f1f5f9 !important;
+  }
+
   .sale-action-btn.view {
     color: #006A4E !important;
-    border-right: 1px solid #f1f5f9 !important;
+  }
+
+  .sale-action-btn.edit {
+    color: #3b82f6 !important;
   }
 
   .sale-action-btn.delete {

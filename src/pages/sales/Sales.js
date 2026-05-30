@@ -1607,12 +1607,12 @@ const Sales = () => {
                     </div>
 
                     <div className="quick-entry-footer">
-                        <div className="quick-entry-action-group" style={{ display: 'flex', gap: '16px', width: '100%', flexDirection: 'row' }}>
+                        <div className="quick-entry-action-group" style={{ display: 'flex', gap: '16px', width: '100%', flexDirection: 'row', alignItems: 'center' }}>
                             {editingTransactionId && (
                                 <button
                                     className="btn-outline quick-entry-btn"
                                     onClick={handleCancelEdit}
-                                    style={{ flex: 1, height: '52px', fontSize: '1rem', fontWeight: 800, borderColor: '#ef4444', color: '#ef4444', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    style={{ flex: 1, height: '52px', fontSize: '1rem', fontWeight: 800, border: '2px solid #ef4444', color: '#ef4444', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '14px' }}
                                 >
                                     <span className="material-symbols-outlined">cancel</span>
                                     CANCEL EDIT
@@ -1621,7 +1621,7 @@ const Sales = () => {
                             <button
                                 className="btn-primary quick-entry-btn log-btn-colored"
                                 onClick={handleLogTransaction}
-                                style={{ flex: editingTransactionId ? 1 : 'none', width: editingTransactionId ? 'auto' : '100%', height: '52px', fontSize: '1rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                style={{ flex: editingTransactionId ? 1 : 'none', width: editingTransactionId ? 'auto' : '100%', height: '52px', fontSize: '1rem', fontWeight: 800, border: '2px solid #10b981', background: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '14px' }}
                                 disabled={!canEdit || isLogging || (billItems.length === 0 && !quantity)}
                             >
                                 <span className="material-symbols-outlined">

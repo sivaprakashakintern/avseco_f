@@ -574,6 +574,15 @@ input[type=number] { -moz-appearance: textfield; }
 .erp-table tbody tr:hover { background: #f8fafc; }
 .erp-table tbody tr:last-child td { border-bottom: none; }
 
+/* ── Table Actions ─────────────────────────────────────────── */
+.erp-table-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 8px !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 /* ── Empty State ───────────────────────────────────────────── */
 .erp-empty {
   padding: 60px 24px;

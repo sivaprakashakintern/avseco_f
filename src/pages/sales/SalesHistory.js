@@ -775,6 +775,15 @@ const SalesHistory = () => {
                                                     {canEdit && (
                                                         <button
                                                             className="erp-btn ghost"
+                                                            onClick={(e) => { e.stopPropagation(); navigate('/sales', { state: { editSale: transaction } }); }}
+                                                            title="Edit Sale"
+                                                        >
+                                                            <span className="material-symbols-outlined" style={{ color: '#3b82f6' }}>edit</span>
+                                                        </button>
+                                                    )}
+                                                    {canEdit && (
+                                                        <button
+                                                            className="erp-btn ghost"
                                                             onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(transaction.id || transaction._id); }}
                                                             title="Delete"
                                                         >
@@ -861,6 +870,15 @@ const SalesHistory = () => {
                                             <span className="material-symbols-outlined">receipt_long</span>
                                             View Bill
                                         </button>
+                                        {canEdit && (
+                                            <button
+                                                className="sale-action-btn edit"
+                                                onClick={() => navigate('/sales', { state: { editSale: transaction } })}
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                                Edit
+                                            </button>
+                                        )}
                                         {canEdit && (
                                             <button className="sale-action-btn delete" onClick={() => handleDeleteTransaction(transaction.id || transaction._id)}>
                                                 <span className="material-symbols-outlined">delete</span>
