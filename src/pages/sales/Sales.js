@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '../../context/AppContext.js';
 import { useAuth } from '../../context/AuthContext.js';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './Sales.css';
 
 
@@ -65,8 +66,64 @@ const Sales = () => {
     const [exportFormat, setExportFormat] = useState('excel');
     const [exportType, setExportType] = useState('all'); // all, upi, cash, card
 
+    const location = useLocation();
+    const navigate = useNavigate();
     const [viewMode] = useState('entry'); // 'entry' or 'history'
     const [editingTransactionId, setEditingTransactionId] = useState(null);
+    const [invoiceNo, setInvoiceNo] = useState("");
+
+    // Load sale details for editing if passed in state from transaction history
+    useEffect(() => {
+        if (location.state && location.state.editSale) {
+            const sale = location.state.editSale;
+            setEditingTransactionId(sale.id || sale._id);
+            setInvoiceNo(sale.invoiceNo || "");
+            
+            // Set clientType dynamically based on whether company is filled
+            setClientType(sale.company && sale.company.trim() !== "" ? "Company" : "Individual");
+            
+            // Load Customer Details
+            setCustomerName(sale.customer || "");
+            setCompanyName(sale.company || "");
+            setCustomerEmail(sale.customerEmail || "");
+            setCustomerPhone(sale.customerPhone || sale.phone || "+91 ");
+            setCustomerGstin(sale.customerGstin || sale.gstin || "");
+            setCustomerAddress(sale.customerAddress || sale.address || "");
+            setDeliveryEmployee(sale.deliveredBy || "");
+            setSoldBy(sale.soldBy || "");
+            setDeliveryMode(sale.deliveryMode || "Door Delivery");
+            setPaymentMode(sale.paymentMode || "Cash");
+            
+            // Normalize status (handles mixed cases or paymentStatus fallback)
+            const rawStatus = sale.paidStatus || sale.paymentStatus || "Paid";
+            const capitalizedStatus = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
+            setPaidStatus(capitalizedStatus === "Unpaid" || capitalizedStatus === "Partial" || capitalizedStatus === "Paid" ? capitalizedStatus : "Paid");
+            
+            setAmountPaid(sale.amountPaid ? sale.amountPaid.toString() : "");
+
+            // Load Bill Items
+            const items = (sale.saleItems || []).map((item, idx) => ({
+                id: item._id || idx,
+                productId: item.productId || "",
+                product: item.productName || item.product,
+                baseName: item.baseName || item.productName || item.product,
+                size: item.size || "-",
+                qty: item.qty,
+                rate: item.rate,
+                amount: item.amount,
+                gstRate: item.gstRate || 0,
+                gstAmount: item.gstAmount || 0,
+                unit: item.unit || "pcs",
+                mrp: item.mrp || item.rate,
+                hsn: item.hsn || "4602 19 19"
+            }));
+            setBillItems(items);
+
+            // Clear the state so it doesn't reload on every render
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate, location.pathname]);
+
     const [selectedBaseProduct, setSelectedBaseProduct] = useState("");
 
     // Auto-select first product to streamline entry
@@ -294,7 +351,7 @@ const Sales = () => {
         }, 0);
 
         const payload = {
-            invoiceNo: editingTransactionId ? (salesHistory.find(s => s.id === editingTransactionId)?.invoiceNo || `INV-${Date.now().toString().slice(-6)}`) : `INV-${Date.now().toString().slice(-6)}`,
+            invoiceNo: editingTransactionId ? (invoiceNo || salesHistory.find(s => (s.id || s._id) === editingTransactionId)?.invoiceNo || `INV-${Date.now().toString().slice(-6)}`) : `INV-${Date.now().toString().slice(-6)}`,
             date: formatDate(new Date()) + ", " + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
             customer: customerName || companyName || "Cash Customer",
             company: companyName,
@@ -352,6 +409,10 @@ const Sales = () => {
                 await updateSale(editingTransactionId, payload);
                 setFeedbackMessage("✅ Sales record updated successfully");
                 setEditingTransactionId(null);
+                setInvoiceNo("");
+                setTimeout(() => {
+                    navigate('/sales/history');
+                }, 1000);
             } else {
                 // Create new transaction
                 await addSale(payload);
@@ -382,26 +443,16 @@ const Sales = () => {
         setAmountPaid("");
         setHsnCode("4602 19 19");
         setGstRate("5");
+        setInvoiceNo("");
         setTimeout(() => setFeedbackMessage(""), 3000);
 
         // Scroll back to the top (Customer Details section) on mobile
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, gstRate, hsnCode, paidStatus, paymentMode, quantity, salesHistory, selectedBaseProduct, selectedProduct, selectedProductObj, selectedSize, setIsLogging, soldBy, updateSale, user?.name, unitPrice]);
-
-
-
-
-
-
-
-
-
-
-
-
+    }, [addClient, addSale, amountPaid, billItems, clients, companyName, customerAddress, customerEmail, customerGstin, customerName, customerPhone, deliveryEmployee, deliveryMode, editingTransactionId, invoiceNo, gstRate, hsnCode, paidStatus, paymentMode, quantity, salesHistory, selectedBaseProduct, selectedProduct, selectedProductObj, selectedSize, setIsLogging, soldBy, updateSale, user?.name, unitPrice]);
 
     const handleCancelEdit = () => {
         setEditingTransactionId(null);
+        setInvoiceNo("");
         setBillItems([]);
         setQuantity("");
         setTotalAmount("");
@@ -419,6 +470,9 @@ const Sales = () => {
         setAmountPaid("");
         setHsnCode("4602 19 19");
         setGstRate("5");
+        
+        // Go back to transaction history
+        navigate('/sales/history');
     };
 
     // ─── Shared: Capture HTML preview & Send to WhatsApp ──────────────────
@@ -712,11 +766,6 @@ const Sales = () => {
                                 </button>
                             </div>
                         </div>
-                        {editingTransactionId && (
-                            <button className="btn-outline" onClick={handleCancelEdit} style={{ padding: '6px 12px', fontSize: '12px', borderColor: '#ef4444', color: '#ef4444' }}>
-                                Cancel Edit
-                            </button>
-                        )}
                     </div>
                     <div className="quick-entry-grid" style={{ paddingBottom: '8px' }}>
                         <div className="quick-entry-row">
@@ -1558,11 +1607,21 @@ const Sales = () => {
                     </div>
 
                     <div className="quick-entry-footer">
-                        <div className="quick-entry-action-group">
+                        <div className="quick-entry-action-group" style={{ display: 'flex', gap: '16px', width: '100%', flexDirection: 'row' }}>
+                            {editingTransactionId && (
+                                <button
+                                    className="btn-outline quick-entry-btn"
+                                    onClick={handleCancelEdit}
+                                    style={{ flex: 1, height: '52px', fontSize: '1rem', fontWeight: 800, borderColor: '#ef4444', color: '#ef4444', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                >
+                                    <span className="material-symbols-outlined">cancel</span>
+                                    CANCEL EDIT
+                                </button>
+                            )}
                             <button
                                 className="btn-primary quick-entry-btn log-btn-colored"
                                 onClick={handleLogTransaction}
-                                style={{ width: '100%', height: '52px', fontSize: '1rem', fontWeight: 800 }}
+                                style={{ flex: editingTransactionId ? 1 : 'none', width: editingTransactionId ? 'auto' : '100%', height: '52px', fontSize: '1rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                 disabled={!canEdit || isLogging || (billItems.length === 0 && !quantity)}
                             >
                                 <span className="material-symbols-outlined">

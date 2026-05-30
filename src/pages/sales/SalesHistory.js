@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from '../../utils/axiosConfig.js';
 import { useAppContext } from '../../context/AppContext.js';
 import { useAuth } from '../../context/AuthContext.js';
+import { useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/ConfirmModal.js';
 import './Sales.css';
 import logo from '../../assets/logo.png';
 import { jsPDF } from "jspdf";
@@ -19,8 +21,9 @@ const getFormattedTime = (transaction) => {
 };
 
 const SalesHistory = () => {
-    const { clients } = useAppContext();
+    const { clients, deleteSale, updateSale } = useAppContext();
     const { user, isAdmin, canEdit } = useAuth();
+    const navigate = useNavigate();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -33,6 +36,20 @@ const SalesHistory = () => {
     const [exportLoading, setExportLoading] = useState(false);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [statusUpdateTarget, setStatusUpdateTarget] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: null
+    });
+    const [selectedMonth, setSelectedMonth] = useState('All');
+    const [selectedYear, setSelectedYear] = useState('All');
+    const [statusFilter, setStatusFilter] = useState('All');
+
+    // Reset status filter when month/year changes
+    useEffect(() => {
+        setStatusFilter('All');
+    }, [selectedMonth, selectedYear]);
 
     const fetchSales = useCallback(async () => {
         setLoading(true);
@@ -55,9 +72,43 @@ const SalesHistory = () => {
         fetchSales();
     }, [fetchSales]);
 
-    const filteredTransactions = useMemo(() => {
+    // Helper: Parse DD-MM-YYYY or Date into month/year
+    const getTransactionMonthYear = useCallback((transaction) => {
+        let dateStr = transaction.date?.split(', ')[0];
+        if (!dateStr && transaction.createdAt) {
+            const d = new Date(transaction.createdAt);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            dateStr = `${day}-${month}-${year}`;
+        }
+        if (!dateStr) return { month: null, year: null };
+        
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            return {
+                month: parseInt(parts[1], 10),
+                year: parseInt(parts[2], 10)
+            };
+        }
+        return { month: null, year: null };
+    }, []);
+
+    // Unique years derived from transaction dates
+    const uniqueYears = useMemo(() => {
+        const years = new Set();
+        transactions.forEach(t => {
+            const { year } = getTransactionMonthYear(t);
+            if (year) years.add(year);
+        });
+        // Always include current year
+        years.add(new Date().getFullYear());
+        return Array.from(years).sort((a, b) => b - a);
+    }, [transactions, getTransactionMonthYear]);
+
+    const monthYearFilteredTransactions = useMemo(() => {
         // Non-admins can only see their own logged sales
-        const baseList = isAdmin
+        let list = isAdmin
             ? transactions
             : transactions.filter(t => {
                 const soldBy = String(t.soldBy || t.recordedBy || '').trim().toLowerCase();
@@ -65,41 +116,109 @@ const SalesHistory = () => {
                 return soldBy === currentName;
               });
 
-        return baseList.filter(t => {
-            const searchLower = searchTerm.toLowerCase();
-            const productMatch = t.saleItems?.some(item =>
-                (item.productName && item.productName.toLowerCase().includes(searchLower)) ||
-                (item.baseName && item.baseName.toLowerCase().includes(searchLower))
-            );
-            
-            return (
-                (t.company && t.company.toLowerCase().includes(searchLower)) ||
-                (t.customer && t.customer.toLowerCase().includes(searchLower)) ||
-                (t.invoiceNo && t.invoiceNo.toLowerCase().includes(searchLower)) ||
-                (t.product && t.product.toLowerCase().includes(searchLower)) ||
-                productMatch
-            );
-        });
-    }, [transactions, searchTerm, isAdmin, user]);
-
-    const handleDeleteTransaction = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this sales record?")) return;
-        try {
-            await axios.delete(`/sales/${id}`);
-            setTransactions(prev => prev.filter(t => (t.id || t._id) !== id));
-            setFeedbackMessage("✅ Transaction deleted successfully");
-            setTimeout(() => setFeedbackMessage(""), 3000);
-        } catch (err) {
-            console.error("Error deleting transaction:", err);
-            alert("Failed to delete transaction.");
+        // Filter by selectedMonth
+        if (selectedMonth !== 'All') {
+            list = list.filter(t => {
+                const { month } = getTransactionMonthYear(t);
+                return month === parseInt(selectedMonth, 10);
+            });
         }
+
+        // Filter by selectedYear
+        if (selectedYear !== 'All') {
+            list = list.filter(t => {
+                const { year } = getTransactionMonthYear(t);
+                return year === parseInt(selectedYear, 10);
+            });
+        }
+
+        // Filter by search term
+        if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            list = list.filter(t => {
+                const productMatch = t.saleItems?.some(item =>
+                    (item.productName && item.productName.toLowerCase().includes(searchLower)) ||
+                    (item.baseName && item.baseName.toLowerCase().includes(searchLower))
+                );
+                
+                return (
+                    (t.company && t.company.toLowerCase().includes(searchLower)) ||
+                    (t.customer && t.customer.toLowerCase().includes(searchLower)) ||
+                    (t.invoiceNo && t.invoiceNo.toLowerCase().includes(searchLower)) ||
+                    (t.product && t.product.toLowerCase().includes(searchLower)) ||
+                    productMatch
+                );
+            });
+        }
+
+        return list;
+    }, [transactions, searchTerm, selectedMonth, selectedYear, isAdmin, user, getTransactionMonthYear]);
+
+    const stats = useMemo(() => {
+        let totalCount = monthYearFilteredTransactions.length;
+        let paidCount = 0;
+        let unpaidCount = 0;
+        let totalRevenue = 0;
+
+        monthYearFilteredTransactions.forEach(t => {
+            const status = (t.paidStatus || t.paymentStatus || 'Paid').toLowerCase();
+            if (status === 'paid') {
+                paidCount++;
+            } else {
+                unpaidCount++;
+            }
+
+            const amount = Number(t.totalAmount || t.amount || 0);
+            totalRevenue += amount;
+        });
+
+        return {
+            totalCount,
+            paidCount,
+            unpaidCount,
+            totalRevenue
+        };
+    }, [monthYearFilteredTransactions]);
+
+    const filteredTransactions = useMemo(() => {
+        if (statusFilter === 'All') return monthYearFilteredTransactions;
+
+        return monthYearFilteredTransactions.filter(t => {
+            const status = (t.paidStatus || t.paymentStatus || 'Paid').toLowerCase();
+            if (statusFilter === 'Paid') {
+                return status === 'paid';
+            } else if (statusFilter === 'Unpaid') {
+                return status === 'unpaid';
+            } else if (statusFilter === 'Partial') {
+                return status === 'partial';
+            }
+            return true;
+        });
+    }, [monthYearFilteredTransactions, statusFilter]);
+
+    const handleDeleteTransaction = (id) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Sales Record',
+            message: 'Are you sure you want to permanently delete this sales record? This action cannot be undone and will restore the items back into product stock.',
+            onConfirm: async () => {
+                try {
+                    await deleteSale(id);
+                    setTransactions(prev => prev.filter(t => (t.id || t._id) !== id));
+                    setFeedbackMessage("✅ Transaction deleted successfully");
+                    setTimeout(() => setFeedbackMessage(""), 3000);
+                } catch (err) {
+                    console.error("Error deleting transaction:", err);
+                    alert("Failed to delete transaction.");
+                } finally {
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
+            }
+        });
     };
 
     const handleTogglePaymentStatus = (transaction) => {
-        const currentStatus = (transaction.paidStatus || transaction.paymentStatus || 'Paid').toLowerCase();
-        if (currentStatus !== 'unpaid') return;
-        setStatusUpdateTarget(transaction);
-        setShowStatusModal(true);
+        navigate('/sales', { state: { editSale: transaction } });
     };
 
     const confirmStatusUpdate = async () => {
@@ -107,9 +226,9 @@ const SalesHistory = () => {
 
         try {
             const updatedData = { paidStatus: 'Paid', paymentMode: 'Cash' };
-            const response = await axios.put(`/sales/${statusUpdateTarget.id || statusUpdateTarget._id}`, updatedData);
+            const data = await updateSale(statusUpdateTarget.id || statusUpdateTarget._id, updatedData);
 
-            if (response.data) {
+            if (data) {
                 setTransactions(prev => prev.map(t =>
                     (t.id || t._id) === (statusUpdateTarget.id || statusUpdateTarget._id)
                         ? { ...t, paidStatus: 'Paid', paymentMode: 'Cash' }
@@ -440,7 +559,7 @@ const SalesHistory = () => {
     };
 
     return (
-        <div className="erp-page">
+        <div className="erp-page animate-fade-in-up">
             <div className="erp-header">
                 <div className="header-left">
                     <h1 className="erp-title">Transaction History</h1>
@@ -462,6 +581,49 @@ const SalesHistory = () => {
                 </div>
             )}
 
+            {/* Metric Cards Box Grid */}
+            <div className="erp-stats-grid" style={{ marginBottom: '12px' }}>
+                <div className="erp-stat-card">
+                    <div className="erp-stat-icon blue">
+                        <span className="material-symbols-outlined">shopping_cart</span>
+                    </div>
+                    <div className="erp-stat-body">
+                        <span className="erp-stat-label">TOTAL ORDERS</span>
+                        <span className="erp-stat-value">{stats.totalCount}</span>
+                    </div>
+                </div>
+
+                <div className="erp-stat-card">
+                    <div className="erp-stat-icon green">
+                        <span className="material-symbols-outlined">check_circle</span>
+                    </div>
+                    <div className="erp-stat-body">
+                        <span className="erp-stat-label">PAID ORDERS</span>
+                        <span className="erp-stat-value">{stats.paidCount}</span>
+                    </div>
+                </div>
+
+                <div className="erp-stat-card">
+                    <div className="erp-stat-icon red">
+                        <span className="material-symbols-outlined">pending</span>
+                    </div>
+                    <div className="erp-stat-body">
+                        <span className="erp-stat-label">UNPAID / PARTIAL</span>
+                        <span className="erp-stat-value">{stats.unpaidCount}</span>
+                    </div>
+                </div>
+
+                <div className="erp-stat-card">
+                    <div className="erp-stat-icon amber">
+                        <span className="material-symbols-outlined">payments</span>
+                    </div>
+                    <div className="erp-stat-body">
+                        <span className="erp-stat-label">OVERALL REVENUE</span>
+                        <span className="erp-stat-value">₹{stats.totalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                    </div>
+                </div>
+            </div>
+
             <div className="erp-controls">
                 <div className="erp-search">
                     <span className="material-symbols-outlined erp-search-icon">search</span>
@@ -477,6 +639,53 @@ const SalesHistory = () => {
                             <span className="material-symbols-outlined">close</span>
                         </button>
                     )}
+                </div>
+
+                <div className="erp-select-group">
+                    {/* Status Selector Filter */}
+                    <select
+                        className="erp-select"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                        <option value="All">Status</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Unpaid">Unpaid</option>
+                        <option value="Partial">Partial</option>
+                    </select>
+
+                    {/* Month Selector Filter */}
+                    <select
+                        className="erp-select"
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(e.target.value)}
+                    >
+                        <option value="All">Month</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+
+                    {/* Year Selector Filter */}
+                    <select
+                        className="erp-select"
+                        value={selectedYear}
+                        onChange={(e) => setSelectedYear(e.target.value)}
+                    >
+                        <option value="All">Year</option>
+                        {uniqueYears.map(year => (
+                            <option key={year} value={year}>{year}</option>
+                        ))}
+                    </select>
                 </div>
             </div>
 
@@ -544,9 +753,9 @@ const SalesHistory = () => {
                                                     className={`erp-badge ${status === 'paid' ? 'success' : status === 'unpaid' ? 'danger' : 'warning'}`}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        if (status === 'unpaid' && canEdit) handleTogglePaymentStatus(transaction);
+                                                        if ((status === 'unpaid' || status === 'partial') && canEdit) handleTogglePaymentStatus(transaction);
                                                     }}
-                                                    style={{ cursor: (status === 'unpaid' && canEdit) ? 'pointer' : 'default' }}
+                                                    style={{ cursor: ((status === 'unpaid' || status === 'partial') && canEdit) ? 'pointer' : 'default' }}
                                                 >
                                                     {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
                                                 </span>
@@ -617,8 +826,9 @@ const SalesHistory = () => {
                                             className={`erp-badge ${status === 'paid' ? 'success' : status === 'unpaid' ? 'danger' : 'warning'}`}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (status === 'unpaid' && canEdit) handleTogglePaymentStatus(transaction);
+                                                if ((status === 'unpaid' || status === 'partial') && canEdit) handleTogglePaymentStatus(transaction);
                                             }}
+                                            style={{ cursor: ((status === 'unpaid' || status === 'partial') && canEdit) ? 'pointer' : 'default' }}
                                         >
                                             {transaction.paidStatus || transaction.paymentStatus || 'Paid'}
                                         </span>
@@ -1004,7 +1214,7 @@ const SalesHistory = () => {
                             </p>
                         </div>
                         <div className="modal-footer">
-                            <button className="modal-cancel" onClick={() => setShowStatusModal(false)}>No, Keep Unpaid</button>
+                             <button className="modal-cancel" onClick={() => setShowStatusModal(false)}>No, Keep Unpaid/Partial</button>
                             <button className="modal-confirm premium-btn" onClick={confirmStatusUpdate} style={{ background: '#10b981' }}>
                                 Yes, Mark as Paid
                             </button>
@@ -1012,6 +1222,16 @@ const SalesHistory = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                confirmText="Yes, Delete"
+                cancelText="Cancel"
+            />
         </div>
     );
 };

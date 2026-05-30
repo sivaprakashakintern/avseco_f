@@ -428,6 +428,17 @@ input[type=number] { -moz-appearance: textfield; }
   flex-wrap: wrap;
 }
 
+.erp-select-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.erp-select-group .erp-select {
+  height: 44px;
+  min-width: 140px;
+}
+
 .erp-search {
   position: relative;
   flex: 1;
@@ -647,6 +658,19 @@ input[type=number] { -moz-appearance: textfield; }
   .erp-search { min-width: 0; }
   .erp-search input { height: 42px; font-size: 14px; }
   .erp-select { height: 42px; width: 100%; }
+
+  .erp-select-group {
+    width: 100%;
+    gap: 8px;
+    justify-content: stretch;
+  }
+  .erp-select-group .erp-select {
+    flex: 1;
+    min-width: 0 !important;
+    height: 42px;
+    font-size: 13px;
+    padding: 0 8px;
+  }
 
   /* ── Mobile Card ── */
   .erp-card { border-radius: var(--radius-lg); }
